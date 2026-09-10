@@ -32,6 +32,18 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Non-goals:** Stage 3 or later capabilities.
 **Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 
+##### Stage 3B2c1 — Deterministic PRNG contract definition
+
+**Status:** Documentation-only contract definition; PRNG implementation is not authorized.
+**Objective:** Define the smallest versioned deterministic random primitive required for reproducible future generation.
+**Contract:** V1 uses Mulberry32 (`nightdrive.prng.mulberry32.v1`), an in-repository uint32 state transition with no `Math.random()` or operating-system entropy after initialization. It is deterministic infrastructure, not a cryptographic generator.
+**Seed/state:** The canonical seed is a finite safe integer in `0..4,294,967,295`, including zero; negative, fractional, non-safe, non-number, and coerced values are invalid. State is one uint32 value; transient state is not canonical composition data.
+**Output:** The primitive emits uint32 values in `[0, 2^32)` using specified integer arithmetic. Bounded integer, boolean, shuffle, weighted-choice, and musical decision helpers remain separate implementation contracts unless later authorized.
+**Replay/lineage:** Replay requires identical seed, PRNG contract version, generator/engine/profile/schema versions, normalized inputs, and canonical parameters. Algorithm changes require a new version; old sequences are reproducible only when their version is selected. Seed and version belong in generation lineage; derived random values need not be persisted.
+**Streams:** Independent component streams are a future requirement for lock-safe regeneration; stream/fork mechanics are explicitly deferred to a separately authorized contract.
+**Non-goals:** PRNG code, composition hashing, music policy, generation, harmony, MIDI, persistence, UI, AI, or security-sensitive randomness.
+**Tests/exit:** Future implementation requires known-answer, boundary/malformed, repeated-run, independent-instance, long-sequence, cross-runtime, no-`Math.random()`, and serializer/version fixtures; exit requires MUS-018/NFR-017 and AC-045 contract review without implementation claims.
+
 ## Stage 3 — Music theory and time core
 
 ### Stage 3A — Canonical musical time core
