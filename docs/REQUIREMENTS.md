@@ -36,6 +36,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MIDI-004 | P0 | Exported fixtures import into a supported FL Studio version with correct length and alignment. | AC-009 | 5, 16 |
 | MUS-007 | P0 | Musical-time constructors and arithmetic use explicit units, stable typed errors, safe-integer validation, and unambiguous 8-bar event boundaries without coercion or clamping. | AC-033 | 3A |
 | MUS-008 | P0 | Canonical pitch identity uses strictly validated `PitchClass` values 0–11 and `MidiPitch` values 0–127; MIDI pitch-class extraction is exact and independent of spelling or octave labels. | AC-035 | 3B1 |
+| MUS-009 | P0 | Canonical intervals use strictly validated signed safe-integer semitone displacement, support deterministic arithmetic, and compute directed distance between valid MIDI pitches without pitch-class ambiguity or transposition. | AC-036 | 3B2a |
 
 ## AI behavior
 
@@ -78,6 +79,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-007 | P0 | The application foundation uses documented supported exact tool versions and a locked dependency graph that passes clean install, format, lint, strict type, test, documentation, and production-build gates. | AC-031 | 2A |
 | NFR-008 | P0 | Equivalent validated musical-time primitives serialize to byte-equivalent versioned JSON independent of locale, timezone, framework, and runtime ambient state. | AC-034 | 3A |
 | NFR-009 | P0 | Equivalent validated pitch-identity primitives serialize to byte-equivalent versioned JSON independent of locale, spelling, octave convention, framework, and runtime ambient state. | AC-035 | 3B1 |
+| NFR-010 | P0 | Equivalent validated intervals serialize to byte-equivalent versioned JSON preserving sign and compound semitone distance without names, spelling, octave, locale, timezone, or ambient runtime state. | AC-036 | 3B2a |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules

@@ -6,9 +6,9 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 ## Current status
 
-**Stage 3B1 — pitch identity primitives.** The repository contains the merged Stage 2A application foundation and Stage 3A musical-time core plus zero-dependency, framework-independent `PitchClass` and `MidiPitch` primitives. They provide strict finite integer validation, exact MIDI-pitch-to-chromatic-class conversion, numeric comparison/equality, stable typed errors, and versioned deterministic serialization.
+**Stage 3B2a — chromatic interval primitive.** The repository contains the merged Stage 2A, Stage 3A, and Stage 3B1 foundations plus a zero-dependency, framework-independent signed-semitone `Interval` primitive. It provides strict safe-integer validation, deterministic signed arithmetic, exact directed MIDI-pitch distance, stable typed errors, and versioned serialization.
 
-Note spelling, octave labels, intervals, scales, keys, chords, PRNG/hash, MIDI export, generation, audio, persistence, authentication, Supabase configuration, AI integration, Vercel resources, and deployment remain intentionally unimplemented.
+Note spelling, octave labels, interval names/quality, scales, keys, chords, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase configuration, AI integration, Vercel resources, and deployment remain intentionally unimplemented.
 
 Start with:
 
@@ -37,6 +37,8 @@ The local shell is then available at `http://localhost:3000`; liveness is `GET /
 The Stage 3A API is exported from `src/music-domain`. Internal musical positions are zero-based. The exclusive 8-bar section boundary is tick `30720`, represented only as `{ bar: 8, beat: 0, tickWithinBeat: 0 }`; it is a valid event end but never a valid event start.
 
 Stage 3B1 exports pitch identity from the same boundary. `PitchClass` is exactly numeric semitone class `0..11`, and `MidiPitch` is exactly MIDI note number `0..127`. Enharmonic names and octave-number conventions are display/theory projections, not canonical pitch identity.
+
+Stage 3B2a adds signed chromatic displacement only: positive intervals move upward, negative intervals move downward, and zero is valid. Values are not reduced modulo 12 and do not encode traditional interval names or notation semantics.
 
 ## Repository baseline
 
