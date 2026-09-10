@@ -190,6 +190,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Non-goals:** Production code, doubling, wider cardinality, extensions, sevenths, voice-leading, progression, harmony, MIDI file writing, spelling, UI, or AI.
 **Exit:** MUS-020/NFR-019 and AC-047 contract review confirms representation, ordering, membership/inversion boundaries, serialization, validation expectations, and deferred policy without implementation claims.
 
+##### Stage 3B2b2i — ChordVoicing primitive implementation
+
+**Status:** Current bounded implementation slice; production scope is limited to the accepted V1 primitive and deterministic compatibility checks.
+**Objective:** Implement the immutable triad-only ChordVoicing value and its Chord/ChordInversion compatibility predicates.
+**Capabilities:** Exactly three validated strictly ascending MidiPitches, deterministic equality, `nightdrive.chord-voicing.v1` serialization, membership compatibility, and canonical-order inversion compatibility.
+**Dependencies:** Merged Stage 3B2b2h contract, Chord, and ChordInversion primitives.
+**Non-goals:** Generation, doubling, wider cardinality, extensions, sevenths, voice-leading, progression, harmony, MIDI file writing, spelling, UI, or AI.
+**Tests:** Exhaustive malformed/forged validation, immutability, equality, exact serialization, all V1 quality/root/inversion compatibility contexts, and wrapped-order evidence.
+**Exit:** MUS-021/NFR-020 and AC-048 pass without new dependencies, framework coupling, or Stage 4 behavior.
+
 ## Stage 4 — Harmony engine
 
 **Objective:** Generate valid progressions and voice-led chord tracks.

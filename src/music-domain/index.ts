@@ -7,3 +7,4 @@ export * from "./chord-quality";
 export * from "./chord";
 export * from "./chord-inversion";
 export * from "./prng";
+export * from "./chord-voicing";
