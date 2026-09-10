@@ -90,7 +90,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2b — ChordQuality contract definition
 
-**Status:** Contract defined by this documentation-only milestone; production implementation is not authorized.
+**Status:** Merged and complete through PR #8 (`f744a1f`).
 **Objective:** Freeze the smallest closed V1 chord-quality vocabulary and its boundaries before deterministic harmony implementation.
 **Contract:** One explicitly versioned V1 vocabulary maps stable IDs to immutable formulas: major triad `major-triad` `[0,4,7]`; minor triad `minor-triad` `[0,3,7]`; diminished triad `diminished-triad` `[0,3,6]`. The version belongs to the vocabulary/schema contract, not redundant per-instance state. Formulas are tonic-relative pitch-class membership sets only: no ordering, octave, inversion, voicing, spelling, root, or extension semantics. Serialization/version mechanics remain for implementation.
 **Profile rationale:** Major and minor support the harmonic center of all four accepted profiles; diminished supplies leading-tone/tension color for harmonic-minor and darker chromatic contexts without opening a broad vocabulary.
@@ -98,6 +98,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Dependencies:** Merged Stage 3B2b2a and explicit authorization for a later implementation task.
 **Non-goals:** `ChordQuality` production code, `Chord`, extensions implementation, harmony, voicing, inversions, progression, named intervals, spelling, generation, MIDI, persistence, AI, or UI.
 **Exit:** MUS-012 and AC-039 contract evidence is reviewed; no implementation completion is claimed.
+
+##### Stage 3B2b2c — ChordQuality primitive
+
+**Status:** Implemented and validated on this bounded branch; merge remains a human/review decision.
+**Objective:** Implement the versioned closed V1 ChordQuality contract without introducing Chord or harmony semantics.
+**Capabilities:** Exactly three canonical IDs, immutable validated formulas, deterministic equality, and `nightdrive.chord-quality.v1` serialization.
+**Dependencies:** Merged Stage 3B2b2b contract and explicit Stage 3B2b2c authorization.
+**Non-goals:** Chord, roots, extensions, seventh identities, inversions, voicings, harmony, progression, spelling, named intervals, generation, MIDI, persistence, AI, UI, or deployment.
+**Tests:** Closed-vocabulary rejection, exact formula invariants, immutability, all ordered equality pairs, serializer fixtures, and forbidden-field checks.
+**Exit:** MUS-013/NFR-013 and AC-040 pass without new dependencies or framework coupling.
 
 ##### Stage 3B2b2 — Remaining theory and determinism foundations
 

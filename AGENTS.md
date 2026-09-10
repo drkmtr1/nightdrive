@@ -4,7 +4,7 @@
 
 Read this file first, then `docs/DECISIONS.md`, `docs/SCOPE.md`, and the document governing the task. If documents conflict, stop implementation, reconcile conservatively, and record any architectural resolution in `docs/DECISIONS.md`.
 
-Nightdrive helps producers create original, editable musical material. Stage 1, Stage 2A, Stage 3A, Stage 3B1, Stage 3B2a, Stage 3B2b1, and Stage 3B2b2a are merged; Stage 3B2b2b is the current documentation-only ChordQuality contract slice. Each later capability gate still requires a separately authorized bounded task. Do not provision Supabase, deploy to Vercel, install models, or implement note spelling, named intervals, chords, harmony, MIDI export, generation, audio, persistence, or AI features before their roadmap stages are explicitly authorized.
+Nightdrive helps producers create original, editable musical material. Stage 1, Stage 2A, Stage 3A, Stage 3B1, Stage 3B2a, Stage 3B2b1, Stage 3B2b2a, and Stage 3B2b2b are merged; Stage 3B2b2c is the current bounded ChordQuality primitive slice. Each later capability gate still requires a separately authorized bounded task. Do not provision Supabase, deploy to Vercel, install models, or implement note spelling, named intervals, chords, harmony, MIDI export, generation, audio, persistence, or AI features before their roadmap stages are explicitly authorized.
 
 ## Non-negotiable boundaries
 

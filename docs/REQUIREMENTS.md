@@ -40,6 +40,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-010 | P0 | Canonical scales use exactly six closed immutable seven-offset formulas; tonic-relative projection, zero-based degree lookup, and exact pitch-class membership are strictly validated and do not introduce spelling or key semantics. | AC-037 | 3B2b1 |
 | MUS-011 | P0 | Canonical keys contain only a strictly validated tonic `PitchClass` and closed canonical `ScaleType`; projection, degree lookup, membership, equality, and serialization preserve those numeric identities without spelling or key-signature semantics. | AC-038 | 3B2b2a |
 | MUS-012 | P0 | The V1 `ChordQuality` contract is one explicitly versioned closed triad-only vocabulary with stable IDs and exact tonic-relative chromatic membership formulas; version belongs to the vocabulary/schema contract rather than redundant per-instance state. Quality excludes root, ordering, inversions, voicings, spelling, and extensions, and seventh structures remain deferred extension metadata. | AC-039 | 3B2b2b |
+| MUS-013 | P0 | The implemented `ChordQuality` primitive accepts exactly the three versioned canonical IDs and immutable formulas, supports deterministic equality and serialization, and does not introduce Chord, extension, inversion, voicing, root, spelling, or harmony semantics. | AC-040 | 3B2b2c |
 
 ## AI behavior
 
@@ -85,6 +86,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-010 | P0 | Equivalent validated intervals serialize to byte-equivalent versioned JSON preserving sign and compound semitone distance without names, spelling, octave, locale, timezone, or ambient runtime state. | AC-036 | 3B2a |
 | NFR-011 | P0 | Equivalent validated scale identities and formulas serialize to byte-equivalent fixed-order `nightdrive.scale.v1` JSON independent of locale, framework, and ambient runtime state. | AC-037 | 3B2b1 |
 | NFR-012 | P0 | Equivalent validated keys serialize to byte-equivalent fixed-order `nightdrive.key.v1` JSON containing only tonic semitone class and canonical scale identity. | AC-038 | 3B2b2a |
+| NFR-013 | P0 | Equivalent validated ChordQuality values serialize to byte-equivalent fixed-order `nightdrive.chord-quality.v1` JSON containing only canonical quality ID and formula. | AC-040 | 3B2b2c |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules

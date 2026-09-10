@@ -7,7 +7,7 @@
 - `Interval`: Stage 3B2a implements only a strictly constructed signed safe-integer semitone distance. Named/diatonic metadata remains deferred until theory semantics require it.
 - `Scale`: Stage 3B2b1 closed six-type identity with immutable seven-offset formula and numeric tonic-relative projection.
 - `Key`: Stage 3B2b2a immutable numeric tonic `PitchClass` plus canonical `ScaleType`; projection delegates to the scale primitive and carries no spelling or key-signature data.
-- `ChordQuality`: Stage 3B2b2b documented closed triad-quality vocabulary with stable ID and immutable tonic-relative chromatic membership formula; no production implementation yet.
+- `ChordQuality`: Stage 3B2b2c implements the closed triad-quality vocabulary with stable ID and immutable tonic-relative chromatic membership formula. The vocabulary/formula contract is versioned at the schema level; individual values carry no redundant version field.
 - `Chord`: future root `PitchClass`, `ChordQuality`, optional extension metadata, and pitch-class membership. Extensions are outside `ChordQuality` and remain undefined until a later implementation slice.
 - `ChordInversion`: bass-member index.
 - `ChordVoicing`: ordered absolute MIDI pitches plus range/spacing metadata.
