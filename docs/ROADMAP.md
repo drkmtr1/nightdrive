@@ -172,7 +172,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2c2 — Deterministic PRNG primitive implementation
 
-**Status:** Implemented on this bounded branch; pending review and merge.
+**Status:** Merged and complete through PR #19 (merge commit `696d896dff4444693c2c578f75a76068ee2cd285`).
 **Objective:** Implement the versioned Mulberry32 PRNG contract without musical policy.
 **Capabilities:** Canonical uint32 seed validation, deterministic immutable state transitions, uint32 output, and `nightdrive.prng.mulberry32.v1` identity.
 **Dependencies:** Merged Stage 3B2c1 and explicit Stage 3B2c2 authorization.
