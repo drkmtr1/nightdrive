@@ -210,6 +210,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Tests:** Future golden progressions, profile/template combinations, compatibility invariants, deterministic replay/ties, unsatisfiable cases, seeded fixtures, property checks, and preliminary human review.
 **Exit:** MUS-022/NFR-021 and AC-049 contract review confirms representation, profile data, deterministic selection, failure behavior, provenance, and deferred implementation boundaries.
 
+### Stage 4B1 — Harmony template runtime
+
+**Status:** Current bounded implementation slice; scope is limited to template/profile runtime data, validation, lookup, and degree-to-Chord realization.
+**Objective:** Execute the accepted `nightdrive.harmony-template.v1` contract deterministically against existing Keys and Chords.
+**Capabilities:** Immutable concrete catalog, opaque-ID lookup, accepted profile/scale mappings, structural validation, scale-context validation, and explicit slot realization.
+**Dependencies:** Merged Stage 4A and Stage 3 primitives.
+**Non-goals:** Template selection, inversion/voicing selection, voice-leading, progression optimization, seeded variation, MIDI, bass, arp, melody, AI, UI, or persistence.
+**Tests:** Catalog fidelity, profile mapping, opaque-ID boundary, golden degree roots/qualities/members, all-template realization, malformed input, scale mismatch, immutability, and determinism.
+**Exit:** MUS-023/NFR-022 and AC-050 pass without new dependencies or later Stage 4 behavior.
+
 ## Stage 4 — Harmony engine
 
 **Objective:** Generate valid progressions and voice-led chord tracks.
