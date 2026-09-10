@@ -202,7 +202,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 4A — Harmony policy architecture and contract
 
-**Status:** Documentation-only architecture and contract milestone; Harmony implementation is not authorized.
+**Status:** Merged and complete through PR #25 (merge commit `9f45744f067875955cc0e87b768cae56c8a95be9`). This was documentation-only; Harmony production implementation remains separately gated.
 **Objective:** Define the smallest deterministic V1 Harmony policy before engine implementation.
 **Capabilities:** Versioned templates, degree-to-Chord mapping, profile-approved triad qualities, bounded inversions/voicings, integer voice-leading cost and tie-breaks, seeded variation boundary, unsatisfiable reasons, and decision/provenance records for all four V1 profiles.
 **Dependencies:** Merged Stage 3 primitives, reviewed profile data, and explicit Stage 4B implementation authorization.
