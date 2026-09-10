@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createMulberry32State,
   nextMulberry32,
@@ -80,5 +80,17 @@ describe("Mulberry32 PRNG", () => {
   it("revalidates forged state values", () => {
     expect(() => nextMulberry32(4_294_967_296 as Mulberry32State)).toThrow();
     expect(() => nextMulberry32("0" as never)).toThrow();
+  });
+
+  it("does not depend on ambient Math.random", () => {
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("ambient randomness is prohibited");
+    });
+    try {
+      expect(sequence(42, 16)).toHaveLength(16);
+      expect(random).not.toHaveBeenCalled();
+    } finally {
+      random.mockRestore();
+    }
   });
 });

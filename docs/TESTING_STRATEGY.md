@@ -73,7 +73,7 @@ This documentation-only gate reviews the versioned Mulberry32 selection and exac
 
 ## Stage 3B2c2 Deterministic PRNG primitive
 
-The implementation suite covers canonical seed boundaries and malformed/coercible rejection, fixed known-answer vectors for seeds `0`, `1`, and `0xffffffff`, independent and repeated-run determinism, exact state advancement, uint32 output invariants, forged-state rejection, algorithm identity, and a longer deterministic sequence. No bounded helpers, streams/forks, ambient randomness, or music policy are included.
+The implementation suite covers canonical seed boundaries and malformed/coercible rejection, fixed known-answer vectors for seeds `0`, `1`, and `0xffffffff`, independent and repeated-run determinism, exact state advancement, uint32 output invariants, forged-state rejection, algorithm identity, a longer deterministic sequence, and an ambient-randomness isolation test that fails if `Math.random()` is called. No bounded helpers, streams/forks, ambient randomness, or music policy are included.
 
 ## Stage 3B2b2g ChordInversion primitive
 
