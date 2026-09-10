@@ -158,7 +158,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2c1 — Deterministic PRNG contract definition
 
-**Status:** Documentation-only contract definition; PRNG implementation is not authorized.
+**Status:** Merged and complete through PR #17 (merge commit `91230834bbd0056996c2aecb70f7319ad71a82c3`); PRNG implementation remains separately gated.
 **Objective:** Define the smallest versioned deterministic random primitive required for reproducible future generation.
 **Contract:** V1 uses Mulberry32 (`nightdrive.prng.mulberry32.v1`), an in-repository uint32 state transition with no `Math.random()` or operating-system entropy after initialization. It is deterministic infrastructure, not a cryptographic generator.
 **Transition:** For uint32 state `s`, set `s = (s + 0x6D2B79F5) >>> 0`; set `t = s`; then `t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0`; then `t = (t ^ ((t + Math.imul(t ^ (t >>> 7), t | 61)) >>> 0)) >>> 0`; return `(t ^ (t >>> 14)) >>> 0`. `Math.imul` supplies signed 32-bit multiplication with low-32-bit result; every `>>> 0` is a uint32 truncation/coercion point, shifts are unsigned-right shifts, state updates before output mixing, and outputs are in `[0, 2^32)`.
