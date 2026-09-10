@@ -79,7 +79,7 @@ In C major, `degree-0340-major-v1` maps degrees `0,3,4,0` to roots `0,5,7,0`, wi
 | Slot | Degree | Root | Quality | Canonical members | Inversion | Voicing | Projected classes |
 |---|---:|---:|---|---|---:|---|---|
 | 1 | 0 | 9 | `minor-triad` | `[9,0,4]` | 0 | `[45,48,52]` | `[9,0,4]` |
-| 2 | 3 | 0 | `minor-triad` | `[0,3,7]` | 1 | `[51,55,60]` | `[3,7,0]` |
+| 2 | 3 | 2 | `minor-triad` | `[2,5,9]` | 1 | `[53,57,62]` | `[5,9,2]` |
 | 3 | 4 | 4 | `major-triad` | `[4,8,11]` | 1 | `[56,59,64]` | `[8,11,4]` |
 | 4 | 0 | 9 | `minor-triad` | `[9,0,4]` | 0 | `[45,48,52]` | `[9,0,4]` |
 
