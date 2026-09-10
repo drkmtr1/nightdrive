@@ -75,6 +75,12 @@ describe("ChordVoicing", () => {
     for (const left of values) {
       for (const right of values) expect(chordVoicingsEqual(left, right)).toBe(left === right);
     }
+    const left = createChordVoicing([48, 52, 55]);
+    const right = createChordVoicing([48, 52, 55]);
+    expect(left).not.toBe(right);
+    expect(chordVoicingsEqual(left, right)).toBe(true);
+    expect(chordVoicingsEqual(right, left)).toBe(true);
+    expect(chordVoicingsEqual(left, createChordVoicing([48, 52, 56]))).toBe(false);
     expect(() => chordVoicingsEqual({ midiPitches: [48, 48, 55] } as never, values[0])).toThrow();
     expect(() => serializeChordVoicing({ midiPitches: [48, 52, 128] } as never)).toThrow();
   });
@@ -102,7 +108,17 @@ describe("ChordVoicing", () => {
 
   it("checks deterministic Chord membership compatibility", () => {
     const cMajor = createChord(createPitchClass(0), createChordQuality(CHORD_QUALITIES.majorTriad));
-    expect(isChordVoicingCompatibleWithChord(createChordVoicing([48, 52, 55]), cMajor)).toBe(true);
+    const cMajorVoicing = createChordVoicing([48, 52, 55]);
+    expect(isChordVoicingCompatibleWithChord(cMajorVoicing, cMajor)).toBe(true);
+    const dMajor = createChord(createPitchClass(2), createChordQuality(CHORD_QUALITIES.majorTriad));
+    const cMinor = createChord(createPitchClass(0), createChordQuality(CHORD_QUALITIES.minorTriad));
+    const cDiminished = createChord(
+      createPitchClass(0),
+      createChordQuality(CHORD_QUALITIES.diminishedTriad),
+    );
+    expect(isChordVoicingCompatibleWithChord(cMajorVoicing, dMajor)).toBe(false);
+    expect(isChordVoicingCompatibleWithChord(cMajorVoicing, cMinor)).toBe(false);
+    expect(isChordVoicingCompatibleWithChord(cMajorVoicing, cDiminished)).toBe(false);
     expect(isChordVoicingCompatibleWithChord(createChordVoicing([52, 55, 60]), cMajor)).toBe(true);
     expect(isChordVoicingCompatibleWithChord(createChordVoicing([55, 60, 64]), cMajor)).toBe(true);
     expect(isChordVoicingCompatibleWithChord(createChordVoicing([48, 55, 60]), cMajor)).toBe(false);
@@ -132,6 +148,26 @@ describe("ChordVoicing", () => {
         }
       }
     }
+  });
+
+  it("revalidates forged contextual Chord and ChordInversion arguments", () => {
+    const voicing = createChordVoicing([48, 52, 55]);
+    const validChord = createChord(
+      createPitchClass(0),
+      createChordQuality(CHORD_QUALITIES.majorTriad),
+    );
+    expect(() =>
+      isChordVoicingCompatibleWithChord(voicing, {
+        root: 12,
+        quality: CHORD_QUALITIES.majorTriad,
+      } as never),
+    ).toThrow();
+    expect(() =>
+      isChordVoicingCompatibleWithChord(voicing, { root: 0, quality: "major" } as never),
+    ).toThrow();
+    expect(() =>
+      isChordVoicingCompatibleWithChordInversion(voicing, validChord, 3 as never),
+    ).toThrow();
   });
 
   it("uses canonical member order for wrapped B diminished inversion", () => {
