@@ -48,10 +48,16 @@ describe("Chord", () => {
       Number.NaN,
       Number.POSITIVE_INFINITY,
       Number.MAX_SAFE_INTEGER + 1,
+      "0",
+      {},
+      null,
+      undefined,
     ]) {
       expect(() => createChord(root as PitchClass, createChordQuality(qualities[0]))).toThrow();
     }
-    expect(() => createChord(createPitchClass(0), "major" as never)).toThrow();
+    for (const quality of ["major", "MAJOR-TRIAD", "unsupported", 1, {}, null, undefined]) {
+      expect(() => createChord(createPitchClass(0), quality as never)).toThrow();
+    }
     const valid = chords[0];
     expect(() =>
       chordsEqual({ root: 12 as never, quality: qualities[0] as never }, valid),
@@ -70,6 +76,15 @@ describe("Chord", () => {
   });
 
   it("serializes every chord with a fixed minimal schema", () => {
+    expect(serializeChord(chords[0])).toBe(
+      '{"schema":"nightdrive.chord.v1","rootSemitoneClass":0,"quality":"major-triad"}',
+    );
+    expect(serializeChord(chords[28])).toBe(
+      '{"schema":"nightdrive.chord.v1","rootSemitoneClass":9,"quality":"minor-triad"}',
+    );
+    expect(serializeChord(chords[35])).toBe(
+      '{"schema":"nightdrive.chord.v1","rootSemitoneClass":11,"quality":"diminished-triad"}',
+    );
     for (const chord of chords) {
       const serialized = serializeChord(chord);
       expect(serializeChord(chord)).toBe(serialized);

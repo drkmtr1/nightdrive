@@ -125,7 +125,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Dependencies:** Merged Stage 3B2b2d and explicit Stage 3B2b2e authorization.
 **Non-goals:** Extensions, seventh identities, inversions, voicings, harmony, progression, spelling, MIDI, generation, persistence, AI, UI, or deployment.
 **Tests:** All 36 canonical chords, membership derivation and immutability, 1,296 ordered equality pairs, runtime forgery rejection, exact serialization fixtures, and forbidden-field checks.
-**Exit:** MUS-014 and AC-041 contract evidence is reviewed; no implementation completion is claimed.
+**Exit:** MUS-015/NFR-014 and AC-042 pass with the Chord primitive and tests implemented, without extensions, inversion, voicing, harmony, new dependencies, or framework coupling.
 
 ##### Stage 3B2b2 — Remaining theory and determinism foundations
 
