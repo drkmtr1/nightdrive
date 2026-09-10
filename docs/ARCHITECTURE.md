@@ -46,7 +46,7 @@ Dependencies point inward: web/persistence/AI/MIDI adapters depend on domain con
 - `src/app/api/health/live`: deterministic, non-cacheable process liveness without dependency or secret disclosure.
 - `src/music-domain`: plain TypeScript canonical musical-time, pitch-identity, and signed chromatic-interval values and operations. Production files accept only relative imports; a test covers static, dynamic, re-export, and side-effect-only forms to enforce the absence of framework, platform, and package dependencies.
 - Root tool configuration: exact runtime/dependency policy, strict TypeScript, Biome, Vitest/jsdom/axe-core, and CI.
-- No named/diatonic interval, scale/key/chord theory, composition, generator, MIDI export, audio, persistence, AI, or provider module is created prematurely.
+- No named/diatonic interval, note spelling, key/chord theory, composition, generator, MIDI export, audio, persistence, AI, or provider module is created prematurely.
 
 Framework-independent modules live outside `src/app`, expose plain TypeScript APIs, and contain no `next/*`, React, DOM, Node-only, database, or provider imports unless the module is explicitly an adapter. The Stage 3A dependency-boundary test enforces this rule for `src/music-domain` production files.
 

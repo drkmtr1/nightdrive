@@ -60,7 +60,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2a — Chromatic interval primitive
 
-**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #5 (`d64b9c2`).
 **Objective:** Establish signed chromatic semitone displacement without introducing traditional interval naming or notation semantics.
 **Capabilities:** Strict signed safe-integer `Interval`, zero/positive/negative compound values, equality/comparison, negation, addition/subtraction with overflow rejection, exact directed MIDI-pitch distance, deterministic versioned serialization, and algebraic/exhaustive MIDI-pair fixtures.
 **Dependencies:** Merged Stage 3B1 and explicit Stage 3B2a authorization.
@@ -68,12 +68,22 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Tests:** Representative signed/compound values, all invalid numeric classes, arithmetic overflow, algebraic invariants, repeated serialization, and all 16,384 ordered MIDI-pitch pairs.
 **Exit:** The Stage 3B2a subset of MUS-001 plus MUS-009/NFR-010 and AC-036 pass without new dependencies or framework coupling.
 
-##### Stage 3B2b — Remaining theory and determinism foundations
+##### Stage 3B2b1 — Scale formula foundations
 
-**Status:** Not authorized and intentionally unscoped beyond the accepted Stage 3 objective.
-**Objective:** Complete remaining framework-independent theory primitives and determinism contracts through future bounded briefs.
-**Capabilities:** Note/spelling, named/diatonic interval metadata, scales, keys, chords, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
-**Dependencies:** Merged Stage 3B2a and explicit authorization.
+**Status:** Implemented and validated on this bounded branch; merge remains a human/review decision.
+**Objective:** Establish the closed V1 scale formula and numeric projection subset.
+**Capabilities:** Exactly six immutable canonical formulas, zero-based `ScaleDegree` values `0..6`, tonic-relative pitch-class projection, degree lookup, exact twelve-class membership, and `nightdrive.scale.v1` serialization.
+**Dependencies:** Merged Stage 3B2a and explicit Stage 3B2b1 authorization.
+**Non-goals:** Note spelling, keys, named/diatonic intervals, chords, composition hashing, PRNG, generation, MIDI files, audio, persistence, AI, UI, or deployment.
+**Tests:** Exact formula fixtures; all 72 tonic/scale contexts; all twelve membership classes; invalid degrees; immutable formula results; repeated serialization.
+**Exit:** MUS-001 plus MUS-010/NFR-011 and AC-037 pass without new dependencies or framework coupling.
+
+##### Stage 3B2b2 — Remaining theory and determinism foundations
+
+**Status:** Not authorized and intentionally unscoped.
+**Objective:** Define future bounded briefs for the remaining theory and determinism contracts.
+**Capabilities:** Note/spelling, keys, named/diatonic interval metadata, chords, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
+**Dependencies:** Merged Stage 3B2b1 and explicit authorization for each bounded slice.
 **Non-goals:** Progression/pattern generation, MIDI export, or UI piano roll.
 **Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 

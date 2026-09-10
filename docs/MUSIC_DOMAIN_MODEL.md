@@ -5,7 +5,7 @@
 - `PitchClass`: implemented in Stage 3B1 as a strictly constructed integer semitone class `0..11`. It is chromatic identity only; enharmonic spelling is a later projection.
 - `MidiPitch`: implemented in Stage 3B1 as a strictly constructed integer MIDI note number `0..127`. Its pitch class is exactly the note number modulo 12. Display `Note`, optional spelling, and octave convention remain deferred.
 - `Interval`: Stage 3B2a implements only a strictly constructed signed safe-integer semitone distance. Named/diatonic metadata remains deferred until theory semantics require it.
-- `Scale`: stable type/version and ordered pitch-class intervals from tonic.
+- `Scale`: Stage 3B2b1 closed six-type identity with immutable seven-offset formula and numeric tonic-relative projection.
 - `Key`: tonic plus scale; enharmonic display policy is separate from pitch-class identity.
 - `ChordQuality`: supported interval formula and stable key/version.
 - `Chord`: root, quality, optional extensions permitted by profile, and pitch-class membership.
@@ -13,7 +13,7 @@
 - `ChordVoicing`: ordered absolute MIDI pitches plus range/spacing metadata.
 - `TimeSignature`, `Tempo`, `MusicalPosition`, `Tick`, and `DurationTicks`: implemented in Stage 3A and defined in [Musical time](MUSICAL_TIME_MODEL.md).
 
-Initial scales are Major, Natural Minor, Harmonic Minor, Melodic Minor, Dorian, and Phrygian. Adding scales or chord vocabulary requires profile/use-case evidence and fixtures.
+Initial scales are Major, Natural Minor, Harmonic Minor, Melodic Minor, Dorian, and Phrygian. Scale degrees are zero-based `0..6`; note spelling and keys remain deferred.
 
 ## Composition hierarchy
 
@@ -39,4 +39,4 @@ Validate domain ranges, section containment, role compatibility, supported scale
 
 ## Canonical serialization
 
-Use a versioned schema, normalized enum strings, explicit units, ordered keys/arrays under a specified canonicalizer, and no derived duplicates. Stage 3A fixes deterministic JSON forms for time primitives. Stage 3B1 adds `nightdrive.pitch-class.v1` with `semitoneClass` and `nightdrive.midi-pitch.v1` with `midiNoteNumber`; neither includes spelling or octave labels. Stage 3B2a adds `nightdrive.interval.v1` with signed `semitones` only. Composition canonicalization and hashing remain a later, separately authorized Stage 3 deliverable.
+Use a versioned schema, normalized enum strings, explicit units, ordered keys/arrays under a specified canonicalizer, and no derived duplicates. Stage 3A fixes deterministic JSON forms for time primitives. Stage 3B1 adds `nightdrive.pitch-class.v1` with `semitoneClass` and `nightdrive.midi-pitch.v1` with `midiNoteNumber`; neither includes spelling or octave labels. Stage 3B2a adds `nightdrive.interval.v1` with signed `semitones` only. Stage 3B2b1 adds `nightdrive.scale.v1` with canonical scale identity and ordered `semitones` only. Composition canonicalization and hashing remain a later, separately authorized Stage 3 deliverable.
