@@ -192,7 +192,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2i — ChordVoicing primitive implementation
 
-**Status:** Current bounded implementation slice; production scope is limited to the accepted V1 primitive and deterministic compatibility checks.
+**Status:** Merged and complete through PR #23 (merge commit `9daa8c37964d71d690f8bdf1dd86715879fa7fcd`). Stage 4 Harmony remains separately gated.
 **Objective:** Implement the immutable triad-only ChordVoicing value and its Chord/ChordInversion compatibility predicates.
 **Capabilities:** Exactly three validated strictly ascending MidiPitches, deterministic equality, `nightdrive.chord-voicing.v1` serialization, membership compatibility, and canonical-order inversion compatibility.
 **Dependencies:** Merged Stage 3B2b2h contract, Chord, and ChordInversion primitives.
