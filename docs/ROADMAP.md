@@ -170,6 +170,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Non-goals:** PRNG code, composition hashing, music policy, generation, harmony, MIDI, persistence, UI, AI, or security-sensitive randomness.
 **Tests/exit:** Future implementation requires known-answer, boundary/malformed, repeated-run, independent-instance, long-sequence, cross-runtime, no-`Math.random()`, and lineage/version-reference fixtures; exit requires MUS-018/NFR-017 and AC-045 contract review without implementation claims.
 
+##### Stage 3B2c2 — Deterministic PRNG primitive implementation
+
+**Status:** Implemented on this bounded branch; pending review and merge.
+**Objective:** Implement the versioned Mulberry32 PRNG contract without musical policy.
+**Capabilities:** Canonical uint32 seed validation, deterministic immutable state transitions, uint32 output, and `nightdrive.prng.mulberry32.v1` identity.
+**Dependencies:** Merged Stage 3B2c1 and explicit Stage 3B2c2 authorization.
+**Non-goals:** Bounded helpers, streams/forks, hashing, generation, harmony, MIDI, persistence, UI, AI, or security randomness.
+**Tests:** Known-answer vectors, seed boundaries and malformed values, repeatability, independent instances, state advancement, output invariants, ambient-randomness isolation, and longer deterministic sequences.
+**Exit:** MUS-019/NFR-018 and AC-046 pass without new dependencies or framework coupling.
+
 ## Stage 4 — Harmony engine
 
 **Objective:** Generate valid progressions and voice-led chord tracks.

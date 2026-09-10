@@ -71,6 +71,10 @@ This documentation-only gate reviews the exact `0..2` member-index domain, canon
 
 This documentation-only gate reviews the versioned Mulberry32 selection and exact transition, uint32 seed/state/output boundaries, replay and lineage inputs, no-ambient-randomness and security boundaries, deferred stream/fork mechanics, and future known-answer, malformed-input, long-sequence, independent-instance, cross-runtime, and lineage/version-reference fixtures. It provides no implementation evidence; standalone PRNG serialization is deferred to the enclosing lineage/composition schema.
 
+## Stage 3B2c2 Deterministic PRNG primitive
+
+The implementation suite covers canonical seed boundaries and malformed/coercible rejection, fixed known-answer vectors for seeds `0`, `1`, and `0xffffffff`, independent and repeated-run determinism, exact state advancement, uint32 output invariants, forged-state rejection, algorithm identity, a longer deterministic sequence, and an ambient-randomness isolation test that fails if `Math.random()` is called. No bounded helpers, streams/forks, ambient randomness, or music policy are included.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.
