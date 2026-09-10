@@ -79,6 +79,10 @@ The implementation suite covers canonical seed boundaries and malformed/coercibl
 
 This documentation-only gate reviews the exact three-pitch representation, strict ordering and duplicate rules, malformed/forged MidiPitch expectations, Chord membership and ChordInversion compatibility boundaries, equality, reserved serialization, immutability, wrapped pitch-class examples, and deferred range/spacing/voice-leading policy. It provides no implementation evidence.
 
+## Stage 3B2b2i ChordVoicing primitive
+
+The implementation suite verifies exactly three immutable strictly ascending MidiPitches, source and returned-array mutation isolation, malformed and forged runtime rejection, deterministic ordered equality, exact minimal `nightdrive.chord-voicing.v1` serialization, and forbidden-field absence. It exhaustively checks Chord membership and ChordInversion compatibility across 12 roots, the three V1 qualities, and all three inversion indices, including wrapped B-diminished canonical order. No generation, doubling, wider cardinality, extensions, voice-leading, harmony, or MIDI behavior is included.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.

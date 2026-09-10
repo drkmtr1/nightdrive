@@ -48,6 +48,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-018 | P0 | The V1 deterministic PRNG contract specifies versioned Mulberry32 uint32 state/output semantics, exact seed validation, replay inputs, and explicit separation from musical policy and security randomness. | AC-045 | 3B2c1 |
 | MUS-019 | P0 | The implemented PRNG primitive enforces canonical uint32 seeds, exact Mulberry32 transitions, deterministic state advancement, and uint32 output without musical policy or ambient randomness. | AC-046 | 3B2c2 |
 | MUS-020 | P0 | The V1 ChordVoicing contract defines exactly three validated MidiPitches in strict ascending order with one realization per triad member, separate Chord/Inversion compatibility checks, and no harmony-policy state. | AC-047 | 3B2b2h |
+| MUS-021 | P0 | The implemented ChordVoicing primitive contains exactly three immutable strictly ascending MidiPitches, supports deterministic equality and serialization, and exposes separate deterministic Chord-membership and ChordInversion compatibility checks without harmony policy. | AC-048 | 3B2b2i |
 
 ## AI behavior
 
@@ -100,6 +101,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-017 | P0 | The PRNG contract identifies `nightdrive.prng.mulberry32.v1`, defines portable uint32 arithmetic and seed/state boundaries, and requires deterministic replay/version-reference fixtures without ambient randomness; standalone seed serialization is deferred to lineage/composition schema work. | AC-045 | 3B2c1 |
 | NFR-018 | P0 | Equivalent PRNG executions with the same version and seed produce byte/value-equivalent uint32 sequences across supported JavaScript semantics without `Math.random()` or environmental entropy. | AC-046 | 3B2c2 |
 | NFR-019 | P0 | The reserved `nightdrive.chord-voicing.v1` representation contains only ordered absolute `midiPitches` and is deterministic independent of Chord, inversion, profile, range, spacing, and harmony context. | AC-047 | 3B2b2h |
+| NFR-020 | P0 | Equivalent validated ChordVoicing values serialize to byte-equivalent fixed-order `nightdrive.chord-voicing.v1` JSON containing only ordered absolute `midiPitches`; compatibility checks remain contextual and do not alter identity or store derived state. | AC-048 | 3B2b2i |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules
