@@ -14,7 +14,7 @@ Execution validates the template/version and requested Key/Scale context, projec
 
 ## Bounded initial profile data
 
-The conceptual progression families are `degree-0344`, `degree-0654`, and `degree-0340`; executable templates are neutral, scale-specific variants. Every slot below has one exact quality, so no implementation infers quality.
+The conceptual progression families are identified by the stable opaque IDs `degree-0344`, `degree-0654`, and `degree-0340`. Their character sequences, including numeric characters, are not normative encodings of ordered scale degrees: implementations must compare IDs exactly for lookup/version identity and must never parse them to derive or validate slots. The explicit ordered slot array below is the sole normative source for degree sequence and quality. IDs remain stable unless changed by a separately versioned contract or migration. Every slot below has one exact quality, so no implementation infers quality.
 
 | Variant ID/version | Scale | Ordered slots `(degree, quality, bars)` |
 |---|---|---|
