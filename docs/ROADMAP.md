@@ -92,7 +92,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 **Status:** Contract defined by this documentation-only milestone; production implementation is not authorized.
 **Objective:** Freeze the smallest closed V1 chord-quality vocabulary and its boundaries before deterministic harmony implementation.
-**Contract:** Major triad `major-triad` `[0,4,7]`; minor triad `minor-triad` `[0,3,7]`; diminished triad `diminished-triad` `[0,3,6]`. Formulas are tonic-relative pitch-class membership sets only: no ordering, octave, inversion, voicing, spelling, root, or extension semantics.
+**Contract:** One explicitly versioned V1 vocabulary maps stable IDs to immutable formulas: major triad `major-triad` `[0,4,7]`; minor triad `minor-triad` `[0,3,7]`; diminished triad `diminished-triad` `[0,3,6]`. The version belongs to the vocabulary/schema contract, not redundant per-instance state. Formulas are tonic-relative pitch-class membership sets only: no ordering, octave, inversion, voicing, spelling, root, or extension semantics. Serialization/version mechanics remain for implementation.
 **Profile rationale:** Major and minor support the harmonic center of all four accepted profiles; diminished supplies leading-tone/tension color for harmonic-minor and darker chromatic contexts without opening a broad vocabulary.
 **Seventh decision:** Seventh structures are deferred extension metadata outside `ChordQuality`; they are not standalone qualities in this contract. Future `Chord` owns root plus quality and any explicitly versioned extensions; inversions and voicings remain separate.
 **Dependencies:** Merged Stage 3B2b2a and explicit authorization for a later implementation task.

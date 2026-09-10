@@ -17,7 +17,7 @@ Initial scales are Major, Natural Minor, Harmonic Minor, Melodic Minor, Dorian, 
 
 ## V1 ChordQuality contract (Stage 3B2b2b)
 
-This is a documentation-only contract; no production `ChordQuality` exists yet.
+This is a documentation-only contract; no production `ChordQuality` exists yet. The vocabulary and formulas are versioned as one canonical contract (conceptually `ChordQuality` contract version + stable quality ID → immutable formula). The version belongs to the vocabulary/schema contract and is not redundant per-instance derived state; serialization/version mechanics remain for the implementation milestone.
 
 | Label | Stable ID | Tonic-relative semitone formula | Profile justification |
 |---|---|---|---|
