@@ -83,6 +83,10 @@ This documentation-only gate reviews the exact three-pitch representation, stric
 
 The implementation suite verifies exactly three immutable strictly ascending MidiPitches, source and returned-array mutation isolation, malformed and forged runtime rejection, deterministic ordered equality, exact minimal `nightdrive.chord-voicing.v1` serialization, and forbidden-field absence. It exhaustively checks Chord membership and ChordInversion compatibility across 12 roots, the three V1 qualities, and all three inversion indices, including wrapped B-diminished canonical order. No generation, doubling, wider cardinality, extensions, voice-leading, harmony, or MIDI behavior is included.
 
+## Stage 4A Harmony policy contract
+
+This documentation-only gate reviews the versioned template shape, all four bounded V1 profile datasets, explicit degree-to-Chord mappings and unsupported-combination failures, inversion and voicing hard bounds, integer voice-leading costs and deterministic tie-breaks, bounded PRNG participation, structured unsatisfiable reasons, provenance records, worked examples, and future golden/property/replay evidence. It provides no Harmony implementation evidence; human review remains a separate musical-quality gate.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.

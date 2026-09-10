@@ -183,3 +183,15 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 **Rationale:** The unique boundary makes `[0, sectionLengthTicks]` round trips total without allowing zero-length or out-of-section events, and separates canonical state from presentation without expanding Stage 3A.
 **Consequences:** Event-start validation is stricter than position conversion. Callers must deliberately distinguish terminal positions, and later composition schemas must embed or reference the established primitive forms without silently changing their meaning.
 **Revisit:** A separately authorized meter/section-map design requires pickup bars, multiple sections, or a different boundary representation with a migration plan.
+
+## ADR-016 — Versioned deterministic Harmony policy contract
+
+**Date:** 2026-09-10
+**Status:** Accepted for the Stage 4A documentation-only contract milestone; implementation remains separately gated.
+
+**Context:** Stage 4 requires reproducible progression, inversion, voicing, and voice-leading choices across four bounded V1 profiles without putting policy into canonical primitives.
+**Decision:** Define `nightdrive.harmony-template.v1` as ordered degree/quality/bar-span slots with explicit profile metadata, deterministic candidate scoring/tie-breaks, hard unsatisfiable reasons, and machine-readable provenance. Use only existing triad, inversion, voicing, key, scale, and PRNG contracts.
+**Alternatives:** Leave templates to implementation; encode realized MIDI in templates; permit ambient/random or AI-selected harmony.
+**Rationale:** A versioned, policy-only contract makes implementation auditable while preserving primitive boundaries and replay.
+**Consequences:** Profile data and voice-leading behavior require deterministic fixtures and human musical review; bounded helpers and implementation remain deferred.
+**Revisit:** Reconsider only if implementation or cross-profile evidence demonstrates that the frozen representation or tie-break contract cannot support deterministic V1 harmony.
