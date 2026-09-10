@@ -78,7 +78,7 @@ const KNOWN_TEMPLATE_IDS = new Set([
   "degree-0340-phrygian-v1",
 ]);
 
-export function createHarmonyTemplate(value: unknown): HarmonyTemplate {
+function createHarmonyTemplateStructure(value: unknown): HarmonyTemplate {
   if (typeof value !== "object" || value === null || Array.isArray(value))
     return fail("template", "template must be an object.");
   const input = value as Record<string, unknown>;
@@ -131,7 +131,7 @@ export function createHarmonyTemplate(value: unknown): HarmonyTemplate {
 
 type SlotData = readonly [number, ChordQuality, number];
 function template(id: string, scale: ScaleType, slots: readonly SlotData[]): HarmonyTemplate {
-  return createHarmonyTemplate({
+  return createHarmonyTemplateStructure({
     schema: HARMONY_TEMPLATE_SCHEMA,
     id,
     version: "v1",
@@ -250,6 +250,33 @@ export const HARMONY_TEMPLATE_CATALOG: readonly HarmonyTemplate[] = Object.freez
     [0, q.minorTriad, 2],
   ]),
 ]);
+
+function definitionsEqual(left: HarmonyTemplate, right: HarmonyTemplate): boolean {
+  return (
+    left.schema === right.schema &&
+    left.id === right.id &&
+    left.version === right.version &&
+    left.scale === right.scale &&
+    left.slots.length === right.slots.length &&
+    left.slots.every(
+      (slot, index) =>
+        slot.degree === right.slots[index].degree &&
+        slot.quality === right.slots[index].quality &&
+        slot.bars === right.slots[index].bars,
+    )
+  );
+}
+
+export function createHarmonyTemplate(value: unknown): HarmonyTemplate {
+  const candidate = createHarmonyTemplateStructure(value);
+  const canonical = HARMONY_TEMPLATE_CATALOG.find(
+    (templateValue) => templateValue.id === candidate.id,
+  );
+  if (canonical === undefined || !definitionsEqual(candidate, canonical)) {
+    return fail("template", "template does not match its canonical definition.");
+  }
+  return canonical;
+}
 
 const PROFILE_TEMPLATE_IDS: Readonly<Record<HarmonyProfileId, readonly string[]>> = Object.freeze({
   [HARMONY_PROFILE_IDS.darkSynthwave]: Object.freeze([

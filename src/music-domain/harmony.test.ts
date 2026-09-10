@@ -94,19 +94,54 @@ describe("Harmony template runtime", () => {
     ]);
   });
 
-  it("uses explicit slots rather than parsing opaque IDs and rejects mismatches", () => {
+  it("uses explicit slots rather than parsing opaque IDs", () => {
     const source = getHarmonyTemplate("degree-0344-major-v1");
-    const altered = createHarmonyTemplate({
-      ...source,
-      id: "degree-0344-major-v1",
-      slots: source.slots.map((slot, index) => (index === 0 ? { ...slot, degree: 6 } : slot)),
-    });
-    expect(realizeHarmonyTemplate(altered, createKey(createPitchClass(0), "major"))[0].root).toBe(
-      11,
-    );
+    expect(source.slots.map((slot) => slot.degree)).toEqual([0, 3, 4, 0]);
+    expect(
+      realizeHarmonyTemplate(source, createKey(createPitchClass(0), "major")).map(
+        (chord) => chord.root,
+      ),
+    ).toEqual([0, 5, 7, 0]);
     expect(() =>
       realizeHarmonyTemplate(source, createKey(createPitchClass(0), "natural-minor")),
     ).toThrow();
+  });
+
+  it("rejects altered content under every canonical ID", () => {
+    for (const source of HARMONY_TEMPLATE_CATALOG) {
+      const mutations = [
+        { ...source, scale: source.scale === "major" ? "natural-minor" : "major" },
+        {
+          ...source,
+          slots: source.slots.map((slot, index) =>
+            index === 0 ? { ...slot, degree: (slot.degree + 1) % 7 } : slot,
+          ),
+        },
+        {
+          ...source,
+          slots: source.slots.map((slot, index) =>
+            index === 0
+              ? {
+                  ...slot,
+                  quality:
+                    slot.quality === CHORD_QUALITIES.majorTriad
+                      ? CHORD_QUALITIES.minorTriad
+                      : CHORD_QUALITIES.majorTriad,
+                }
+              : slot,
+          ),
+        },
+        {
+          ...source,
+          slots: source.slots.map((slot, index) =>
+            index === 0 ? { ...slot, bars: slot.bars + 1 } : slot,
+          ),
+        },
+        { ...source, slots: source.slots.slice(1) },
+      ];
+      for (const mutation of mutations) expect(() => createHarmonyTemplate(mutation)).toThrow();
+      expect(createHarmonyTemplate(source)).toBe(source);
+    }
   });
 
   it("realizes every template and rejects malformed runtime values", () => {
