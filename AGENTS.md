@@ -4,7 +4,7 @@
 
 Read this file first, then `docs/DECISIONS.md`, `docs/SCOPE.md`, and the document governing the task. If documents conflict, stop implementation, reconcile conservatively, and record any architectural resolution in `docs/DECISIONS.md`.
 
-Nightdrive helps producers create original, editable musical material. Stage 1 and Stage 2A are complete; Stage 3A implements only the canonical musical-time core. Each later capability gate still requires a separately authorized bounded task. Do not provision Supabase, deploy to Vercel, install models, or implement theory, MIDI export, generation, audio, persistence, or AI features before their roadmap stages are explicitly authorized.
+Nightdrive helps producers create original, editable musical material. Stage 1, Stage 2A, and Stage 3A are merged; Stage 3B1 implements only canonical pitch-class and MIDI-pitch identity. Each later capability gate still requires a separately authorized bounded task. Do not provision Supabase, deploy to Vercel, install models, or implement intervals, scales, keys, chords, MIDI export, generation, audio, persistence, or AI features before their roadmap stages are explicitly authorized.
 
 ## Non-negotiable boundaries
 

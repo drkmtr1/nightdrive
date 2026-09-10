@@ -15,7 +15,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 2A — Toolchain validation and minimal local shell
 
-**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #2 (`06daf5a`).
 **Objective:** Validate the framework direction and create the smallest production-quality local shell and engineering gates.
 **Capabilities:** Accepted Next.js/TypeScript direction, exact Node/npm/framework policy, semantic layout, honest empty/loading/error/not-found states, design tokens, liveness route, strict type/format/lint/test/build gates, dependency register, runtime CI.
 **Dependencies:** Merged Stage 1 foundation and explicit Stage 2A authorization.
@@ -36,7 +36,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 3A — Canonical musical time core
 
-**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #3 (`e46fee9`).
 **Objective:** Implement the framework-independent canonical time subset without opening the rest of Stage 3.
 **Capabilities:** Branded 960 PPQ ticks/durations/position indices, the bounded 8-bar 4/4 conversion context, explicit validated tempo and time-signature values, exact straight/dotted/triplet subdivision fixtures, safe arithmetic/comparison/event-boundary validation, structured errors, and deterministic versioned primitive serialization.
 **Dependencies:** Merged Stage 2A foundation and explicit Stage 3A authorization.
@@ -46,10 +46,22 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 3B — Remaining music-theory and determinism foundations
 
+#### Stage 3B1 — Pitch identity primitives
+
+**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Objective:** Establish canonical chromatic and absolute MIDI pitch identity without introducing notation or theory relationships.
+**Capabilities:** Strict branded `PitchClass` values `0..11`, strict branded `MidiPitch` values `0..127`, exact MIDI-to-pitch-class extraction, equality/comparison, stable typed errors, deterministic versioned serializers, and hardened music-domain import-boundary coverage.
+**Dependencies:** Merged Stage 3A and explicit Stage 3B1 authorization.
+**Non-goals:** Note/display names, octave conventions, accidentals, intervals, scales, keys, chords, PRNG/hash, composition/events, MIDI files, generation, audio, persistence, AI, UI, or deployment.
+**Tests:** Exhaustive 12-value pitch-class and 128-value MIDI domains, extraction invariant, all invalid numeric classes, exact serialization/repetition, ordering/equality, and static/dynamic/re-export/side-effect import recognition.
+**Exit:** The Stage 3B1 subset of MUS-001 plus MUS-008/NFR-009 and AC-035 pass without new dependencies or framework coupling.
+
+#### Stage 3B2 — Remaining theory and determinism foundations
+
 **Status:** Not authorized and intentionally unscoped beyond the accepted Stage 3 objective.
-**Objective:** Complete the remaining framework-independent canonical primitives and determinism contracts through a future bounded brief.
-**Capabilities:** Pitch/interval/scale/key/chord primitives, canonical composition schema/hash, and fixed PRNG contract, if separately authorized.
-**Dependencies:** Merged Stage 3A and explicit authorization.
+**Objective:** Complete remaining framework-independent canonical primitives and determinism contracts through future bounded briefs.
+**Capabilities:** Note/spelling, interval/scale/key/chord primitives, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
+**Dependencies:** Merged Stage 3B1 and explicit authorization.
 **Non-goals:** Progression/pattern generation, MIDI export, or UI piano roll.
 **Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 
