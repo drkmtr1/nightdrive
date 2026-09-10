@@ -8,7 +8,7 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 **Stage 3B2b2h — ChordVoicing contract definition.** The repository contains the merged musical-domain foundations through Chord, ChordInversion, and the deterministic PRNG primitive, plus a documentation-only contract for immutable ordered MIDI voicings. Voicing implementation and Stage 4 harmony remain separately gated.
 
-Note spelling, octave labels, key display naming, enharmonic policy, key signatures, interval names/quality, chord extensions, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally deferred.
+Note spelling, octave labels, key display naming, enharmonic policy, key signatures, interval names/quality, chord extensions, bounded random helpers, PRNG streams/forks, seed derivation, canonical composition hashing, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally deferred.
 
 Start with:
 

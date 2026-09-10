@@ -43,7 +43,13 @@ Serialization is implemented as `nightdrive.chord.v1` with the minimal triad rep
 
 This documentation-only milestone defines `ChordVoicing` as exactly three validated `MidiPitch` values for the triad-only V1, stored in strictly ascending absolute MIDI order from bass to highest voice. Exact duplicate MIDI pitches are not permitted; each canonical triad member must occur once. Global validity uses `MidiPitch`'s `0..127` domain; instrument/register ranges and stylistic spacing are harmony policy, not intrinsic invariants.
 
-The value contains only the frozen MIDI-pitch sequence, not `Chord`, `ChordInversion`, root, quality, pitch classes, labels, ranges, spacing, profile, or harmony context. Separate deterministic compatibility checks validate membership against a Chord and require the lowest pitch's pitch class to equal the canonical member selected by `ChordInversion`. Equality compares the ordered absolute MIDI sequence only. The reserved serializer is `nightdrive.chord-voicing.v1` with `{"schema":"nightdrive.chord-voicing.v1","midiPitches":[48,52,55]}` and no derived fields. Voice-leading and generation policy remain outside the primitive; wider cardinality, doubling, and compatibility require later explicit review.
+The value contains only the frozen MIDI-pitch sequence, not `Chord`, `ChordInversion`, root, quality, pitch classes, labels, ranges, spacing, profile, or harmony context. Separate deterministic compatibility checks validate membership against a Chord and require the lowest pitch's pitch class to equal the canonical member selected by `ChordInversion`. Equality compares the ordered absolute MIDI sequence only. The reserved serializer is `nightdrive.chord-voicing.v1` with `{"schema":"nightdrive.chord-voicing.v1","midiPitches":[48,52,55]}` and no derived fields. Voice-leading and generation policy remain outside the primitive; wider cardinality and doubling require future contract review, while production compatibility APIs and implementation remain separately gated.
+
+### Concrete examples
+
+For C major (`root = 0`, `major-triad`, canonical members `[0,4,7]`), root position is `[48,52,55]` with pitch classes `[0,4,7]`, so the lowest member is index `0` and it matches `ChordInversion(0)`. First inversion is `[52,55,60]` with pitch classes `[4,7,0]`, matching index `1`; second inversion is `[55,60,64]` with pitch classes `[7,0,4]`, matching index `2`.
+
+For B diminished (`root = 11`, formula `[0,3,6]`), canonical member pitch classes are `[11,2,5]`, not numeric sorting `[2,5,11]`. The voicing `[50,53,59]` has pitch classes `[2,5,11]`; its lowest member `2` is canonical index `1`, so it is first inversion. The C-major voicing `[48,55,60]` is invalid: pitch classes `[0,7,0]` omit canonical member `4` and duplicate member `0`, violating the exactly-one-realization-per-triad-member rule.
 
 ## V1 ChordInversion contract (Stage 3B2b2f)
 
