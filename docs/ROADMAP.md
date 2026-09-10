@@ -129,13 +129,23 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2f — ChordInversion contract definition
 
-**Status:** Documentation-only contract definition; production implementation is not authorized.
+**Status:** Merged and complete through PR #14; contract definition preceded the Stage 3B2b2g implementation.
 **Objective:** Define the smallest deterministic V1 inversion metadata contract before implementation or Stage 4 harmony work.
 **Contract:** `ChordInversion` is exactly a validated member index `0..2` in canonical triad membership order: root position, first inversion, and second inversion. It remains separate from `Chord` identity and from realized voicing.
 **Serialization:** Reserve `nightdrive.chord-inversion.v1` with only `schema` and `memberIndex`; no chord, pitch, voicing, label, or redundant version state.
 **Dependencies:** Merged Stage 3B2b2e Chord primitive and explicit authorization for a later implementation task.
 **Non-goals:** Production code, implementation tests, arbitrary-cardinality generalization, extensions, sevenths, voicing, MIDI realization, harmony, progression, spelling, or UI.
 **Exit:** MUS-016/NFR-015 and AC-043 contract review confirms valid indices, canonical ordering, Chord/voicing boundaries, reserved serialization, runtime-validation expectations, and deferred wider cardinality without implementation claims.
+
+##### Stage 3B2b2g — ChordInversion primitive implementation
+
+**Status:** Implemented on this bounded branch; pending review and merge.
+**Objective:** Implement the deterministic triad-only `ChordInversion` scalar defined by Stage 3B2b2f.
+**Capabilities:** Validated indices `0..2`, deterministic equality, and exact `nightdrive.chord-inversion.v1` serialization.
+**Dependencies:** Merged Stage 3B2b2f and explicit Stage 3B2b2g authorization.
+**Non-goals:** Chord changes, extensions, sevenths, voicing, MIDI realization, harmony, progression, spelling, UI, or persistence.
+**Tests:** All valid values, invalid numeric/runtime classes, forged-value revalidation, all 9 ordered equality pairs, exact serialization, byte stability, and forbidden-field checks.
+**Exit:** MUS-017/NFR-016 and AC-044 pass without voicing, harmony, new dependencies, or framework coupling.
 
 ##### Stage 3B2b2 — Remaining theory and determinism foundations
 

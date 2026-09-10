@@ -44,6 +44,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-014 | P0 | The future canonical Chord contract contains only numeric root `PitchClass` and `ChordQuality` initially; base membership is deterministic derived modulo-12 state, extensions are deferred, and inversion, voicing, harmony, spelling, and context remain outside Chord identity. | AC-041 | 3B2b2d |
 | MUS-015 | P0 | The implemented Chord primitive contains exactly root `PitchClass` and `ChordQuality`; membership is derived modulo 12, equality uses canonical identity, and serialization excludes derived or future extension state. | AC-042 | 3B2b2e |
 | MUS-016 | P0 | The V1 ChordInversion contract defines exactly validated member indices `0..2` in canonical triad membership order, separate from Chord identity and realized voicing; wider cardinality requires explicit versioned review. | AC-043 | 3B2b2f |
+| MUS-017 | P0 | The implemented ChordInversion primitive accepts exactly validated indices `0..2`, supports deterministic equality and serialization, and introduces no Chord, voicing, or harmony semantics. | AC-044 | 3B2b2g |
 
 ## AI behavior
 
@@ -92,6 +93,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-013 | P0 | Equivalent validated ChordQuality values serialize to byte-equivalent fixed-order `nightdrive.chord-quality.v1` JSON containing only canonical quality ID and formula. | AC-040 | 3B2b2c |
 | NFR-014 | P0 | Equivalent validated Chord values serialize to byte-equivalent fixed-order `nightdrive.chord.v1` JSON containing only root semitone class and canonical quality ID. | AC-042 | 3B2b2e |
 | NFR-015 | P0 | The reserved ChordInversion representation is versioned as `nightdrive.chord-inversion.v1` with only validated `memberIndex` and no chord, pitch, voicing, label, or redundant per-instance version state. | AC-043 | 3B2b2f |
+| NFR-016 | P0 | Equivalent validated ChordInversion values serialize to byte-equivalent fixed-order `nightdrive.chord-inversion.v1` JSON containing only `memberIndex`. | AC-044 | 3B2b2g |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules
