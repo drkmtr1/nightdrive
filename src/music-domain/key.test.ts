@@ -55,6 +55,10 @@ describe("canonical key primitive", () => {
           );
         }
         expect(keysEqual(key, createKey(createPitchClass(tonic), scale))).toBe(true);
+        const neighboringTonic = createPitchClass((tonic + 1) % 12);
+        const alternateScale = createScaleType(scaleTypes.find((candidate) => candidate !== scale));
+        expect(keysEqual(key, createKey(neighboringTonic, scale))).toBe(false);
+        expect(keysEqual(key, createKey(createPitchClass(tonic), alternateScale))).toBe(false);
         expect(serializeKey(key)).toBe(serializeKey(key));
       }
     }

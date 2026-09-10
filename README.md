@@ -8,7 +8,7 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 **Stage 3B2b2a — Key primitive.** The repository contains the merged Stage 2A, Stage 3A, Stage 3B1, Stage 3B2a, and Stage 3B2b1 foundations plus an immutable numeric `Key` composed of tonic `PitchClass` and canonical `ScaleType`, delegated pitch-class projection, degree lookup, membership, equality, and deterministic serialization.
 
-Note spelling, octave labels, interval names/quality, keys, chords, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally unimplemented.
+Note spelling, octave labels, key display naming, enharmonic policy, key signatures, interval names/quality, chords, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally unimplemented.
 
 Start with:
 
