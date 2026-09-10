@@ -6,9 +6,9 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 ## Current status
 
-**Stage 3A — canonical musical-time core.** The repository contains the validated Stage 2A application foundation plus a zero-dependency, framework-independent TypeScript time module. It defines 960 PPQ ticks, positive durations, zero-based 8-bar 4/4 positions, explicit tempo/meter metadata, exact common subdivisions, bounded arithmetic, structured errors, and versioned deterministic primitive serialization.
+**Stage 3B1 — pitch identity primitives.** The repository contains the merged Stage 2A application foundation and Stage 3A musical-time core plus zero-dependency, framework-independent `PitchClass` and `MidiPitch` primitives. They provide strict finite integer validation, exact MIDI-pitch-to-chromatic-class conversion, numeric comparison/equality, stable typed errors, and versioned deterministic serialization.
 
-Pitch, interval, scale, key, chord, PRNG/hash, MIDI export, generation, audio, persistence, authentication, Supabase configuration, AI integration, Vercel resources, and deployment remain intentionally unimplemented.
+Note spelling, octave labels, intervals, scales, keys, chords, PRNG/hash, MIDI export, generation, audio, persistence, authentication, Supabase configuration, AI integration, Vercel resources, and deployment remain intentionally unimplemented.
 
 Start with:
 
@@ -35,6 +35,8 @@ npm run dev
 The local shell is then available at `http://localhost:3000`; liveness is `GET /api/health/live`. See [Deployment](docs/DEPLOYMENT.md) for environment policy. Running locally does not provision or deploy anything.
 
 The Stage 3A API is exported from `src/music-domain`. Internal musical positions are zero-based. The exclusive 8-bar section boundary is tick `30720`, represented only as `{ bar: 8, beat: 0, tickWithinBeat: 0 }`; it is a valid event end but never a valid event start.
+
+Stage 3B1 exports pitch identity from the same boundary. `PitchClass` is exactly numeric semitone class `0..11`, and `MidiPitch` is exactly MIDI note number `0..127`. Enharmonic names and octave-number conventions are display/theory projections, not canonical pitch identity.
 
 ## Repository baseline
 
