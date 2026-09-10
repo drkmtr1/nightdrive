@@ -111,7 +111,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2d — Chord aggregate contract definition
 
-**Status:** Contract defined by this documentation-only milestone; production implementation is not authorized.
+**Status:** Merged and complete through PR #10; contract definition preceded the Stage 3B2b2e implementation.
 **Objective:** Freeze the minimal canonical Chord identity and its boundaries before implementation.
 **Contract:** Chord contains root `PitchClass` plus `ChordQuality`; triad membership is derived by tonic-relative formula plus modulo-12 root projection. Extensions are deferred and initially unsupported. Equality uses canonical stored identity; serialization is reserved as `nightdrive.chord.v1` without derived membership.
 **Dependencies:** Merged Stage 3B2b2c and explicit authorization for a later Chord implementation task.
@@ -119,7 +119,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2e — Chord primitive implementation
 
-**Status:** Implemented on this bounded branch; pending review and merge.
+**Status:** Merged and complete through PR #11 (merge commit `4e84eec9150841f4b7a25a5709771cb6b016135d`).
 **Objective:** Implement the canonical triad-only Chord identity.
 **Capabilities:** Immutable root `PitchClass` plus `ChordQuality`, derived modulo-12 membership, canonical equality, and minimal `nightdrive.chord.v1` serialization.
 **Dependencies:** Merged Stage 3B2b2d and explicit Stage 3B2b2e authorization.
@@ -131,7 +131,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 **Status:** Not authorized and intentionally unscoped.
 **Objective:** Define future bounded briefs for the remaining theory and determinism contracts.
-**Capabilities:** Note/spelling, named/diatonic interval metadata, chords, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
+**Capabilities:** Note/spelling, named/diatonic interval metadata, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
 **Dependencies:** Merged Stage 3B2b2a and explicit authorization for each bounded slice.
 **Non-goals:** Progression/pattern generation, MIDI export, or UI piano roll.
 **Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
