@@ -47,6 +47,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-017 | P0 | The implemented ChordInversion primitive accepts exactly validated indices `0..2`, supports deterministic equality and serialization, and introduces no Chord, voicing, or harmony semantics. | AC-044 | 3B2b2g |
 | MUS-018 | P0 | The V1 deterministic PRNG contract specifies versioned Mulberry32 uint32 state/output semantics, exact seed validation, replay inputs, and explicit separation from musical policy and security randomness. | AC-045 | 3B2c1 |
 | MUS-019 | P0 | The implemented PRNG primitive enforces canonical uint32 seeds, exact Mulberry32 transitions, deterministic state advancement, and uint32 output without musical policy or ambient randomness. | AC-046 | 3B2c2 |
+| MUS-020 | P0 | The V1 ChordVoicing contract defines exactly three validated MidiPitches in strict ascending order with one realization per triad member, separate Chord/Inversion compatibility checks, and no harmony-policy state. | AC-047 | 3B2b2h |
 
 ## AI behavior
 
@@ -98,6 +99,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-016 | P0 | Equivalent validated ChordInversion values serialize to byte-equivalent fixed-order `nightdrive.chord-inversion.v1` JSON containing only `memberIndex`. | AC-044 | 3B2b2g |
 | NFR-017 | P0 | The PRNG contract identifies `nightdrive.prng.mulberry32.v1`, defines portable uint32 arithmetic and seed/state boundaries, and requires deterministic replay/version-reference fixtures without ambient randomness; standalone seed serialization is deferred to lineage/composition schema work. | AC-045 | 3B2c1 |
 | NFR-018 | P0 | Equivalent PRNG executions with the same version and seed produce byte/value-equivalent uint32 sequences across supported JavaScript semantics without `Math.random()` or environmental entropy. | AC-046 | 3B2c2 |
+| NFR-019 | P0 | The reserved `nightdrive.chord-voicing.v1` representation contains only ordered absolute `midiPitches` and is deterministic independent of Chord, inversion, profile, range, spacing, and harmony context. | AC-047 | 3B2b2h |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules

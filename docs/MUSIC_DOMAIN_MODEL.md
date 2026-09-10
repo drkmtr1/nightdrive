@@ -37,7 +37,13 @@ Root is numeric chromatic identity only; it contains no spelling, enharmonic pre
 
 Serialization is implemented as `nightdrive.chord.v1` with the minimal triad representation `{"schema":"nightdrive.chord.v1","rootSemitoneClass":0,"quality":"major-triad"}`. It contains no derived membership, inversion, voicing, spelling, display, timing, or context fields. Future extension semantics require a later accepted contract/schema version.
 
-`ChordInversion` will identify the bass member without changing Chord identity. `ChordVoicing` will realize ordered absolute MIDI pitches with range/spacing/doubling as appropriate without becoming Chord identity. The future harmony engine selects chords and owns progression, function, inversion, voicing, voice-leading, tension, and movement decisions; none are canonical Chord properties.
+`ChordInversion` identifies the bass member without changing Chord identity. `ChordVoicing` is defined in Stage 3B2b2h as a future immutable ordered sequence of absolute MIDI pitches, separate from Chord identity and inversion metadata. The future harmony engine selects chords and owns progression, function, inversion, voicing, voice-leading, tension, and movement decisions; none are canonical Chord properties.
+
+## V1 ChordVoicing contract (Stage 3B2b2h)
+
+This documentation-only milestone defines `ChordVoicing` as exactly three validated `MidiPitch` values for the triad-only V1, stored in strictly ascending absolute MIDI order from bass to highest voice. Exact duplicate MIDI pitches are not permitted; each canonical triad member must occur once. Global validity uses `MidiPitch`'s `0..127` domain; instrument/register ranges and stylistic spacing are harmony policy, not intrinsic invariants.
+
+The value contains only the frozen MIDI-pitch sequence, not `Chord`, `ChordInversion`, root, quality, pitch classes, labels, ranges, spacing, profile, or harmony context. Separate deterministic compatibility checks validate membership against a Chord and require the lowest pitch's pitch class to equal the canonical member selected by `ChordInversion`. Equality compares the ordered absolute MIDI sequence only. The reserved serializer is `nightdrive.chord-voicing.v1` with `{"schema":"nightdrive.chord-voicing.v1","midiPitches":[48,52,55]}` and no derived fields. Voice-leading and generation policy remain outside the primitive; wider cardinality, doubling, and compatibility require later explicit review.
 
 ## V1 ChordInversion contract (Stage 3B2b2f)
 
