@@ -48,7 +48,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 #### Stage 3B1 — Pitch identity primitives
 
-**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #4 (`85c7958`).
 **Objective:** Establish canonical chromatic and absolute MIDI pitch identity without introducing notation or theory relationships.
 **Capabilities:** Strict branded `PitchClass` values `0..11`, strict branded `MidiPitch` values `0..127`, exact MIDI-to-pitch-class extraction, equality/comparison, stable typed errors, deterministic versioned serializers, and hardened music-domain import-boundary coverage.
 **Dependencies:** Merged Stage 3A and explicit Stage 3B1 authorization.
@@ -58,10 +58,22 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 #### Stage 3B2 — Remaining theory and determinism foundations
 
+##### Stage 3B2a — Chromatic interval primitive
+
+**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Objective:** Establish signed chromatic semitone displacement without introducing traditional interval naming or notation semantics.
+**Capabilities:** Strict signed safe-integer `Interval`, zero/positive/negative compound values, equality/comparison, negation, addition/subtraction with overflow rejection, exact directed MIDI-pitch distance, deterministic versioned serialization, and algebraic/exhaustive MIDI-pair fixtures.
+**Dependencies:** Merged Stage 3B1 and explicit Stage 3B2a authorization.
+**Non-goals:** Named/diatonic intervals, qualities, spelling, octave labels, pitch-class direction, transposition, scales, keys, chords, PRNG/hash, MIDI files, generation, audio, persistence, AI, UI, or deployment.
+**Tests:** Representative signed/compound values, all invalid numeric classes, arithmetic overflow, algebraic invariants, repeated serialization, and all 16,384 ordered MIDI-pitch pairs.
+**Exit:** The Stage 3B2a subset of MUS-001 plus MUS-009/NFR-010 and AC-036 pass without new dependencies or framework coupling.
+
+##### Stage 3B2b — Remaining theory and determinism foundations
+
 **Status:** Not authorized and intentionally unscoped beyond the accepted Stage 3 objective.
-**Objective:** Complete remaining framework-independent canonical primitives and determinism contracts through future bounded briefs.
-**Capabilities:** Note/spelling, interval/scale/key/chord primitives, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
-**Dependencies:** Merged Stage 3B1 and explicit authorization.
+**Objective:** Complete remaining framework-independent theory primitives and determinism contracts through future bounded briefs.
+**Capabilities:** Note/spelling, named/diatonic interval metadata, scales, keys, chords, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
+**Dependencies:** Merged Stage 3B2a and explicit authorization.
 **Non-goals:** Progression/pattern generation, MIDI export, or UI piano roll.
 **Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 
