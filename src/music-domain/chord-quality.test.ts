@@ -13,6 +13,14 @@ const expected = {
   "minor-triad": [0, 3, 7],
   "diminished-triad": [0, 3, 6],
 } as const;
+const serialized = {
+  "major-triad":
+    '{"schema":"nightdrive.chord-quality.v1","quality":"major-triad","semitones":[0,4,7]}',
+  "minor-triad":
+    '{"schema":"nightdrive.chord-quality.v1","quality":"minor-triad","semitones":[0,3,7]}',
+  "diminished-triad":
+    '{"schema":"nightdrive.chord-quality.v1","quality":"diminished-triad","semitones":[0,3,6]}',
+} as const;
 const qualities = Object.values(CHORD_QUALITIES);
 
 describe("canonical chord-quality primitive", () => {
@@ -48,15 +56,16 @@ describe("canonical chord-quality primitive", () => {
     }
   });
 
-  it("keeps formulas immutable and serialization stable", () => {
-    const quality = createChordQuality("major-triad");
-    const formula = getChordQualityFormula(quality);
+  it.each(qualities)("keeps %s immutable and serialization stable", (quality) => {
+    const value = createChordQuality(quality);
+    const formula = getChordQualityFormula(value);
+    const before = serializeChordQuality(value);
+    expect(Object.isFrozen(formula)).toBe(true);
     expect(Reflect.set(formula, 0, 9)).toBe(false);
-    expect(getChordQualityFormula(quality)).toEqual([0, 4, 7]);
-    expect(serializeChordQuality(quality)).toBe(
-      '{"schema":"nightdrive.chord-quality.v1","quality":"major-triad","semitones":[0,4,7]}',
-    );
-    expect(serializeChordQuality(quality)).toBe(serializeChordQuality(quality));
+    expect(getChordQualityFormula(value)).toEqual(expected[quality]);
+    expect(serializeChordQuality(value)).toBe(serialized[quality]);
+    expect(serializeChordQuality(value)).toBe(before);
+    expect(serializeChordQuality(value)).toBe(serializeChordQuality(value));
   });
 
   it("compares every quality deterministically", () => {
@@ -69,6 +78,7 @@ describe("canonical chord-quality primitive", () => {
   });
 
   it.each(qualities)("serializes %s with only canonical fields", (quality) => {
+    expect(serializeChordQuality(createChordQuality(quality))).toBe(serialized[quality]);
     const parsed = JSON.parse(serializeChordQuality(createChordQuality(quality))) as Record<
       string,
       unknown
