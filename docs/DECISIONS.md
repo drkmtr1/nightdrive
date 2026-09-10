@@ -120,17 +120,21 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 **Alternatives:** ambient randomness; latest-value overwrite.
 **Rationale:** Enables debugging, comparison, recovery, and trust.
 **Consequences:** PRNG algorithm/version and canonical serialization become public contracts.
+**Revisit:** Storage pressure may change retention representation, never silent provenance.
 
 ## ADR-014 — Versioned deterministic PRNG contract
 
+**Date:** 2026-09-09
 **Status:** Accepted for the Stage 3B2c1 contract-definition milestone; implementation remains separately gated.
 
+**Context:** Future randomized music generation requires reproducible, versioned randomness across supported JavaScript runtimes.
 **Decision:** Use an in-repository Mulberry32 uint32 transition identified as `nightdrive.prng.mulberry32.v1`. Accept only canonical uint32 seeds (`0..4,294,967,295`), including zero, with no coercion. Keep the PRNG independent of musical policy, ambient randomness, and security-sensitive randomness.
+**Alternatives:** ambient/`Math.random()` randomness; another deterministic PRNG; dependency-backed PRNG.
 
 **Rationale:** Mulberry32 is small enough for auditable in-repository implementation, uses explicit integer arithmetic with portable JavaScript semantics, and is adequate for bounded deterministic generation decisions without claiming cryptographic security. Versioning prevents silent sequence drift.
 
 **Consequences:** Future replay records retain seed and selected PRNG/generator/profile/schema versions with normalized inputs. Bounded-choice helpers and independent stream/fork mechanics require later contracts; transient state and derived random values are not canonical composition state.
-**Revisit:** Storage pressure may change retention representation, never silent provenance.
+**Revisit:** Reconsider only if implementation or cross-runtime evidence demonstrates that the frozen algorithm cannot satisfy the deterministic replay contract.
 
 ## ADR-011 — Browser audition is a derived preview
 
