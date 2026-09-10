@@ -101,7 +101,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2c — ChordQuality primitive
 
-**Status:** Implemented and validated on this bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #9 (`6ca4611`).
 **Objective:** Implement the versioned closed V1 ChordQuality contract without introducing Chord or harmony semantics.
 **Capabilities:** Exactly three canonical IDs, immutable validated formulas, deterministic equality, and `nightdrive.chord-quality.v1` serialization.
 **Dependencies:** Merged Stage 3B2b2b contract and explicit Stage 3B2b2c authorization.
