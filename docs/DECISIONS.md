@@ -148,6 +148,18 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 **Consequences:** Resume policies, latency/drift, tab suspension, mobile limits, and accessibility require testing.
 **Revisit:** Stage 9 measurements fail synchronization/timing requirements.
 
+## ADR-015 — Triad-only ChordVoicing boundary
+
+**Date:** 2026-09-10
+**Status:** Accepted for the Stage 3B2b2h contract-definition milestone; implementation remains separately gated.
+
+**Context:** Stage 4 harmony needs a deterministic realized voicing boundary without conflating voicing with Chord identity or inversion metadata.
+**Decision:** Define V1 `ChordVoicing` as exactly three unique validated `MidiPitch` values in strictly ascending absolute order, one per canonical triad member. Keep Chord and ChordInversion external; validate membership and lowest-member inversion compatibility through separate deterministic checks. Reserve `nightdrive.chord-voicing.v1` for the ordered pitch sequence only.
+**Alternatives:** Allow arbitrary voice counts or doubling; embed Chord/inversion context in the voicing value; defer all voicing semantics until Stage 4.
+**Rationale:** The triad-only representation is the smallest deterministic contract needed before harmony while leaving register, spacing, voice-leading, and future cardinality to policy or separately reviewed contracts.
+**Consequences:** Wider chord cardinality, doubling, and realized compatibility algorithms require explicit future review; no voicing implementation is authorized by this milestone.
+**Revisit:** Reconsider only when an explicitly authorized extension or harmony contract demonstrates a need for additional canonical voicing state.
+
 ## ADR-012 — Constant 4/4, single 8-bar section for Version 1
 
 **Date:** 2026-09-09
