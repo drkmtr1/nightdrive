@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Stage 2A implements the Next.js web adapter shell and engineering gates. Stage 3A adds the framework-independent musical-time subset of `music-domain`; Stage 3B1 adds pitch identity; Stage 3B2a adds signed chromatic interval identity; Stage 3B2b1 adds scale formulas; Stage 3B2b2a adds the numeric Key primitive. The remaining modules below are target architecture and do not exist yet. Technology status remains authoritative in [Decisions](DECISIONS.md).
+Stage 2A implements the Next.js web adapter shell and engineering gates. Stage 3A adds the framework-independent musical-time subset of `music-domain`; Stage 3B1 adds pitch identity; Stage 3B2a adds signed chromatic interval identity; Stage 3B2b1 adds scale formulas; Stage 3B2b2a adds the numeric Key primitive; Stage 3B2b2c adds ChordQuality. The remaining modules below are target architecture and do not exist yet. Technology status remains authoritative in [Decisions](DECISIONS.md).
 
 ## System shape
 

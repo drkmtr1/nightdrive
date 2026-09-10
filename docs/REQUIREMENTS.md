@@ -41,6 +41,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-011 | P0 | Canonical keys contain only a strictly validated tonic `PitchClass` and closed canonical `ScaleType`; projection, degree lookup, membership, equality, and serialization preserve those numeric identities without spelling or key-signature semantics. | AC-038 | 3B2b2a |
 | MUS-012 | P0 | The V1 `ChordQuality` contract is one explicitly versioned closed triad-only vocabulary with stable IDs and exact tonic-relative chromatic membership formulas; version belongs to the vocabulary/schema contract rather than redundant per-instance state. Quality excludes root, ordering, inversions, voicings, spelling, and extensions, and seventh structures remain deferred extension metadata. | AC-039 | 3B2b2b |
 | MUS-013 | P0 | The implemented `ChordQuality` primitive accepts exactly the three versioned canonical IDs and immutable formulas, supports deterministic equality and serialization, and does not introduce Chord, extension, inversion, voicing, root, spelling, or harmony semantics. | AC-040 | 3B2b2c |
+| MUS-014 | P0 | The future canonical Chord contract contains only numeric root `PitchClass` and `ChordQuality` initially; base membership is deterministic derived modulo-12 state, extensions are deferred, and inversion, voicing, harmony, spelling, and context remain outside Chord identity. | AC-041 | 3B2b2d |
 
 ## AI behavior
 
