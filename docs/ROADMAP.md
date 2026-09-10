@@ -127,6 +127,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Tests:** All 36 canonical chords, membership derivation and immutability, 1,296 ordered equality pairs, runtime forgery rejection, exact serialization fixtures, and forbidden-field checks.
 **Exit:** MUS-015/NFR-014 and AC-042 pass with the Chord primitive and tests implemented, without extensions, inversion, voicing, harmony, new dependencies, or framework coupling.
 
+##### Stage 3B2b2f — ChordInversion contract definition
+
+**Status:** Documentation-only contract definition; production implementation is not authorized.
+**Objective:** Define the smallest deterministic V1 inversion metadata contract before implementation or Stage 4 harmony work.
+**Contract:** `ChordInversion` is exactly a validated member index `0..2` in canonical triad membership order: root position, first inversion, and second inversion. It remains separate from `Chord` identity and from realized voicing.
+**Serialization:** Reserve `nightdrive.chord-inversion.v1` with only `schema` and `memberIndex`; no chord, pitch, voicing, label, or redundant version state.
+**Dependencies:** Merged Stage 3B2b2e Chord primitive and explicit authorization for a later implementation task.
+**Non-goals:** Production code, implementation tests, arbitrary-cardinality generalization, extensions, sevenths, voicing, MIDI realization, harmony, progression, spelling, or UI.
+**Exit:** MUS-016/NFR-015 and AC-043 contract review confirms valid indices, canonical ordering, Chord/voicing boundaries, reserved serialization, runtime-validation expectations, and deferred wider cardinality without implementation claims.
+
 ##### Stage 3B2b2 — Remaining theory and determinism foundations
 
 **Status:** Not authorized and intentionally unscoped.
