@@ -34,12 +34,24 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 3 — Music theory and time core
 
-**Objective:** Implement framework-independent canonical primitives and serialization.
-**Capabilities:** Pitch/interval/scale/key/chord/time types, 960 PPQ arithmetic, canonical schema/hash, fixed PRNG contract.
-**Dependencies:** Stage 2 foundation.
-**Non-goals:** Progression/pattern generation or UI piano roll.
-**Tests:** Unit/property/canonical/cross-runtime fixtures for all supported scales and time bounds.
-**Exit:** MUS-001/MIDI-001/NFR-001 foundations pass and APIs are stable enough for generators.
+### Stage 3A — Canonical musical time core
+
+**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Objective:** Implement the framework-independent canonical time subset without opening the rest of Stage 3.
+**Capabilities:** Branded 960 PPQ ticks/durations/position indices, the bounded 8-bar 4/4 conversion context, explicit validated tempo and time-signature values, exact straight/dotted/triplet subdivision fixtures, safe arithmetic/comparison/event-boundary validation, structured errors, and deterministic versioned primitive serialization.
+**Dependencies:** Merged Stage 2A foundation and explicit Stage 3A authorization.
+**Non-goals:** Pitch/interval/scale/key/chord primitives, canonical composition schema/hash, PRNG, MIDI serialization/export, generators, UI controls, audio, persistence, AI, Supabase, Vercel, or deployment.
+**Tests:** Exhaustive tick/position round trip across ticks `0..30720`; straight/dotted/triplet fixtures; validation, arithmetic, boundary, tempo, serializer, and dependency-boundary tests; complete repository validation.
+**Exit:** The Stage 3A subset of MIDI-001 plus MUS-007/NFR-008 and AC-033/034 pass without new dependencies or framework coupling.
+
+### Stage 3B — Remaining music-theory and determinism foundations
+
+**Status:** Not authorized and intentionally unscoped beyond the accepted Stage 3 objective.
+**Objective:** Complete the remaining framework-independent canonical primitives and determinism contracts through a future bounded brief.
+**Capabilities:** Pitch/interval/scale/key/chord primitives, canonical composition schema/hash, and fixed PRNG contract, if separately authorized.
+**Dependencies:** Merged Stage 3A and explicit authorization.
+**Non-goals:** Progression/pattern generation, MIDI export, or UI piano roll.
+**Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 
 ## Stage 4 — Harmony engine
 
