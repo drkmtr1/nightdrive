@@ -145,3 +145,15 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 **Rationale:** It aligns every component around the north-star task.
 **Consequences:** Other meters, tempo automation, and full songs are deferred.
 **Revisit:** After Version 1 evidence and a separately approved scope change.
+
+## ADR-013 — Zero-based positions and a unique terminal boundary
+
+**Date:** 2026-09-09
+**Status:** Accepted
+
+**Context:** Exhaustive absolute-tick conversion must include the 8-bar section end, while event starts must remain strictly inside the section and UI labels will eventually be one-based.
+**Decision:** Canonical `MusicalPosition` indices are zero-based. Ordinary positions cover bars 0–7, beats 0–3, and ticks 0–959. Absolute tick 30,720 has exactly one structured representation, `{ bar: 8, beat: 0, tickWithinBeat: 0 }`; it is valid only as the conversion/event-end boundary. UI one-based labels are projections. Individual Stage 3A time primitives serialize through fixed-key-order versioned JSON forms, while composition canonicalization and hashing remain deferred.
+**Alternatives:** Exclude the terminal tick from conversion; alias it to the final tick; permit normalized overflow tuples; use one-based domain indices; implement the full composition canonicalizer now.
+**Rationale:** The unique boundary makes `[0, sectionLengthTicks]` round trips total without allowing zero-length or out-of-section events, and separates canonical state from presentation without expanding Stage 3A.
+**Consequences:** Event-start validation is stricter than position conversion. Callers must deliberately distinguish terminal positions, and later composition schemas must embed or reference the established primitive forms without silently changing their meaning.
+**Revisit:** A separately authorized meter/section-map design requires pickup bars, multiple sections, or a different boundary representation with a migration plan.

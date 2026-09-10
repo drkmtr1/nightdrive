@@ -30,10 +30,11 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-004 | P0 | Motifs model identity, repetition, variation, phrase boundary, target tones, tension/resolution, register, range, and leaps. | AC-012 | 8 |
 | MUS-005 | P0 | Voice-leading obeys documented ranges, chord membership, spacing, and movement constraints or returns a structured failure. | AC-003 | 4 |
 | MUS-006 | P0 | All generated events remain within the 8-bar section and valid musical grid unless explicit bounded microtiming is later supported. | AC-013 | 3–8 |
-| MIDI-001 | P0 | Canonical musical time uses integer ticks at 960 PPQ with explicit bar/beat conversion. | AC-007 | 3, 5 |
+| MIDI-001 | P0 | Canonical musical time uses integer ticks at 960 PPQ with explicit bar/beat conversion. | AC-007, AC-033 | 3A, 5 |
 | MIDI-002 | P0 | Export preserves pitch, start, duration, velocity, tempo, PPQ, and track identity. | AC-008 | 5 |
 | MIDI-003 | P0 | MIDI serialization has stable event ordering and valid note-on/off semantics. | AC-007 | 5 |
 | MIDI-004 | P0 | Exported fixtures import into a supported FL Studio version with correct length and alignment. | AC-009 | 5, 16 |
+| MUS-007 | P0 | Musical-time constructors and arithmetic use explicit units, stable typed errors, safe-integer validation, and unambiguous 8-bar event boundaries without coercion or clamping. | AC-033 | 3A |
 
 ## AI behavior
 
@@ -74,6 +75,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-005 | P0 | A passing build satisfies lint/type/unit/integration/API/RLS/E2E/accessibility/security and required evaluation gates defined in the testing strategy. | AC-029 | 2–20 |
 | NFR-006 | P1 | Versioned canonical formats have documented migration and backward-compatibility behavior. | AC-030 | 3, 12 |
 | NFR-007 | P0 | The application foundation uses documented supported exact tool versions and a locked dependency graph that passes clean install, format, lint, strict type, test, documentation, and production-build gates. | AC-031 | 2A |
+| NFR-008 | P0 | Equivalent validated musical-time primitives serialize to byte-equivalent versioned JSON independent of locale, timezone, framework, and runtime ambient state. | AC-034 | 3A |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules

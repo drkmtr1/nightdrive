@@ -36,6 +36,8 @@ Each criterion maps to requirements in [REQUIREMENTS.md](REQUIREMENTS.md). Evide
 | AC-030 | NFR-006 | A fixture from each supported prior canonical schema version migrates deterministically or produces an explicit supported-version error without data loss. |
 | AC-031 | NFR-007 | Given a clean checkout and the selected Node/npm policy, `npm ci` and every required validation command complete successfully using the committed lockfile; direct versions and dependencies match the authoritative register. |
 | AC-032 | UX-005 | The rendered foundation shell has one clear application identity and heading hierarchy, semantic landmarks, visible keyboard focus, responsive reflow, no baseline automated accessibility violations, working error/not-found recovery, and no control or copy that implies composition features exist. |
+| AC-033 | MIDI-001, MUS-007 | Every absolute tick from 0 through 30720 round-trips through the zero-based 8-bar 4/4 position converter; invalid numeric/position/duration inputs fail with stable typed errors; event starts are before 30720 and positive durations may end exactly at, but never after, that boundary. |
+| AC-034 | NFR-008 | Repeated serialization of each validated Stage 3A time primitive produces its exact versioned fixed-order JSON fixture without locale, timezone, framework, provider, or ambient-clock input. |
 
 ## Release interpretation
 

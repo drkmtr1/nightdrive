@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Stage 2A implements only the Next.js web adapter shell and engineering gates. The remaining modules below are target architecture and do not exist yet. Technology status remains authoritative in [Decisions](DECISIONS.md).
+Stage 2A implements the Next.js web adapter shell and engineering gates. Stage 3A adds only the framework-independent musical-time subset of `music-domain`; the remaining modules below are target architecture and do not exist yet. Technology status remains authoritative in [Decisions](DECISIONS.md).
 
 ## System shape
 
@@ -40,14 +40,15 @@ flowchart LR
 
 Dependencies point inward: web/persistence/AI/MIDI adapters depend on domain contracts; domain logic does not depend on Next.js, Supabase, Vercel, Web Audio, or an AI provider.
 
-### Implemented Stage 2A boundary
+### Implemented boundaries
 
 - `src/app`: Next.js routes, semantic layout, state pages, global tokens/styles, and HTTP adapters only.
 - `src/app/api/health/live`: deterministic, non-cacheable process liveness without dependency or secret disclosure.
+- `src/music-domain`: plain TypeScript canonical musical-time values and operations. Production files accept only relative imports; a test enforces the absence of framework, platform, and package dependencies.
 - Root tool configuration: exact runtime/dependency policy, strict TypeScript, Biome, Vitest/jsdom/axe-core, and CI.
-- No `domain`, `music`, `midi`, `audio`, `persistence`, `ai`, or provider module is created prematurely.
+- No theory, composition, generator, MIDI, audio, persistence, AI, or provider module is created prematurely.
 
-Future framework-independent modules should live outside `src/app`, expose plain TypeScript APIs, and contain no `next/*`, React, DOM, Node-only, database, or provider imports unless the module is explicitly an adapter. Boundary enforcement should be added when the first domain module exists rather than through empty packages now.
+Framework-independent modules live outside `src/app`, expose plain TypeScript APIs, and contain no `next/*`, React, DOM, Node-only, database, or provider imports unless the module is explicitly an adapter. The Stage 3A dependency-boundary test enforces this rule for `src/music-domain` production files.
 
 ## Canonical flow
 

@@ -11,7 +11,7 @@
 - `Chord`: root, quality, optional extensions permitted by profile, and pitch-class membership.
 - `ChordInversion`: bass-member index.
 - `ChordVoicing`: ordered absolute MIDI pitches plus range/spacing metadata.
-- `TimeSignature`, `Tempo`, `MusicalPosition`, `Duration`: defined in [Musical time](MUSICAL_TIME_MODEL.md).
+- `TimeSignature`, `Tempo`, `MusicalPosition`, `Tick`, and `DurationTicks`: implemented in Stage 3A and defined in [Musical time](MUSICAL_TIME_MODEL.md).
 
 Initial scales are Major, Natural Minor, Harmonic Minor, Melodic Minor, Dorian, and Phrygian. Adding scales or chord vocabulary requires profile/use-case evidence and fixtures.
 
@@ -39,4 +39,4 @@ Validate domain ranges, section containment, role compatibility, supported scale
 
 ## Canonical serialization
 
-Use a versioned schema, normalized enum strings, explicit units, ordered keys/arrays under a specified canonicalizer, and no derived duplicates. Hash the canonical byte representation for determinism/locks/lineage. Exact schema is a Stage 3 deliverable.
+Use a versioned schema, normalized enum strings, explicit units, ordered keys/arrays under a specified canonicalizer, and no derived duplicates. Stage 3A fixes deterministic JSON forms for individual time primitives only. Composition canonicalization and hashing remain a later, separately authorized Stage 3 deliverable.
