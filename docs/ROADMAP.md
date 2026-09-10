@@ -139,7 +139,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2g — ChordInversion primitive implementation
 
-**Status:** Implemented on this bounded branch; pending review and merge.
+**Status:** Merged and complete through PR #15 (merge commit `ba1d102cf70be8bde6a00557410d8a07adacc09e`).
 **Objective:** Implement the deterministic triad-only `ChordInversion` scalar defined by Stage 3B2b2f.
 **Capabilities:** Validated indices `0..2`, deterministic equality, and exact `nightdrive.chord-inversion.v1` serialization.
 **Dependencies:** Merged Stage 3B2b2f and explicit Stage 3B2b2g authorization.
