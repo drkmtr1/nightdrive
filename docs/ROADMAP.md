@@ -182,7 +182,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2h — ChordVoicing contract definition
 
-**Status:** Documentation-only contract definition; production implementation is not authorized.
+**Status:** Merged and accepted through PR #21 (merge commit `c33255433d7cc9682e53b01d1c3be36081b06956`). ChordVoicing implementation remains separately gated.
 **Objective:** Freeze the smallest deterministic V1 realized ChordVoicing contract before implementation or Stage 4 harmony.
 **Contract:** Exactly three validated `MidiPitch` values, strictly ascending absolute MIDI order, no duplicate MIDI pitches, one realization of each triad member, and separate contextual checks for Chord membership and ChordInversion compatibility.
 **Serialization:** Reserve `nightdrive.chord-voicing.v1` with only ordered `midiPitches`; exclude Chord, inversion, pitch-class, label, range, spacing, profile, and harmony fields.
