@@ -69,7 +69,7 @@ This documentation-only gate reviews the exact `0..2` member-index domain, canon
 
 ## Stage 3B2c1 Deterministic PRNG contract definition
 
-This documentation-only gate reviews the versioned Mulberry32 selection, exact uint32 seed/state/output boundaries, replay and lineage inputs, no-ambient-randomness and security boundaries, deferred stream/fork mechanics, and future known-answer, malformed-input, long-sequence, independent-instance, cross-runtime, and serializer/version fixtures. It provides no implementation evidence.
+This documentation-only gate reviews the versioned Mulberry32 selection and exact transition, uint32 seed/state/output boundaries, replay and lineage inputs, no-ambient-randomness and security boundaries, deferred stream/fork mechanics, and future known-answer, malformed-input, long-sequence, independent-instance, cross-runtime, and lineage/version-reference fixtures. It provides no implementation evidence; standalone PRNG serialization is deferred to the enclosing lineage/composition schema.
 
 ## Stage 3B2b2g ChordInversion primitive
 

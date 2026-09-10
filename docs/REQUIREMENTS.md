@@ -95,7 +95,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-014 | P0 | Equivalent validated Chord values serialize to byte-equivalent fixed-order `nightdrive.chord.v1` JSON containing only root semitone class and canonical quality ID. | AC-042 | 3B2b2e |
 | NFR-015 | P0 | The reserved ChordInversion representation is versioned as `nightdrive.chord-inversion.v1` with only validated `memberIndex` and no chord, pitch, voicing, label, or redundant per-instance version state. | AC-043 | 3B2b2f |
 | NFR-016 | P0 | Equivalent validated ChordInversion values serialize to byte-equivalent fixed-order `nightdrive.chord-inversion.v1` JSON containing only `memberIndex`. | AC-044 | 3B2b2g |
-| NFR-017 | P0 | The PRNG contract identifies `nightdrive.prng.mulberry32.v1`, defines portable uint32 arithmetic and seed/state boundaries, and requires deterministic replay/version fixtures without ambient randomness. | AC-045 | 3B2c1 |
+| NFR-017 | P0 | The PRNG contract identifies `nightdrive.prng.mulberry32.v1`, defines portable uint32 arithmetic and seed/state boundaries, and requires deterministic replay/version-reference fixtures without ambient randomness; standalone seed serialization is deferred to lineage/composition schema work. | AC-045 | 3B2c1 |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules

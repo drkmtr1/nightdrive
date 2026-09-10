@@ -121,7 +121,7 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 **Rationale:** Enables debugging, comparison, recovery, and trust.
 **Consequences:** PRNG algorithm/version and canonical serialization become public contracts.
 
-## ADR-011 — Versioned deterministic PRNG contract
+## ADR-014 — Versioned deterministic PRNG contract
 
 **Status:** Accepted for the Stage 3B2c1 contract-definition milestone; implementation remains separately gated.
 
