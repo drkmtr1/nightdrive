@@ -39,6 +39,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-009 | P0 | Canonical intervals use strictly validated signed safe-integer semitone displacement, support deterministic arithmetic, and compute directed distance between valid MIDI pitches without pitch-class ambiguity or transposition. | AC-036 | 3B2a |
 | MUS-010 | P0 | Canonical scales use exactly six closed immutable seven-offset formulas; tonic-relative projection, zero-based degree lookup, and exact pitch-class membership are strictly validated and do not introduce spelling or key semantics. | AC-037 | 3B2b1 |
 | MUS-011 | P0 | Canonical keys contain only a strictly validated tonic `PitchClass` and closed canonical `ScaleType`; projection, degree lookup, membership, equality, and serialization preserve those numeric identities without spelling or key-signature semantics. | AC-038 | 3B2b2a |
+| MUS-012 | P0 | The V1 `ChordQuality` contract is one explicitly versioned closed triad-only vocabulary with stable IDs and exact tonic-relative chromatic membership formulas; version belongs to the vocabulary/schema contract rather than redundant per-instance state. Quality excludes root, ordering, inversions, voicings, spelling, and extensions, and seventh structures remain deferred extension metadata. | AC-039 | 3B2b2b |
 
 ## AI behavior
 

@@ -80,13 +80,24 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2a — Key primitive
 
-**Status:** Implemented and validated on this bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #7 (`d06d898`).
 **Objective:** Establish the canonical deterministic `Key` value as tonic `PitchClass` plus `ScaleType`.
 **Capabilities:** Immutable two-field Key, runtime component revalidation, deterministic equality, delegated key pitch-class projection, degree lookup, exact membership, and `nightdrive.key.v1` serialization.
 **Dependencies:** Merged Stage 3B2b1 and explicit Stage 3B2b2a authorization.
 **Non-goals:** Note spelling, key signatures, named/diatonic intervals, chords, composition hashing, PRNG, generation, MIDI files, audio, persistence, AI, UI, or deployment.
 **Tests:** All 72 tonic/scale keys; five readable numeric fixtures; seven degree and twelve membership checks per key; forged runtime inputs; immutability, equality, delegation, and repeated serialization.
 **Exit:** MUS-001 plus MUS-011/NFR-012 and AC-038 pass without new dependencies or framework coupling.
+
+##### Stage 3B2b2b — ChordQuality contract definition
+
+**Status:** Contract defined by this documentation-only milestone; production implementation is not authorized.
+**Objective:** Freeze the smallest closed V1 chord-quality vocabulary and its boundaries before deterministic harmony implementation.
+**Contract:** One explicitly versioned V1 vocabulary maps stable IDs to immutable formulas: major triad `major-triad` `[0,4,7]`; minor triad `minor-triad` `[0,3,7]`; diminished triad `diminished-triad` `[0,3,6]`. The version belongs to the vocabulary/schema contract, not redundant per-instance state. Formulas are tonic-relative pitch-class membership sets only: no ordering, octave, inversion, voicing, spelling, root, or extension semantics. Serialization/version mechanics remain for implementation.
+**Profile rationale:** Major and minor support the harmonic center of all four accepted profiles; diminished supplies leading-tone/tension color for harmonic-minor and darker chromatic contexts without opening a broad vocabulary.
+**Seventh decision:** Seventh structures are deferred extension metadata outside `ChordQuality`; they are not standalone qualities in this contract. Future `Chord` owns root plus quality and any explicitly versioned extensions; inversions and voicings remain separate.
+**Dependencies:** Merged Stage 3B2b2a and explicit authorization for a later implementation task.
+**Non-goals:** `ChordQuality` production code, `Chord`, extensions implementation, harmony, voicing, inversions, progression, named intervals, spelling, generation, MIDI, persistence, AI, or UI.
+**Exit:** MUS-012 and AC-039 contract evidence is reviewed; no implementation completion is claimed.
 
 ##### Stage 3B2b2 — Remaining theory and determinism foundations
 

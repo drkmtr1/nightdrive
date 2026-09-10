@@ -7,13 +7,25 @@
 - `Interval`: Stage 3B2a implements only a strictly constructed signed safe-integer semitone distance. Named/diatonic metadata remains deferred until theory semantics require it.
 - `Scale`: Stage 3B2b1 closed six-type identity with immutable seven-offset formula and numeric tonic-relative projection.
 - `Key`: Stage 3B2b2a immutable numeric tonic `PitchClass` plus canonical `ScaleType`; projection delegates to the scale primitive and carries no spelling or key-signature data.
-- `ChordQuality`: supported interval formula and stable key/version.
-- `Chord`: root, quality, optional extensions permitted by profile, and pitch-class membership.
+- `ChordQuality`: Stage 3B2b2b documented closed triad-quality vocabulary with stable ID and immutable tonic-relative chromatic membership formula; no production implementation yet.
+- `Chord`: future root `PitchClass`, `ChordQuality`, optional extension metadata, and pitch-class membership. Extensions are outside `ChordQuality` and remain undefined until a later implementation slice.
 - `ChordInversion`: bass-member index.
 - `ChordVoicing`: ordered absolute MIDI pitches plus range/spacing metadata.
 - `TimeSignature`, `Tempo`, `MusicalPosition`, `Tick`, and `DurationTicks`: implemented in Stage 3A and defined in [Musical time](MUSICAL_TIME_MODEL.md).
 
 Initial scales are Major, Natural Minor, Harmonic Minor, Melodic Minor, Dorian, and Phrygian. Scale degrees are zero-based `0..6`; note spelling and key-signature semantics remain deferred.
+
+## V1 ChordQuality contract (Stage 3B2b2b)
+
+This is a documentation-only contract; no production `ChordQuality` exists yet. The vocabulary and formulas are versioned as one canonical contract (conceptually `ChordQuality` contract version + stable quality ID → immutable formula). The version belongs to the vocabulary/schema contract and is not redundant per-instance derived state; serialization/version mechanics remain for the implementation milestone.
+
+| Label | Stable ID | Tonic-relative semitone formula | Profile justification |
+|---|---|---|---|
+| Major triad | `major-triad` | `[0,4,7]` | Foundational harmonic center for Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk. |
+| Minor triad | `minor-triad` | `[0,3,7]` | Foundational darker harmonic center for all four accepted profiles. |
+| Diminished triad | `diminished-triad` | `[0,3,6]` | Compact leading-tone/tension color for harmonic-minor and darker chromatic contexts across the profiles. |
+
+These formulas are immutable tonic-relative pitch-class membership sets only. Ordering, octave duplication, root, inversions, voicings, spelling, and extensions are outside `ChordQuality`. Suspended, augmented, seventh, altered, extended, borrowed, slash, and modal-interchange structures are deferred. Seventh structures will be future extension metadata on `Chord`, not standalone quality identities.
 
 ## Composition hierarchy
 
