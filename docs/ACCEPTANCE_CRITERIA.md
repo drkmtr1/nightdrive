@@ -40,6 +40,7 @@ Each criterion maps to requirements in [REQUIREMENTS.md](REQUIREMENTS.md). Evide
 | AC-034 | NFR-008 | Repeated serialization of each validated Stage 3A time primitive produces its exact versioned fixed-order JSON fixture without locale, timezone, framework, provider, or ambient-clock input. |
 | AC-035 | MUS-001, MUS-008, NFR-009 | All pitch classes 0–11 and MIDI pitches 0–127 construct and serialize deterministically; every MIDI pitch extracts `midiPitch % 12`; invalid numeric inputs fail with stable typed errors; no canonical value or serialized field encodes enharmonic spelling or an octave-label convention. |
 | AC-036 | MUS-001, MUS-009, NFR-010 | Representative signed and compound intervals, including negative values, zero, and positive values, construct and serialize deterministically; invalid/fractional/non-finite/unsafe values fail explicitly; negation, comparison, addition, subtraction, and overflow behavior are tested; all 16,384 ordered MIDI-pitch pairs satisfy directed `to - from` distance and antisymmetry. |
+| AC-037 | MUS-001, MUS-010, NFR-011 | The six closed scale formulas are exact and immutable; zero-based degrees `0..6`, invalid IDs/degrees, all 72 tonic/scale contexts, all twelve membership outcomes, and repeated fixed-order `nightdrive.scale.v1` serialization are validated without spelling, key, named-interval, chord, or generation semantics. |
 
 ## Release interpretation
 
