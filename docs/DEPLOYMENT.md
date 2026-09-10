@@ -1,8 +1,20 @@
 # Deployment plan
 
-## Stage 1 status
+## Current status
 
-No Vercel project, Supabase project, environment, domain, or deployment is created in Stage 1.
+Stage 2A defines a locally runnable production build and CI only. No Vercel project, Supabase project, environment, domain, or deployment has been created.
+
+## Runtime policy
+
+| Tool | Selected policy | Enforcement |
+|---|---|---|
+| Node.js | `24.21.0` LTS for local/CI; patch updates within major 24 require validation | `.nvmrc`, `engines.node`, CI setup |
+| npm | `11.19.0`; updates remain within major 11 unless reviewed | `packageManager`, `engines.npm`, lockfile |
+| Next.js | exact `16.3.4` Active LTS | `package.json`, lockfile |
+| React | exact `19.3.0` for `react` and `react-dom` | `package.json`, lockfile |
+| TypeScript | exact `7.0.2`, strict/no-emit | `package.json`, `tsconfig.json` |
+
+CI is the enforcement authority for the selected Node version. Developers using another runtime may inspect documentation but must reproduce passing validation on the selected LTS before delivery.
 
 ## Target environments
 

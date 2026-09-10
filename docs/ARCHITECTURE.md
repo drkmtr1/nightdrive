@@ -1,12 +1,12 @@
 # Architecture
 
-## Stage 1 status
+## Implementation status
 
-This is a target architecture, not an implemented system. Technology selections are provisional or accepted only as recorded in [Decisions](DECISIONS.md).
+Stage 2A implements only the Next.js web adapter shell and engineering gates. The remaining modules below are target architecture and do not exist yet. Technology status remains authoritative in [Decisions](DECISIONS.md).
 
 ## System shape
 
-Use a TypeScript modular monolith: one web application/deployment with explicit internal domains and server boundaries. Supabase provides PostgreSQL and authentication when persistence enters scope; Vercel is the default web host. Deterministic music logic remains framework-independent and runnable in browser/server/tests where equivalent behavior can be guaranteed.
+Use a TypeScript modular monolith: one Next.js `16.3.4` App Router application with explicit internal domains and server boundaries. The root application is intentionally not a monorepo. A workspace becomes justified only when a real independently consumed package or tooling boundary cannot be enforced in the root project. Supabase provides PostgreSQL and authentication when persistence enters scope; Vercel is the default web host. Deterministic music logic remains framework-independent and runnable in browser/server/tests where equivalent behavior can be guaranteed.
 
 ```mermaid
 flowchart LR
@@ -39,6 +39,15 @@ flowchart LR
 - `web`: UI composition and API adapters.
 
 Dependencies point inward: web/persistence/AI/MIDI adapters depend on domain contracts; domain logic does not depend on Next.js, Supabase, Vercel, Web Audio, or an AI provider.
+
+### Implemented Stage 2A boundary
+
+- `src/app`: Next.js routes, semantic layout, state pages, global tokens/styles, and HTTP adapters only.
+- `src/app/api/health/live`: deterministic, non-cacheable process liveness without dependency or secret disclosure.
+- Root tool configuration: exact runtime/dependency policy, strict TypeScript, Biome, Vitest/jsdom/axe-core, and CI.
+- No `domain`, `music`, `midi`, `audio`, `persistence`, `ai`, or provider module is created prematurely.
+
+Future framework-independent modules should live outside `src/app`, expose plain TypeScript APIs, and contain no `next/*`, React, DOM, Node-only, database, or provider imports unless the module is explicitly an adapter. Boundary enforcement should be added when the first domain module exists rather than through empty packages now.
 
 ## Canonical flow
 

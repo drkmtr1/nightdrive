@@ -8,6 +8,7 @@ node_modules/
 .next/
 out/
 coverage/
+*.tsbuildinfo
 
 # Editors and operating systems
 .DS_Store

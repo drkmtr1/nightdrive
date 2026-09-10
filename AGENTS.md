@@ -4,7 +4,7 @@
 
 Read this file first, then `docs/DECISIONS.md`, `docs/SCOPE.md`, and the document governing the task. If documents conflict, stop implementation, reconcile conservatively, and record any architectural resolution in `docs/DECISIONS.md`.
 
-Nightdrive helps producers create original, editable musical material. The current authorized capability gate is **Stage 1: documentation and architecture only**. Do not scaffold the production app, provision Supabase, deploy to Vercel, install dependencies or models, or implement application features until a later bounded task explicitly authorizes the relevant roadmap stage.
+Nightdrive helps producers create original, editable musical material. Stage 1 is complete and Stage 2A establishes only the validated application/toolchain shell. Each later capability gate still requires a separately authorized bounded task. Do not provision Supabase, deploy to Vercel, install models, or implement music, MIDI, audio, persistence, or AI features before their roadmap stages are explicitly authorized.
 
 ## Non-negotiable boundaries
 

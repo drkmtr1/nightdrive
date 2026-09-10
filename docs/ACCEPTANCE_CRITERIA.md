@@ -34,6 +34,8 @@ Each criterion maps to requirements in [REQUIREMENTS.md](REQUIREMENTS.md). Evide
 | AC-028 | NFR-003 | Representative deterministic generation meets the release performance budget established and approved in Stage 17, with regression thresholds stored in CI. |
 | AC-029 | NFR-005 | Required CI jobs and human evaluation gates in `TESTING_STRATEGY.md` pass on the release commit; no skipped release-blocking test is unexplained. |
 | AC-030 | NFR-006 | A fixture from each supported prior canonical schema version migrates deterministically or produces an explicit supported-version error without data loss. |
+| AC-031 | NFR-007 | Given a clean checkout and the selected Node/npm policy, `npm ci` and every required validation command complete successfully using the committed lockfile; direct versions and dependencies match the authoritative register. |
+| AC-032 | UX-005 | The rendered foundation shell has one clear application identity and heading hierarchy, semantic landmarks, visible keyboard focus, responsive reflow, no baseline automated accessibility violations, working error/not-found recovery, and no control or copy that implies composition features exist. |
 
 ## Release interpretation
 

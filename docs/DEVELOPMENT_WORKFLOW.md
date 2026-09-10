@@ -38,6 +38,8 @@ The bounded requirement is implemented; acceptance evidence is recorded; relevan
 
 Before adding a significant dependency, record its exact purpose and why platform/standard-library code is insufficient; license; release/maintenance health; known security posture; browser bundle or runtime cost; operational and monetary cost; supported runtimes; portability/lock-in; data/privacy impact; and removal/migration path. Pin through the selected package manager and commit its lockfile. Reject dependencies that add speculative microservices, queues, orchestration, vectors, or model infrastructure without an approved requirement.
 
+The authoritative current register is [Dependencies](DEPENDENCIES.md). Dependency changes require `npm install` with the selected Node/npm versions, review of lockfile and install scripts, `npm ls`, `npm audit`, the full validation command, and an updated register in the same change. Clean reproducibility is verified with `npm ci`; do not hand-edit `package-lock.json`.
+
 ## Required task report
 
 Report: task completed; files modified; implementation summary; tests/results; acceptance verification; UX/accessibility verification; architecture/docs, Supabase, and deployment changes; branch; commit; push; assumptions; remaining risks/debt; recommended next smallest backlog task. Do not implement that recommendation automatically.

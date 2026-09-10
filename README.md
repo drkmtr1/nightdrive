@@ -6,7 +6,9 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 ## Current status
 
-**Stage 1 — documentation and architecture. No production application has been implemented.** No dependencies, Supabase resources, Vercel project, or AI/ML models are created by this stage.
+**Stage 2A — application/toolchain foundation.** The repository contains a minimal accessible Next.js shell, a liveness route, strict TypeScript, formatting/linting, component and accessibility tests, production-build validation, and CI. Composition tools are intentionally not implemented.
+
+No music-domain logic, MIDI/audio functionality, persistence, authentication, Supabase configuration, AI integration, Vercel resource, or deployment exists.
 
 Start with:
 
@@ -16,11 +18,25 @@ Start with:
 - [Acceptance criteria](docs/ACCEPTANCE_CRITERIA.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Framework validation](docs/FRAMEWORK_VALIDATION.md)
+- [Dependency register](docs/DEPENDENCIES.md)
 - [Operating rules](AGENTS.md)
+
+## Local foundation
+
+Use Node.js `24.21.0` LTS and npm `11.19.0` as recorded in `.nvmrc` and `package.json`.
+
+```powershell
+npm ci
+npm run validate
+npm run dev
+```
+
+The local shell is then available at `http://localhost:3000`; liveness is `GET /api/health/live`. See [Deployment](docs/DEPLOYMENT.md) for environment policy. Running locally does not provision or deploy anything.
 
 ## Repository baseline
 
-The 2026-09-09 Stage 1 inspection found that both the provided local directory and the public `drkmtr1/nightdrive` GitHub remote were empty; the remote had no default branch. There was no current branch, history, code, test, package/dependency configuration, Supabase configuration, Vercel configuration, or documentation to preserve or reconcile. The brief's phrase “existing repository” therefore means an existing empty GitHub repository, not an existing implementation. This documentation is the first project foundation.
+The 2026-09-09 Stage 1 inspection found that both the provided local directory and the public `drkmtr1/nightdrive` GitHub remote were empty; the remote had no default branch. Stage 1 established the documentation foundation and was squash-merged to `main` as `74c16cf`. Stage 2A began from that clean merged commit.
 
 ## Guiding architecture
 

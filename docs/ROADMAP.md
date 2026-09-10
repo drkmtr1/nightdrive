@@ -13,12 +13,24 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 2 — Application foundation
 
-**Objective:** Create the smallest deployable-quality local shell and engineering gates.
-**Capabilities:** Strict TypeScript/Next.js decision validation, design tokens/layout shell/empty states, schema/test/lint/type/build tooling, dependency register, CI foundation.
-**Dependencies:** Stage 1 audit and explicit authorization.
-**Non-goals:** Music generation, persistence, AI, deployment provisioning.
-**Tests:** Toolchain, route smoke, component accessibility baseline, production build, CI.
-**Exit:** Supported versions/dependencies are documented; local shell and required checks pass.
+### Stage 2A — Toolchain validation and minimal local shell
+
+**Status:** Implemented and validated on its bounded branch; merge remains a human/review decision.
+**Objective:** Validate the framework direction and create the smallest production-quality local shell and engineering gates.
+**Capabilities:** Accepted Next.js/TypeScript direction, exact Node/npm/framework policy, semantic layout, honest empty/loading/error/not-found states, design tokens, liveness route, strict type/format/lint/test/build gates, dependency register, runtime CI.
+**Dependencies:** Merged Stage 1 foundation and explicit Stage 2A authorization.
+**Non-goals:** Music/domain/time/MIDI/audio behavior, feature-like placeholder controls, persistence/auth/Supabase, AI, Vercel provisioning/deployment, observability vendors.
+**Tests:** Clean install, format, lint, strict type check, component/route/accessibility tests, production build/server HTTP smoke, documentation validation, diff check, CI.
+**Exit:** ADR-003 accepted with evidence; NFR-007/UX-005 and AC-031/032 pass; exact dependencies are documented; all checks pass.
+
+### Stage 2B — Reserved application-foundation continuation
+
+**Status:** Not authorized and intentionally unscoped.
+**Objective:** To be defined by a future bounded brief if more non-domain foundation is justified.
+**Capabilities:** None approved.
+**Dependencies:** Stage 2A merge and explicit authorization.
+**Non-goals:** Stage 3 or later capabilities.
+**Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 
 ## Stage 3 — Music theory and time core
 
