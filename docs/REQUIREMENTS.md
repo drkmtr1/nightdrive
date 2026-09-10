@@ -50,6 +50,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-020 | P0 | The V1 ChordVoicing contract defines exactly three validated MidiPitches in strict ascending order with one realization per triad member, separate Chord/Inversion compatibility checks, and no harmony-policy state. | AC-047 | 3B2b2h |
 | MUS-021 | P0 | The implemented ChordVoicing primitive contains exactly three immutable strictly ascending MidiPitches, supports deterministic equality and serialization, and exposes separate deterministic Chord-membership and ChordInversion compatibility checks without harmony policy. | AC-048 | 3B2b2i |
 | MUS-022 | P0 | The Stage 4A contract defines versioned profile-approved harmony templates, deterministic degree-to-Chord mapping, bounded inversions/voicings, explainable voice-leading selection, seeded variation boundaries, unsatisfiable behavior, and decision provenance without implementing Harmony. | AC-049 | 4A |
+| MUS-023 | P0 | The Stage 4B1 runtime validates the versioned concrete Harmony template catalog and profile compatibility, then deterministically realizes explicit slots into ordered existing Chords without quality inference or later Harmony behavior. | AC-050 | 4B1 |
 
 ## AI behavior
 
@@ -104,6 +105,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-019 | P0 | The reserved `nightdrive.chord-voicing.v1` representation contains only ordered absolute `midiPitches` and is deterministic independent of Chord, inversion, profile, range, spacing, and harmony context. | AC-047 | 3B2b2h |
 | NFR-020 | P0 | Equivalent validated ChordVoicing values serialize to byte-equivalent fixed-order `nightdrive.chord-voicing.v1` JSON containing only ordered absolute `midiPitches`; compatibility checks remain contextual and do not alter identity or store derived state. | AC-048 | 3B2b2i |
 | NFR-021 | P0 | Versioned Harmony templates, profile policies, candidate ordering, integer voice-leading costs, tie-breaks, and decision records are deterministic and independent of object order, locale, ambient randomness, framework, and AI; hard constraints fail explicitly. | AC-049 | 4A |
+| NFR-022 | P0 | Equivalent validated Harmony templates and Keys produce equivalent ordered Chord identities independent of template-ID spelling, object order, ambient randomness, framework, or provider state; malformed or scale-mismatched contexts fail explicitly. | AC-050 | 4B1 |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules
