@@ -67,6 +67,10 @@ The suite exhaustively constructs all 36 root/quality identities, verifies immut
 
 This documentation-only gate reviews the exact `0..2` member-index domain, canonical formula-order mapping, separation from Chord identity and voicing, reserved serializer shape, runtime-validation expectations, and explicit review requirement before wider chord cardinality. It provides no implementation evidence.
 
+## Stage 3B2c1 Deterministic PRNG contract definition
+
+This documentation-only gate reviews the versioned Mulberry32 selection and exact transition, uint32 seed/state/output boundaries, replay and lineage inputs, no-ambient-randomness and security boundaries, deferred stream/fork mechanics, and future known-answer, malformed-input, long-sequence, independent-instance, cross-runtime, and lineage/version-reference fixtures. It provides no implementation evidence; standalone PRNG serialization is deferred to the enclosing lineage/composition schema.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.

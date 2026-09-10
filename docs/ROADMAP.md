@@ -156,6 +156,20 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Non-goals:** Progression/pattern generation, MIDI export, or UI piano roll.
 **Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 
+##### Stage 3B2c1 — Deterministic PRNG contract definition
+
+**Status:** Documentation-only contract definition; PRNG implementation is not authorized.
+**Objective:** Define the smallest versioned deterministic random primitive required for reproducible future generation.
+**Contract:** V1 uses Mulberry32 (`nightdrive.prng.mulberry32.v1`), an in-repository uint32 state transition with no `Math.random()` or operating-system entropy after initialization. It is deterministic infrastructure, not a cryptographic generator.
+**Transition:** For uint32 state `s`, set `s = (s + 0x6D2B79F5) >>> 0`; set `t = s`; then `t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0`; then `t = (t ^ ((t + Math.imul(t ^ (t >>> 7), t | 61)) >>> 0)) >>> 0`; return `(t ^ (t >>> 14)) >>> 0`. `Math.imul` supplies signed 32-bit multiplication with low-32-bit result; every `>>> 0` is a uint32 truncation/coercion point, shifts are unsigned-right shifts, state updates before output mixing, and outputs are in `[0, 2^32)`.
+**Seed/state:** The canonical seed is a finite safe integer in `0..4,294,967,295`, including zero; negative, fractional, non-safe, non-number, and coerced values are invalid. State is one uint32 value; transient state is not canonical composition data.
+**Output:** The primitive emits uint32 values in `[0, 2^32)`. Bounded integer, boolean, shuffle, weighted-choice, and musical decision helpers remain separate implementation contracts unless later authorized.
+**Replay/lineage:** Replay requires identical seed, PRNG contract version, generator/engine/profile/schema versions, normalized inputs, and canonical parameters. Algorithm changes require a new version; old sequences are reproducible only when their version is selected. Seed and version belong in generation lineage; derived random values need not be persisted.
+**Serialization:** Stage 3B2c1 defines the seed value domain and PRNG identifier only. Their enclosing canonical lineage serialization is deferred to the future lineage/composition schema contract; no standalone PRNG serializer fixture is defined here.
+**Streams:** Independent component streams are a future requirement for lock-safe regeneration; stream/fork mechanics are explicitly deferred to a separately authorized contract.
+**Non-goals:** PRNG code, composition hashing, music policy, generation, harmony, MIDI, persistence, UI, AI, or security-sensitive randomness.
+**Tests/exit:** Future implementation requires known-answer, boundary/malformed, repeated-run, independent-instance, long-sequence, cross-runtime, no-`Math.random()`, and lineage/version-reference fixtures; exit requires MUS-018/NFR-017 and AC-045 contract review without implementation claims.
+
 ## Stage 4 — Harmony engine
 
 **Objective:** Generate valid progressions and voice-led chord tracks.
