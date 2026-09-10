@@ -1,0 +1,19 @@
+name: Documentation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate documentation foundation
+        shell: pwsh
+        run: ./scripts/validate-docs.ps1
