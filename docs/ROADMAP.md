@@ -70,7 +70,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b1 — Scale formula foundations
 
-**Status:** Implemented and validated on this bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #6 (`58e3845`).
 **Objective:** Establish the closed V1 scale formula and numeric projection subset.
 **Capabilities:** Exactly six immutable canonical formulas, zero-based `ScaleDegree` values `0..6`, tonic-relative pitch-class projection, degree lookup, exact twelve-class membership, and `nightdrive.scale.v1` serialization.
 **Dependencies:** Merged Stage 3B2a and explicit Stage 3B2b1 authorization.
@@ -78,12 +78,22 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Tests:** Exact formula fixtures; all 72 tonic/scale contexts; all twelve membership classes; invalid degrees; immutable formula results; repeated serialization.
 **Exit:** MUS-001 plus MUS-010/NFR-011 and AC-037 pass without new dependencies or framework coupling.
 
+##### Stage 3B2b2a — Key primitive
+
+**Status:** Implemented and validated on this bounded branch; merge remains a human/review decision.
+**Objective:** Establish the canonical deterministic `Key` value as tonic `PitchClass` plus `ScaleType`.
+**Capabilities:** Immutable two-field Key, runtime component revalidation, deterministic equality, delegated key pitch-class projection, degree lookup, exact membership, and `nightdrive.key.v1` serialization.
+**Dependencies:** Merged Stage 3B2b1 and explicit Stage 3B2b2a authorization.
+**Non-goals:** Note spelling, key signatures, named/diatonic intervals, chords, composition hashing, PRNG, generation, MIDI files, audio, persistence, AI, UI, or deployment.
+**Tests:** All 72 tonic/scale keys; five readable numeric fixtures; seven degree and twelve membership checks per key; forged runtime inputs; immutability, equality, delegation, and repeated serialization.
+**Exit:** MUS-001 plus MUS-011/NFR-012 and AC-038 pass without new dependencies or framework coupling.
+
 ##### Stage 3B2b2 — Remaining theory and determinism foundations
 
 **Status:** Not authorized and intentionally unscoped.
 **Objective:** Define future bounded briefs for the remaining theory and determinism contracts.
-**Capabilities:** Note/spelling, keys, named/diatonic interval metadata, chords, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
-**Dependencies:** Merged Stage 3B2b1 and explicit authorization for each bounded slice.
+**Capabilities:** Note/spelling, named/diatonic interval metadata, chords, canonical composition schema/hash, and fixed PRNG contract, only if separately authorized.
+**Dependencies:** Merged Stage 3B2b2a and explicit authorization for each bounded slice.
 **Non-goals:** Progression/pattern generation, MIDI export, or UI piano roll.
 **Tests/exit:** Must be specified before implementation; do not infer work from this placeholder gate.
 
