@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Stage 2A implements the Next.js web adapter shell and engineering gates. Stage 3A adds the framework-independent musical-time subset of `music-domain`; Stage 3B1 adds pitch identity; Stage 3B2a adds only signed chromatic interval identity. The remaining modules below are target architecture and do not exist yet. Technology status remains authoritative in [Decisions](DECISIONS.md).
+Stage 2A implements the Next.js web adapter shell and engineering gates. Stage 3A adds the framework-independent musical-time subset of `music-domain`; Stage 3B1 adds pitch identity; Stage 3B2a adds signed chromatic interval identity; Stage 3B2b1 adds scale formulas; Stage 3B2b2a adds the numeric Key primitive. The remaining modules below are target architecture and do not exist yet. Technology status remains authoritative in [Decisions](DECISIONS.md).
 
 ## System shape
 
@@ -44,7 +44,7 @@ Dependencies point inward: web/persistence/AI/MIDI adapters depend on domain con
 
 - `src/app`: Next.js routes, semantic layout, state pages, global tokens/styles, and HTTP adapters only.
 - `src/app/api/health/live`: deterministic, non-cacheable process liveness without dependency or secret disclosure.
-- `src/music-domain`: plain TypeScript canonical musical-time, pitch-identity, and signed chromatic-interval values and operations. Production files accept only relative imports; a test covers static, dynamic, re-export, and side-effect-only forms to enforce the absence of framework, platform, and package dependencies.
+- `src/music-domain`: plain TypeScript canonical musical-time, pitch-identity, signed chromatic-interval, scale-formula, and Key values and operations. Production files accept only relative imports; a test covers static, dynamic, re-export, and side-effect-only forms to enforce the absence of framework, platform, and package dependencies.
 - Root tool configuration: exact runtime/dependency policy, strict TypeScript, Biome, Vitest/jsdom/axe-core, and CI.
 - No named/diatonic interval, note spelling, key/chord theory, composition, generator, MIDI export, audio, persistence, AI, or provider module is created prematurely.
 

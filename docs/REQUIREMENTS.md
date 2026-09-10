@@ -38,6 +38,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-008 | P0 | Canonical pitch identity uses strictly validated `PitchClass` values 0–11 and `MidiPitch` values 0–127; MIDI pitch-class extraction is exact and independent of spelling or octave labels. | AC-035 | 3B1 |
 | MUS-009 | P0 | Canonical intervals use strictly validated signed safe-integer semitone displacement, support deterministic arithmetic, and compute directed distance between valid MIDI pitches without pitch-class ambiguity or transposition. | AC-036 | 3B2a |
 | MUS-010 | P0 | Canonical scales use exactly six closed immutable seven-offset formulas; tonic-relative projection, zero-based degree lookup, and exact pitch-class membership are strictly validated and do not introduce spelling or key semantics. | AC-037 | 3B2b1 |
+| MUS-011 | P0 | Canonical keys contain only a strictly validated tonic `PitchClass` and closed canonical `ScaleType`; projection, degree lookup, membership, equality, and serialization preserve those numeric identities without spelling or key-signature semantics. | AC-038 | 3B2b2a |
 
 ## AI behavior
 
@@ -82,6 +83,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-009 | P0 | Equivalent validated pitch-identity primitives serialize to byte-equivalent versioned JSON independent of locale, spelling, octave convention, framework, and runtime ambient state. | AC-035 | 3B1 |
 | NFR-010 | P0 | Equivalent validated intervals serialize to byte-equivalent versioned JSON preserving sign and compound semitone distance without names, spelling, octave, locale, timezone, or ambient runtime state. | AC-036 | 3B2a |
 | NFR-011 | P0 | Equivalent validated scale identities and formulas serialize to byte-equivalent fixed-order `nightdrive.scale.v1` JSON independent of locale, framework, and ambient runtime state. | AC-037 | 3B2b1 |
+| NFR-012 | P0 | Equivalent validated keys serialize to byte-equivalent fixed-order `nightdrive.key.v1` JSON containing only tonic semitone class and canonical scale identity. | AC-038 | 3B2b2a |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules
