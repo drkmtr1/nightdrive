@@ -59,10 +59,16 @@ describe("scale formula foundations", () => {
     }
   });
 
-  it.each([-1, 7, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
-    "rejects invalid scale degree %s",
-    (degree) => {
-      expect(() => createScaleDegree(degree)).toThrowError(ScaleValueError);
-    },
-  );
+  it.each([
+    -1,
+    7,
+    1.5,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1,
+    -(Number.MAX_SAFE_INTEGER + 1),
+  ])("rejects invalid scale degree %s", (degree) => {
+    expect(() => createScaleDegree(degree)).toThrowError(ScaleValueError);
+  });
 });

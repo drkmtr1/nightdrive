@@ -8,7 +8,7 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 **Stage 3B2b1 — scale formula foundations.** The repository contains the merged Stage 2A, Stage 3A, Stage 3B1, and Stage 3B2a foundations plus six immutable canonical scale formulas, zero-based scale degrees, tonic-relative pitch-class projection, exact membership, and deterministic serialization.
 
-Note spelling, octave labels, interval names/quality, scales, keys, chords, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase configuration, AI integration, Vercel resources, and deployment remain intentionally unimplemented.
+Note spelling, octave labels, interval names/quality, keys, chords, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally unimplemented.
 
 Start with:
 
