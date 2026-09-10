@@ -5,3 +5,4 @@ export * from "./scale";
 export * from "./key";
 export * from "./chord-quality";
 export * from "./chord";
+export * from "./chord-inversion";
