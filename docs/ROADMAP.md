@@ -200,6 +200,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Tests:** Exhaustive malformed/forged validation, immutability, equality, exact serialization, all V1 quality/root/inversion compatibility contexts, and wrapped-order evidence.
 **Exit:** MUS-021/NFR-020 and AC-048 pass without new dependencies, framework coupling, or Stage 4 behavior.
 
+### Stage 4A — Harmony policy architecture and contract
+
+**Status:** Documentation-only architecture and contract milestone; Harmony implementation is not authorized.
+**Objective:** Define the smallest deterministic V1 Harmony policy before engine implementation.
+**Capabilities:** Versioned templates, degree-to-Chord mapping, profile-approved triad qualities, bounded inversions/voicings, integer voice-leading cost and tie-breaks, seeded variation boundary, unsatisfiable reasons, and decision/provenance records for all four V1 profiles.
+**Dependencies:** Merged Stage 3 primitives, reviewed profile data, and explicit Stage 4B implementation authorization.
+**Non-goals:** Harmony TypeScript, progression generation, PRNG helpers, MIDI, bass, arp, melody, AI, persistence, UI, audio, extensions, or sevenths.
+**Tests:** Future golden progressions, profile/template combinations, compatibility invariants, deterministic replay/ties, unsatisfiable cases, seeded fixtures, property checks, and preliminary human review.
+**Exit:** MUS-022/NFR-021 and AC-049 contract review confirms representation, profile data, deterministic selection, failure behavior, provenance, and deferred implementation boundaries.
+
 ## Stage 4 — Harmony engine
 
 **Objective:** Generate valid progressions and voice-led chord tracks.
