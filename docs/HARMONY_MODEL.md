@@ -4,13 +4,13 @@ This document defines the documentation-only Stage 4A boundary. It authorizes no
 
 ## Versioned template representation
 
-`nightdrive.harmony-template.v1` identifies a template by `{id, version}` and contains ordered slots. Each slot has `degree` (zero-based scale degree), an allowed `qualities` list, `bars` (positive integer span), and optional `inversions` (subset of `0..2`). Profile weights, preference ordering, tension (`0..1`), movement (`static|stepwise|mixed`), cadence tendency, and explanation labels are profile metadata, not template identity. Templates contain no realized MIDI pitches.
+`nightdrive.harmony-template.v1` identifies a template by `{id, version}` and contains ordered slots. Each executable slot has `degree` (zero-based scale degree), exactly one explicit `quality: ChordQuality` from the V1 vocabulary, `bars` (positive integer span), and an optional `inversions` restriction (subset of `0..2`). Profile weights, preference ordering, tension (`0..1`), movement (`static|stepwise|mixed`), cadence tendency, and explanation labels are profile metadata, not template identity. Templates contain no realized MIDI pitches.
 
 An 8-bar plan has slots whose positive bar spans sum to 8. Stable IDs and explicit array order define identity; object-key or discovery order never does.
 
 ## Degree-to-Chord mapping
 
-For a validated `Key`, obtain the scale's degree pitch class through the existing scale projection, then construct `Chord(root, quality)` using the slot's explicitly allowed quality. The six supported scales (major, natural minor, harmonic minor, melodic minor, Dorian, Phrygian) use their existing formulas without additional diatonic inference. A degree outside `0..6`, a quality not listed by the slot, or a quality/formula that cannot construct a Chord is an `UNSUPPORTED_TEMPLATE` validation failure; no substitution is permitted.
+Execution validates the template/version and requested Key/Scale context, projects each explicit degree through the existing Scale/Key contract, reads that slot's single explicit `ChordQuality`, and constructs the existing `Chord(root, quality)`. The six supported scales (major, natural minor, harmonic minor, melodic minor, Dorian, Phrygian) use their existing formulas without additional inference. A degree outside `0..6`, a scale outside the template context, a missing/invalid slot quality, or a quality/formula that cannot construct a Chord is an `UNSUPPORTED_TEMPLATE` validation failure; no quality-list selection, stacking-thirds rule, display label, mode convention, genre heuristic, substitution, or coercion is permitted.
 
 ## Bounded initial profile data
 
@@ -74,6 +74,15 @@ The future engine emits a machine-readable record containing `schema`, `engineVe
 
 ## Worked examples and evidence
 
-In C major, `degree-0340-major-v1` maps degrees `0,3,4,0` to roots `0,5,7,0`, with qualities `major-triad, major-triad, major-triad, major-triad`. In A natural minor, `degree-0340-natural-minor-v1` maps degrees `0,3,4,0` to roots `9,0,4,9`, with qualities `minor-triad, minor-triad, major-triad, minor-triad`; use inversions `0,1,1,0` and voicings `[45,48,52]`, `[51,55,60]`, `[52,55,59]`, `[45,48,52]`. Their projected members are respectively `[9,0,4]`, `[3,7,0]`, `[4,8,11]`, and `[9,0,4]`, so each satisfies the existing Chord and ChordInversion contracts.
+In C major, `degree-0340-major-v1` maps degrees `0,3,4,0` to roots `0,5,7,0`, with qualities `major-triad, major-triad, major-triad, major-triad`. The complete A-natural-minor fixture for `degree-0340-natural-minor-v1` is:
+
+| Slot | Degree | Root | Quality | Canonical members | Inversion | Voicing | Projected classes |
+|---|---:|---:|---|---|---:|---|---|
+| 1 | 0 | 9 | `minor-triad` | `[9,0,4]` | 0 | `[45,48,52]` | `[9,0,4]` |
+| 2 | 3 | 0 | `minor-triad` | `[0,3,7]` | 1 | `[51,55,60]` | `[3,7,0]` |
+| 3 | 4 | 4 | `major-triad` | `[4,8,11]` | 1 | `[56,59,64]` | `[8,11,4]` |
+| 4 | 0 | 9 | `minor-triad` | `[9,0,4]` | 0 | `[45,48,52]` | `[9,0,4]` |
+
+Each row has exactly the listed canonical members once; its lowest projected class is the member selected by the listed inversion, so both Chord membership and ChordInversion compatibility hold.
 
 For B diminished root `11`, members are `[11,2,5]`; voicing `[50,53,59]` projects `[2,5,11]` and therefore uses inversion `1`, preserving canonical member order. An impossible register requiring three distinct pitches inside a one-semitone range returns `NO_VOICING`. Future validation must cover every profile/template/scale combination, compatibility and inversion invariants, replay, tie-breaks, seeded fixtures, wrapped classes, property checks, and preliminary human musical-quality review; human review evaluates usefulness and style, not deterministic correctness.
