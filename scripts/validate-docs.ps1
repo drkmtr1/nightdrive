@@ -32,7 +32,9 @@ $requiredFiles = @(
     'docs/MIDI_MODEL.md',
     'docs/GENRE_PROFILE_MODEL.md',
     'docs/SYNTH_RECIPE_MODEL.md',
-    'docs/MUSICAL_TIME_MODEL.md'
+    'docs/MUSICAL_TIME_MODEL.md',
+    'docs/FRAMEWORK_VALIDATION.md',
+    'docs/DEPENDENCIES.md'
 )
 
 $issues = [System.Collections.Generic.List[string]]::new()
@@ -45,7 +47,9 @@ foreach ($relativePath in $requiredFiles) {
 }
 
 $markdownFiles = Get-ChildItem -LiteralPath $repositoryRoot -Recurse -File -Filter '*.md' |
-    Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+    Where-Object {
+        $_.FullName -notmatch '[\\/](?:\.git|\.next|node_modules|coverage)[\\/]'
+    }
 
 foreach ($file in $markdownFiles) {
     $content = Get-Content -LiteralPath $file.FullName -Raw

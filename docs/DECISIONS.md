@@ -29,14 +29,14 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 ## ADR-003 — Next.js and TypeScript application direction
 
 **Date:** 2026-09-09
-**Status:** Provisional
+**Status:** Accepted — validated 2026-09-09
 
 **Context:** The product needs a desktop-first interactive web UI, typed shared schemas, server routes, and Vercel compatibility.
-**Decision:** Plan for a supported Next.js App Router and strict TypeScript baseline, selecting exact versions during Stage 2.
+**Decision:** Use Next.js `16.3.4` Active LTS with React/React DOM `19.3.0`, strict TypeScript `7.0.2`, Node.js `24.21.0` LTS, and npm `11.19.0`. Use App Router and the default Node.js server runtime. Keep future deterministic domain modules framework-independent and place Next.js only at the web adapter boundary. Pin direct dependencies exactly and commit npm's lockfile.
 **Alternatives:** Vite SPA plus API; Remix; native desktop.
-**Rationale:** One typed codebase can host UI and bounded server APIs with strong Vercel support.
-**Consequences:** Client/server boundaries and bundle size need active review.
-**Revisit:** Stage 2 spike shows deterministic/audio/editor constraints or portability costs are materially worse.
+**Rationale:** The Stage 2A evidence in [Framework validation](FRAMEWORK_VALIDATION.md) confirms semantic desktop UI, strict shared contracts, explicit server/client boundaries, browser APIs behind client adapters, route testability, production builds, and native Vercel compatibility. A single root application avoids a premature workspace while dependency direction preserves a future extraction path. Biome was selected because Next.js's scaffold supports it and the otherwise-compatible ESLint 9 line was deprecated while ESLint 10 remained outside plugin peer ranges.
+**Consequences:** Server Components remain the default; browser-only audio/editor adapters must use explicit client boundaries. Framework imports are prohibited from future domain modules. Node/npm and direct dependency updates require CI, compatibility, security, and dependency-register review. Bundle/runtime boundaries stay measurable.
+**Revisit:** A future cross-runtime determinism, Web Audio, MIDI, accessibility, hosting, or maintainability spike demonstrates a material limitation, or the selected LTS/runtime line approaches end of support.
 
 ## ADR-004 — Supabase for persistence/authentication
 

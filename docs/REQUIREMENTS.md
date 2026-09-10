@@ -73,6 +73,8 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-004 | P0 | The system emits structured, correlated observability events while excluding secrets, raw tokens, and unnecessary personal content. | AC-024 | 18 |
 | NFR-005 | P0 | A passing build satisfies lint/type/unit/integration/API/RLS/E2E/accessibility/security and required evaluation gates defined in the testing strategy. | AC-029 | 2–20 |
 | NFR-006 | P1 | Versioned canonical formats have documented migration and backward-compatibility behavior. | AC-030 | 3, 12 |
+| NFR-007 | P0 | The application foundation uses documented supported exact tool versions and a locked dependency graph that passes clean install, format, lint, strict type, test, documentation, and production-build gates. | AC-031 | 2A |
+| UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules
 

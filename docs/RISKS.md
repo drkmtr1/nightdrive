@@ -24,5 +24,6 @@ Scale: likelihood/severity **Low, Medium, High**. Owners are roles until assigne
 | R-018 | Data evolution | Schema/profile changes make history unreproducible. | M | H | immutable versions, schema migration fixtures, retain inputs/hashes. | replay tests | Architecture/Data |
 | R-019 | Copyright | Users request direct imitation of protected compositions. | M | H | product policy, original bounded profiles, refusal/UX guidance; no reference ingestion V1. | abuse reports/eval prompts | Product/Security |
 | R-020 | Performance | Dense editor/generation is slow on typical hardware. | M | M | event limits, profiling, virtualization only if measured, performance budgets. | percentiles/device tests | Engineering |
+| R-021 | Toolchain | Fast framework/compiler/tool releases drift out of peer support or security maintenance. | M | H | LTS runtime/framework, exact direct pins, lockfile, dependency register, clean-install/CI/build gates; reject peer overrides. | update/audit alerts, install warnings, quarterly support review | Engineering/Security |
 
 Review the register at each milestone entry/exit and when scope, provider, dependency, data model, or production environment changes.
