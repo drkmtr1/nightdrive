@@ -17,7 +17,7 @@ Initial scales are Major, Natural Minor, Harmonic Minor, Melodic Minor, Dorian, 
 
 ## V1 ChordQuality contract (Stage 3B2b2b)
 
-This is a documentation-only contract; no production `ChordQuality` exists yet. The vocabulary and formulas are versioned as one canonical contract (conceptually `ChordQuality` contract version + stable quality ID → immutable formula). The version belongs to the vocabulary/schema contract and is not redundant per-instance derived state; serialization/version mechanics remain for the implementation milestone.
+The contract was defined in Stage 3B2b2b and implemented in Stage 3B2b2c. The vocabulary and formulas are versioned as one canonical contract (conceptually `ChordQuality` contract version + stable quality ID → immutable formula). The version belongs to the vocabulary/schema contract and is not redundant per-instance derived state; serialization uses the versioned schema without a per-instance version field.
 
 | Label | Stable ID | Tonic-relative semitone formula | Profile justification |
 |---|---|---|---|
@@ -26,6 +26,18 @@ This is a documentation-only contract; no production `ChordQuality` exists yet. 
 | Diminished triad | `diminished-triad` | `[0,3,6]` | Compact leading-tone/tension color for harmonic-minor and darker chromatic contexts across the profiles. |
 
 These formulas are immutable tonic-relative pitch-class membership sets only. Ordering, octave duplication, root, inversions, voicings, spelling, and extensions are outside `ChordQuality`. Suspended, augmented, seventh, altered, extended, borrowed, slash, and modal-interchange structures are deferred. Seventh structures will be future extension metadata on `Chord`, not standalone quality identities.
+
+## V1 Chord aggregate contract (Stage 3B2b2d)
+
+This is a documentation-only contract; no production `Chord` exists yet. Canonical `Chord` identity contains exactly `root: PitchClass` and `quality: ChordQuality` for the initial triad-only implementation. Extensions are not supported initially and will be a separately versioned field/contract only when authorized. Pitch-class membership is deterministic derived state: add each quality offset to the root modulo 12, without storing or serializing a duplicate member list. Formula order is canonical normalization order, not a voicing or inversion.
+
+For the four accepted V1 profiles—Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk—this triad-only primitive is sufficient as the immediate next implementation because it establishes deterministic Chord identity and membership, not the full harmonic-language feature set. Root plus major, minor, and diminished triad quality is enough to validate that identity layer. Richer seventh/extension structures may be musically useful later but are not required to validate Chord itself; they remain future extension metadata owned by Chord under a separately accepted contract. Stage 4 harmony must not infer or implement extension support until that contract is authorized.
+
+Root is numeric chromatic identity only; it contains no spelling, enharmonic preference, octave, MIDI pitch, or key-signature meaning. Two Chords are equal iff root, quality, and any future extension metadata are equal; contextual membership coincidence does not collapse distinct identities.
+
+The future serializer is `nightdrive.chord.v1` with the minimal triad representation `{"schema":"nightdrive.chord.v1","rootSemitoneClass":0,"quality":"major-triad"}`. It contains no derived membership, inversion, voicing, spelling, display, timing, or context fields. Future extension semantics require a later accepted contract/schema version.
+
+`ChordInversion` will identify the bass member without changing Chord identity. `ChordVoicing` will realize ordered absolute MIDI pitches with range/spacing/doubling as appropriate without becoming Chord identity. The future harmony engine selects chords and owns progression, function, inversion, voicing, voice-leading, tension, and movement decisions; none are canonical Chord properties.
 
 ## Composition hierarchy
 

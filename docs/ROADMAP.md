@@ -101,13 +101,22 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ##### Stage 3B2b2c — ChordQuality primitive
 
-**Status:** Implemented and validated on this bounded branch; merge remains a human/review decision.
+**Status:** Merged and complete through PR #9 (`6ca4611`).
 **Objective:** Implement the versioned closed V1 ChordQuality contract without introducing Chord or harmony semantics.
 **Capabilities:** Exactly three canonical IDs, immutable validated formulas, deterministic equality, and `nightdrive.chord-quality.v1` serialization.
 **Dependencies:** Merged Stage 3B2b2b contract and explicit Stage 3B2b2c authorization.
 **Non-goals:** Chord, roots, extensions, seventh identities, inversions, voicings, harmony, progression, spelling, named intervals, generation, MIDI, persistence, AI, UI, or deployment.
 **Tests:** Closed-vocabulary rejection, exact formula invariants, immutability, all ordered equality pairs, serializer fixtures, and forbidden-field checks.
 **Exit:** MUS-013/NFR-013 and AC-040 pass without new dependencies or framework coupling.
+
+##### Stage 3B2b2d — Chord aggregate contract definition
+
+**Status:** Contract defined by this documentation-only milestone; production implementation is not authorized.
+**Objective:** Freeze the minimal canonical Chord identity and its boundaries before implementation.
+**Contract:** Chord contains root `PitchClass` plus `ChordQuality`; triad membership is derived by tonic-relative formula plus modulo-12 root projection. Extensions are deferred and initially unsupported. Equality uses canonical stored identity; serialization is reserved as `nightdrive.chord.v1` without derived membership.
+**Dependencies:** Merged Stage 3B2b2c and explicit authorization for a later Chord implementation task.
+**Non-goals:** Chord production code, extensions, inversions, voicings, harmony, progression, spelling, MIDI, generation, persistence, AI, or UI.
+**Exit:** MUS-014 and AC-041 contract evidence is reviewed; no implementation completion is claimed.
 
 ##### Stage 3B2b2 — Remaining theory and determinism foundations
 
