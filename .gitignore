@@ -1,0 +1,21 @@
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
+# Dependencies and framework output (for later authorized stages)
+node_modules/
+.next/
+out/
+coverage/
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local logs and temporary artifacts
+*.log
+tmp/
+temp/
