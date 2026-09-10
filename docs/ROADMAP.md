@@ -116,6 +116,15 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Contract:** Chord contains root `PitchClass` plus `ChordQuality`; triad membership is derived by tonic-relative formula plus modulo-12 root projection. Extensions are deferred and initially unsupported. Equality uses canonical stored identity; serialization is reserved as `nightdrive.chord.v1` without derived membership.
 **Dependencies:** Merged Stage 3B2b2c and explicit authorization for a later Chord implementation task.
 **Non-goals:** Chord production code, extensions, inversions, voicings, harmony, progression, spelling, MIDI, generation, persistence, AI, or UI.
+
+##### Stage 3B2b2e — Chord primitive implementation
+
+**Status:** Implemented on this bounded branch; pending review and merge.
+**Objective:** Implement the canonical triad-only Chord identity.
+**Capabilities:** Immutable root `PitchClass` plus `ChordQuality`, derived modulo-12 membership, canonical equality, and minimal `nightdrive.chord.v1` serialization.
+**Dependencies:** Merged Stage 3B2b2d and explicit Stage 3B2b2e authorization.
+**Non-goals:** Extensions, seventh identities, inversions, voicings, harmony, progression, spelling, MIDI, generation, persistence, AI, UI, or deployment.
+**Tests:** All 36 canonical chords, membership derivation and immutability, 1,296 ordered equality pairs, runtime forgery rejection, exact serialization fixtures, and forbidden-field checks.
 **Exit:** MUS-014 and AC-041 contract evidence is reviewed; no implementation completion is claimed.
 
 ##### Stage 3B2b2 — Remaining theory and determinism foundations

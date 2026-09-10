@@ -4,3 +4,4 @@ export * from "./pitch";
 export * from "./scale";
 export * from "./key";
 export * from "./chord-quality";
+export * from "./chord";

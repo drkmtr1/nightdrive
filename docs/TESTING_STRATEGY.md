@@ -59,6 +59,10 @@ This documentation-only gate reviews minimal root-plus-quality identity, derived
 
 Tests cover the closed three-ID vocabulary, runtime rejection of malformed and forged identities, exact formula invariants, frozen returned formulas, every ordered equality pair, exact fixed-order serialization fixtures, and exclusion of root, inversion, voicing, spelling, extension, display, and per-instance version fields.
 
+## Stage 3B2b2e Chord primitive
+
+The suite exhaustively constructs all 36 root/quality identities, verifies immutable two-field state and modulo-12 membership derivation, rejects forged runtime values, checks all 1,296 ordered equality pairs, and validates repeated exact minimal serialization with forbidden-field checks.
+
 Mock network/provider/storage clocks at boundaries; do not mock deterministic domain code in integration tests. Use a seeded project factory and fixed UTC clock. Human musical ratings are preserved as evaluation evidence, not converted into unit-test truth.
 
 ## CI gates

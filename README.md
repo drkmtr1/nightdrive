@@ -6,9 +6,9 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 ## Current status
 
-**Stage 3B2b2a — Key primitive.** The repository contains the merged Stage 2A, Stage 3A, Stage 3B1, Stage 3B2a, and Stage 3B2b1 foundations plus an immutable numeric `Key` composed of tonic `PitchClass` and canonical `ScaleType`, delegated pitch-class projection, degree lookup, membership, equality, and deterministic serialization.
+**Stage 3B2b2e — Chord primitive.** The repository contains the merged musical-domain foundations through ChordQuality and Chord aggregate contract, plus immutable triad-only `Chord` identity (`PitchClass` root + `ChordQuality`), derived modulo-12 membership, equality, and deterministic serialization.
 
-Note spelling, octave labels, key display naming, enharmonic policy, key signatures, interval names/quality, chords, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally unimplemented.
+Note spelling, octave labels, key display naming, enharmonic policy, key signatures, interval names/quality, chord extensions, PRNG/hash, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally deferred.
 
 Start with:
 

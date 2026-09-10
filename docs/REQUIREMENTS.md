@@ -42,6 +42,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-012 | P0 | The V1 `ChordQuality` contract is one explicitly versioned closed triad-only vocabulary with stable IDs and exact tonic-relative chromatic membership formulas; version belongs to the vocabulary/schema contract rather than redundant per-instance state. Quality excludes root, ordering, inversions, voicings, spelling, and extensions, and seventh structures remain deferred extension metadata. | AC-039 | 3B2b2b |
 | MUS-013 | P0 | The implemented `ChordQuality` primitive accepts exactly the three versioned canonical IDs and immutable formulas, supports deterministic equality and serialization, and does not introduce Chord, extension, inversion, voicing, root, spelling, or harmony semantics. | AC-040 | 3B2b2c |
 | MUS-014 | P0 | The future canonical Chord contract contains only numeric root `PitchClass` and `ChordQuality` initially; base membership is deterministic derived modulo-12 state, extensions are deferred, and inversion, voicing, harmony, spelling, and context remain outside Chord identity. | AC-041 | 3B2b2d |
+| MUS-015 | P0 | The implemented Chord primitive contains exactly root `PitchClass` and `ChordQuality`; membership is derived modulo 12, equality uses canonical identity, and serialization excludes derived or future extension state. | AC-042 | 3B2b2e |
 
 ## AI behavior
 
@@ -88,6 +89,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-011 | P0 | Equivalent validated scale identities and formulas serialize to byte-equivalent fixed-order `nightdrive.scale.v1` JSON independent of locale, framework, and ambient runtime state. | AC-037 | 3B2b1 |
 | NFR-012 | P0 | Equivalent validated keys serialize to byte-equivalent fixed-order `nightdrive.key.v1` JSON containing only tonic semitone class and canonical scale identity. | AC-038 | 3B2b2a |
 | NFR-013 | P0 | Equivalent validated ChordQuality values serialize to byte-equivalent fixed-order `nightdrive.chord-quality.v1` JSON containing only canonical quality ID and formula. | AC-040 | 3B2b2c |
+| NFR-014 | P0 | Equivalent validated Chord values serialize to byte-equivalent fixed-order `nightdrive.chord.v1` JSON containing only root semitone class and canonical quality ID. | AC-042 | 3B2b2e |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules
