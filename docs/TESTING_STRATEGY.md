@@ -99,6 +99,10 @@ Tests cover immutable profile voicing policies, deterministic lexicographic cand
 
 Tests cover exact integer adjacent voice-leading cost, deterministic lower-cost selection, independent lower-maximum, lower-bass, and lower-middle tie-break evidence, candidate-order independence, immutable results, and stable empty-input failure. The lower-top tie-break is redundant because top pitch is the maximum pitch for a strictly ascending three-note voicing. No progression-wide optimization, lookahead, seeded variation, PRNG, MIDI, or later Harmony behavior is included.
 
+## Stage 4B4 Harmony progression realization contract
+
+The future implementation evidence must cover deterministic first-slot anchoring, sequential adjacent selection, profile soft-preference ranks, template inversion restrictions, slot order and bar preservation, specific failure propagation, immutable non-canonical result/provenance shape, repeatability, and human review of usefulness and profile fit. It must not claim progression-wide optimization, seeded variation, MIDI, or later Harmony behavior.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.
