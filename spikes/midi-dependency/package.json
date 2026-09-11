@@ -1,0 +1,9 @@
+{
+  "name": "nightdrive-midi-dependency-spike",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "midi-file": "1.2.4",
+    "midi-writer-js": "3.2.1"
+  }
+}
