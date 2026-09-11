@@ -16,7 +16,10 @@ export function progressionCandidates(
   return enumerateChordVoicingCandidates(chord, profile, inversions);
 }
 
-function compareFirstPitchTuples(left: ChordVoicingCandidate, right: ChordVoicingCandidate): number {
+function compareFirstPitchTuples(
+  left: ChordVoicingCandidate,
+  right: ChordVoicingCandidate,
+): number {
   const leftPitches = left.voicing.midiPitches;
   const rightPitches = right.voicing.midiPitches;
   return (
@@ -26,7 +29,10 @@ function compareFirstPitchTuples(left: ChordVoicingCandidate, right: ChordVoicin
   );
 }
 
-function compareStage4B3PitchTieBreak(left: ChordVoicingCandidate, right: ChordVoicingCandidate): number {
+function compareStage4B3PitchTieBreak(
+  left: ChordVoicingCandidate,
+  right: ChordVoicingCandidate,
+): number {
   const leftPitches = left.voicing.midiPitches;
   const rightPitches = right.voicing.midiPitches;
   return (
