@@ -565,7 +565,11 @@ export function realizeHarmonyProgression(
     return fail("template", "template is not supported for this harmony profile.");
   const key = createKey(keyValue.tonic, keyValue.scale);
   if (key.scale !== templateValidated.scale)
-    return fail("scale", "key scale does not match template scale.", HARMONY_ERROR_CODES.scaleMismatch);
+    return fail(
+      "scale",
+      "key scale does not match template scale.",
+      HARMONY_ERROR_CODES.scaleMismatch,
+    );
 
   const chords = realizeHarmonyTemplate(templateValidated, key);
   const slots: HarmonyProgressionSlot[] = [];
