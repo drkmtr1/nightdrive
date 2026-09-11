@@ -46,23 +46,13 @@ function writeMidiFile() {
 function writeMidiWriter() {
   const conductor = new MidiWriter.Track();
   conductor.addTrackName("Conductor");
-  conductor.addEvent(new MidiWriter.TimeSignatureEvent({
-    numerator: 4,
-    denominator: 4,
-    metronome: 24,
-    thirtyseconds: 8,
-  }));
-  conductor.addEvent(new MidiWriter.TempoEvent({ bpm: 120 }));
+  conductor.setTimeSignature(4, 4);
+  conductor.setTempo(120);
   const chords = new MidiWriter.Track();
   chords.addTrackName("Chords");
-  chords.addEvent(new MidiWriter.NoteOnEvent({ channel: 1, pitch: 60, velocity: 100, tick: 0 }));
-  chords.addEvent(new MidiWriter.NoteOnEvent({ channel: 1, pitch: 64, velocity: 100, tick: 0 }));
-  chords.addEvent(new MidiWriter.NoteOnEvent({ channel: 1, pitch: 67, velocity: 100, tick: 0 }));
-  chords.addEvent(new MidiWriter.NoteOffEvent({ channel: 1, pitch: 60, velocity: 0, duration: "T960", tick: 960 }));
-  chords.addEvent(new MidiWriter.NoteOnEvent({ channel: 1, pitch: 60, velocity: 90, tick: 960 }));
-  chords.addEvent(new MidiWriter.NoteOffEvent({ channel: 1, pitch: 60, velocity: 0, duration: "T28800", tick: END }));
-  chords.addEvent(new MidiWriter.NoteOffEvent({ channel: 1, pitch: 64, velocity: 0, duration: "T30720", tick: END }));
-  chords.addEvent(new MidiWriter.NoteOffEvent({ channel: 1, pitch: 67, velocity: 0, duration: "T30720", tick: END }));
+  // Documented NoteEvent uses startTick/tick, 1-based channels, and velocity 1..100.
+  chords.addEvent(new MidiWriter.NoteEvent({ pitch: [60, 64, 67], duration: "T960", channel: 1, velocity: 79, startTick: 0 }));
+  chords.addEvent(new MidiWriter.NoteEvent({ pitch: [60], duration: "T29760", channel: 1, velocity: 71, startTick: 960 }));
   return new MidiWriter.Writer([conductor, chords], { ticksPerBeat: PPQ }).buildFile();
 }
 
@@ -70,6 +60,7 @@ function readVlq(bytes, index) {
   let value = 0;
   let count = 0;
   while (true) {
+    if (index >= bytes.length) throw new Error("truncated VLQ");
     const byte = bytes[index++];
     value = (value << 7) | (byte & 0x7f);
     count += 1;
@@ -89,8 +80,10 @@ function inspect(bytes) {
   const trackReports = [];
   for (let trackIndex = 0; trackIndex < tracks; trackIndex += 1) {
     if (text(offset, 4) !== "MTrk") throw new Error("missing MTrk");
+    if (offset + 8 > bytes.length) throw new Error("truncated track header");
     const length = view.getUint32(offset + 4);
     const end = offset + 8 + length;
+    if (end > bytes.length) throw new Error("truncated track payload");
     let cursor = offset + 8;
     let absolute = 0;
     let running = 0;
@@ -105,8 +98,22 @@ function inspect(bytes) {
       if (status === 0xff) {
         const type = bytes[cursor++];
         const size = readVlq(bytes, cursor);
+        if (size.next + size.value > end) throw new Error("truncated meta payload");
+        const payload = bytes.slice(size.next, size.next + size.value);
         cursor = size.next + size.value;
-        events.push({ tick: absolute, status: `ff${type.toString(16).padStart(2, "0")}` });
+        const event = { tick: absolute, status: `ff${type.toString(16).padStart(2, "0")}` };
+        if (type === 0x03) event.text = new TextDecoder().decode(payload);
+        if (type === 0x58) {
+          if (payload.length !== 4) throw new Error("invalid time-signature payload");
+          event.numerator = payload[0];
+          event.denominatorExponent = payload[1];
+          event.denominator = 2 ** payload[1];
+        }
+        if (type === 0x51) {
+          if (payload.length !== 3) throw new Error("invalid tempo payload");
+          event.microsecondsPerBeat = (payload[0] << 16) | (payload[1] << 8) | payload[2];
+        }
+        events.push(event);
         if (type === 0x2f) break;
       } else if ((status & 0xf0) === 0x80 || (status & 0xf0) === 0x90) {
         const pitch = bytes[cursor++];

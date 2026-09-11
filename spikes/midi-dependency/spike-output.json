@@ -99,15 +99,20 @@
             "events": [
               {
                 "tick": 0,
-                "status": "ff03"
+                "status": "ff03",
+                "text": "Conductor"
               },
               {
                 "tick": 0,
-                "status": "ff58"
+                "status": "ff58",
+                "numerator": 4,
+                "denominatorExponent": 1,
+                "denominator": 2
               },
               {
                 "tick": 0,
-                "status": "ff51"
+                "status": "ff51",
+                "microsecondsPerBeat": 500000
               },
               {
                 "tick": 30720,
@@ -124,7 +129,8 @@
             "events": [
               {
                 "tick": 0,
-                "status": "ff03"
+                "status": "ff03",
+                "text": "Chords"
               },
               {
                 "tick": 0,
@@ -320,91 +326,107 @@
         "division": 960,
         "trackReports": [
           {
-            "length": 40,
+            "length": 32,
             "events": [
               {
                 "tick": 0,
-                "status": "ff03"
+                "status": "ff03",
+                "text": "Conductor"
               },
               {
                 "tick": 0,
-                "status": "ff58"
+                "status": "ff58",
+                "numerator": 4,
+                "denominatorExponent": 2,
+                "denominator": 4
+              },
+              {
+                "tick": 0,
+                "status": "ff51",
+                "microsecondsPerBeat": 500000
+              },
+              {
+                "tick": 0,
+                "status": "ff2f"
               }
             ],
-            "eotCount": 0,
-            "eotTicks": []
+            "eotCount": 1,
+            "eotTicks": [
+              0
+            ]
           },
           {
             "length": 53,
             "events": [
               {
                 "tick": 0,
-                "status": "ff03"
+                "status": "ff03",
+                "text": "Chords"
               },
               {
                 "tick": 0,
                 "status": 144,
                 "channel": 0,
                 "pitch": 60,
-                "velocity": 127
+                "velocity": 100
               },
               {
                 "tick": 0,
                 "status": 144,
                 "channel": 0,
                 "pitch": 64,
-                "velocity": 127
+                "velocity": 100
               },
               {
                 "tick": 0,
                 "status": 144,
                 "channel": 0,
                 "pitch": 67,
-                "velocity": 127
+                "velocity": 100
               },
               {
                 "tick": 960,
                 "status": 128,
                 "channel": 0,
                 "pitch": 60,
-                "velocity": 64
+                "velocity": 100
+              },
+              {
+                "tick": 960,
+                "status": 128,
+                "channel": 0,
+                "pitch": 64,
+                "velocity": 100
+              },
+              {
+                "tick": 960,
+                "status": 128,
+                "channel": 0,
+                "pitch": 67,
+                "velocity": 100
               },
               {
                 "tick": 960,
                 "status": 144,
                 "channel": 0,
                 "pitch": 60,
-                "velocity": 114
+                "velocity": 90
               },
               {
-                "tick": 29760,
+                "tick": 30720,
                 "status": 128,
                 "channel": 0,
                 "pitch": 60,
-                "velocity": 64
+                "velocity": 90
               },
               {
-                "tick": 60480,
-                "status": 128,
-                "channel": 0,
-                "pitch": 64,
-                "velocity": 64
-              },
-              {
-                "tick": 91200,
-                "status": 128,
-                "channel": 0,
-                "pitch": 67,
-                "velocity": 64
-              },
-              {
-                "tick": 91200,
+                "tick": 30720,
                 "status": "ff2f"
               }
             ],
             "eotCount": 1,
             "eotTicks": [
-              91200
+              30720
             ]
           }
         ],
@@ -430,7 +452,7 @@
           0,
           0,
           0,
-          40,
+          32,
           0,
           255,
           3,
@@ -448,16 +470,8 @@
           255,
           88,
           4,
-          0,
-          0,
-          0,
-          12,
-          0,
-          11,
-          236,
-          0,
-          0,
-          10,
+          4,
+          2,
           24,
           8,
           0,
@@ -492,42 +506,42 @@
           0,
           144,
           60,
-          127,
+          100,
           0,
           144,
           64,
-          127,
+          100,
           0,
           144,
           67,
-          127,
+          100,
           135,
           64,
           128,
           60,
-          64,
-          0,
-          144,
-          60,
-          114,
-          129,
-          225,
-          0,
-          128,
-          60,
-          64,
-          129,
-          240,
+          100,
           0,
           128,
           64,
-          64,
-          129,
-          240,
+          100,
           0,
           128,
           67,
+          100,
+          0,
+          144,
+          60,
+          90,
+          129,
+          232,
           64,
+          128,
+          60,
+          90,
+          0,
+          255,
+          47,
+          0,
           0,
           255,
           47,
