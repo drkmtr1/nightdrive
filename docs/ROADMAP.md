@@ -261,7 +261,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 5 — MIDI engine and export
 
-Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1, Stage 5B2a, Stage 5B2b, and Stage 5C1 are merged bounded implementation/evidence slices; MIDI-004 is accepted only for the declared tested FL Studio environment, while broader compatibility, browser delivery, and later MIDI behavior remain separately gated.
+Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1, Stage 5B2a, Stage 5B2b, and Stage 5C1 are merged bounded implementation/evidence slices, and Stage 5D1 is the current bounded browser-delivery implementation slice; MIDI-004 is accepted only for the declared tested FL Studio environment, while broader compatibility and later MIDI behavior remain separately gated.
 
 ### Stage 5A — MIDI boundary and dependency-spike definition
 
@@ -275,7 +275,7 @@ Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5
 
 ### Stage 5B — MIDI implementation
 
-Stage 5B is delivered through separately bounded implementation slices. Stage 5B1 establishes the owned semantic IR, Stage 5B2a provides the isolated serializer adapter, and Stage 5B2b provides independent parser/reference and round-trip evidence; production parser, browser delivery, and later export work remain separately gated.
+Stage 5B is delivered through separately bounded implementation slices. Stage 5B1 establishes the owned semantic IR, Stage 5B2a provides the isolated serializer adapter, and Stage 5B2b provides independent parser/reference and round-trip evidence; production parser and later export work remain separately gated.
 
 #### Stage 5B1 — Nightdrive-owned MIDI IR and strict validators
 
@@ -317,16 +317,26 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 **Tests/evidence:** Exact byte/hash regeneration, independent Format 1/960 parsing, expected tempo/meter/tracks/events, explicit Note Off and terminal-boundary checks, plus the manual protocol in `docs/reviews/STAGE5_FL_STUDIO_INTEROPERABILITY.md`.
 **Exit:** Automated fixture evidence and the recorded clean re-import review pass for the declared environment; exact numeric velocity preservation remains not directly verifiable, and broader compatibility remains deferred.
 
+#### Stage 5D1 — Browser MIDI download delivery adapter
+
+**Status:** Current bounded implementation slice; full export UX and later delivery workflows remain separately gated.
+**Objective:** Deliver already-produced deterministic MIDI bytes through a browser-only download adapter without changing MIDI semantics or requiring a server route.
+**Capabilities:** Strict `Uint8Array` input, deterministic safe `.mid` filename normalization, `audio/midi` Blob creation, temporary-anchor download triggering, and deterministic anchor/object-URL cleanup.
+**Dependencies:** Existing Stage 5B2a serializer adapter and browser platform APIs; no new package.
+**Non-goals:** Serializer or IR changes, server/API delivery, persistence, package/ZIP export, component-file packaging, browser export UX, FL Studio compatibility claims, or later MIDI behavior.
+**Tests/evidence:** Filename edge cases, exact Blob bytes and MIME type, click/filename/object-URL lifecycle, DOM cleanup, input immutability, repeated invocation, failure cleanup, and static inward-boundary checks.
+**Exit:** Focused browser-delivery tests and repository gates pass with no MIDI semantic or serializer changes and no new dependency.
+
 #### Later MIDI delivery and interoperability work
 
 **Status:** Not authorized; requires a separate bounded task after any further compatibility review.
 **Objective:** To be defined by an explicitly authorized implementation brief against the Stage 5A contract.
 **Capabilities:** None approved.
 **Dependencies:** Accepted Stage 5A contract, completed dependency spike, reviewed Stage 5B2a adapter, accepted Stage 5B2b evidence, and Stage 5C1 review.
-**Non-goals:** Any work inferred from this placeholder, including browser delivery or later package workflow.
+**Non-goals:** Any work inferred from this placeholder, including package workflow or later delivery behavior.
 
 **Umbrella objective:** Produce independently valid, deterministic standard MIDI from canonical events.
-**Capabilities:** SMF writer/reader validation, conductor/component tracks, stable ordering, initial download.
+**Capabilities:** SMF writer/reader validation, conductor/component tracks, stable ordering, browser download adapter.
 **Dependencies:** Stage 3; harmony fixtures.
 **Non-goals:** Complete production package or `.flp`.
 **Tests:** Binary fixtures, independent parser, round trip, malformed cases, FL Studio import spike.

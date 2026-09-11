@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Stage 2A implements the Next.js web adapter shell and engineering gates. The framework-independent domain now includes musical time, pitch, interval, scale, Key, ChordQuality, Chord, ChordInversion, ChordVoicing, and the versioned PRNG. Bounded Harmony runtime includes the immutable template catalog, profile-constrained hard-valid voicing candidate enumeration, adjacent voice-leading cost, and deterministic candidate selection. Full progression generation/optimization, seeded Harmony variation, MIDI, bass, arp, melody, AI generation, and persistence remain target architecture and are not implemented. Technology status remains authoritative in [Decisions](DECISIONS.md).
+Stage 2A implements the Next.js web adapter shell and engineering gates. The framework-independent domain now includes musical time, pitch, interval, scale, Key, ChordQuality, Chord, ChordInversion, ChordVoicing, and the versioned PRNG. Bounded Harmony runtime includes the immutable template catalog, profile-constrained hard-valid voicing candidate enumeration, adjacent voice-leading cost, and deterministic candidate selection. Stage 5B1/B2a/B2b provide the owned MIDI IR, isolated serializer, and independent reference evidence; Stage 5C1 provides the controlled fixture/interoperability record; Stage 5D1 provides a browser-only adapter for already-produced MIDI bytes. Full progression generation/optimization, seeded Harmony variation, broader MIDI compatibility, package/export UX, bass, arp, melody, AI generation, and persistence remain target architecture and are not implemented. Technology status remains authoritative in [Decisions](DECISIONS.md).
 
 ## System shape
 
@@ -50,7 +50,7 @@ Stage 5A defined the MIDI boundary. Stage 5B1 provides a framework-independent N
 - `src/app/api/health/live`: deterministic, non-cacheable process liveness without dependency or secret disclosure.
 - `src/music-domain`: plain TypeScript canonical musical-time, pitch-identity, signed chromatic-interval, scale-formula, and Key values and operations. Production files accept only relative imports; a test covers static, dynamic, re-export, and side-effect-only forms to enforce the absence of framework, platform, and package dependencies.
 - Root tool configuration: exact runtime/dependency policy, strict TypeScript, Biome, Vitest/jsdom/axe-core, and CI.
-- No named/diatonic interval, note spelling, key/chord theory, composition, generator, later MIDI delivery/export workflow, audio, persistence, AI, or provider module is created prematurely; the accepted bounded MIDI IR/adapter stages remain the only MIDI implementation slices.
+- No named/diatonic interval, note spelling, key/chord theory, composition, generator, full MIDI export workflow, audio, persistence, AI, or provider module is created prematurely; the accepted bounded MIDI IR/serializer/browser-delivery slices remain the only MIDI implementation slices.
 
 Framework-independent modules live outside `src/app`, expose plain TypeScript APIs, and contain no `next/*`, React, DOM, Node-only, database, or provider imports unless the module is explicitly an adapter. The Stage 3A dependency-boundary test enforces this rule for `src/music-domain` production files.
 
