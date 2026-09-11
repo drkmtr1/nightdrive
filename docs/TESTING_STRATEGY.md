@@ -120,3 +120,9 @@ Prioritize behavioral/invariant and branch-risk coverage over a single percentag
 ## Environments
 
 Fast deterministic checks run on every change. Database/browser suites run in CI with isolated data. Preview smoke tests run after deployment. Production gets non-destructive smoke checks. FL Studio verification remains a controlled human gate until automatable evidence is credible.
+
+## Stage 5A MIDI boundary and dependency-spike definition
+
+This documentation-only milestone freezes the evidence plan for a Nightdrive-owned MIDI IR and isolated Standard MIDI adapter. Review covers validated canonical-composition input, 960-PPQ integer ticks, format-1 conductor/component policy, fixed channels, note-on/off expansion, equal-tick ordering, structured failures, semantic versus binary determinism, and the FL Studio import checklist. It does not claim a writer, parser, browser download, `.mid` fixture, or dependency exists.
+
+The later bounded dependency spike compares `midi-file` and `midi-writer-js` using deterministic binary fixtures, independent parsing, malformed-input behavior, browser/Node and TypeScript support, license/health/security, size/transitives, and adapter replaceability. Adoption requires evidence that Nightdrive semantics remain adapter-owned; otherwise custom encoding requires architecture review. No package installation or implementation evidence belongs to Stage 5A.
