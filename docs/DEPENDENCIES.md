@@ -41,3 +41,7 @@ Direct versions are exact and npm's lockfile freezes the transitive graph. Updat
 - ESLint 9.39.5: peer-compatible but emitted a deprecation/no-longer-supported warning during installation.
 - Prettier and `eslint-config-prettier`: unnecessary after selecting Biome.
 - Tailwind CSS, component libraries, state managers, schema libraries, Playwright, Supabase, Vercel SDKs, AI SDKs, audio, and MIDI packages: no Stage 2A requirement justifies them.
+
+## Stage 5 MIDI dependency spike
+
+The isolated Stage 5A spike evaluates `midi-file` `1.2.4` and `midi-writer-js` `3.2.1` under `spikes/midi-dependency`; neither is a production dependency. The evidence and recommendation are recorded in [MIDI dependency spike](reviews/MIDI_DEPENDENCY_SPIKE.md). A later adoption task must repeat security/audit review and update this register only after explicit approval.
