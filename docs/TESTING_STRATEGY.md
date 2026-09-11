@@ -97,7 +97,7 @@ Tests cover immutable profile voicing policies, deterministic lexicographic cand
 
 ## Stage 4B3 Adjacent voice-leading selection
 
-Tests cover exact integer adjacent voice-leading cost, deterministic lower-cost selection, applicable tie-break ordering, candidate-order independence, immutable results, and stable empty-input failure. No progression-wide optimization, lookahead, seeded variation, PRNG, MIDI, or later Harmony behavior is included.
+Tests cover exact integer adjacent voice-leading cost, deterministic lower-cost selection, independent lower-maximum, lower-bass, and lower-middle tie-break evidence, candidate-order independence, immutable results, and stable empty-input failure. The lower-top tie-break is redundant because top pitch is the maximum pitch for a strictly ascending three-note voicing. No progression-wide optimization, lookahead, seeded variation, PRNG, MIDI, or later Harmony behavior is included.
 
 ## Stage 3B2b2g ChordInversion primitive
 

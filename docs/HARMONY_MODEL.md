@@ -58,6 +58,8 @@ For adjacent voicings `a` and `b`, V1 cost is the integer
 `abs(bassΔ) + abs(middleΔ) + abs(topΔ)`.
 No additional penalty is normative in V1. Select the minimum cost, then break ties by: (1) lower maximum pitch, (2) lower bass pitch, (3) lower middle pitch, (4) lower top pitch, (5) lower template slot order. This order is explicit and independent of runtime iteration.
 
+For this adjacent single-slot selection, lower template slot order is inapplicable. Because `ChordVoicing` is strictly ascending, top pitch equals maximum pitch; the lower-top comparison is therefore redundant and requires no separate fixture.
+
 Example: `[48,52,55] → [50,53,57]` costs `2+1+2=5`; `[48,52,55] → [48,55,60]` costs `0+3+5=8`, so the first wins. For the same target C-major Chord with the same unrestricted inversion and register/span constraints, `[48,55,64]` costs `0+3+9=12` and `[52,55,60]` costs `4+3+5=12`; both are valid three-member voicings, and lower maximum pitch selects `[52,55,60]` (60 < 64).
 
 ## Seeded variation
