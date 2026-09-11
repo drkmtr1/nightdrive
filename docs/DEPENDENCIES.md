@@ -2,7 +2,7 @@
 
 ## Policy
 
-Direct versions are exact and npm's lockfile freezes the transitive graph. Updates require current support/license/security review, clean `npm ci`, `npm ls`, `npm audit`, full validation, and this register in the same change. No dependency is present for a future music, MIDI, audio, persistence, Supabase, AI, or deployment feature.
+Direct versions are exact and npm's lockfile freezes the transitive graph. Updates require current support/license/security review, clean `npm ci`, `npm ls`, `npm audit`, full validation, and this register in the same change. No dependency is present for deferred music, MIDI, audio, persistence, Supabase, AI, or deployment features.
 
 ## Runtime and package manager
 
@@ -18,6 +18,7 @@ Direct versions are exact and npm's lockfile freezes the transitive graph. Updat
 | `next` | 16.3.4 | App Router, server rendering/build, routes, and production server. | MIT; 16.3 is Active LTS. Track monthly security releases and framework advisories. | Core web/server framework and largest dependency. Web adapter can migrate to another framework while domain modules remain plain TypeScript. |
 | `react` | 19.3.0 | Declarative component model required by Next. | MIT; current stable line paired with Next. Avoid unsafe HTML and unnecessary client state. | Client/server component runtime. Removed only with framework replacement. |
 | `react-dom` | 19.3.0 | React DOM renderer required by Next and component tests. | MIT; version-matched to React. | Browser/server rendering runtime; removed with React/framework replacement. |
+| `midi-file` | 1.2.4 | Commodity Standard MIDI File Format 1 byte encoding behind the isolated Stage 5B2a adapter. | MIT; no runtime dependencies; exact version pinned and covered by dependency/audit gates. | Adapter-only runtime dependency; replaceable without changing the Nightdrive-owned MIDI IR or canonical semantics. |
 
 ## Development dependencies
 
@@ -40,8 +41,8 @@ Direct versions are exact and npm's lockfile freezes the transitive graph. Updat
 - ESLint 10.10.0: current stable but outside peer ranges of the Next.js 16.3 lint plugin graph during validation.
 - ESLint 9.39.5: peer-compatible but emitted a deprecation/no-longer-supported warning during installation.
 - Prettier and `eslint-config-prettier`: unnecessary after selecting Biome.
-- Tailwind CSS, component libraries, state managers, schema libraries, Playwright, Supabase, Vercel SDKs, AI SDKs, audio, and MIDI packages: no Stage 2A requirement justifies them.
+- Tailwind CSS, component libraries, state managers, schema libraries, Playwright, Supabase, Vercel SDKs, AI SDKs, and audio packages: no Stage 2A requirement justifies them. Additional MIDI packages remain deferred; Stage 5B2a uses only the approved `midi-file` adapter dependency.
 
 ## Stage 5 MIDI dependency spike
 
-The isolated Stage 5A spike evaluates `midi-file` `1.2.4` and `midi-writer-js` `3.2.1` under `spikes/midi-dependency`; neither is a production dependency. The evidence and recommendation are recorded in [MIDI dependency spike](reviews/MIDI_DEPENDENCY_SPIKE.md). A later adoption task must repeat security/audit review and update this register only after explicit approval.
+The completed Stage 5A spike evaluated `midi-file` `1.2.4` and `midi-writer-js` `3.2.1` under `spikes/midi-dependency`; `midi-file` `1.2.4` is now the approved production dependency for Stage 5B2a, isolated behind `src/midi/adapter`, while `midi-writer-js` remains rejected. The evidence and recommendation are recorded in [MIDI dependency spike](reviews/MIDI_DEPENDENCY_SPIKE.md). Any later dependency adoption must repeat security/audit review and update this register only after explicit approval.

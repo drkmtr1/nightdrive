@@ -1,7 +1,7 @@
 # Stage 5 requirements traceability review
 
 **Baseline:** `c1162ae1f9247d9ec0a1108e719970a88796c3bc`  
-**Scope:** Read-only audit plus one narrow, non-architectural EOT-ordering clarification. No production MIDI code or dependency adoption.
+**Scope:** Requirements traceability review plus the accepted Stage 5B2a isolated serializer adapter. The adapter adds no canonical MIDI state or later workflow behavior.
 
 **Identifier audit:** `MIDI-001` through `MIDI-004` are accepted identifiers in the MIDI requirements table (`docs/REQUIREMENTS.md`, rows 33–36) and are referenced by accepted criteria; they are retained below.
 
@@ -9,13 +9,13 @@
 
 | Requirement / decision | Requirement statement | Authoritative source | Architecture responsibility | Planned module/layer | Validation obligation | Acceptance | Status | Gap / ambiguity |
 |---|---|---|---|---|---|---|---|---|
-| MUS-027 | Define a versioned Nightdrive-owned MIDI IR from validated canonical composition/timing and derived Harmony input; MIDI bytes are not canonical. | `REQUIREMENTS.md`; ADR-017 | Own semantic mapping and IR types; keep Harmony derived. | Stage 5B1 `midi` IR boundary and later adapter. | IR schema/type and validator tests; no third-party types. | AC-054 | Implemented in Stage 5B1 | Exact mapper and version-serialization mechanics remain deferred. |
-| NFR-026 | Freeze Format 1/960, tracks/channels, ordering, lifecycle, failures, determinism, adapter, independent parser, and dependency gate. | `REQUIREMENTS.md`; `MIDI_MODEL.md`; ADR-017 | Domain owns policy; adapter owns commodity bytes. | `midi` mapper plus isolated SMF adapter. | Binary fixtures, byte repeatability, independent inspector/parser, malformed cases. | AC-054/055 | Aligned after EOT clarification | Production serializer and parser remain unimplemented. |
-| AC-054 | Stage 5A contract evidence covers IR, canonical input, Format 1, 960 PPQ, channels, Note Off, EOT, ordering, failures, determinism, and adapter isolation. | `ACCEPTANCE_CRITERIA.md` | Contract review, not runtime implementation. | Docs and future `midi` module. | Documentation review and implementation test plan. | AC-054 | Accepted/merged | No production evidence is claimed. |
-| AC-055 | Compare `midi-file` and `midi-writer-js`; adoption requires evidence preserving Nightdrive semantics. | `ACCEPTANCE_CRITERIA.md`; spike report | Dependency remains behind adapter and cannot define semantics. | Spike tooling, future adapter. | Candidate matrix, raw bytes, independent inspector, browser smoke. | AC-055 | Spike complete; adoption pending | Root manifest/lockfile and register update still belong to adoption task. |
-| ADR-017 | Versioned Nightdrive MIDI boundary; Format 1/960; adapter and independent validation; no serializer/dependency adoption in Stage 5B1. | `DECISIONS.md` | Preserve inward dependency direction and canonical ownership. | `midi` IR and later adapter boundary. | IR validation now; cross-runtime and FL Studio evidence at implementation/release. | AC-054/055 | Accepted | None. |
+| MUS-027 | Define a versioned Nightdrive-owned MIDI IR from validated canonical composition/timing and derived Harmony input; MIDI bytes are not canonical. | `REQUIREMENTS.md`; ADR-017 | Own semantic mapping and IR types; keep Harmony derived. | Stage 5B1 `midi` IR boundary and Stage 5B2a adapter. | IR schema/type, validator, and adapter tests; no third-party types cross the public boundary. | AC-054 | Implemented in Stage 5B1; adapter bounded in B2a | Independent parser and versioned package mechanics remain deferred. |
+| NFR-026 | Freeze Format 1/960, tracks/channels, ordering, lifecycle, failures, determinism, adapter, independent parser, and dependency gate. | `REQUIREMENTS.md`; `MIDI_MODEL.md`; ADR-017 | Domain owns policy; adapter owns commodity bytes. | `midi` mapper plus isolated SMF adapter. | Binary fixtures, byte repeatability, independent inspector/parser, malformed cases. | AC-054/055 | Aligned; B2a adapter in progress | Independent parser remains unimplemented. |
+| AC-054 | Stage 5A contract evidence covers IR, canonical input, Format 1, 960 PPQ, channels, Note Off, EOT, ordering, failures, determinism, and adapter isolation. | `ACCEPTANCE_CRITERIA.md` | Contract review, not runtime implementation. | Docs, `midi` IR, and isolated adapter. | Documentation review plus bounded implementation evidence. | AC-054 | Accepted/merged | Independent parser and FL Studio evidence remain deferred. |
+| AC-055 | Compare `midi-file` and `midi-writer-js`; adoption requires evidence preserving Nightdrive semantics. | `ACCEPTANCE_CRITERIA.md`; spike report | Dependency remains behind adapter and cannot define semantics. | Spike tooling and isolated B2a adapter. | Candidate matrix, raw bytes, independent inspector, browser smoke. | AC-055 | Spike complete; `midi-file` 1.2.4 adopted for B2a | Parser/round-trip and browser delivery remain deferred. |
+| ADR-017 | Versioned Nightdrive MIDI boundary; Format 1/960; isolated adapter and independent validation; no dependency-defined canonical semantics. | `DECISIONS.md` | Preserve inward dependency direction and canonical ownership. | `midi` IR and B2a adapter boundary. | IR validation now; byte-level adapter evidence; cross-runtime and FL Studio evidence at implementation/release. | AC-054/055 | Accepted | None. |
 | MIDI-001 | Canonical time is integer ticks at 960 PPQ. | `REQUIREMENTS.md`; ADR-006; `MUSICAL_TIME_MODEL.md` | Reuse validated tick primitives. | Existing musical-time domain. | Tick conversion and boundary tests. | AC-007/033 | Implemented prerequisite | None. |
-| MIDI-002 | Export preserves pitch, start, duration, velocity, tempo, PPQ, and track identity. | `REQUIREMENTS.md` | Map canonical fields without lossy conversion. | Stage 5B1 source-note IR, then future mapper/adapter. | IR boundary tests; independent semantic round-trip remains future. | AC-008 | Partially exercised | Production mapping and export are not implemented. |
+| MIDI-002 | Export preserves pitch, start, duration, velocity, tempo, PPQ, and track identity. | `REQUIREMENTS.md` | Map canonical fields without lossy conversion. | Stage 5B1 source-note IR and Stage 5B2a adapter. | IR and byte-level adapter tests; independent semantic round-trip remains future. | AC-008 | Partially exercised | Parser/round-trip and FL Studio acceptance remain future. |
 | MIDI-003 | Serialization has stable ordering and valid note lifecycle. | `REQUIREMENTS.md`; `MIDI_MODEL.md` | Nightdrive owns ordering and lifecycle. | IR mapper and adapter. | Same-tick, off-before-on, ascending-pitch, delta conversion, raw-byte tests. | AC-007 | Planned | EOT sentinel clarification applied below. |
 | MIDI-004 | Exported fixtures import correctly into supported FL Studio. | `REQUIREMENTS.md`; ADR-007; `MIDI_MODEL.md` | Human compatibility gate after valid bytes exist. | Export artifact/manual protocol. | Controlled FL Studio import record. | AC-009 | Deferred | Requires implementation and declared FL Studio environment. |
 | Unnumbered accepted constraint | MIDI is derived output; deterministic typed logic, not an LLM, owns raw MIDI semantics. | ADR-008; `AGENTS.md`; `ARCHITECTURE.md` | Prevent AI/provider authority and canonical-state leakage. | Domain and adapter boundaries. | Source-boundary and ownership review. | AC-017/054 | Aligned | None. |
@@ -56,7 +56,7 @@ The merged spike recommends `midi-file` `1.2.4` and rejects `midi-writer-js` for
 | Runtime portability | Node and browser-target adapter/bundle smoke checks. |
 | FL Studio | Later controlled manual import acceptance, separate from CI. |
 
-Stage 5B1 now has focused production IR/validator tests; serializer, independent parser, and FL Studio tests remain future implementation evidence. The dependency-spike tests remain experimental and isolated.
+Stage 5B1 has focused production IR/validator tests and Stage 5B2a adds focused byte-level serializer evidence; independent parser and FL Studio tests remain future implementation/evaluation evidence. The dependency-spike tests remain experimental and isolated.
 
 ## Failure semantics
 
@@ -64,7 +64,7 @@ The accepted documents define structured rejection categories (unsupported versi
 
 ## Scope verification
 
-Stage 5B does not imply `.flp` generation, direct FL Studio control, ZIP packaging, browser download UI, instrument/program assignment, audio/stems, full-song composition, deferred lanes, persistence, or backend work. Stage 5B remains separately gated in `ROADMAP.md`.
+Stage 5B does not imply `.flp` generation, direct FL Studio control, ZIP packaging, browser download UI, instrument/program assignment, audio/stems, full-song composition, deferred lanes, persistence, or backend work. Later Stage 5B behavior remains separately gated in `ROADMAP.md`.
 
 ## Gaps / conflicts / ambiguities
 
@@ -76,8 +76,8 @@ No unresolved architecture conflict was found.
 
 ## Gate conclusion
 
-**READY WITH DOC CORRECTION.** The correction is narrow and non-architectural; once this review is accepted, the repository is sufficiently aligned for a bounded Stage 5B prerequisite. The full serializer/export task is not authorized by this review.
+**READY FOR BOUNDED B2A REVIEW.** The requirements and dependency evidence support the isolated Stage 5B2a serializer adapter; parser/round-trip, browser delivery, and later export workflows remain separately gated.
 
 ## Smallest recommended Stage 5B task
 
-The next smallest task after this implementation is review/acceptance of the owned IR and validators. A later bounded task can implement the isolated `midi-file` adapter after those validators and their tests are reviewed; no serializer, parser, browser delivery, or dependency adoption is included here.
+The next smallest task after this implementation is review/acceptance of the isolated B2a adapter. A later bounded task can define independent parser/round-trip evidence; no browser delivery or broader MIDI workflow is included here.

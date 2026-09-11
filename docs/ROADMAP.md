@@ -261,7 +261,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 5 — MIDI engine and export
 
-Stage 5A below is a documentation-only contract and dependency-spike definition. Stage 5B1 is the separately authorized bounded IR implementation; MIDI serialization/export and later behavior remain separately gated.
+Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1 and Stage 5B2a are separately bounded implementation slices; parser/round-trip, browser delivery, and later MIDI behavior remain separately gated.
 
 ### Stage 5A — MIDI boundary and dependency-spike definition
 
@@ -275,11 +275,11 @@ Stage 5A below is a documentation-only contract and dependency-spike definition.
 
 ### Stage 5B — MIDI implementation
 
-Stage 5B is delivered through separately bounded implementation slices. Stage 5B1 establishes the owned semantic IR; later serializer/export work remains unimplemented and separately gated.
+Stage 5B is delivered through separately bounded implementation slices. Stage 5B1 establishes the owned semantic IR and Stage 5B2a provides the isolated serializer adapter; parser/round-trip and later export work remain unimplemented and separately gated.
 
 #### Stage 5B1 — Nightdrive-owned MIDI IR and strict validators
 
-**Status:** Implemented on the current bounded branch; review and acceptance remain separate from Stage 5A and later serializer work.
+**Status:** Merged and complete through PR #42; later serializer/parser work remains separately gated.
 **Objective:** Establish the framework-independent Nightdrive MIDI IR and deterministic validation boundary before any third-party SMF adapter.
 **Capabilities:** Versioned IR schema, closed conductor/chords/bass/arp/lead identities, fixed component channels, absolute 960-PPQ ticks, one-section boundary validation, typed conductor and component events, explicit Note On/Note Off semantics, source-note span expansion, stable structured failures, and immutable validated values.
 **Dependencies:** Existing musical-time and pitch primitives; no new package.
@@ -287,12 +287,22 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 **Tests/evidence:** Focused boundary, component/channel, lifecycle, metadata, unsupported-event, immutability, forged-runtime, and explicit note-expansion tests; complete repository validation.
 **Exit:** MUS-027, NFR-026, MIDI-001/002/003, AC-054, and ADR-017 are exercised by the owned IR/validator implementation without serializer or dependency behavior.
 
-#### Later MIDI serializer and validation work
+#### Stage 5B2a — Isolated deterministic SMF Format 1 serializer adapter
 
-**Status:** Not authorized; requires a separate bounded task after Stage 5A review.
+**Status:** Current bounded implementation slice; review and acceptance remain open.
+**Objective:** Serialize validated Nightdrive MIDI IR as deterministic Standard MIDI File Format 1 bytes without changing canonical ownership.
+**Capabilities:** `serializeStandardMidiV1` environment-neutral byte output, strict IR revalidation, Format 1/960 header, conductor-first fixed component-track order, absolute-to-delta conversion, explicit Note Off `0x8n` with release velocity 0, and exactly one terminal End-of-Track at tick 30720 per emitted track.
+**Dependencies:** Adopted `midi-file` `1.2.4` only behind the isolated adapter; no third-party types cross the public boundary and no runtime transitive dependencies are introduced.
+**Non-goals:** Independent parser/round-trip implementation, VLQ API exposure, `.mid` fixtures, browser delivery, FL Studio import, generation, Harmony changes, or later MIDI workflow behavior.
+**Tests/evidence:** Focused byte-level SMF header/chunk/event inspection, fixed track/channel mapping, delta-time and explicit Note Off assertions, terminal EOT and no-extra-event checks, deterministic repeated serialization, forged-IR rejection, existing Stage 5B1 tests, and complete repository validation.
+**Exit:** Stage 5B2a serializer tests and repository gates pass with adapter isolation, deterministic Format 1 bytes, exact boundary/EOT semantics, and no parser or browser-delivery behavior.
+
+#### Later MIDI parser and validation work
+
+**Status:** Not authorized; requires a separate bounded task after Stage 5B2a review.
 **Objective:** To be defined by an explicitly authorized implementation brief against the Stage 5A contract.
 **Capabilities:** None approved.
-**Dependencies:** Accepted Stage 5A contract and completed dependency spike.
+**Dependencies:** Accepted Stage 5A contract, completed dependency spike, and reviewed Stage 5B2a adapter.
 **Non-goals:** Any work inferred from this placeholder, including browser delivery or later package workflow.
 
 **Umbrella objective:** Produce independently valid, deterministic standard MIDI from canonical events.

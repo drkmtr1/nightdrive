@@ -199,11 +199,11 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 ## ADR-017 — Versioned Nightdrive MIDI boundary
 
 **Date:** 2026-09-10
-**Status:** Accepted for the Stage 5A documentation-only contract and dependency-spike definition; Stage 5B1 IR implementation is separately bounded, while MIDI serialization and dependency adoption remain separately gated.
+**Status:** Accepted for the Stage 5A boundary and dependency-spike definition; Stage 5B1 IR and Stage 5B2a isolated serializer-adapter implementations are separately bounded, while parser/round-trip and delivery remain separately gated.
 
 **Context:** Standard MIDI is the planned FL Studio interchange, but canonical composition/timing must remain independent of file-format and provider behavior.
 **Decision:** Define a Nightdrive-owned, versioned MIDI intermediate representation over validated 960-PPQ integer composition events. Map it to Standard MIDI File Format 1 only, with division 960, conductor track 0, fixed component tracks/channels, explicit `0x8n` Note Off messages with release velocity 0, deterministic event ordering, and exactly one End-of-Track at tick 30720 on every track. Require independent parsing and binary fixtures for later implementation validation; parsing is test/reference-only in Stage 5A.
 **Alternatives:** Let a writer library define canonical event semantics; emit format 0 only; couple canonical state directly to a third-party MIDI object model; defer all boundary decisions to implementation.
 **Rationale:** Ownership of the IR preserves deterministic musical semantics while allowing commodity serialization to be evaluated and replaced without changing canonical state.
-**Consequences:** Semantic and byte-level determinism are separate acceptance claims. A later dependency spike must compare `midi-file` and `midi-writer-js` against the adapter and validation criteria; no dependency or serializer is selected by Stage 5A. FL Studio import remains a human compatibility gate.
+**Consequences:** Semantic and byte-level determinism are separate acceptance claims. The completed dependency spike selected `midi-file` `1.2.4` only behind the Stage 5B2a adapter; Nightdrive retains ownership of the IR, mapping, ordering, and validation. FL Studio import and parser/round-trip remain separately gated human/implementation compatibility work.
 **Revisit:** Reconsider only if the implementation/dependency spike or cross-runtime/FL Studio evidence demonstrates that the frozen IR, format-1 boundary, or adapter cannot satisfy deterministic interchange without an explicitly reviewed contract change.
