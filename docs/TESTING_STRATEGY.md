@@ -101,7 +101,7 @@ Tests cover exact integer adjacent voice-leading cost, deterministic lower-cost 
 
 ## Stage 4B4 Harmony progression realization contract
 
-The future implementation evidence must cover deterministic first-slot anchoring, sequential adjacent selection, profile soft-preference ranks, template inversion restrictions, slot order and bar preservation, specific failure propagation, immutable non-canonical result/provenance shape, repeatability, and human review of usefulness and profile fit. It must not claim progression-wide optimization, seeded variation, MIDI, or later Harmony behavior.
+The future implementation evidence must cover deterministic first-slot anchoring, sequential adjacent selection, and the separate Stage 4B4 progression-level ranking of hard-valid candidates by lower Stage 4B3 adjacent cost, applicable profile soft-preference rank, then the accepted Stage 4B3 pitch tie-break sequence. It must also cover template inversion restrictions, slot order and bar preservation, specific failure propagation, immutable non-canonical result/provenance shape, repeatability, and human review of usefulness and profile fit. Tests may reuse Stage 4B3 cost/tie-break fixtures but must not imply that the Stage 4B3 selector itself performs profile-aware ranking. Darkwave cadence inversions `0` and `1` share a soft preferred rank over `2`; deterministic pitch tie-breaks decide otherwise-tied `0`/`1` candidates. It must not claim progression-wide optimization, seeded variation, MIDI, or later Harmony behavior.
 
 ## Stage 3B2b2g ChordInversion primitive
 
