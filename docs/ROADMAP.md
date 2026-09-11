@@ -261,7 +261,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 5 — MIDI engine and export
 
-Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1, Stage 5B2a, and Stage 5B2b are merged bounded implementation/evidence slices; Stage 5C1 is the current controlled FL Studio interoperability fixture/protocol preparation slice, while human compatibility acceptance, browser delivery, and later MIDI behavior remain separately gated.
+Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1, Stage 5B2a, Stage 5B2b, and Stage 5C1 are merged bounded implementation/evidence slices; MIDI-004 is accepted only for the declared tested FL Studio environment, while broader compatibility, browser delivery, and later MIDI behavior remain separately gated.
 
 ### Stage 5A — MIDI boundary and dependency-spike definition
 
@@ -309,17 +309,17 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 #### Stage 5C1 — Controlled FL Studio MIDI interoperability acceptance preparation
 
-**Status:** Current bounded fixture/protocol preparation slice; human import review remains pending and MIDI-004 is not complete.
+**Status:** Merged and complete through the controlled human review for FL Studio Producer Edition 2025 `26.1.6.5639`; MIDI-004 is satisfied for that declared tested environment only.
 **Objective:** Prepare one deterministic Standard MIDI File fixture and a precise manual FL Studio verification record without automating or claiming interoperability.
 **Capabilities:** Production-serializer-generated `stage-5c1-interoperability.mid`, committed source IR and SHA-256, independent parser semantic checks, and a controlled import/inspection checklist with evidence fields.
 **Dependencies:** Merged Stage 5B1 IR, Stage 5B2a adapter, Stage 5B2b independent reference evidence, and an explicitly declared FL Studio test environment; no new dependency.
 **Non-goals:** FL Studio automation/control, compatibility claims, browser delivery, ZIP/package export, parser or serializer changes, `.flp`, instrument assignment, generation, Harmony changes, persistence, UI, or AI.
 **Tests/evidence:** Exact byte/hash regeneration, independent Format 1/960 parsing, expected tempo/meter/tracks/events, explicit Note Off and terminal-boundary checks, plus the manual protocol in `docs/reviews/STAGE5_FL_STUDIO_INTEROPERABILITY.md`.
-**Exit:** Automated fixture evidence passes and a product owner records/reviews the manual FL Studio observations; MIDI-004 remains deferred until that human gate is satisfied.
+**Exit:** Automated fixture evidence and the recorded clean re-import review pass for the declared environment; exact numeric velocity preservation remains not directly verifiable, and broader compatibility remains deferred.
 
 #### Later MIDI delivery and interoperability work
 
-**Status:** Not authorized; requires a separate bounded task after Stage 5C1 review and the MIDI-004 human gate.
+**Status:** Not authorized; requires a separate bounded task after any further compatibility review.
 **Objective:** To be defined by an explicitly authorized implementation brief against the Stage 5A contract.
 **Capabilities:** None approved.
 **Dependencies:** Accepted Stage 5A contract, completed dependency spike, reviewed Stage 5B2a adapter, accepted Stage 5B2b evidence, and Stage 5C1 review.
