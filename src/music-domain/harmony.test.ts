@@ -17,6 +17,7 @@ import {
   HARMONY_ERROR_CODES,
   isHarmonyTemplateSupportedForProfile,
   realizeHarmonyTemplate,
+  realizeHarmonyProgression,
 } from "./harmony";
 import { createMidiPitch, createPitchClass } from "./pitch";
 import { createChord } from "./chord";
@@ -26,6 +27,41 @@ import {
   isChordVoicingCompatibleWithChordInversion,
 } from "./chord-voicing";
 import { createChordInversion } from "./chord-inversion";
+import {
+  progressionCandidates as progressionCandidatesInternal,
+  selectFirstProgressionCandidate as selectFirstProgressionCandidateInternal,
+  selectLaterProgressionCandidate as selectLaterProgressionCandidateInternal,
+} from "./harmony-progression-internal";
+
+const progressionCandidate = (inversion: 0 | 1 | 2, pitches: number[]): ChordVoicingCandidate => ({
+  inversion: createChordInversion(inversion),
+  voicing: createChordVoicing(pitches.map(createMidiPitch)),
+});
+const progressionCandidates = (
+  chord: Parameters<typeof enumerateChordVoicingCandidates>[0],
+  profile: Parameters<typeof enumerateChordVoicingCandidates>[1],
+  inversions: Parameters<typeof enumerateChordVoicingCandidates>[2],
+) => progressionCandidatesInternal(chord, profile, inversions, enumerateChordVoicingCandidates);
+const selectLaterProgressionCandidate = (
+  profile: Parameters<typeof selectFirstProgressionCandidateInternal>[0],
+  candidates: Parameters<typeof selectFirstProgressionCandidateInternal>[1],
+  previous: ChordVoicingCandidate,
+  slotIndex: number,
+  slotCount: number,
+) =>
+  selectLaterProgressionCandidateInternal(
+    profile,
+    candidates,
+    previous,
+    slotIndex,
+    slotCount,
+    calculateVoiceLeadingCost,
+    HARMONY_PROFILE_IDS,
+  );
+const selectFirstProgressionCandidate = (
+  profile: Parameters<typeof selectFirstProgressionCandidateInternal>[0],
+  candidates: Parameters<typeof selectFirstProgressionCandidateInternal>[1],
+) => selectFirstProgressionCandidateInternal(profile, candidates, HARMONY_PROFILE_IDS);
 
 describe("Harmony template runtime", () => {
   it("preserves the complete immutable catalog and profile mappings", () => {
@@ -494,5 +530,269 @@ describe("Harmony template runtime", () => {
       { ...source, slots: [{ ...source.slots[0], inversions: [0] }, ...source.slots.slice(1)] },
     ];
     for (const value of malformed) expect(() => createHarmonyTemplate(value)).toThrow();
+  });
+
+  it("realizes an immutable sequential progression while preserving slots and bars", () => {
+    const template = getHarmonyTemplate("degree-0654-natural-minor-v1");
+    const realization = realizeHarmonyProgression(
+      HARMONY_PROFILE_IDS.darkSynthwave,
+      template,
+      createKey(createPitchClass(0), "natural-minor"),
+    );
+    expect(realization.templateId).toBe(template.id);
+    expect(realization.templateVersion).toBe("v1");
+    expect(realization.slots).toHaveLength(4);
+    expect(realization.slots.map((slot) => slot.index)).toEqual([0, 1, 2, 3]);
+    expect(realization.slots.map((slot) => slot.bars)).toEqual([2, 2, 2, 2]);
+    for (const slot of realization.slots) {
+      expect(isChordVoicingCompatibleWithChord(slot.voicing, slot.chord)).toBe(true);
+      expect(
+        isChordVoicingCompatibleWithChordInversion(slot.voicing, slot.chord, slot.inversion),
+      ).toBe(true);
+    }
+    expect(realization.slots[0].adjacentCost).toBeNull();
+    expect(realization.slots.slice(1).every((slot) => typeof slot.adjacentCost === "number")).toBe(
+      true,
+    );
+    expect(realization.slots.every((slot) => Object.isFrozen(slot))).toBe(true);
+    expect(realization.slots.every((slot) => Object.isFrozen(slot.rationale))).toBe(true);
+    expect(Object.isFrozen(realization)).toBe(true);
+    expect(Object.isFrozen(realization.slots)).toBe(true);
+    expect(realization).toEqual(
+      realizeHarmonyProgression(
+        HARMONY_PROFILE_IDS.darkSynthwave,
+        template,
+        createKey(createPitchClass(0), "natural-minor"),
+      ),
+    );
+  });
+
+  it("applies the Classic Synthwave root-position anchor preference only to slot one", () => {
+    const realization = realizeHarmonyProgression(
+      HARMONY_PROFILE_IDS.classicSynthwave,
+      getHarmonyTemplate("degree-0344-major-v1"),
+      createKey(createPitchClass(0), "major"),
+    );
+    expect(realization.slots[0].inversion).toBe(0);
+    expect(realization.slots[0].rationale.preferenceRank).toBe(0);
+    expect(realization.slots.slice(1).every((slot) => slot.rationale.preferenceRank === 0)).toBe(
+      true,
+    );
+  });
+
+  it("keeps Darkwave cadence inversions zero and one at the same preferred rank", () => {
+    const realization = realizeHarmonyProgression(
+      HARMONY_PROFILE_IDS.darkwave,
+      getHarmonyTemplate("degree-0344-dorian-v1"),
+      createKey(createPitchClass(0), "dorian"),
+    );
+    const finalSlot = realization.slots[3];
+    expect(finalSlot.rationale.preferenceRank).toBeLessThanOrEqual(1);
+    expect(finalSlot.rationale.tieBreak).toContain("Stage 4B3");
+  });
+
+  it("rejects templates outside a profile's approved mapping", () => {
+    expect(() =>
+      realizeHarmonyProgression(
+        HARMONY_PROFILE_IDS.darkSynthwave,
+        getHarmonyTemplate("degree-0344-major-v1"),
+        createKey(createPitchClass(0), "major"),
+      ),
+    ).toThrowError(HarmonyTemplateValueError);
+  });
+
+  it("applies template inversion restrictions before progression preferences", () => {
+    const chord = createChord(createPitchClass(0), CHORD_QUALITIES.majorTriad);
+    const unrestricted = progressionCandidates(chord, HARMONY_PROFILE_IDS.darkSynthwave, undefined);
+    expect(new Set(unrestricted.map((candidate) => candidate.inversion))).toEqual(
+      new Set([0, 1, 2]),
+    );
+    for (const restriction of [[0], [1], [0, 2]] as const) {
+      const candidates = progressionCandidates(
+        chord,
+        HARMONY_PROFILE_IDS.darkSynthwave,
+        restriction.map(createChordInversion),
+      );
+      expect(new Set(candidates.map((candidate) => candidate.inversion))).toEqual(
+        new Set(restriction),
+      );
+      expect(
+        selectFirstProgressionCandidate(HARMONY_PROFILE_IDS.darkSynthwave, candidates).candidate
+          .inversion,
+      ).toBe(restriction[0]);
+    }
+  });
+
+  it("proves the Stage 4B4 first-slot and later-slot ranking seams", () => {
+    const lowLexicographic = progressionCandidate(1, [40, 50, 60]);
+    const rootPosition = progressionCandidate(0, [50, 60, 70]);
+    expect(
+      selectFirstProgressionCandidate(HARMONY_PROFILE_IDS.classicSynthwave, [
+        lowLexicographic,
+        rootPosition,
+      ]).candidate,
+    ).toBe(rootPosition);
+    expect(
+      selectFirstProgressionCandidate(HARMONY_PROFILE_IDS.darkwave, [
+        lowLexicographic,
+        rootPosition,
+      ]).candidate,
+    ).toBe(lowLexicographic);
+
+    const previous = progressionCandidate(0, [50, 60, 70]);
+    const higherCostPreferred = progressionCandidate(0, [55, 65, 75]);
+    const lowerCostOther = progressionCandidate(1, [50, 60, 70]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.darkSynthwave,
+        [higherCostPreferred, lowerCostOther],
+        previous,
+        1,
+        2,
+      ).candidate,
+    ).toBe(lowerCostOther);
+
+    const equalCostPreferredRoot = progressionCandidate(0, [50, 61, 71]);
+    const equalCostNonRoot = progressionCandidate(1, [49, 61, 70]);
+    const darkSynthwaveFinal = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.darkSynthwave,
+      [equalCostNonRoot, equalCostPreferredRoot],
+      previous,
+      2,
+      3,
+    );
+    expect(calculateVoiceLeadingCost(previous.voicing, equalCostPreferredRoot.voicing)).toBe(
+      calculateVoiceLeadingCost(previous.voicing, equalCostNonRoot.voicing),
+    );
+    expect(darkSynthwaveFinal.preferenceRank).toBe(0);
+    expect(darkSynthwaveFinal.candidate).toBe(equalCostPreferredRoot);
+
+    const darkwaveZero = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.darkwave,
+      [progressionCandidate(0, [50, 60, 70])],
+      previous,
+      1,
+      2,
+    );
+    const darkwaveOne = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.darkwave,
+      [progressionCandidate(1, [50, 60, 70])],
+      previous,
+      1,
+      2,
+    );
+    const darkwaveTwo = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.darkwave,
+      [progressionCandidate(2, [50, 60, 70])],
+      previous,
+      1,
+      2,
+    );
+    expect(darkwaveZero.preferenceRank).toBe(darkwaveOne.preferenceRank);
+    expect(darkwaveZero.preferenceRank).toBeLessThan(darkwaveTwo.preferenceRank);
+
+    const darkwaveZeroCandidate = progressionCandidate(0, [50, 61, 71]);
+    const darkwaveOneCandidate = progressionCandidate(1, [49, 61, 70]);
+    const darkwavePair = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.darkwave,
+      [darkwaveZeroCandidate, darkwaveOneCandidate],
+      previous,
+      2,
+      3,
+    );
+    expect(calculateVoiceLeadingCost(previous.voicing, darkwaveZeroCandidate.voicing)).toBe(
+      calculateVoiceLeadingCost(previous.voicing, darkwaveOneCandidate.voicing),
+    );
+    expect(darkwavePair.preferenceRank).toBe(darkwaveZero.preferenceRank);
+    expect(darkwavePair.candidate).toBe(darkwaveOneCandidate);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.darkwave,
+        [darkwaveOneCandidate, darkwaveZeroCandidate],
+        previous,
+        2,
+        3,
+      ).candidate,
+    ).toBe(darkwaveOneCandidate);
+
+    const repeated = progressionCandidate(0, [50, 60, 70]);
+    const changed = progressionCandidate(1, [50, 60, 70]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.midtempoCyberpunk,
+        [repeated, changed],
+        previous,
+        1,
+        2,
+      ).candidate,
+    ).toBe(changed);
+    const lowerCostRepeated = progressionCandidate(0, [51, 60, 70]);
+    const higherCostChanged = progressionCandidate(1, [53, 62, 72]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.midtempoCyberpunk,
+        [higherCostChanged, lowerCostRepeated],
+        previous,
+        1,
+        2,
+      ).candidate,
+    ).toBe(lowerCostRepeated);
+
+    const equalCostLowerMaximum = progressionCandidate(1, [49, 61, 70]);
+    const equalCostHigherMaximum = progressionCandidate(1, [49, 60, 71]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.classicSynthwave,
+        [equalCostHigherMaximum, equalCostLowerMaximum],
+        previous,
+        1,
+        3,
+      ).candidate,
+    ).toBe(equalCostLowerMaximum);
+
+    const equalCostLowerBass = progressionCandidate(1, [49, 60, 71]);
+    const equalCostHigherBass = progressionCandidate(1, [50, 59, 71]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.classicSynthwave,
+        [equalCostHigherBass, equalCostLowerBass],
+        previous,
+        1,
+        3,
+      ).candidate,
+    ).toBe(equalCostLowerBass);
+
+    const equalCostLowerMiddle = progressionCandidate(1, [49, 59, 71]);
+    const equalCostHigherMiddle = progressionCandidate(1, [49, 61, 71]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.classicSynthwave,
+        [equalCostHigherMiddle, equalCostLowerMiddle],
+        previous,
+        1,
+        3,
+      ).candidate,
+    ).toBe(equalCostLowerMiddle);
+  });
+
+  it("keeps controlled later-slot selection independent of candidate order", () => {
+    const previous = progressionCandidate(0, [50, 60, 70]);
+    const left = progressionCandidate(1, [51, 60, 70]);
+    const right = progressionCandidate(2, [50, 61, 70]);
+    const first = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.classicSynthwave,
+      [left, right],
+      previous,
+      1,
+      3,
+    );
+    const second = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.classicSynthwave,
+      [right, left],
+      previous,
+      1,
+      3,
+    );
+    expect(second).toEqual(first);
   });
 });
