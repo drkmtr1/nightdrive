@@ -261,7 +261,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 5 — MIDI engine and export
 
-Stage 5A below is a documentation-only contract and dependency-spike definition. MIDI implementation and export remain separately gated; Stage 5B requires a new explicit authorization.
+Stage 5A below is a documentation-only contract and dependency-spike definition. Stage 5B1 is the separately authorized bounded IR implementation; MIDI serialization/export and later behavior remain separately gated.
 
 ### Stage 5A — MIDI boundary and dependency-spike definition
 
@@ -273,7 +273,21 @@ Stage 5A below is a documentation-only contract and dependency-spike definition.
 **Tests/evidence:** Documentation review of the IR and ordering contract, malformed-input and binary-fixture strategy, independent parsing and round-trip plan, FL Studio import checklist, and evidence criteria for the later dependency spike.
 **Exit:** MUS-027/NFR-026 and AC-054/055 confirm the boundary, deterministic policies, adapter isolation, validation strategy, and dependency evaluation gate without production MIDI behavior.
 
-### Stage 5B — MIDI serializer and validation implementation
+### Stage 5B — MIDI implementation
+
+Stage 5B is delivered through separately bounded implementation slices. Stage 5B1 establishes the owned semantic IR; later serializer/export work remains unimplemented and separately gated.
+
+#### Stage 5B1 — Nightdrive-owned MIDI IR and strict validators
+
+**Status:** Implemented on the current bounded branch; review and acceptance remain separate from Stage 5A and later serializer work.
+**Objective:** Establish the framework-independent Nightdrive MIDI IR and deterministic validation boundary before any third-party SMF adapter.
+**Capabilities:** Versioned IR schema, closed conductor/chords/bass/arp/lead identities, fixed component channels, absolute 960-PPQ ticks, one-section boundary validation, typed conductor and component events, explicit Note On/Note Off semantics, source-note span expansion, stable structured failures, and immutable validated values.
+**Dependencies:** Existing musical-time and pitch primitives; no new package.
+**Non-goals:** Standard MIDI bytes, parser, VLQ/delta encoding, browser download, `.mid` fixtures, dependency adoption, FL Studio import, lane generation, Harmony changes, persistence, UI, or AI.
+**Tests/evidence:** Focused boundary, component/channel, lifecycle, metadata, unsupported-event, immutability, forged-runtime, and explicit note-expansion tests; complete repository validation.
+**Exit:** MUS-027, NFR-026, MIDI-001/002/003, AC-054, and ADR-017 are exercised by the owned IR/validator implementation without serializer or dependency behavior.
+
+#### Later MIDI serializer and validation work
 
 **Status:** Not authorized; requires a separate bounded task after Stage 5A review.
 **Objective:** To be defined by an explicitly authorized implementation brief against the Stage 5A contract.
