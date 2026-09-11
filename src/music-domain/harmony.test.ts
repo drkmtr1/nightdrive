@@ -280,14 +280,14 @@ describe("Harmony template runtime", () => {
       CHORD_QUALITIES.diminishedTriad,
     ];
     const profiles = Object.values(HARMONY_PROFILE_IDS);
-    let hasMinimumBoundary = false;
-    let hasMaximumBoundary = false;
     for (const profile of profiles) {
       const policy = getHarmonyVoicingPolicy(profile);
+      const profileCandidates = [];
       for (const quality of qualities) {
         const candidates = Array.from({ length: 12 }, (_, root) =>
           enumerateChordVoicingCandidates(createChord(createPitchClass(root), quality), profile),
         ).flat();
+        profileCandidates.push(...candidates);
         expect(candidates.length).toBeGreaterThan(0);
         for (const candidate of candidates) {
           const [bass, , top] = candidate.voicing.midiPitches;
@@ -295,12 +295,6 @@ describe("Harmony template runtime", () => {
           expect(top).toBeLessThanOrEqual(policy.maxMidiPitch);
           expect(top - bass).toBeLessThanOrEqual(policy.maxSpan);
         }
-        hasMinimumBoundary ||= candidates.some(
-          ({ voicing }) => voicing.midiPitches[0] === policy.minMidiPitch,
-        );
-        hasMaximumBoundary ||= candidates.some(
-          ({ voicing }) => voicing.midiPitches[2] === policy.maxMidiPitch,
-        );
         expect(
           candidates.some(({ voicing }) => voicing.midiPitches[0] === policy.minMidiPitch - 1),
         ).toBe(false);
@@ -313,9 +307,13 @@ describe("Harmony template runtime", () => {
           ),
         ).toBe(false);
       }
+      expect(
+        profileCandidates.some(({ voicing }) => voicing.midiPitches[0] === policy.minMidiPitch),
+      ).toBe(true);
+      expect(
+        profileCandidates.some(({ voicing }) => voicing.midiPitches[2] === policy.maxMidiPitch),
+      ).toBe(true);
     }
-    expect(hasMinimumBoundary).toBe(true);
-    expect(hasMaximumBoundary).toBe(true);
     const allCandidates = profiles.flatMap((profile) =>
       qualities.flatMap((quality) =>
         enumerateChordVoicingCandidates(createChord(createPitchClass(0), quality), profile),
