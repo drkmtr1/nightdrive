@@ -46,7 +46,6 @@ export const HARMONY_ERROR_CODES = {
   unknownProfile: "UNKNOWN_HARMONY_PROFILE",
   noInversion: "NO_INVERSION",
   noVoicing: "NO_VOICING",
-  noCandidate: "NO_CANDIDATE",
 } as const;
 export type HarmonyErrorCode = (typeof HARMONY_ERROR_CODES)[keyof typeof HARMONY_ERROR_CODES];
 export class HarmonyTemplateValueError extends RangeError {
@@ -419,11 +418,7 @@ export function selectVoiceLedCandidate(
 ): VoiceLedCandidateSelection {
   const validatedPrevious = createChordVoicing(previous.midiPitches);
   if (!Array.isArray(candidates) || candidates.length === 0) {
-    return fail(
-      "candidates",
-      "at least one candidate is required.",
-      HARMONY_ERROR_CODES.noCandidate,
-    );
+    return fail("candidates", "no target voicing candidate.", HARMONY_ERROR_CODES.noVoicing);
   }
   let selected: ChordVoicingCandidate | undefined;
   let selectedCost = Number.POSITIVE_INFINITY;

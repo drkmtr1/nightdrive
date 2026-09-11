@@ -12,6 +12,7 @@ import {
   getHarmonyVoicingPolicy,
   calculateVoiceLeadingCost,
   selectVoiceLedCandidate,
+  type ChordVoicingCandidate,
   HarmonyTemplateValueError,
   HARMONY_ERROR_CODES,
   isHarmonyTemplateSupportedForProfile,
@@ -376,13 +377,88 @@ describe("Harmony template runtime", () => {
     expect(selectVoiceLedCandidate(previous, [...candidates].reverse())).toEqual(selection);
   });
 
+  it("proves reachable lower-bass and lower-middle tie-breaks independently", () => {
+    const previous = createChordVoicing([48, 52, 55].map(createMidiPitch));
+    const qualities = [
+      CHORD_QUALITIES.majorTriad,
+      CHORD_QUALITIES.minorTriad,
+      CHORD_QUALITIES.diminishedTriad,
+    ];
+    const candidates = enumerateChordVoicingCandidates(
+      createChord(createPitchClass(0), CHORD_QUALITIES.majorTriad),
+      HARMONY_PROFILE_IDS.darkSynthwave,
+    );
+    const findPair = (
+      predicate: (left: ChordVoicingCandidate, right: ChordVoicingCandidate) => boolean,
+    ) => {
+      for (const left of candidates) {
+        for (const right of candidates) {
+          if (left !== right && predicate(left, right)) return [left, right] as const;
+        }
+      }
+      return undefined;
+    };
+    const bassPair = findPair((left, right) => {
+      const leftPitches = left.voicing.midiPitches;
+      const rightPitches = right.voicing.midiPitches;
+      return (
+        calculateVoiceLeadingCost(previous, left.voicing) ===
+          calculateVoiceLeadingCost(previous, right.voicing) &&
+        leftPitches[2] === rightPitches[2] &&
+        leftPitches[0] !== rightPitches[0]
+      );
+    });
+    expect(bassPair).toBeDefined();
+    if (bassPair) {
+      const [left, right] = bassPair;
+      const expected = left.voicing.midiPitches[0] < right.voicing.midiPitches[0] ? left : right;
+      expect(selectVoiceLedCandidate(previous, [left, right]).candidate).toEqual(expected);
+    }
+    const middleCandidates = qualities.flatMap((quality) =>
+      Array.from({ length: 12 }, (_, root) =>
+        enumerateChordVoicingCandidates(
+          createChord(createPitchClass(root), quality),
+          HARMONY_PROFILE_IDS.darkSynthwave,
+        ),
+      ).flat(),
+    );
+    const middlePrevious = createChordVoicing([48, 54, 60].map(createMidiPitch));
+    const findMiddlePair = (
+      predicate: (left: ChordVoicingCandidate, right: ChordVoicingCandidate) => boolean,
+    ) => {
+      for (const left of middleCandidates) {
+        for (const right of middleCandidates) {
+          if (left !== right && predicate(left, right)) return [left, right] as const;
+        }
+      }
+      return undefined;
+    };
+    const middlePair = findMiddlePair((left, right) => {
+      const leftPitches = left.voicing.midiPitches;
+      const rightPitches = right.voicing.midiPitches;
+      return (
+        calculateVoiceLeadingCost(middlePrevious, left.voicing) ===
+          calculateVoiceLeadingCost(middlePrevious, right.voicing) &&
+        leftPitches[2] === rightPitches[2] &&
+        leftPitches[0] === rightPitches[0] &&
+        leftPitches[1] !== rightPitches[1]
+      );
+    });
+    expect(middlePair).toBeDefined();
+    if (middlePair) {
+      const [left, right] = middlePair;
+      const expected = left.voicing.midiPitches[1] < right.voicing.midiPitches[1] ? left : right;
+      expect(selectVoiceLedCandidate(middlePrevious, [right, left]).candidate).toEqual(expected);
+    }
+  });
+
   it("rejects empty candidate input with stable Harmony error semantics", () => {
     const previous = createChordVoicing([48, 52, 55].map(createMidiPitch));
     expect(() => selectVoiceLedCandidate(previous, [])).toThrowError(HarmonyTemplateValueError);
     try {
       selectVoiceLedCandidate(previous, []);
     } catch (error) {
-      expect(error).toMatchObject({ code: HARMONY_ERROR_CODES.noCandidate, field: "candidates" });
+      expect(error).toMatchObject({ code: HARMONY_ERROR_CODES.noVoicing, field: "candidates" });
     }
   });
 });
