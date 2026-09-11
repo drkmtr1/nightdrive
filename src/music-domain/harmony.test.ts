@@ -555,6 +555,7 @@ describe("Harmony template runtime", () => {
       true,
     );
     expect(realization.slots.every((slot) => Object.isFrozen(slot))).toBe(true);
+    expect(realization.slots.every((slot) => Object.isFrozen(slot.rationale))).toBe(true);
     expect(Object.isFrozen(realization)).toBe(true);
     expect(Object.isFrozen(realization.slots)).toBe(true);
     expect(realization).toEqual(
@@ -651,6 +652,21 @@ describe("Harmony template runtime", () => {
       ).candidate,
     ).toBe(lowerCostOther);
 
+    const equalCostPreferredRoot = progressionCandidate(0, [50, 61, 71]);
+    const equalCostNonRoot = progressionCandidate(1, [49, 61, 70]);
+    const darkSynthwaveFinal = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.darkSynthwave,
+      [equalCostNonRoot, equalCostPreferredRoot],
+      previous,
+      2,
+      3,
+    );
+    expect(calculateVoiceLeadingCost(previous.voicing, equalCostPreferredRoot.voicing)).toBe(
+      calculateVoiceLeadingCost(previous.voicing, equalCostNonRoot.voicing),
+    );
+    expect(darkSynthwaveFinal.preferenceRank).toBe(0);
+    expect(darkSynthwaveFinal.candidate).toBe(equalCostPreferredRoot);
+
     const darkwaveZero = selectLaterProgressionCandidate(
       HARMONY_PROFILE_IDS.darkwave,
       [progressionCandidate(0, [50, 60, 70])],
@@ -674,6 +690,30 @@ describe("Harmony template runtime", () => {
     );
     expect(darkwaveZero.preferenceRank).toBe(darkwaveOne.preferenceRank);
     expect(darkwaveZero.preferenceRank).toBeLessThan(darkwaveTwo.preferenceRank);
+
+    const darkwaveZeroCandidate = progressionCandidate(0, [50, 61, 71]);
+    const darkwaveOneCandidate = progressionCandidate(1, [49, 61, 70]);
+    const darkwavePair = selectLaterProgressionCandidate(
+      HARMONY_PROFILE_IDS.darkwave,
+      [darkwaveZeroCandidate, darkwaveOneCandidate],
+      previous,
+      2,
+      3,
+    );
+    expect(calculateVoiceLeadingCost(previous.voicing, darkwaveZeroCandidate.voicing)).toBe(
+      calculateVoiceLeadingCost(previous.voicing, darkwaveOneCandidate.voicing),
+    );
+    expect(darkwavePair.preferenceRank).toBe(darkwaveZero.preferenceRank);
+    expect(darkwavePair.candidate).toBe(darkwaveOneCandidate);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.darkwave,
+        [darkwaveOneCandidate, darkwaveZeroCandidate],
+        previous,
+        2,
+        3,
+      ).candidate,
+    ).toBe(darkwaveOneCandidate);
 
     const repeated = progressionCandidate(0, [50, 60, 70]);
     const changed = progressionCandidate(1, [50, 60, 70]);
