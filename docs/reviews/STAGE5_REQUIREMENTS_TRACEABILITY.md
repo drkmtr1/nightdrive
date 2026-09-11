@@ -22,7 +22,7 @@
 
 ## MUS-027 / NFR-026 / AC-054 / AC-055 / ADR-017
 
-The five Stage 5A identifiers form a consistent chain. MUS-027 establishes ownership and input provenance; NFR-026 freezes deterministic file-boundary behavior; AC-054 is the documentation contract criterion; AC-055 is the dependency-spike gate; ADR-017 records the architecture and deferral boundary. The merged spike report supplies empirical evidence for AC-055 but does not authorize production adoption.
+The five Stage 5A identifiers form a consistent chain. MUS-027 establishes ownership and input provenance; NFR-026 freezes deterministic file-boundary behavior; AC-054 is the documentation contract criterion; AC-055 is the dependency-spike gate; ADR-017 records the architecture and deferral boundary. The merged spike report supplied the evidence for AC-055, and Stage 5B2a subsequently adopted `midi-file` `1.2.4` only behind the isolated adapter.
 
 ## Timing / EOT traceability
 
@@ -38,7 +38,7 @@ Nightdrive owns the IR, semantic validation, absolute ticks, ordering, track/cha
 
 ## Dependency decision traceability
 
-The merged spike recommends `midi-file` `1.2.4` and rejects `midi-writer-js` for this boundary. This is evidence, not adoption. A future adoption task must update the root `package.json`, root `package-lock.json`, `docs/DEPENDENCIES.md`, license/health/security/audit evidence, and any required ADR/status text, then rerun clean install and all gates. This audit installed nothing in the root graph.
+The merged spike recommended `midi-file` `1.2.4` and rejected `midi-writer-js` for this boundary; Stage 5B2a accepted that recommendation behind `src/midi/adapter`, with no third-party types crossing the public boundary. Any future dependency adoption must update the root `package.json`, root `package-lock.json`, `docs/DEPENDENCIES.md`, license/health/security/audit evidence, and any required ADR/status text, then rerun clean install and all gates. This B2b task adds no dependency.
 
 ## Test traceability
 
