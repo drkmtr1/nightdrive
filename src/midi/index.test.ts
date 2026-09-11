@@ -183,6 +183,7 @@ describe("Nightdrive MIDI IR", () => {
         component,
         channel,
         events: [
+          { type: "track-name", tick: 0, name: component[0].toUpperCase() + component.slice(1) },
           { type: "note-on", tick: 0, channel, pitch: 60, velocity: 1 },
           { type: "note-off", tick: 1, channel, pitch: 60, releaseVelocity: 0 },
           endOfTrack,
@@ -224,6 +225,247 @@ describe("Nightdrive MIDI IR", () => {
       MIDI_IR_ERROR_CODES.invalidComponent,
       "track.component",
     );
+  });
+
+  it("requires fixed conductor metadata exactly once at tick 0", () => {
+    const valid = conductorTrack();
+    expect(createMidiIrTrack(valid).component).toBe("conductor");
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...valid,
+          events: valid.events.filter((event) => event.type !== "tempo"),
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...valid,
+          events: valid.events.filter((event) => event.type !== "time-signature"),
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...valid,
+          events: valid.events.map((event) =>
+            event.type === "track-name" ? { ...event, name: "Wrong" } : event,
+          ),
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...valid,
+          events: valid.events.map((event) =>
+            event.type === "tempo" ? { ...event, tick: 1 } : event,
+          ),
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...valid,
+          events: [
+            { type: "track-name", tick: 0, name: "Conductor" },
+            { type: "time-signature", tick: 0, numerator: 4, denominator: 4 },
+            { type: "tempo", tick: 0, microsecondsPerQuarter: 500_000 },
+            { type: "tempo", tick: 0, microsecondsPerQuarter: 500_000 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+    expectMidiError(
+      () => createMidiIrTrack({ ...valid, channel: 0 }),
+      MIDI_IR_ERROR_CODES.invalidChannel,
+      "track.channel",
+    );
+  });
+
+  it("requires stable role names and excludes conductor metadata from component tracks", () => {
+    for (const [component, channel] of Object.entries(MIDI_CHANNEL_BY_COMPONENT)) {
+      const track = createMidiIrTrack({
+        component,
+        channel,
+        events: [
+          { type: "track-name", tick: 0, name: component[0].toUpperCase() + component.slice(1) },
+          { type: "note-on", tick: 0, channel, pitch: 60, velocity: 1 },
+          { type: "note-off", tick: 1, channel, pitch: 60, releaseVelocity: 0 },
+          endOfTrack,
+        ],
+      });
+      expect(track.component).toBe(component);
+    }
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: chordsTrack().events.map((event) =>
+            event.type === "track-name" ? { ...event, name: "Bass" } : event,
+          ),
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "tempo", tick: 0, microsecondsPerQuarter: 500_000 },
+            { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+            { type: "note-off", tick: 1, channel: 0, pitch: 60, releaseVelocity: 0 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "time-signature", tick: 0, numerator: 4, denominator: 4 },
+            { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+            { type: "note-off", tick: 1, channel: 0, pitch: 60, releaseVelocity: 0 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+    );
+  });
+
+  it("enforces deterministic absolute event ordering and terminal EOT", () => {
+    const validTerminal = createMidiIrTrack({
+      ...chordsTrack(),
+      events: [
+        { type: "track-name", tick: 0, name: "Chords" },
+        { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+        {
+          type: "note-off",
+          tick: MIDI_IR_SECTION_END_TICK,
+          channel: 0,
+          pitch: 60,
+          releaseVelocity: 0,
+        },
+        endOfTrack,
+      ],
+    });
+    expect(validTerminal.events.at(-1)?.type).toBe("end-of-track");
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "note-on", tick: 10, channel: 0, pitch: 60, velocity: 1 },
+            { type: "note-off", tick: 11, channel: 0, pitch: 60, releaseVelocity: 0 },
+            { type: "note-on", tick: 0, channel: 0, pitch: 62, velocity: 1 },
+            { type: "note-off", tick: 1, channel: 0, pitch: 62, releaseVelocity: 0 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidOrdering,
+      "track.events[3]",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+            { type: "note-off", tick: 0, channel: 0, pitch: 60, releaseVelocity: 0 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidOrdering,
+      "track.events[2]",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "note-on", tick: 0, channel: 0, pitch: 61, velocity: 1 },
+            { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+            { type: "note-off", tick: 1, channel: 0, pitch: 60, releaseVelocity: 0 },
+            { type: "note-off", tick: 1, channel: 0, pitch: 61, releaseVelocity: 0 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidOrdering,
+      "track.events[2]",
+    );
+  });
+
+  it("requires deterministic matched note lifecycles", () => {
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "note-off", tick: 1, channel: 0, pitch: 60, releaseVelocity: 0 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidNoteLifecycle,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidNoteLifecycle,
+      "track.events",
+    );
+    expectMidiError(
+      () =>
+        createMidiIrTrack({
+          ...chordsTrack(),
+          events: [
+            { type: "track-name", tick: 0, name: "Chords" },
+            { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+            { type: "note-on", tick: 1, channel: 0, pitch: 60, velocity: 1 },
+            { type: "note-off", tick: 2, channel: 0, pitch: 60, releaseVelocity: 0 },
+            endOfTrack,
+          ],
+        }),
+      MIDI_IR_ERROR_CODES.invalidNoteLifecycle,
+      "track.events",
+    );
+    const matched = createMidiIrTrack({
+      ...chordsTrack(),
+      events: [
+        { type: "track-name", tick: 0, name: "Chords" },
+        { type: "note-on", tick: 0, channel: 0, pitch: 60, velocity: 1 },
+        { type: "note-off", tick: 1, channel: 0, pitch: 60, releaseVelocity: 0 },
+        endOfTrack,
+      ],
+    });
+    expect(matched.events).toHaveLength(4);
   });
 
   it("rejects malformed event, tempo, and track lifecycle state", () => {

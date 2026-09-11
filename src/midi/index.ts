@@ -39,6 +39,8 @@ export const MIDI_IR_ERROR_CODES = {
   invalidNoteLifecycle: "INVALID_NOTE_LIFECYCLE",
   invalidNoteOffVelocity: "INVALID_NOTE_OFF_VELOCITY",
   invalidNoteOnVelocity: "INVALID_NOTE_ON_VELOCITY",
+  invalidMetadata: "INVALID_METADATA",
+  invalidOrdering: "INVALID_ORDERING",
   invalidPitch: "INVALID_PITCH",
   invalidPpq: "INVALID_PPQ",
   invalidSectionBoundary: "INVALID_SECTION_BOUNDARY",
@@ -449,6 +451,136 @@ function validateTrackEvent(
   return event;
 }
 
+const TRACK_NAMES: Readonly<Record<MidiComponent, string>> = Object.freeze({
+  conductor: "Conductor",
+  chords: "Chords",
+  bass: "Bass",
+  arp: "Arp",
+  lead: "Lead",
+});
+
+function eventClass(event: MidiIrEvent): 0 | 1 | 2 {
+  if (event.type === "note-off") return 1;
+  if (event.type === "note-on") return 2;
+  return 0;
+}
+
+function eventSuborder(event: MidiIrEvent): number {
+  if (event.type === "track-name") return 0;
+  if (event.type === "time-signature") return 1;
+  if (event.type === "tempo") return 2;
+  if (event.type === "note-on" || event.type === "note-off") return event.pitch;
+  return 0;
+}
+
+function validateEventOrdering(events: readonly MidiIrEvent[]): void {
+  let previousTick = -1;
+  let previousClass = -1;
+  let previousSuborder = -1;
+  for (const [index, event] of events.entries()) {
+    if (event.type === "end-of-track") continue;
+    const currentClass = eventClass(event);
+    const currentSuborder = eventSuborder(event);
+    if (
+      event.tick < previousTick ||
+      (event.tick === previousTick && currentClass < previousClass) ||
+      (event.tick === previousTick &&
+        currentClass === previousClass &&
+        currentSuborder < previousSuborder)
+    ) {
+      fail(
+        MIDI_IR_ERROR_CODES.invalidOrdering,
+        `track.events[${index}]`,
+        "events must use the accepted absolute-tick and event-class order.",
+      );
+    }
+    if (
+      event.tick === previousTick &&
+      currentClass === previousClass &&
+      currentSuborder === previousSuborder
+    ) {
+      fail(
+        MIDI_IR_ERROR_CODES.invalidOrdering,
+        `track.events[${index}]`,
+        "otherwise-indistinguishable events require an explicit stable source order.",
+      );
+    }
+    previousTick = event.tick;
+    previousClass = currentClass;
+    previousSuborder = currentSuborder;
+  }
+}
+
+function validateNoteLifecycle(events: readonly MidiIrEvent[]): void {
+  const active = new Set<string>();
+  for (const event of events) {
+    if (event.type === "note-on") {
+      const key = `${event.channel}:${event.pitch}`;
+      if (active.has(key)) {
+        fail(
+          MIDI_IR_ERROR_CODES.invalidNoteLifecycle,
+          "track.events",
+          "same channel and pitch cannot overlap or restart before Note Off.",
+        );
+      }
+      active.add(key);
+    } else if (event.type === "note-off") {
+      const key = `${event.channel}:${event.pitch}`;
+      if (!active.delete(key)) {
+        fail(
+          MIDI_IR_ERROR_CODES.invalidNoteLifecycle,
+          "track.events",
+          "Note Off must match a preceding Note On on the same channel and pitch.",
+        );
+      }
+    }
+  }
+  if (active.size > 0) {
+    fail(
+      MIDI_IR_ERROR_CODES.invalidNoteLifecycle,
+      "track.events",
+      "every Note On must have a subsequent matching Note Off.",
+    );
+  }
+}
+
+function validateTrackMetadata(events: readonly MidiIrEvent[], component: MidiComponent): void {
+  const names = events.filter((event): event is MidiTrackNameEvent => event.type === "track-name");
+  if (names.length !== 1 || names[0].name !== TRACK_NAMES[component] || names[0].tick !== 0) {
+    fail(
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+      `track must contain exactly one ${TRACK_NAMES[component]} track-name event at tick 0.`,
+    );
+  }
+  const timeSignatures = events.filter(
+    (event): event is MidiTimeSignatureEvent => event.type === "time-signature",
+  );
+  const tempos = events.filter((event): event is MidiTempoEvent => event.type === "tempo");
+  if (component === MIDI_COMPONENT_IDS.conductor) {
+    if (timeSignatures.length !== 1 || timeSignatures[0].tick !== 0) {
+      fail(
+        MIDI_IR_ERROR_CODES.invalidMetadata,
+        "track.events",
+        "conductor must contain exactly one 4/4 time-signature event at tick 0.",
+      );
+    }
+    if (tempos.length !== 1 || tempos[0].tick !== 0) {
+      fail(
+        MIDI_IR_ERROR_CODES.invalidMetadata,
+        "track.events",
+        "conductor must contain exactly one tempo event at tick 0.",
+      );
+    }
+  } else if (timeSignatures.length > 0 || tempos.length > 0) {
+    fail(
+      MIDI_IR_ERROR_CODES.invalidMetadata,
+      "track.events",
+      "component tracks cannot contain conductor-only metadata.",
+    );
+  }
+}
+
 export function createMidiIrTrack(value: unknown): MidiIrTrack {
   const input = requireRecord(value, "track");
   const component = validateComponent(input.component, "track.component");
@@ -476,6 +608,9 @@ export function createMidiIrTrack(value: unknown): MidiIrTrack {
       "each track must end with exactly one End-of-Track event.",
     );
   }
+  validateTrackMetadata(events, component);
+  validateEventOrdering(events);
+  validateNoteLifecycle(events);
   const channel =
     component === MIDI_COMPONENT_IDS.conductor
       ? undefined
