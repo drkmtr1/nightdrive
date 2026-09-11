@@ -2,7 +2,7 @@
 
 ## Authority
 
-Canonical composition events use 960 PPQ integer ticks. MIDI is a derived export, not the editing/database authority. Version 1 targets Standard MIDI File compatibility before any proprietary FL Studio format. Stage 5A freezes the boundary and validation contract only; it does not implement a writer, parser, browser download, or dependency.
+Canonical composition events use 960 PPQ integer ticks. MIDI is a derived export, not the editing/database authority. Version 1 targets Standard MIDI File compatibility before any proprietary FL Studio format. Stage 5A freezes the boundary and validation contract; Stage 5B1 implements the Nightdrive-owned IR and strict validators, but does not implement a writer, parser, browser download, or dependency adoption.
 
 ## Stage 5A boundary contract
 
