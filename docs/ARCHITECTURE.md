@@ -40,6 +40,8 @@ flowchart LR
 
 Dependencies point inward: web/persistence/AI/MIDI adapters depend on domain contracts; domain logic does not depend on Next.js, Supabase, Vercel, Web Audio, or an AI provider.
 
+Commodity mechanisms may use evaluated third-party libraries behind adapters, but canonical Nightdrive musical semantics remain defined by the framework-independent domain contracts.
+
 ### Implemented boundaries
 
 - `src/app`: Next.js routes, semantic layout, state pages, global tokens/styles, and HTTP adapters only.
