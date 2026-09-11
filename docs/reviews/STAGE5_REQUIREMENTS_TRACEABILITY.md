@@ -3,6 +3,8 @@
 **Baseline:** `c1162ae1f9247d9ec0a1108e719970a88796c3bc`  
 **Scope:** Read-only audit plus one narrow, non-architectural EOT-ordering clarification. No production MIDI code or dependency adoption.
 
+**Identifier audit:** `MIDI-001` through `MIDI-004` are accepted identifiers in the MIDI requirements table (`docs/REQUIREMENTS.md`, rows 33–36) and are referenced by accepted criteria; they are retained below.
+
 ## Traceability matrix
 
 | Requirement / decision | Requirement statement | Authoritative source | Architecture responsibility | Planned module/layer | Validation obligation | Acceptance | Status | Gap / ambiguity |
