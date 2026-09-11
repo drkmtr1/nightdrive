@@ -199,7 +199,7 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 ## ADR-017 — Versioned Nightdrive MIDI boundary
 
 **Date:** 2026-09-10
-**Status:** Accepted for the Stage 5A boundary and dependency-spike definition; Stage 5B1 IR and Stage 5B2a isolated serializer-adapter implementations are merged, Stage 5B2b independent parser/reference evidence is separately bounded, and production parser/round-trip and delivery remain separately gated.
+**Status:** Accepted for the Stage 5A boundary and dependency-spike definition; Stage 5B1 IR, Stage 5B2a isolated serializer-adapter implementation, and Stage 5B2b independent parser/reference evidence are merged, while Stage 5C1 interoperability preparation and production parser/round-trip, FL Studio acceptance, and delivery remain separately gated.
 
 **Context:** Standard MIDI is the planned FL Studio interchange, but canonical composition/timing must remain independent of file-format and provider behavior.
 **Decision:** Define a Nightdrive-owned, versioned MIDI intermediate representation over validated 960-PPQ integer composition events. Map it to Standard MIDI File Format 1 only, with division 960, conductor track 0, fixed component tracks/channels, explicit `0x8n` Note Off messages with release velocity 0, deterministic event ordering, and exactly one End-of-Track at tick 30720 on every track. Require independent parsing and binary fixtures for later implementation validation; parsing is test/reference-only in Stage 5A.
