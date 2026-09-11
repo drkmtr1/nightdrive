@@ -577,7 +577,12 @@ export function realizeHarmonyProgression(
   for (let index = 0; index < templateValidated.slots.length; index += 1) {
     const templateSlot = templateValidated.slots[index];
     const chord = chords[index];
-    const candidates = progressionCandidates(chord, profile, templateSlot.inversions);
+    const candidates = progressionCandidates(
+      chord,
+      profile,
+      templateSlot.inversions,
+      enumerateChordVoicingCandidates,
+    );
     if (previous === undefined) {
       const selected = selectFirstProgressionCandidate(profile, candidates);
       previous = selected.candidate;
@@ -604,6 +609,7 @@ export function realizeHarmonyProgression(
       previous,
       index,
       templateValidated.slots.length,
+      calculateVoiceLeadingCost,
     );
     previous = selected.candidate;
     slots.push(

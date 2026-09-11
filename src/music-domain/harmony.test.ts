@@ -28,15 +28,35 @@ import {
 } from "./chord-voicing";
 import { createChordInversion } from "./chord-inversion";
 import {
-  progressionCandidates,
+  progressionCandidates as progressionCandidatesInternal,
   selectFirstProgressionCandidate,
-  selectLaterProgressionCandidate,
+  selectLaterProgressionCandidate as selectLaterProgressionCandidateInternal,
 } from "./harmony-progression-internal";
 
 const progressionCandidate = (inversion: 0 | 1 | 2, pitches: number[]): ChordVoicingCandidate => ({
   inversion: createChordInversion(inversion),
   voicing: createChordVoicing(pitches.map(createMidiPitch)),
 });
+const progressionCandidates = (
+  chord: Parameters<typeof enumerateChordVoicingCandidates>[0],
+  profile: Parameters<typeof enumerateChordVoicingCandidates>[1],
+  inversions: Parameters<typeof enumerateChordVoicingCandidates>[2],
+) => progressionCandidatesInternal(chord, profile, inversions, enumerateChordVoicingCandidates);
+const selectLaterProgressionCandidate = (
+  profile: Parameters<typeof selectFirstProgressionCandidate>[0],
+  candidates: Parameters<typeof selectFirstProgressionCandidate>[1],
+  previous: ChordVoicingCandidate,
+  slotIndex: number,
+  slotCount: number,
+) =>
+  selectLaterProgressionCandidateInternal(
+    profile,
+    candidates,
+    previous,
+    slotIndex,
+    slotCount,
+    calculateVoiceLeadingCost,
+  );
 
 describe("Harmony template runtime", () => {
   it("preserves the complete immutable catalog and profile mappings", () => {
