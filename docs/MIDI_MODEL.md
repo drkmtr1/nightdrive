@@ -26,7 +26,7 @@ The planned flow is canonical composition/timing → Nightdrive IR → isolated 
 
 ## Deterministic event ordering
 
-At equal absolute ticks, the total order is `(tick, track order, event class, pitch, source order)`: conductor/component track order is fixed; meta events precede note-offs, which precede note-ons; within a class, pitch is ascending and source order is the stable canonical order. Thus same-pitch termination precedes a new start, and simultaneous chord notes are ordered by ascending pitch. Delta times are derived only after total ordering. No emitted event may occur after tick `30720`; every track, including conductor and component tracks, emits exactly one End-of-Track meta event at absolute tick `30720`.
+At equal absolute ticks, the total order is `(tick, track order, event class, pitch, source order)`: conductor/component track order is fixed; ordinary meta events precede note-offs, which precede note-ons; within a class, pitch is ascending and source order is the stable canonical order. End-of-Track is a terminal sentinel, excluded from that ordinary meta priority: after all other events (including tick-30720 note-offs), each track emits exactly one End-of-Track at absolute tick `30720`. Thus same-pitch termination precedes a new start, and simultaneous chord notes are ordered by ascending pitch. Delta times are derived only after total ordering. No emitted event may occur after tick `30720`.
 
 ## Determinism and failures
 
