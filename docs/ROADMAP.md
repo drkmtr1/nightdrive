@@ -232,7 +232,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 4B3 — Adjacent voice-leading cost and candidate selection
 
-**Status:** Current bounded implementation slice; implementation and review remain pending.
+**Status:** Merged and complete through PR #34 (merge commit `1e7a1cf3503ade791521df8ae967ea9857090f17`). Scope remains limited to adjacent voice-leading cost and deterministic selection from an existing hard-valid candidate set, with accepted applicable tie-breaks, immutable results, and `NO_VOICING` empty-candidate behavior. Full progression generation, lookahead, dynamic programming, global optimization, profile soft-preference scoring, cadence/first-slot policy, repeated-inversion preferences, seeded variation, MIDI, and later Harmony behavior remain separately gated.
 **Objective:** Calculate accepted adjacent voice-leading cost and select one target candidate from an existing hard-valid set deterministically.
 **Capabilities:** Exact integer three-voice cost, candidate-order-independent lower-cost selection, maximum-pitch/bass/middle/top tie-breaks, immutable selection results, and structured empty-input failure.
 **Dependencies:** Existing Stage 4B2 candidate enumeration and ChordVoicing primitives.
