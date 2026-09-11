@@ -242,12 +242,12 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 4B4 — Harmony progression realization contract
 
-**Status:** Documentation-only contract-definition slice; implementation requires separate authorization.
+**Status:** Implemented bounded progression-realization slice; review and merge remain separate decisions.
 **Objective:** Define deterministic sequential realization of one complete ordered Harmony progression from the accepted template, Key, candidate, and adjacent-selection contracts.
 **Capabilities:** Deterministic first-slot anchor, sequential greedy later-slot selection, explicit soft-preference ranks, hard restriction interaction, slot-duration preservation, specific failure propagation, immutable non-canonical result shape, and explanatory provenance boundary. Later-slot ranking is a separate Stage 4B4 orchestration policy that reuses Stage 4B3 adjacent cost and pitch tie-break definitions without modifying the Stage 4B3 selector.
 **Dependencies:** Accepted Stage 4A, Stage 4B1, Stage 4B2, and Stage 4B3 contracts.
 **Non-goals:** Production progression generator, lookahead, dynamic programming, global optimization, profile soft scoring beyond documented ranks, seeded variation, PRNG helpers, MIDI, bass, arp, melody, AI, UI, persistence, or Stage 4 completion.
-**Tests:** Future first-slot and preference fixtures, sequential repeatability, slot/bar preservation, failure propagation, candidate restriction interaction, immutable result/provenance shape, and human musical-quality review.
+**Tests:** First-slot and preference fixtures, sequential repeatability, slot/bar preservation, failure propagation, candidate restriction interaction, immutable result/provenance shape, and human musical-quality review.
 **Exit:** MUS-026/NFR-025 and AC-053 contract review confirms deterministic sequential policy, preference priority, result boundaries, provenance, and deferred implementation scope.
 
 ## Stage 4 — Harmony engine

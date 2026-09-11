@@ -16,6 +16,11 @@ import {
   type ScaleDegree,
   type ScaleType,
 } from "./scale";
+import {
+  progressionCandidates,
+  selectFirstProgressionCandidate,
+  selectLaterProgressionCandidate,
+} from "./harmony-progression-internal";
 
 export const HARMONY_TEMPLATE_SCHEMA = "nightdrive.harmony-template.v1" as const;
 export type HarmonyTemplateSlot = Readonly<{
@@ -72,6 +77,28 @@ export type ChordVoicingCandidate = Readonly<{
 export type VoiceLedCandidateSelection = Readonly<{
   candidate: ChordVoicingCandidate;
   cost: number;
+}>;
+
+export type HarmonyProgressionSlot = Readonly<{
+  index: number;
+  degree: ScaleDegree;
+  bars: number;
+  chord: Chord;
+  inversion: ChordInversion;
+  voicing: ChordVoicing;
+  adjacentCost: number | null;
+  rationale: Readonly<{
+    preferenceRank: number;
+    tieBreak: string;
+  }>;
+}>;
+
+export type HarmonyProgressionRealization = Readonly<{
+  profile: HarmonyProfileId;
+  templateId: string;
+  templateVersion: HarmonyTemplate["version"];
+  key: Key;
+  slots: readonly HarmonyProgressionSlot[];
 }>;
 
 function fail(
@@ -524,4 +551,78 @@ export function realizeHarmonyTemplate(
       createChord(pitchClassAtKeyDegree(key, slot.degree), slot.quality),
     ),
   );
+}
+
+export function realizeHarmonyProgression(
+  profile: HarmonyProfileId,
+  templateValue: HarmonyTemplate,
+  keyValue: Key,
+): HarmonyProgressionRealization {
+  if (!isHarmonyProfileId(profile))
+    return fail("profile", "unknown harmony profile.", HARMONY_ERROR_CODES.unknownProfile);
+  const templateValidated = createHarmonyTemplate(templateValue);
+  if (!isHarmonyTemplateSupportedForProfile(profile, templateValidated))
+    return fail("template", "template is not supported for this harmony profile.");
+  const key = createKey(keyValue.tonic, keyValue.scale);
+  if (key.scale !== templateValidated.scale)
+    return fail("scale", "key scale does not match template scale.", HARMONY_ERROR_CODES.scaleMismatch);
+
+  const chords = realizeHarmonyTemplate(templateValidated, key);
+  const slots: HarmonyProgressionSlot[] = [];
+  let previous: ChordVoicingCandidate | undefined;
+  for (let index = 0; index < templateValidated.slots.length; index += 1) {
+    const templateSlot = templateValidated.slots[index];
+    const chord = chords[index];
+    const candidates = progressionCandidates(chord, profile, templateSlot.inversions);
+    if (previous === undefined) {
+      const selected = selectFirstProgressionCandidate(profile, candidates);
+      previous = selected.candidate;
+      slots.push(
+        Object.freeze({
+          index,
+          degree: templateSlot.degree,
+          bars: templateSlot.bars,
+          chord,
+          inversion: selected.candidate.inversion,
+          voicing: selected.candidate.voicing,
+          adjacentCost: null,
+          rationale: Object.freeze({
+            preferenceRank: selected.preferenceRank,
+            tieBreak: "preference-rank then lexicographic MIDI tuple",
+          }),
+        }),
+      );
+      continue;
+    }
+    const selected = selectLaterProgressionCandidate(
+      profile,
+      candidates,
+      previous,
+      index,
+      templateValidated.slots.length,
+    );
+    previous = selected.candidate;
+    slots.push(
+      Object.freeze({
+        index,
+        degree: templateSlot.degree,
+        bars: templateSlot.bars,
+        chord,
+        inversion: selected.candidate.inversion,
+        voicing: selected.candidate.voicing,
+        adjacentCost: selected.cost,
+        rationale: Object.freeze({
+          preferenceRank: selected.preferenceRank,
+          tieBreak: "adjacent cost, preference rank, then Stage 4B3 pitch tie-breaks",
+        }),
+      }),
+    );
+  }
+  return Object.freeze({
+    profile,
+    templateId: templateValidated.id,
+    templateVersion: templateValidated.version,
+    key,
+    slots: Object.freeze(slots),
+  });
 }
