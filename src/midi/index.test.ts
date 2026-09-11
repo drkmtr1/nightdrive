@@ -541,5 +541,14 @@ describe("Nightdrive MIDI IR", () => {
     const source = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
     const imports = Array.from(source.matchAll(/from\s+["']([^"']+)["']/g), (match) => match[1]);
     expect(imports.every((specifier) => specifier.startsWith("."))).toBe(true);
+    expect(source).not.toContain("./adapter");
+    expect(source).not.toContain("midi-file");
+
+    const adapterSource = readFileSync(new URL("./adapter/index.ts", import.meta.url), "utf8");
+    const adapterExternalImports = Array.from(
+      adapterSource.matchAll(/(?:from\s+|import\s*\(\s*)["']([^"']+)["']/g),
+      (match) => match[1],
+    ).filter((specifier) => !specifier.startsWith("."));
+    expect(adapterExternalImports).toEqual(["midi-file"]);
   });
 });

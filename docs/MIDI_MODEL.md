@@ -30,7 +30,7 @@ At equal absolute ticks, the total order is `(tick, track order, event class, pi
 
 ## Determinism and failures
 
-Semantic determinism means equal validated canonical input yields the same ordered Nightdrive IR. Binary determinism additionally requires byte-identical Standard MIDI output; serializer defaults may not define this contract. Stage 5B2a exposes a narrow `serializeStandardMidiV1` boundary returning environment-neutral bytes while keeping all canonical mapping and ordering in Nightdrive-owned code and using `midi-file` only for commodity SMF encoding. It revalidates the IR and reports validation failures before writing; partial files are never successful. Independent parsing remains a later test/reference concern, using an independent reader rather than the writer as its sole oracle.
+Semantic determinism means equal validated canonical input yields the same ordered Nightdrive IR. Binary determinism additionally requires byte-identical Standard MIDI output; serializer defaults may not define this contract. Stage 5B2a's isolated `src/midi/adapter` entry point exposes a narrow `serializeStandardMidiV1` boundary returning environment-neutral bytes while keeping all canonical mapping and ordering in Nightdrive-owned code and using `midi-file` only for commodity SMF encoding. It revalidates the IR and reports validation failures before writing; partial files are never successful. Independent parsing remains a later test/reference concern, using an independent reader rather than the writer as its sole oracle.
 
 ## Validation
 

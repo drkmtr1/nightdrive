@@ -8,8 +8,8 @@ import {
   MIDI_IR_SCHEMA,
   MIDI_IR_SECTION_END_TICK,
   MidiIrValidationError,
-  serializeStandardMidiV1,
 } from "../index";
+import { serializeStandardMidiV1 } from "./index";
 
 const endOfTrack = { type: "end-of-track", tick: MIDI_IR_SECTION_END_TICK } as const;
 
