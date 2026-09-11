@@ -261,7 +261,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 5 — MIDI engine and export
 
-Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1 and Stage 5B2a are merged bounded implementation slices; Stage 5B2b is the current independent reference/round-trip evidence slice, while production parser, browser delivery, and later MIDI behavior remain separately gated.
+Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1, Stage 5B2a, and Stage 5B2b are merged bounded implementation/evidence slices; Stage 5C1 is the current controlled FL Studio interoperability fixture/protocol preparation slice, while human compatibility acceptance, browser delivery, and later MIDI behavior remain separately gated.
 
 ### Stage 5A — MIDI boundary and dependency-spike definition
 
@@ -299,7 +299,7 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 #### Stage 5B2b — Independent SMF parser/reference verification
 
-**Status:** Current bounded implementation slice; review and acceptance remain open.
+**Status:** Merged and complete through PR #44; production parser, browser delivery, and FL Studio compatibility acceptance remain separately gated.
 **Objective:** Provide test-only independent parser/reference evidence that the accepted Stage 5B2a bytes preserve semantic fields and deterministic Standard MIDI invariants.
 **Capabilities:** Independent strict Format 1/960 parser, semantic round-trip assertions for accepted IR fields, deterministic golden byte fixtures and hashes, explicit Note Off and terminal EOT evidence, and malformed-file rejection coverage.
 **Dependencies:** Merged Stage 5B1 IR and Stage 5B2a adapter; no new dependency.
@@ -307,12 +307,22 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 **Tests/evidence:** Six deterministic golden fixtures covering conductor/component layouts, simultaneous notes, same-tick off-before-on, boundary-ending notes, and absent optional tracks; independent semantic round-trip checks; malformed header/chunk/VLQ/EOT/channel-event rejection; exact Note Off, ordering, and EOT assertions; repeated byte equality.
 **Exit:** Stage 5B2b reference tests and repository gates pass with no serializer or IR changes, no third-party reader used as the sole oracle, and production parser/delivery still separately gated.
 
+#### Stage 5C1 — Controlled FL Studio MIDI interoperability acceptance preparation
+
+**Status:** Current bounded fixture/protocol preparation slice; human import review remains pending and MIDI-004 is not complete.
+**Objective:** Prepare one deterministic Standard MIDI File fixture and a precise manual FL Studio verification record without automating or claiming interoperability.
+**Capabilities:** Production-serializer-generated `stage-5c1-interoperability.mid`, committed source IR and SHA-256, independent parser semantic checks, and a controlled import/inspection checklist with evidence fields.
+**Dependencies:** Merged Stage 5B1 IR, Stage 5B2a adapter, Stage 5B2b independent reference evidence, and an explicitly declared FL Studio test environment; no new dependency.
+**Non-goals:** FL Studio automation/control, compatibility claims, browser delivery, ZIP/package export, parser or serializer changes, `.flp`, instrument assignment, generation, Harmony changes, persistence, UI, or AI.
+**Tests/evidence:** Exact byte/hash regeneration, independent Format 1/960 parsing, expected tempo/meter/tracks/events, explicit Note Off and terminal-boundary checks, plus the manual protocol in `docs/reviews/STAGE5_FL_STUDIO_INTEROPERABILITY.md`.
+**Exit:** Automated fixture evidence passes and a product owner records/reviews the manual FL Studio observations; MIDI-004 remains deferred until that human gate is satisfied.
+
 #### Later MIDI delivery and interoperability work
 
-**Status:** Not authorized; requires a separate bounded task after Stage 5B2b review.
+**Status:** Not authorized; requires a separate bounded task after Stage 5C1 review and the MIDI-004 human gate.
 **Objective:** To be defined by an explicitly authorized implementation brief against the Stage 5A contract.
 **Capabilities:** None approved.
-**Dependencies:** Accepted Stage 5A contract, completed dependency spike, reviewed Stage 5B2a adapter, and accepted Stage 5B2b evidence.
+**Dependencies:** Accepted Stage 5A contract, completed dependency spike, reviewed Stage 5B2a adapter, accepted Stage 5B2b evidence, and Stage 5C1 review.
 **Non-goals:** Any work inferred from this placeholder, including browser delivery or later package workflow.
 
 **Umbrella objective:** Produce independently valid, deterministic standard MIDI from canonical events.
