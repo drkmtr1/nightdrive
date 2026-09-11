@@ -15,9 +15,9 @@
 | AC-055 | Compare `midi-file` and `midi-writer-js`; adoption requires evidence preserving Nightdrive semantics. | `ACCEPTANCE_CRITERIA.md`; spike report | Dependency remains behind adapter and cannot define semantics. | Spike tooling, isolated B2a adapter, and B2b test reference. | Candidate matrix, raw bytes, independent parser, malformed cases, browser smoke. | AC-055 | Spike complete; `midi-file` 1.2.4 adopted only for B2a | Browser delivery remains deferred. |
 | ADR-017 | Versioned Nightdrive MIDI boundary; Format 1/960; isolated adapter and independent validation; no dependency-defined canonical semantics. | `DECISIONS.md` | Preserve inward dependency direction and canonical ownership. | `midi` IR and B2a adapter boundary. | IR validation now; byte-level adapter evidence; cross-runtime and FL Studio evidence at implementation/release. | AC-054/055 | Accepted | None. |
 | MIDI-001 | Canonical time is integer ticks at 960 PPQ. | `REQUIREMENTS.md`; ADR-006; `MUSICAL_TIME_MODEL.md` | Reuse validated tick primitives. | Existing musical-time domain. | Tick conversion and boundary tests. | AC-007/033 | Implemented prerequisite | None. |
-| MIDI-002 | Export preserves pitch, start, duration, velocity, tempo, PPQ, and track identity. | `REQUIREMENTS.md` | Map canonical fields without lossy conversion. | Stage 5B1 source-note IR, Stage 5B2a adapter, B2b reference, and C1 fixture. | IR, byte-level adapter, independent semantic round-trip, and fixture tests. | AC-008 | Exercised by B2a/B2b/C1 evidence | FL Studio acceptance remains future. |
+| MIDI-002 | Export preserves pitch, start, duration, velocity, tempo, PPQ, and track identity. | `REQUIREMENTS.md` | Map canonical fields without lossy conversion. | Stage 5B1 source-note IR, Stage 5B2a adapter, B2b reference, and C1 fixture. | IR, byte-level adapter, independent semantic round-trip, and fixture tests. | AC-008 | Exercised by B2a/B2b/C1 evidence | Exact numeric velocity preservation was not directly verifiable in FL Studio; broader compatibility remains untested. |
 | MIDI-003 | Serialization has stable ordering and valid note lifecycle. | `REQUIREMENTS.md`; `MIDI_MODEL.md` | Nightdrive owns ordering and lifecycle. | IR mapper, adapter, and independent reference. | Same-tick, off-before-on, ascending-pitch, delta conversion, raw-byte, and parsed-event tests. | AC-007 | Exercised by B2a/B2b evidence | EOT sentinel clarification applied below. |
-| MIDI-004 | Exported fixtures import correctly into supported FL Studio. | `REQUIREMENTS.md`; ADR-007; `MIDI_MODEL.md` | Human compatibility gate after valid bytes exist. | Export artifact/manual protocol. | Controlled FL Studio import record. | AC-009 | Deferred | Requires implementation and declared FL Studio environment. |
+| MIDI-004 | Exported fixtures import correctly into supported FL Studio. | `REQUIREMENTS.md`; ADR-007; `MIDI_MODEL.md` | Human compatibility gate after valid bytes exist. | Export artifact/manual protocol. | Controlled FL Studio import record. | AC-009 | Satisfied for FL Studio Producer Edition 2025 `26.1.6.5639` using the recorded settings; not universal. | Exact numeric velocity preservation was not directly verifiable; broader versions/DAWs remain untested. |
 | Unnumbered accepted constraint | MIDI is derived output; deterministic typed logic, not an LLM, owns raw MIDI semantics. | ADR-008; `AGENTS.md`; `ARCHITECTURE.md` | Prevent AI/provider authority and canonical-state leakage. | Domain and adapter boundaries. | Source-boundary and ownership review. | AC-017/054 | Aligned | None. |
 
 ## MUS-027 / NFR-026 / AC-054 / AC-055 / ADR-017
@@ -54,9 +54,9 @@ The merged spike recommended `midi-file` `1.2.4` and rejected `midi-writer-js` f
 | Independent verification | Standards-level inspector or independent parser, never the writer's own reader alone. |
 | Failures | Unsupported schema/version, invalid tick/channel/pitch/velocity/tempo/lifecycle/event, and serializer-failure tests. |
 | Runtime portability | Node and browser-target adapter/bundle smoke checks. |
-| FL Studio | Later controlled manual import acceptance, separate from CI. |
+| FL Studio | Controlled manual import acceptance recorded for the declared environment; broader compatibility remains separate. |
 
-Stage 5B1 has focused production IR/validator tests, Stage 5B2a adds focused byte-level serializer evidence, Stage 5B2b adds independent parser/reference, semantic round-trip, malformed-file, and golden-fixture evidence, and Stage 5C1 adds committed fixture regeneration/hash and manual protocol preparation. FL Studio tests remain human evaluation evidence; the dependency-spike tests remain experimental and isolated.
+Stage 5B1 has focused production IR/validator tests, Stage 5B2a adds focused byte-level serializer evidence, Stage 5B2b adds independent parser/reference, semantic round-trip, malformed-file, and golden-fixture evidence, and Stage 5C1 adds committed fixture regeneration/hash plus the recorded clean manual import for the declared FL Studio environment. Exact numeric velocity preservation remains not directly verifiable; broader compatibility is untested.
 
 ## Failure semantics
 
@@ -70,14 +70,14 @@ Stage 5B does not imply `.flp` generation, direct FL Studio control, ZIP packagi
 
 - The EOT ordering ambiguity was genuine and is clarified in `MIDI_MODEL.md`, `TESTING_STRATEGY.md`, and AC-054.
 - The first production task still needs exact IR type names, validator error fields, and the mapper/adaptor call signature; these are implementation details, not contradictions in the accepted architecture.
-- FL Studio version/device acceptance remains a human gate and cannot be satisfied by this audit.
+- FL Studio acceptance is satisfied only for the declared Producer Edition 2025 `26.1.6.5639` environment; broader version/device acceptance remains unproven.
 
 No unresolved architecture conflict was found.
 
 ## Gate conclusion
 
-**READY FOR BOUNDED C1 HUMAN INTEROPERABILITY REVIEW.** The requirements and dependency evidence support the merged Stage 5B2a serializer adapter and Stage 5B2b independent reference evidence, plus the C1 fixture/protocol preparation; production parser, browser delivery, and FL Studio compatibility remain separately gated.
+**C1 HUMAN INTEROPERABILITY EVIDENCE RECORDED.** The merged Stage 5B2a serializer adapter and Stage 5B2b independent reference evidence are supplemented by a clean FL Studio Producer Edition 2025 `26.1.6.5639` import record satisfying MIDI-004 for that environment; production parser, browser delivery, and broader compatibility remain separately gated.
 
 ## Smallest recommended Stage 5C task
 
-The next smallest task is the controlled human review of the C1 fixture in a declared FL Studio environment; no production parser, browser delivery, or broader MIDI workflow is included here.
+The next smallest task is a separately authorized broader compatibility evaluation if required; no production parser, browser delivery, or broader MIDI workflow is included here.
