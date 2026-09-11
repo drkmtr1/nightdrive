@@ -220,6 +220,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Tests:** Catalog fidelity, profile mapping, opaque-ID boundary, golden degree roots/qualities/members, all-template realization, malformed input, scale mismatch, immutability, and determinism.
 **Exit:** MUS-023/NFR-022 and AC-050 pass without new dependencies or later Stage 4 behavior.
 
+### Stage 4B2 — Harmony voicing candidates
+
+**Status:** Current bounded implementation slice; implementation and review remain pending.
+**Objective:** Enumerate deterministic hard-valid ChordInversion and ChordVoicing candidates under the accepted Stage 4A policy bounds.
+**Capabilities:** Profile voicing policies, strict range/span validation, Chord membership and inversion compatibility filtering, explicit inversion restrictions, immutable candidates, deterministic lexicographic ordering, and structured no-inversion/no-voicing failures.
+**Dependencies:** Merged Stage 4B1 and existing Chord, ChordInversion, and ChordVoicing primitives.
+**Non-goals:** Candidate selection, scoring, voice-leading, progression generation, seeded variation, PRNG helpers, MIDI, bass, arp, melody, extensions, harmony implementation beyond this bounded candidate layer, AI, UI, or persistence.
+**Tests:** Policy immutability, candidate invariants, ordering/uniqueness, restriction behavior, wrapped-root compatibility, fixed-policy boundary checks, and repeatability; no-voicing is reserved because every fixed V1 triad policy has candidates.
+**Exit:** MUS-024/NFR-023 and AC-051 pass without new dependencies or selection, voice-leading, progression, or Stage 4 engine behavior.
+
 ## Stage 4 — Harmony engine
 
 **Objective:** Generate valid progressions and voice-led chord tracks.

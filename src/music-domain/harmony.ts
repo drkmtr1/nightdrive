@@ -2,6 +2,14 @@ import { createChord, type Chord } from "./chord";
 import { createChordQuality, CHORD_QUALITIES, type ChordQuality } from "./chord-quality";
 import { createKey, pitchClassAtKeyDegree, type Key } from "./key";
 import {
+  createChordVoicing,
+  isChordVoicingCompatibleWithChord,
+  isChordVoicingCompatibleWithChordInversion,
+  type ChordVoicing,
+} from "./chord-voicing";
+import { createChordInversion, type ChordInversion } from "./chord-inversion";
+import { createMidiPitch } from "./pitch";
+import {
   createScaleDegree,
   createScaleType,
   SCALE_TYPES,
@@ -36,6 +44,8 @@ export const HARMONY_ERROR_CODES = {
   scaleMismatch: "HARMONY_SCALE_MISMATCH",
   unknownTemplate: "UNKNOWN_HARMONY_TEMPLATE",
   unknownProfile: "UNKNOWN_HARMONY_PROFILE",
+  noInversion: "NO_INVERSION",
+  noVoicing: "NO_VOICING",
 } as const;
 export type HarmonyErrorCode = (typeof HARMONY_ERROR_CODES)[keyof typeof HARMONY_ERROR_CODES];
 export class HarmonyTemplateValueError extends RangeError {
@@ -48,6 +58,16 @@ export class HarmonyTemplateValueError extends RangeError {
     this.field = field;
   }
 }
+
+export type HarmonyVoicingPolicy = Readonly<{
+  minMidiPitch: number;
+  maxMidiPitch: number;
+  maxSpan: number;
+}>;
+export type ChordVoicingCandidate = Readonly<{
+  inversion: ChordInversion;
+  voicing: ChordVoicing;
+}>;
 
 function fail(
   field: string,
@@ -301,6 +321,75 @@ const PROFILE_TEMPLATE_IDS: Readonly<Record<HarmonyProfileId, readonly string[]>
     "degree-0340-natural-minor-v1",
   ]),
 });
+
+export const HARMONY_VOICING_POLICIES: Readonly<Record<HarmonyProfileId, HarmonyVoicingPolicy>> =
+  Object.freeze({
+    [HARMONY_PROFILE_IDS.darkSynthwave]: Object.freeze({
+      minMidiPitch: 36,
+      maxMidiPitch: 84,
+      maxSpan: 24,
+    }),
+    [HARMONY_PROFILE_IDS.classicSynthwave]: Object.freeze({
+      minMidiPitch: 40,
+      maxMidiPitch: 88,
+      maxSpan: 24,
+    }),
+    [HARMONY_PROFILE_IDS.darkwave]: Object.freeze({
+      minMidiPitch: 34,
+      maxMidiPitch: 80,
+      maxSpan: 22,
+    }),
+    [HARMONY_PROFILE_IDS.midtempoCyberpunk]: Object.freeze({
+      minMidiPitch: 38,
+      maxMidiPitch: 86,
+      maxSpan: 26,
+    }),
+  });
+
+export function getHarmonyVoicingPolicy(profile: HarmonyProfileId): HarmonyVoicingPolicy {
+  return (
+    HARMONY_VOICING_POLICIES[profile] ??
+    fail("profile", "unknown harmony profile.", HARMONY_ERROR_CODES.unknownProfile)
+  );
+}
+
+export function enumerateChordVoicingCandidates(
+  chord: Chord,
+  profile: HarmonyProfileId,
+  allowedInversions?: readonly ChordInversion[],
+): readonly ChordVoicingCandidate[] {
+  const policy = getHarmonyVoicingPolicy(profile);
+  const allowed =
+    allowedInversions === undefined
+      ? [0, 1, 2].map(createChordInversion)
+      : allowedInversions.map((value) => createChordInversion(value));
+  if (allowed.length === 0)
+    return fail("inversions", "no permitted inversion.", HARMONY_ERROR_CODES.noInversion);
+  const candidates: ChordVoicingCandidate[] = [];
+  for (let bass = policy.minMidiPitch; bass <= policy.maxMidiPitch; bass += 1) {
+    for (let middle = bass + 1; middle <= policy.maxMidiPitch; middle += 1) {
+      for (
+        let top = middle + 1;
+        top <= policy.maxMidiPitch && top - bass <= policy.maxSpan;
+        top += 1
+      ) {
+        const voicing = createChordVoicing([
+          createMidiPitch(bass),
+          createMidiPitch(middle),
+          createMidiPitch(top),
+        ]);
+        if (!isChordVoicingCompatibleWithChord(voicing, chord)) continue;
+        const inversion = allowed.find((value) =>
+          isChordVoicingCompatibleWithChordInversion(voicing, chord, value),
+        );
+        if (inversion !== undefined) candidates.push(Object.freeze({ inversion, voicing }));
+      }
+    }
+  }
+  if (candidates.length === 0)
+    return fail("voicing", "no valid voicing.", HARMONY_ERROR_CODES.noVoicing);
+  return Object.freeze(candidates);
+}
 
 export function isHarmonyProfileId(value: unknown): value is HarmonyProfileId {
   return typeof value === "string" && Object.hasOwn(PROFILE_TEMPLATE_IDS, value);

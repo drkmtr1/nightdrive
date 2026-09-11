@@ -7,10 +7,22 @@ import {
   createHarmonyTemplate,
   getHarmonyTemplate,
   getHarmonyTemplateIdsForProfile,
+  HARMONY_PROFILE_IDS,
+  enumerateChordVoicingCandidates,
+  getHarmonyVoicingPolicy,
   isHarmonyTemplateSupportedForProfile,
   realizeHarmonyTemplate,
+  HarmonyTemplateValueError,
+  HARMONY_ERROR_CODES,
 } from "./harmony";
-import { createPitchClass } from "./pitch";
+import { createMidiPitch, createPitchClass } from "./pitch";
+import { createChord } from "./chord";
+import {
+  createChordVoicing,
+  isChordVoicingCompatibleWithChord,
+  isChordVoicingCompatibleWithChordInversion,
+} from "./chord-voicing";
+import { createChordInversion } from "./chord-inversion";
 
 describe("Harmony template runtime", () => {
   it("preserves the complete immutable catalog and profile mappings", () => {
@@ -164,5 +176,168 @@ describe("Harmony template runtime", () => {
     ]) {
       expect(() => createHarmonyTemplate(value)).toThrow();
     }
+  });
+
+  it("enumerates immutable hard-valid voicing candidates in lexicographic order", () => {
+    const policies = [
+      [HARMONY_PROFILE_IDS.darkSynthwave, 36, 84, 24],
+      [HARMONY_PROFILE_IDS.classicSynthwave, 40, 88, 24],
+      [HARMONY_PROFILE_IDS.darkwave, 34, 80, 22],
+      [HARMONY_PROFILE_IDS.midtempoCyberpunk, 38, 86, 26],
+    ] as const;
+    const chord = createChord(createPitchClass(0), CHORD_QUALITIES.majorTriad);
+    for (const [profile, min, max, span] of policies) {
+      const policy = getHarmonyVoicingPolicy(profile);
+      expect(policy).toEqual({ minMidiPitch: min, maxMidiPitch: max, maxSpan: span });
+      expect(Object.isFrozen(policy)).toBe(true);
+      const candidates = enumerateChordVoicingCandidates(chord, profile);
+      let previous: number[] | undefined;
+      const tuples = new Set<string>();
+      for (const candidate of candidates) {
+        const tuple = [...candidate.voicing.midiPitches];
+        expect(tuple[0]).toBeGreaterThanOrEqual(min);
+        expect(tuple[2]).toBeLessThanOrEqual(max);
+        expect(tuple[2] - tuple[0]).toBeLessThanOrEqual(span);
+        expect(
+          previous === undefined ||
+            tuple[0] > previous[0] ||
+            (tuple[0] === previous[0] &&
+              (tuple[1] > previous[1] || (tuple[1] === previous[1] && tuple[2] > previous[2]))),
+        ).toBe(true);
+        previous = tuple;
+        expect(tuples.has(tuple.join(","))).toBe(false);
+        tuples.add(tuple.join(","));
+        expect(Object.isFrozen(candidate)).toBe(true);
+        expect(
+          isChordVoicingCompatibleWithChordInversion(candidate.voicing, chord, candidate.inversion),
+        ).toBe(true);
+      }
+      expect(candidates.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("supports restrictions, boundaries, wrapped roots, and unsatisfiable behavior", () => {
+    const chord = createChord(createPitchClass(11), CHORD_QUALITIES.diminishedTriad);
+    const unrestricted = enumerateChordVoicingCandidates(chord, HARMONY_PROFILE_IDS.darkSynthwave);
+    expect(unrestricted.some((candidate) => candidate.inversion === 0)).toBe(true);
+    expect(unrestricted.some((candidate) => candidate.inversion === 1)).toBe(true);
+    expect(unrestricted.some((candidate) => candidate.inversion === 2)).toBe(true);
+    const firstOnly = enumerateChordVoicingCandidates(chord, HARMONY_PROFILE_IDS.darkSynthwave, [
+      createChordInversion(1),
+    ]);
+    expect(firstOnly.every((candidate) => candidate.inversion === 1)).toBe(true);
+    try {
+      enumerateChordVoicingCandidates(chord, HARMONY_PROFILE_IDS.darkSynthwave, []);
+      throw new Error("expected NO_INVERSION");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HarmonyTemplateValueError);
+      expect(error).toMatchObject({ code: HARMONY_ERROR_CODES.noInversion, field: "inversions" });
+    }
+    expect(() =>
+      enumerateChordVoicingCandidates(chord, HARMONY_PROFILE_IDS.darkSynthwave, [3 as never]),
+    ).toThrow();
+    const wrapped = firstOnly.find(
+      (candidate) => candidate.voicing.midiPitches.join(",") === "50,53,59",
+    );
+    expect(wrapped?.inversion).toBe(1);
+  });
+
+  it("proves complete candidate enumeration against an independent reference", () => {
+    const chord = createChord(createPitchClass(0), CHORD_QUALITIES.majorTriad);
+    const profile = HARMONY_PROFILE_IDS.darkSynthwave;
+    const policy = getHarmonyVoicingPolicy(profile);
+    const expected: Array<{ tuple: string; inversion: number }> = [];
+    for (let bass = policy.minMidiPitch; bass <= policy.maxMidiPitch; bass += 1) {
+      for (let middle = bass + 1; middle <= policy.maxMidiPitch; middle += 1) {
+        for (let top = middle + 1; top <= policy.maxMidiPitch; top += 1) {
+          if (top - bass > policy.maxSpan) continue;
+          const voicing = createChordVoicing([
+            createMidiPitch(bass),
+            createMidiPitch(middle),
+            createMidiPitch(top),
+          ]);
+          if (!isChordVoicingCompatibleWithChord(voicing, chord)) continue;
+          const inversion = [0, 1, 2].find((index) =>
+            isChordVoicingCompatibleWithChordInversion(voicing, chord, createChordInversion(index)),
+          );
+          if (inversion !== undefined)
+            expected.push({ tuple: `${bass},${middle},${top}`, inversion });
+        }
+      }
+    }
+    const actual = enumerateChordVoicingCandidates(chord, profile).map((candidate) => ({
+      tuple: candidate.voicing.midiPitches.join(","),
+      inversion: candidate.inversion,
+    }));
+    expect(actual).toEqual(expected);
+    expect(actual).toHaveLength(expected.length);
+  });
+
+  it("covers all V1 qualities and exact policy boundaries", () => {
+    const qualities = [
+      CHORD_QUALITIES.majorTriad,
+      CHORD_QUALITIES.minorTriad,
+      CHORD_QUALITIES.diminishedTriad,
+    ];
+    const profiles = Object.values(HARMONY_PROFILE_IDS);
+    for (const profile of profiles) {
+      const policy = getHarmonyVoicingPolicy(profile);
+      const profileCandidates = [];
+      for (const quality of qualities) {
+        const candidates = Array.from({ length: 12 }, (_, root) =>
+          enumerateChordVoicingCandidates(createChord(createPitchClass(root), quality), profile),
+        ).flat();
+        profileCandidates.push(...candidates);
+        expect(candidates.length).toBeGreaterThan(0);
+        for (const candidate of candidates) {
+          const [bass, , top] = candidate.voicing.midiPitches;
+          expect(bass).toBeGreaterThanOrEqual(policy.minMidiPitch);
+          expect(top).toBeLessThanOrEqual(policy.maxMidiPitch);
+          expect(top - bass).toBeLessThanOrEqual(policy.maxSpan);
+        }
+        expect(
+          candidates.some(({ voicing }) => voicing.midiPitches[0] === policy.minMidiPitch - 1),
+        ).toBe(false);
+        expect(
+          candidates.some(({ voicing }) => voicing.midiPitches[2] === policy.maxMidiPitch + 1),
+        ).toBe(false);
+        expect(
+          candidates.some(
+            ({ voicing }) => voicing.midiPitches[2] - voicing.midiPitches[0] === policy.maxSpan + 1,
+          ),
+        ).toBe(false);
+      }
+      expect(
+        profileCandidates.some(({ voicing }) => voicing.midiPitches[0] === policy.minMidiPitch),
+      ).toBe(true);
+      expect(
+        profileCandidates.some(({ voicing }) => voicing.midiPitches[2] === policy.maxMidiPitch),
+      ).toBe(true);
+    }
+    const allCandidates = profiles.flatMap((profile) =>
+      qualities.flatMap((quality) =>
+        enumerateChordVoicingCandidates(createChord(createPitchClass(0), quality), profile),
+      ),
+    );
+    expect(allCandidates.every(({ voicing }) => voicing.midiPitches[0] >= 0)).toBe(true);
+    expect(allCandidates.every(({ voicing }) => voicing.midiPitches[2] <= 127)).toBe(true);
+  });
+
+  it("supports multiple allowed inversions while excluding omitted inversions", () => {
+    const chord = createChord(createPitchClass(11), CHORD_QUALITIES.diminishedTriad);
+    const candidates = enumerateChordVoicingCandidates(chord, HARMONY_PROFILE_IDS.darkSynthwave, [
+      createChordInversion(0),
+      createChordInversion(2),
+    ]);
+    expect(candidates.some((candidate) => candidate.inversion === 0)).toBe(true);
+    expect(candidates.some((candidate) => candidate.inversion === 2)).toBe(true);
+    expect(candidates.some((candidate) => candidate.inversion === 1)).toBe(false);
+    expect(candidates.map(({ voicing }) => voicing.midiPitches.join(","))).toEqual(
+      [...candidates]
+        .sort((left, right) =>
+          left.voicing.midiPitches.join(",").localeCompare(right.voicing.midiPitches.join(",")),
+        )
+        .map(({ voicing }) => voicing.midiPitches.join(",")),
+    );
   });
 });
