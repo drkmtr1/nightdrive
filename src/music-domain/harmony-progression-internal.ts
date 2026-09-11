@@ -1,4 +1,4 @@
-import type { ChordVoicingCandidate, HarmonyProfileId } from "./harmony";
+import type { ChordVoicingCandidate, HarmonyProfileId, HARMONY_PROFILE_IDS } from "./harmony";
 import type { Chord } from "./chord";
 import type { ChordInversion } from "./chord-inversion";
 
@@ -12,12 +12,7 @@ type VoiceLeadingCost = (
   next: ChordVoicingCandidate["voicing"],
 ) => number;
 
-const PROFILE_IDS = {
-  darkSynthwave: "dark-synthwave",
-  classicSynthwave: "classic-synthwave",
-  darkwave: "darkwave",
-  midtempoCyberpunk: "midtempo-cyberpunk",
-} as const;
+type HarmonyProfileIds = typeof HARMONY_PROFILE_IDS;
 
 export function progressionCandidates(
   chord: Chord,
@@ -56,26 +51,28 @@ function compareStage4B3PitchTieBreak(
 }
 
 function firstSlotPreferenceRank(
+  profileIds: HarmonyProfileIds,
   profile: HarmonyProfileId,
   candidate: ChordVoicingCandidate,
 ): number {
-  return profile === PROFILE_IDS.classicSynthwave && candidate.inversion === 0 ? 0 : 1;
+  return profile === profileIds.classicSynthwave && candidate.inversion === 0 ? 0 : 1;
 }
 
 function laterSlotPreferenceRank(
+  profileIds: HarmonyProfileIds,
   profile: HarmonyProfileId,
   candidate: ChordVoicingCandidate,
   slotIndex: number,
   slotCount: number,
   previous: ChordVoicingCandidate,
 ): number {
-  if (slotIndex === slotCount - 1 && profile === PROFILE_IDS.darkSynthwave) {
+  if (slotIndex === slotCount - 1 && profile === profileIds.darkSynthwave) {
     return candidate.inversion === 0 ? 0 : 1;
   }
-  if (slotIndex === slotCount - 1 && profile === PROFILE_IDS.darkwave) {
+  if (slotIndex === slotCount - 1 && profile === profileIds.darkwave) {
     return candidate.inversion === 2 ? 1 : 0;
   }
-  if (profile === PROFILE_IDS.midtempoCyberpunk) {
+  if (profile === profileIds.midtempoCyberpunk) {
     return candidate.inversion === previous.inversion ? 1 : 0;
   }
   return 0;
@@ -84,11 +81,12 @@ function laterSlotPreferenceRank(
 export function selectFirstProgressionCandidate(
   profile: HarmonyProfileId,
   candidates: readonly ChordVoicingCandidate[],
+  profileIds: HarmonyProfileIds,
 ): { candidate: ChordVoicingCandidate; preferenceRank: number } {
   let selected = candidates[0];
-  let selectedRank = firstSlotPreferenceRank(profile, selected);
+  let selectedRank = firstSlotPreferenceRank(profileIds, profile, selected);
   for (const candidate of candidates.slice(1)) {
-    const rank = firstSlotPreferenceRank(profile, candidate);
+    const rank = firstSlotPreferenceRank(profileIds, profile, candidate);
     if (
       rank < selectedRank ||
       (rank === selectedRank && compareFirstPitchTuples(candidate, selected) < 0)
@@ -107,13 +105,28 @@ export function selectLaterProgressionCandidate(
   slotIndex: number,
   slotCount: number,
   calculateCost: VoiceLeadingCost,
+  profileIds: HarmonyProfileIds,
 ): { candidate: ChordVoicingCandidate; cost: number; preferenceRank: number } {
   let selected = candidates[0];
   let selectedCost = calculateCost(previous.voicing, selected.voicing);
-  let selectedRank = laterSlotPreferenceRank(profile, selected, slotIndex, slotCount, previous);
+  let selectedRank = laterSlotPreferenceRank(
+    profileIds,
+    profile,
+    selected,
+    slotIndex,
+    slotCount,
+    previous,
+  );
   for (const candidate of candidates.slice(1)) {
     const cost = calculateCost(previous.voicing, candidate.voicing);
-    const rank = laterSlotPreferenceRank(profile, candidate, slotIndex, slotCount, previous);
+    const rank = laterSlotPreferenceRank(
+      profileIds,
+      profile,
+      candidate,
+      slotIndex,
+      slotCount,
+      previous,
+    );
     if (
       cost < selectedCost ||
       (cost === selectedCost &&

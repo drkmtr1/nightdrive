@@ -584,7 +584,7 @@ export function realizeHarmonyProgression(
       enumerateChordVoicingCandidates,
     );
     if (previous === undefined) {
-      const selected = selectFirstProgressionCandidate(profile, candidates);
+      const selected = selectFirstProgressionCandidate(profile, candidates, HARMONY_PROFILE_IDS);
       previous = selected.candidate;
       slots.push(
         Object.freeze({
@@ -610,6 +610,7 @@ export function realizeHarmonyProgression(
       index,
       templateValidated.slots.length,
       calculateVoiceLeadingCost,
+      HARMONY_PROFILE_IDS,
     );
     previous = selected.candidate;
     slots.push(
