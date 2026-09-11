@@ -6,8 +6,15 @@ const END = 30720;
 const fixture = {
   conductor: [
     { tick: 0, kind: "trackName", text: "Conductor" },
-    { tick: 0, kind: "timeSignature", numerator: 4, denominator: 2, metronome: 24, thirtyseconds: 8 },
-      { tick: 0, kind: "setTempo", microsecondsPerBeat: 500000 },
+    {
+      tick: 0,
+      kind: "timeSignature",
+      numerator: 4,
+      denominator: 2,
+      metronome: 24,
+      thirtyseconds: 8,
+    },
+    { tick: 0, kind: "setTempo", microsecondsPerBeat: 500000 },
   ],
   chords: [
     { tick: 0, kind: "trackName", text: "Chords" },
@@ -34,13 +41,18 @@ function toDelta(events) {
 }
 
 function writeMidiFile() {
-  return Uint8Array.from(writeMidi({
-    header: { format: 1, numTracks: 2, ticksPerBeat: PPQ },
-    tracks: [
-      toDelta([...fixture.conductor, { tick: END, kind: "endOfTrack", meta: true }]),
-      toDelta([...fixture.chords, { tick: END, kind: "endOfTrack", meta: true }]),
-    ],
-  }, { running: false, useByte9ForNoteOff: false }));
+  return Uint8Array.from(
+    writeMidi(
+      {
+        header: { format: 1, numTracks: 2, ticksPerBeat: PPQ },
+        tracks: [
+          toDelta([...fixture.conductor, { tick: END, kind: "endOfTrack", meta: true }]),
+          toDelta([...fixture.chords, { tick: END, kind: "endOfTrack", meta: true }]),
+        ],
+      },
+      { running: false, useByte9ForNoteOff: false },
+    ),
+  );
 }
 
 function writeMidiWriter() {
@@ -51,8 +63,24 @@ function writeMidiWriter() {
   const chords = new MidiWriter.Track();
   chords.addTrackName("Chords");
   // Documented NoteEvent uses startTick/tick, 1-based channels, and velocity 1..100.
-  chords.addEvent(new MidiWriter.NoteEvent({ pitch: [60, 64, 67], duration: "T960", channel: 1, velocity: 79, startTick: 0 }));
-  chords.addEvent(new MidiWriter.NoteEvent({ pitch: [60], duration: "T29760", channel: 1, velocity: 71, startTick: 960 }));
+  chords.addEvent(
+    new MidiWriter.NoteEvent({
+      pitch: [60, 64, 67],
+      duration: "T960",
+      channel: 1,
+      velocity: 79,
+      startTick: 0,
+    }),
+  );
+  chords.addEvent(
+    new MidiWriter.NoteEvent({
+      pitch: [60],
+      duration: "T29760",
+      channel: 1,
+      velocity: 71,
+      startTick: 960,
+    }),
+  );
   return new MidiWriter.Writer([conductor, chords], { ticksPerBeat: PPQ }).buildFile();
 }
 
@@ -118,14 +146,25 @@ function inspect(bytes) {
       } else if ((status & 0xf0) === 0x80 || (status & 0xf0) === 0x90) {
         const pitch = bytes[cursor++];
         const velocity = bytes[cursor++];
-        events.push({ tick: absolute, status: status & 0xf0, channel: status & 0x0f, pitch, velocity });
+        events.push({
+          tick: absolute,
+          status: status & 0xf0,
+          channel: status & 0x0f,
+          pitch,
+          velocity,
+        });
       } else {
         const size = (status & 0xe0) === 0xc0 ? 1 : 2;
         cursor += size;
       }
       if (status >= 0x80 && status < 0xf0) running = status;
     }
-    trackReports.push({ length, events, eotCount: events.filter((event) => event.status === "ff2f").length, eotTicks: events.filter((event) => event.status === "ff2f").map((event) => event.tick) });
+    trackReports.push({
+      length,
+      events,
+      eotCount: events.filter((event) => event.status === "ff2f").length,
+      eotTicks: events.filter((event) => event.status === "ff2f").map((event) => event.tick),
+    });
     offset = end;
   }
   return { format, tracks, division, trackReports, bytes: [...bytes] };
@@ -135,10 +174,21 @@ function run(name, writer) {
   try {
     const first = Uint8Array.from(writer());
     const second = Uint8Array.from(writer());
-    return { name, ok: true, byteStable: Buffer.from(first).equals(Buffer.from(second)), inspection: inspect(first) };
+    return {
+      name,
+      ok: true,
+      byteStable: Buffer.from(first).equals(Buffer.from(second)),
+      inspection: inspect(first),
+    };
   } catch (error) {
     return { name, ok: false, error: String(error) };
   }
 }
 
-console.log(JSON.stringify({ fixture, results: [run("midi-file", writeMidiFile), run("midi-writer-js", writeMidiWriter)] }, null, 2));
+console.log(
+  JSON.stringify(
+    { fixture, results: [run("midi-file", writeMidiFile), run("midi-writer-js", writeMidiWriter)] },
+    null,
+    2,
+  ),
+);
