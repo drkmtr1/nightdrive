@@ -17,16 +17,16 @@ The planned flow is canonical composition/timing → Nightdrive IR → isolated 
 ## Mapping
 
 - File header declares division 960 ticks per quarter note.
-- Initial export uses Type 1 for a tempo/conductor track plus named musical tracks; component files may be Type 0 or 1 under one documented export version.
+- The V1 serializer emits Standard MIDI File Format 1 only, with conductor track 0 followed by the fixed component-track order. Separate component-file packaging and any Format 0 export are deferred questions and cannot weaken this serializer contract.
 - At tick 0, conductor metadata includes tempo and 4/4 time signature.
 - `NoteEvent.pitch` maps to MIDI key 0–127; velocity maps to 1–127 for note-on. Velocity 0 note-on is not emitted as canonical note start.
-- Start tick maps to note-on; `start + duration` maps to note-off (explicit status policy selected in Stage 5 and fixture-stable).
+- Start tick maps to a Note On channel message. `start + duration` maps to an explicit MIDI Note Off channel message (`0x8n`) with release velocity `0`; a Note On with velocity `0` is never emitted as Nightdrive's V1 canonical termination representation, regardless of library defaults.
 - Track names are sanitized, bounded, stable, and role-identifying: Chords, Bass, Arp, Lead.
 - Channels avoid percussion channel 10 by default and are explicit in the manifest. Instrument/program selection is not promised.
 
 ## Deterministic event ordering
 
-At equal absolute ticks, the total order is `(tick, track order, event class, pitch, source order)`: conductor/component track order is fixed; meta events precede note-offs, which precede note-ons; within a class, pitch is ascending and source order is the stable canonical order. Thus same-pitch termination precedes a new start, and simultaneous chord notes are ordered by ascending pitch. Delta times are derived only after total ordering. Each track emits exactly one deterministic end-of-track event.
+At equal absolute ticks, the total order is `(tick, track order, event class, pitch, source order)`: conductor/component track order is fixed; meta events precede note-offs, which precede note-ons; within a class, pitch is ascending and source order is the stable canonical order. Thus same-pitch termination precedes a new start, and simultaneous chord notes are ordered by ascending pitch. Delta times are derived only after total ordering. No emitted event may occur after tick `30720`; every track, including conductor and component tracks, emits exactly one End-of-Track meta event at absolute tick `30720`.
 
 ## Determinism and failures
 
@@ -34,7 +34,7 @@ Semantic determinism means equal validated canonical input yields the same order
 
 ## Validation
 
-Before export validate PPQ, tempo/meter, section length, integer ranges, positive durations, matching note lifecycle, track names/identity, channel policy, stable ordering, parseability by an independent reader, and round-trip equality of required fields. Reject invalid output; never label a partial file successful.
+Before export validate PPQ, tempo/meter, section length, integer ranges, positive durations, note starts `<30720`, note ends `<=30720`, matching note lifecycle, explicit Note Off status/velocity, track names/identity, channel policy, stable ordering, exactly one terminal End-of-Track at `30720` per track, parseability by an independent reader, and round-trip equality of required fields. Reject invalid output; never label a partial file successful.
 
 ## Package contract
 
