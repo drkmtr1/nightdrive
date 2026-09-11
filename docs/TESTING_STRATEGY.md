@@ -93,7 +93,7 @@ Tests cover the immutable concrete catalog, opaque template-ID lookup, exact pro
 
 ## Stage 4B2 Harmony voicing candidates
 
-Tests cover immutable profile voicing policies, deterministic lexicographic candidate ordering and uniqueness, strict MIDI range/span bounds, Chord membership and ChordInversion compatibility, explicit inversion restrictions, wrapped-root cases, and stable no-inversion/no-voicing failures. No candidate selection, scoring, voice-leading, progression, seeded variation, MIDI realization, or later Harmony behavior is included.
+Tests cover immutable profile voicing policies, deterministic lexicographic candidate ordering and uniqueness, strict MIDI range/span bounds, Chord membership and ChordInversion compatibility across all V1 qualities, explicit inversion restrictions, wrapped-root cases, exact minimum/maximum boundaries, and stable `NO_INVERSION` failure semantics. No-voicing failure is not reachable under the fixed V1 policies and is reserved for a future configurable-policy contract. No candidate selection, scoring, voice-leading, progression, seeded variation, MIDI realization, or later Harmony behavior is included.
 
 ## Stage 3B2b2g ChordInversion primitive
 
