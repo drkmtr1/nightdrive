@@ -683,3 +683,5 @@ export const createMidiEvent = createMidiIrEvent;
 export const createMidiTrack = createMidiIrTrack;
 export const createMidiNote = createMidiSourceNote;
 export const expandMidiNote = expandMidiSourceNote;
+
+export { serializeStandardMidiV1 } from "./adapter";

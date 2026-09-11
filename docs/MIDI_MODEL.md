@@ -2,7 +2,7 @@
 
 ## Authority
 
-Canonical composition events use 960 PPQ integer ticks. MIDI is a derived export, not the editing/database authority. Version 1 targets Standard MIDI File compatibility before any proprietary FL Studio format. Stage 5A freezes the boundary and validation contract; Stage 5B1 implements the Nightdrive-owned IR and strict validators, but does not implement a writer, parser, browser download, or dependency adoption.
+Canonical composition events use 960 PPQ integer ticks. MIDI is a derived export, not the editing/database authority. Version 1 targets Standard MIDI File compatibility before any proprietary FL Studio format. Stage 5A freezes the boundary and validation contract; Stage 5B1 implements the Nightdrive-owned IR and strict validators; Stage 5B2a implements an isolated deterministic Standard MIDI File Format 1 adapter over that IR using the approved `midi-file` dependency. Parsing, browser download, and later export workflows remain separately gated.
 
 ## Stage 5A boundary contract
 
@@ -30,7 +30,7 @@ At equal absolute ticks, the total order is `(tick, track order, event class, pi
 
 ## Determinism and failures
 
-Semantic determinism means equal validated canonical input yields the same ordered Nightdrive IR. Binary determinism additionally requires byte-identical Standard MIDI output; serializer defaults may not define this contract. A future adapter exposes a narrow `serializeStandardMidiV1` boundary returning bytes while keeping all canonical mapping and ordering in Nightdrive-owned code. It reports structured failures for unsupported versions/events and invalid tick, pitch, velocity, channel, tempo, or lifecycle data; partial files are never successful. Parsing is a test/reference concern for this milestone, using an independent reader rather than the writer as its sole oracle.
+Semantic determinism means equal validated canonical input yields the same ordered Nightdrive IR. Binary determinism additionally requires byte-identical Standard MIDI output; serializer defaults may not define this contract. Stage 5B2a exposes a narrow `serializeStandardMidiV1` boundary returning environment-neutral bytes while keeping all canonical mapping and ordering in Nightdrive-owned code and using `midi-file` only for commodity SMF encoding. It revalidates the IR and reports validation failures before writing; partial files are never successful. Independent parsing remains a later test/reference concern, using an independent reader rather than the writer as its sole oracle.
 
 ## Validation
 
@@ -46,7 +46,7 @@ For declared supported FL Studio version(s): import into a blank project, confir
 
 ## Stage 5A dependency spike
 
-The later bounded spike compares `midi-file` and `midi-writer-js` against the fixed IR/adapter boundary: format-1 and division-960 support, exact event ordering and note-off behavior, browser and Node support, TypeScript/runtime fit, independent parseability, malformed-input behavior, determinism, license/health/security, size/transitives, and replaceability. No candidate is selected here. Adoption requires evidence that a candidate preserves Nightdrive semantics behind the adapter; otherwise a minimal local encoder requires a new architecture review. This is a definition of evidence, not an installation or implementation authorization.
+The completed Stage 5A dependency spike compared `midi-file` and `midi-writer-js` against the fixed IR/adapter boundary. `midi-file` `1.2.4` is adopted only behind the Stage 5B2a adapter because the evidence showed the required Format 1/960 support, explicit event controls, deterministic output, and no runtime transitive dependencies; `midi-writer-js` remains rejected for this boundary. A future parser/round-trip or browser-delivery task must retain the Nightdrive-owned semantics and may require a separately reviewed dependency decision.
 
 ## Limitations
 

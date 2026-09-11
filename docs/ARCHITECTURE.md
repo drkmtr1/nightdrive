@@ -42,7 +42,7 @@ Dependencies point inward: web/persistence/AI/MIDI adapters depend on domain con
 
 Commodity mechanisms may use evaluated third-party libraries behind adapters, but canonical Nightdrive musical semantics remain defined by the framework-independent domain contracts.
 
-Stage 5A defined the MIDI boundary. Stage 5B1 now provides a framework-independent Nightdrive-owned intermediate representation and strict validators for validated canonical composition/timing inputs; it has no serializer or third-party MIDI types. A later bounded task may pass the validated IR through an isolated Standard MIDI adapter; any parser is an independent validation/reference tool, not canonical state.
+Stage 5A defined the MIDI boundary. Stage 5B1 provides a framework-independent Nightdrive-owned intermediate representation and strict validators for validated canonical composition/timing inputs. Stage 5B2a passes that validated IR through an isolated Standard MIDI adapter using `midi-file` only for commodity byte encoding; the public boundary remains Nightdrive-owned and third-party MIDI types do not cross it. Any parser is an independent validation/reference tool, not canonical state.
 
 ### Implemented boundaries
 
