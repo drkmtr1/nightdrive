@@ -222,7 +222,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 4B2 — Harmony voicing candidates
 
-**Status:** Current bounded implementation slice; implementation and review remain pending.
+**Status:** Merged and complete through PR #30 (merge commit `776a10101b9c4eb267aa85c628b23228f0e3c7eb`). Scope remains limited to profile voicing policies, deterministic hard-valid ChordInversion/ChordVoicing candidate enumeration, range/span constraints, explicit inversion restrictions, deterministic lexicographic ordering, and `NO_INVERSION`; `NO_VOICING` remains reserved because fixed V1 policies admit candidates for every triad. Stage 4B3 and later Harmony behavior remain separately gated.
 **Objective:** Enumerate deterministic hard-valid ChordInversion and ChordVoicing candidates under the accepted Stage 4A policy bounds.
 **Capabilities:** Profile voicing policies, strict range/span validation, Chord membership and inversion compatibility filtering, explicit inversion restrictions, immutable candidates, deterministic lexicographic ordering, and structured no-inversion/no-voicing failures.
 **Dependencies:** Merged Stage 4B1 and existing Chord, ChordInversion, and ChordVoicing primitives.
