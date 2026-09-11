@@ -91,6 +91,10 @@ This documentation-only gate reviews the versioned template shape, all four boun
 
 Tests cover the immutable concrete catalog, opaque template-ID lookup, exact profile/scale mappings, strict template validation, scale mismatch rejection, deterministic explicit degree-to-Chord realization, major/natural-minor and wrapped-root fixtures, all-template execution, and repeatability. No selection, inversion/voicing, voice-leading, progression, seeded variation, or Harmony engine behavior is included.
 
+## Stage 4B2 Harmony voicing candidates
+
+Tests cover immutable profile voicing policies, deterministic lexicographic candidate ordering and uniqueness, strict MIDI range/span bounds, Chord membership and ChordInversion compatibility, explicit inversion restrictions, wrapped-root cases, and stable no-inversion/no-voicing failures. No candidate selection, scoring, voice-leading, progression, seeded variation, MIDI realization, or later Harmony behavior is included.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.
