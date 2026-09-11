@@ -52,6 +52,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | MUS-022 | P0 | The Stage 4A contract defines versioned profile-approved harmony templates, deterministic degree-to-Chord mapping, bounded inversions/voicings, explainable voice-leading selection, seeded variation boundaries, unsatisfiable behavior, and decision provenance without implementing Harmony. | AC-049 | 4A |
 | MUS-023 | P0 | The Stage 4B1 runtime validates the versioned concrete Harmony template catalog and profile compatibility, then deterministically realizes explicit slots into ordered existing Chords without quality inference or later Harmony behavior. | AC-050 | 4B1 |
 | MUS-024 | P0 | The Stage 4B2 runtime deterministically enumerates hard-valid ChordInversion and ChordVoicing candidates for an existing Chord under an approved profile voicing policy, preserving canonical ordering and rejecting malformed inversion restrictions without selection or voice-leading. No-voicing failure remains reserved because the fixed V1 policies admit candidates for every triad. | AC-051 | 4B2 |
+| MUS-025 | P0 | The Stage 4B3 runtime calculates adjacent voice-leading cost between valid ChordVoicings and deterministically selects one candidate from an existing hard-valid target set using the accepted tie-break order, without progression-wide optimization. | AC-052 | 4B3 |
 
 ## AI behavior
 
@@ -108,6 +109,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 | NFR-021 | P0 | Versioned Harmony templates, profile policies, candidate ordering, integer voice-leading costs, tie-breaks, and decision records are deterministic and independent of object order, locale, ambient randomness, framework, and AI; hard constraints fail explicitly. | AC-049 | 4A |
 | NFR-022 | P0 | Equivalent validated Harmony templates and Keys produce equivalent ordered Chord identities independent of template-ID spelling, object order, ambient randomness, framework, or provider state; malformed or scale-mismatched contexts fail explicitly. | AC-050 | 4B1 |
 | NFR-023 | P0 | Equivalent validated Stage 4B2 inputs produce the same immutable, lexicographically ordered candidate sequence independent of object order, locale, ambient randomness, framework, or provider state; every candidate satisfies the profile range/span, Chord membership, and inversion constraints. | AC-051 | 4B2 |
+| NFR-024 | P0 | Equivalent validated adjacent voicing inputs produce the same integer voice-leading cost and selected candidate independent of candidate input order, locale, ambient randomness, framework, or provider state; no hidden penalties or floating-point weighting are applied. | AC-052 | 4B3 |
 | UX-005 | P0 | The foundation shell uses semantic landmarks/headings, accessible contrast/focus, responsive layout, recoverable state pages, and explicitly states that composition features are unavailable. | AC-032 | 2A |
 
 ## Requirement change rules

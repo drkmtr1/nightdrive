@@ -95,6 +95,10 @@ Tests cover the immutable concrete catalog, opaque template-ID lookup, exact pro
 
 Tests cover immutable profile voicing policies, deterministic lexicographic candidate ordering and uniqueness, strict MIDI range/span bounds, Chord membership and ChordInversion compatibility across all V1 qualities, explicit inversion restrictions, wrapped-root cases, exact minimum/maximum boundaries, and stable `NO_INVERSION` failure semantics. No-voicing failure is not reachable under the fixed V1 policies and is reserved for a future configurable-policy contract. No candidate selection, scoring, voice-leading, progression, seeded variation, MIDI realization, or later Harmony behavior is included.
 
+## Stage 4B3 Adjacent voice-leading selection
+
+Tests cover exact integer adjacent voice-leading cost, deterministic lower-cost selection, applicable tie-break ordering, candidate-order independence, immutable results, and stable empty-input failure. No progression-wide optimization, lookahead, seeded variation, PRNG, MIDI, or later Harmony behavior is included.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.

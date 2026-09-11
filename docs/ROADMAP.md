@@ -230,6 +230,16 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 **Tests:** Policy immutability, candidate invariants, ordering/uniqueness, restriction behavior, wrapped-root compatibility, fixed-policy boundary checks, and repeatability; no-voicing is reserved because every fixed V1 triad policy has candidates.
 **Exit:** MUS-024/NFR-023 and AC-051 pass without new dependencies or selection, voice-leading, progression, or Stage 4 engine behavior.
 
+### Stage 4B3 — Adjacent voice-leading cost and candidate selection
+
+**Status:** Current bounded implementation slice; implementation and review remain pending.
+**Objective:** Calculate accepted adjacent voice-leading cost and select one target candidate from an existing hard-valid set deterministically.
+**Capabilities:** Exact integer three-voice cost, candidate-order-independent lower-cost selection, maximum-pitch/bass/middle/top tie-breaks, immutable selection results, and structured empty-input failure.
+**Dependencies:** Existing Stage 4B2 candidate enumeration and ChordVoicing primitives.
+**Non-goals:** Progression generation, lookahead, dynamic programming, global optimization, template/profile selection, scoring, seeded variation, PRNG helpers, MIDI, AI, UI, or persistence.
+**Tests:** Exact cost fixtures, tie-break evidence, candidate-order independence, integer-cost invariants, immutability, empty input, and regression coverage.
+**Exit:** MUS-025/NFR-024 and AC-052 pass without new dependencies or progression-wide Harmony behavior.
+
 ## Stage 4 — Harmony engine
 
 **Objective:** Generate valid progressions and voice-led chord tracks.
