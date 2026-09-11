@@ -261,7 +261,27 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 5 — MIDI engine and export
 
-**Objective:** Produce independently valid, deterministic standard MIDI from canonical events.
+Stage 5A below is a documentation-only contract and dependency-spike definition. MIDI implementation and export remain separately gated; Stage 5B requires a new explicit authorization.
+
+### Stage 5A — MIDI boundary and dependency-spike definition
+
+**Status:** Documentation-only contract milestone; implementation and dependency adoption remain separately gated.
+**Objective:** Freeze the canonical-composition-to-MIDI boundary before any serializer or parser is selected.
+**Capabilities:** Versioned Nightdrive-owned MIDI IR, validated canonical timing input, exactly 960-PPQ integer ticks, Standard MIDI File Format 1 with conductor track 0 and fixed component/channel policy, explicit Note Off representation, deterministic note lifecycle and equal-tick ordering, terminal End-of-Track at tick 30720 on every track, structured failures, semantic/binary determinism distinction, isolated adapter interface, independent-parser validation plan, FL Studio acceptance protocol, and a bounded `midi-file` versus `midi-writer-js` dependency spike definition.
+**Dependencies:** Existing canonical composition/timing and Harmony contracts; no new package is added.
+**Non-goals:** MIDI writer/parser implementation, browser download, `.mid` fixtures, package installation, instrument assignment, MIDI editing/import product behavior, or Stage 5B authorization.
+**Tests/evidence:** Documentation review of the IR and ordering contract, malformed-input and binary-fixture strategy, independent parsing and round-trip plan, FL Studio import checklist, and evidence criteria for the later dependency spike.
+**Exit:** MUS-027/NFR-026 and AC-054/055 confirm the boundary, deterministic policies, adapter isolation, validation strategy, and dependency evaluation gate without production MIDI behavior.
+
+### Stage 5B — MIDI serializer and validation implementation
+
+**Status:** Not authorized; requires a separate bounded task after Stage 5A review.
+**Objective:** To be defined by an explicitly authorized implementation brief against the Stage 5A contract.
+**Capabilities:** None approved.
+**Dependencies:** Accepted Stage 5A contract and completed dependency spike.
+**Non-goals:** Any work inferred from this placeholder, including browser delivery or later package workflow.
+
+**Umbrella objective:** Produce independently valid, deterministic standard MIDI from canonical events.
 **Capabilities:** SMF writer/reader validation, conductor/component tracks, stable ordering, initial download.
 **Dependencies:** Stage 3; harmony fixtures.
 **Non-goals:** Complete production package or `.flp`.
