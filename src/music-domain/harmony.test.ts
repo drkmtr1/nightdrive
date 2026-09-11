@@ -10,10 +10,12 @@ import {
   HARMONY_PROFILE_IDS,
   enumerateChordVoicingCandidates,
   getHarmonyVoicingPolicy,
-  isHarmonyTemplateSupportedForProfile,
-  realizeHarmonyTemplate,
+  calculateVoiceLeadingCost,
+  selectVoiceLedCandidate,
   HarmonyTemplateValueError,
   HARMONY_ERROR_CODES,
+  isHarmonyTemplateSupportedForProfile,
+  realizeHarmonyTemplate,
 } from "./harmony";
 import { createMidiPitch, createPitchClass } from "./pitch";
 import { createChord } from "./chord";
@@ -339,5 +341,48 @@ describe("Harmony template runtime", () => {
         )
         .map(({ voicing }) => voicing.midiPitches.join(",")),
     );
+  });
+
+  it("calculates the exact adjacent voice-leading cost", () => {
+    const first = createChordVoicing([
+      createMidiPitch(48),
+      createMidiPitch(52),
+      createMidiPitch(55),
+    ]);
+    expect(
+      calculateVoiceLeadingCost(first, createChordVoicing([50, 53, 57].map(createMidiPitch))),
+    ).toBe(5);
+    expect(
+      calculateVoiceLeadingCost(first, createChordVoicing([48, 55, 60].map(createMidiPitch))),
+    ).toBe(8);
+  });
+
+  it("selects deterministically with the accepted tie-break order", () => {
+    const previous = createChordVoicing([48, 52, 55].map(createMidiPitch));
+    const candidates = [
+      {
+        inversion: createChordInversion(0),
+        voicing: createChordVoicing([48, 55, 64].map(createMidiPitch)),
+      },
+      {
+        inversion: createChordInversion(1),
+        voicing: createChordVoicing([52, 55, 60].map(createMidiPitch)),
+      },
+    ] as const;
+    const selection = selectVoiceLedCandidate(previous, candidates);
+    expect(selection.cost).toBe(12);
+    expect(selection.candidate.voicing.midiPitches).toEqual([52, 55, 60]);
+    expect(Object.isFrozen(selection)).toBe(true);
+    expect(selectVoiceLedCandidate(previous, [...candidates].reverse())).toEqual(selection);
+  });
+
+  it("rejects empty candidate input with stable Harmony error semantics", () => {
+    const previous = createChordVoicing([48, 52, 55].map(createMidiPitch));
+    expect(() => selectVoiceLedCandidate(previous, [])).toThrowError(HarmonyTemplateValueError);
+    try {
+      selectVoiceLedCandidate(previous, []);
+    } catch (error) {
+      expect(error).toMatchObject({ code: HARMONY_ERROR_CODES.noCandidate, field: "candidates" });
+    }
   });
 });

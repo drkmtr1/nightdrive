@@ -46,6 +46,7 @@ export const HARMONY_ERROR_CODES = {
   unknownProfile: "UNKNOWN_HARMONY_PROFILE",
   noInversion: "NO_INVERSION",
   noVoicing: "NO_VOICING",
+  noCandidate: "NO_CANDIDATE",
 } as const;
 export type HarmonyErrorCode = (typeof HARMONY_ERROR_CODES)[keyof typeof HARMONY_ERROR_CODES];
 export class HarmonyTemplateValueError extends RangeError {
@@ -67,6 +68,10 @@ export type HarmonyVoicingPolicy = Readonly<{
 export type ChordVoicingCandidate = Readonly<{
   inversion: ChordInversion;
   voicing: ChordVoicing;
+}>;
+export type VoiceLedCandidateSelection = Readonly<{
+  candidate: ChordVoicingCandidate;
+  cost: number;
 }>;
 
 function fail(
@@ -389,6 +394,56 @@ export function enumerateChordVoicingCandidates(
   if (candidates.length === 0)
     return fail("voicing", "no valid voicing.", HARMONY_ERROR_CODES.noVoicing);
   return Object.freeze(candidates);
+}
+
+export function calculateVoiceLeadingCost(previous: ChordVoicing, next: ChordVoicing): number {
+  const from = createChordVoicing(previous.midiPitches).midiPitches;
+  const to = createChordVoicing(next.midiPitches).midiPitches;
+  return Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]) + Math.abs(from[2] - to[2]);
+}
+
+function compareCandidateVoicings(left: ChordVoicing, right: ChordVoicing): number {
+  const leftPitches = left.midiPitches;
+  const rightPitches = right.midiPitches;
+  return (
+    leftPitches[2] - rightPitches[2] ||
+    leftPitches[0] - rightPitches[0] ||
+    leftPitches[1] - rightPitches[1] ||
+    leftPitches[2] - rightPitches[2]
+  );
+}
+
+export function selectVoiceLedCandidate(
+  previous: ChordVoicing,
+  candidates: readonly ChordVoicingCandidate[],
+): VoiceLedCandidateSelection {
+  const validatedPrevious = createChordVoicing(previous.midiPitches);
+  if (!Array.isArray(candidates) || candidates.length === 0) {
+    return fail(
+      "candidates",
+      "at least one candidate is required.",
+      HARMONY_ERROR_CODES.noCandidate,
+    );
+  }
+  let selected: ChordVoicingCandidate | undefined;
+  let selectedCost = Number.POSITIVE_INFINITY;
+  for (const candidate of candidates) {
+    const validatedVoicing = createChordVoicing(candidate.voicing.midiPitches);
+    const validatedCandidate = Object.freeze({
+      inversion: createChordInversion(candidate.inversion),
+      voicing: validatedVoicing,
+    });
+    const cost = calculateVoiceLeadingCost(validatedPrevious, validatedVoicing);
+    if (
+      selected === undefined ||
+      cost < selectedCost ||
+      (cost === selectedCost && compareCandidateVoicings(validatedVoicing, selected.voicing) < 0)
+    ) {
+      selected = validatedCandidate;
+      selectedCost = cost;
+    }
+  }
+  return Object.freeze({ candidate: selected as ChordVoicingCandidate, cost: selectedCost });
 }
 
 export function isHarmonyProfileId(value: unknown): value is HarmonyProfileId {
