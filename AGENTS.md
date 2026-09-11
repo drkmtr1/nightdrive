@@ -27,6 +27,10 @@ Nightdrive helps producers create original, editable musical material. Stage 1, 
 - Significant dependencies require purpose, license, health, security, bundle/runtime cost, operational cost, portability, and removal notes.
 - New architectural decisions require an ADR with context, alternatives, consequences, and revisit conditions.
 
+## Build vs. Buy / Dependency Evaluation Gate
+
+Before implementing any new capability that could reasonably be provided by an established library, framework, protocol implementation, SDK, or standard tool, classify it as Nightdrive-specific domain logic, commodity/standardized functionality, or mixed. Keep Nightdrive-specific semantics owned by Nightdrive; use a mature dependency for commodity mechanisms when it provides meaningful value over a small local implementation. Evaluate candidate dependencies for capability fit, maintenance, license, TypeScript/runtime support, determinism, testability, size/transitives, security, API stability, pinning, canonical-boundary impact, and replaceability. External libraries may implement commodity mechanisms but must not define canonical musical semantics; use adapters where consequential. Do not replace accepted primitives without evidence preserving semantics. Record the classification, alternatives, selected approach, rationale, boundary impact, and dependencies in every implementation report. If no suitable library exists, document why custom code is appropriate. Stop for architecture review if adoption would change accepted architecture, canonical semantics, persisted formats, or public interfaces. Skip broad package research for trivial local logic.
+
 ## Delivery report
 
 Every implementation task must report: task completed; files modified; implementation; tests and results; acceptance verification; UX/accessibility verification; architecture/docs changes; Supabase changes; deployment changes; branch; commit; push; assumptions; remaining risks; and the next smallest backlog task. Recommending a task does not authorize it.
