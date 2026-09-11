@@ -672,6 +672,42 @@ describe("Harmony template runtime", () => {
         2,
       ).candidate,
     ).toBe(lowerCostRepeated);
+
+    const equalCostLowerMaximum = progressionCandidate(1, [49, 61, 70]);
+    const equalCostHigherMaximum = progressionCandidate(1, [49, 60, 71]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.classicSynthwave,
+        [equalCostHigherMaximum, equalCostLowerMaximum],
+        previous,
+        1,
+        3,
+      ).candidate,
+    ).toBe(equalCostLowerMaximum);
+
+    const equalCostLowerBass = progressionCandidate(1, [49, 60, 71]);
+    const equalCostHigherBass = progressionCandidate(1, [50, 59, 71]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.classicSynthwave,
+        [equalCostHigherBass, equalCostLowerBass],
+        previous,
+        1,
+        3,
+      ).candidate,
+    ).toBe(equalCostLowerBass);
+
+    const equalCostLowerMiddle = progressionCandidate(1, [49, 59, 71]);
+    const equalCostHigherMiddle = progressionCandidate(1, [49, 61, 71]);
+    expect(
+      selectLaterProgressionCandidate(
+        HARMONY_PROFILE_IDS.classicSynthwave,
+        [equalCostHigherMiddle, equalCostLowerMiddle],
+        previous,
+        1,
+        3,
+      ).candidate,
+    ).toBe(equalCostLowerMiddle);
   });
 
   it("keeps controlled later-slot selection independent of candidate order", () => {
