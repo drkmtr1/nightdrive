@@ -214,7 +214,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 **Status:** Merged and complete through PR #28 (merge commit `b4df679ce3c8aab4ed0dba4faca2c6a46b6fd35d`). Scope was limited to template/profile runtime data, validation, lookup, and degree-to-Chord realization; later Harmony behavior remains separately gated.
 **Objective:** Execute the accepted `nightdrive.harmony-template.v1` contract deterministically against existing Keys and Chords.
-**Capabilities:** Immutable concrete catalog, opaque-ID lookup, accepted profile/scale mappings, structural validation, scale-context validation, and explicit slot realization.
+**Capabilities:** Immutable concrete catalog, opaque-ID lookup, accepted profile/scale mappings, structural validation including optional slot inversion restrictions, scale-context validation, and explicit slot realization.
 **Dependencies:** Merged Stage 4A and Stage 3 primitives.
 **Non-goals:** Template selection, inversion/voicing selection, voice-leading, progression optimization, seeded variation, MIDI, bass, arp, melody, AI, UI, or persistence.
 **Tests:** Catalog fidelity, profile mapping, opaque-ID boundary, golden degree roots/qualities/members, all-template realization, malformed input, scale mismatch, immutability, and determinism.

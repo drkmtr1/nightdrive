@@ -461,4 +461,38 @@ describe("Harmony template runtime", () => {
       expect(error).toMatchObject({ code: HARMONY_ERROR_CODES.noVoicing, field: "candidates" });
     }
   });
+
+  it("preserves unrestricted slots and Stage 4B2 candidate behavior", () => {
+    for (const template of HARMONY_TEMPLATE_CATALOG) {
+      expect(template.slots.every((slot) => !Object.hasOwn(slot, "inversions"))).toBe(true);
+      const chord = realizeHarmonyTemplate(
+        template,
+        createKey(createPitchClass(0), template.scale),
+      )[0];
+      expect(
+        enumerateChordVoicingCandidates(
+          chord,
+          HARMONY_PROFILE_IDS.darkSynthwave,
+          template.slots[0].inversions,
+        ),
+      ).toEqual(enumerateChordVoicingCandidates(chord, HARMONY_PROFILE_IDS.darkSynthwave));
+    }
+  });
+
+  it("strictly validates optional template inversion restrictions", () => {
+    const source = getHarmonyTemplate("degree-0340-major-v1");
+    const sparse: unknown[] = [];
+    sparse.length = 1;
+    const malformed = [
+      { ...source, slots: [{ ...source.slots[0], inversions: "0" }, ...source.slots.slice(1)] },
+      { ...source, slots: [{ ...source.slots[0], inversions: [] }, ...source.slots.slice(1)] },
+      { ...source, slots: [{ ...source.slots[0], inversions: sparse }, ...source.slots.slice(1)] },
+      { ...source, slots: [{ ...source.slots[0], inversions: [0, 0] }, ...source.slots.slice(1)] },
+      { ...source, slots: [{ ...source.slots[0], inversions: [3] }, ...source.slots.slice(1)] },
+      { ...source, slots: [{ ...source.slots[0], inversions: [1.5] }, ...source.slots.slice(1)] },
+      { ...source, slots: [{ ...source.slots[0], inversions: ["1"] }, ...source.slots.slice(1)] },
+      { ...source, slots: [{ ...source.slots[0], inversions: [0] }, ...source.slots.slice(1)] },
+    ];
+    for (const value of malformed) expect(() => createHarmonyTemplate(value)).toThrow();
+  });
 });

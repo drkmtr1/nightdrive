@@ -22,6 +22,7 @@ export type HarmonyTemplateSlot = Readonly<{
   degree: ScaleDegree;
   quality: ChordQuality;
   bars: number;
+  inversions?: readonly ChordInversion[];
 }>;
 export type HarmonyTemplate = Readonly<{
   schema: typeof HARMONY_TEMPLATE_SCHEMA;
@@ -139,7 +140,36 @@ function createHarmonyTemplateStructure(value: unknown): HarmonyTemplate {
     }
     if (typeof slot.bars !== "number" || !Number.isSafeInteger(slot.bars) || slot.bars <= 0)
       return fail(`slots[${index}].bars`, "bars must be a positive safe integer.");
-    const frozen = Object.freeze({ degree, quality, bars: slot.bars });
+    let inversions: readonly ChordInversion[] | undefined;
+    if (Object.hasOwn(slot, "inversions")) {
+      if (!Array.isArray(slot.inversions) || slot.inversions.length === 0)
+        return fail(`slots[${index}].inversions`, "inversions must be a non-empty array.");
+      const parsed: ChordInversion[] = [];
+      for (let inversionIndex = 0; inversionIndex < slot.inversions.length; inversionIndex += 1) {
+        if (!Object.hasOwn(slot.inversions, inversionIndex))
+          return fail(
+            `slots[${index}].inversions[${inversionIndex}]`,
+            "inversions must not be sparse.",
+          );
+        try {
+          parsed.push(createChordInversion(slot.inversions[inversionIndex] as number));
+        } catch {
+          return fail(
+            `slots[${index}].inversions[${inversionIndex}]`,
+            "inversions must contain canonical inversion values.",
+          );
+        }
+      }
+      if (new Set(parsed).size !== parsed.length)
+        return fail(`slots[${index}].inversions`, "inversions must not contain duplicates.");
+      inversions = Object.freeze(parsed);
+    }
+    const frozen = Object.freeze({
+      degree,
+      quality,
+      bars: slot.bars,
+      ...(inversions === undefined ? {} : { inversions }),
+    });
     slots.push(frozen);
     totalBars += slot.bars;
   }
@@ -282,12 +312,23 @@ function definitionsEqual(left: HarmonyTemplate, right: HarmonyTemplate): boolea
     left.version === right.version &&
     left.scale === right.scale &&
     left.slots.length === right.slots.length &&
-    left.slots.every(
-      (slot, index) =>
-        slot.degree === right.slots[index].degree &&
-        slot.quality === right.slots[index].quality &&
-        slot.bars === right.slots[index].bars,
-    )
+    left.slots.every((slot, index) => {
+      const rightSlot = right.slots[index];
+      if (
+        slot.degree !== rightSlot.degree ||
+        slot.quality !== rightSlot.quality ||
+        slot.bars !== rightSlot.bars
+      )
+        return false;
+      if (slot.inversions === undefined || rightSlot.inversions === undefined)
+        return slot.inversions === rightSlot.inversions;
+      return (
+        slot.inversions.length === rightSlot.inversions.length &&
+        slot.inversions.every(
+          (inversion, inversionIndex) => inversion === rightSlot.inversions?.[inversionIndex],
+        )
+      );
+    })
   );
 }
 

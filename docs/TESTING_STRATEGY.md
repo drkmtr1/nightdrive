@@ -89,7 +89,7 @@ This documentation-only gate reviews the versioned template shape, all four boun
 
 ## Stage 4B1 Harmony template runtime
 
-Tests cover the immutable concrete catalog, opaque template-ID lookup, exact profile/scale mappings, strict template validation, scale mismatch rejection, deterministic explicit degree-to-Chord realization, major/natural-minor and wrapped-root fixtures, all-template execution, and repeatability. No selection, inversion/voicing, voice-leading, progression, seeded variation, or Harmony engine behavior is included.
+Tests cover the immutable concrete catalog, opaque template-ID lookup, exact profile/scale mappings, strict template validation including optional inversion restrictions, scale mismatch rejection, deterministic explicit degree-to-Chord realization, major/natural-minor and wrapped-root fixtures, all-template execution, and repeatability. No selection, inversion/voicing, voice-leading, progression, seeded variation, or Harmony engine behavior is included.
 
 ## Stage 4B2 Harmony voicing candidates
 
