@@ -9,3 +9,4 @@ export * from "./chord-inversion";
 export * from "./prng";
 export * from "./chord-voicing";
 export * from "./harmony";
+export * from "./bass";
