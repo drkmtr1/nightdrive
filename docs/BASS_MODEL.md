@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-This document defines the Stage 6 V1 Bass contract. The separately bounded Stage 6A1 root-pitch and Stage 6A2 canonical event implementations realize the sustained root-aligned baseline. The current documentation-only milestone defines the first straight-rhythm expansion; it does not authorize its implementation.
+This document defines the Stage 6 V1 Bass contract. The separately bounded Stage 6A1 root-pitch and Stage 6A2 canonical event implementations realize the sustained root-aligned baseline. The straight-rhythm contract is merged through PR #52; its production implementation remains separately gated.
 
 The contract reuses the existing `PitchClass`, `MidiPitch`, `Tick`, `DurationTicks`, `HarmonyProgressionRealization`, and shared composition-generator boundaries. It does not change Harmony semantics or create a second timing, provenance, or generator framework.
 

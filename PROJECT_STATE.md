@@ -6,7 +6,7 @@ Stage 6 contract-led Bass development.
 
 ## Current Milestone
 
-Milestone Integrity Audit gate before Bass straight-rhythm production implementation.
+Post-audit F-001 status reconciliation is complete; Bass straight-rhythm production implementation remains separately gated.
 
 The project-state maintenance milestone is complete.
 
@@ -24,7 +24,7 @@ The accepted repository baseline is `main` after PR #53; `main` and `origin/main
 
 ## Current Gate
 
-The next engineering gate is the read-only Milestone Integrity Audit. Bass straight-rhythm production implementation is not authorized until that audit is reviewed and passes or its findings are dispositioned.
+The next engineering gate is a separately authorized Stage 6 Bass straight-rhythm implementation task. Bass straight-rhythm production implementation is not authorized until that task is reviewed and explicitly approved.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Bass rhythm implementation, compound and expressive rhythms, seeded variation, a
 
 ## Next Eligible Task
 
-Conduct the read-only Milestone Integrity Audit according to the Engineering Review Playbook. Do not begin Bass rhythm production implementation before that gate is reviewed.
+Prepare a bounded Stage 6 Bass straight-rhythm production implementation task for ChatGPT review. Do not begin Bass rhythm production implementation before explicit authorization.
 
 ## Maintenance
 
