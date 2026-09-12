@@ -10,9 +10,7 @@ import {
   resolveFirstBassPitch,
   resolveSubsequentBassPitch,
 } from "./bass";
-import { createChord } from "./chord";
 import {
-  enumerateChordVoicingCandidates,
   getHarmonyTemplate,
   HARMONY_PROFILE_IDS,
   realizeHarmonyProgression,
@@ -40,15 +38,9 @@ function progressionWithRoots(
       progression.slots.map((slot, index) => {
         const root = roots[index];
         if (root === undefined) return slot;
-        const chord = createChord(createPitchClass(root), slot.chord.quality);
-        const candidate = enumerateChordVoicingCandidates(chord, progression.profile)[0];
-        if (candidate === undefined) throw new Error("Expected a valid voicing candidate.");
         return Object.freeze({
           ...slot,
-          chord,
-          inversion: candidate.inversion,
-          voicing: candidate.voicing,
-          adjacentCost: index === 0 ? null : 0,
+          chord: Object.freeze({ ...slot.chord, root: createPitchClass(root) }),
         });
       }),
     ),
@@ -216,6 +208,18 @@ describe("Bass V1 Harmony-slot event generation", () => {
     expect(generateBassEvents(progression)).toEqual(events);
   });
 
+  it("consumes only ordered slot bars and chord roots from validated Harmony output", () => {
+    const progression = validProgression();
+    const bassProjection = {
+      slots: progression.slots.map((slot) => ({
+        bars: slot.bars,
+        chord: { root: slot.chord.root },
+      })),
+    };
+
+    expect(generateBassEvents(bassProjection as never)).toEqual(generateBassEvents(progression));
+  });
+
   it("keeps a B-to-C transition near the prior register", () => {
     const progression = progressionWithRoots(validProgression(), [11, 0]);
     const events = generateBassEvents(progression);
@@ -223,11 +227,11 @@ describe("Bass V1 Harmony-slot event generation", () => {
     expect(events.slice(0, 2).map((event) => event.pitch)).toEqual([47, 48]);
   });
 
-  it("permits repeated roots and upward continuity without inserting movement", () => {
-    const progression = progressionWithRoots(validProgression(), [0, 0, 7, undefined]);
+  it("permits repeated roots and preserves nearest continuity in either direction", () => {
+    const progression = progressionWithRoots(validProgression(), [0, 0, 7, 8]);
     const events = generateBassEvents(progression);
 
-    expect(events.slice(0, 3).map((event) => event.pitch)).toEqual([48, 48, 43]);
+    expect(events.map((event) => event.pitch)).toEqual([48, 48, 43, 44]);
   });
 
   it("applies the lower-pitch continuity tie through event generation", () => {
@@ -280,16 +284,27 @@ describe("Bass V1 Harmony-slot event generation", () => {
           ],
         } as never),
       BASS_ERROR_CODES.invalidHarmonicContext,
-      "progression.slots[0]",
+      "progression.slots[0].chord.root",
     );
+    for (const bars of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expectBassError(
+        () =>
+          generateBassEvents({
+            ...progression,
+            slots: [{ ...progression.slots[0], bars }, ...progression.slots.slice(1)],
+          } as never),
+        BASS_ERROR_CODES.invalidBassTiming,
+        "progression.slots[0].bars",
+      );
+    }
     expectBassError(
       () =>
         generateBassEvents({
           ...progression,
-          slots: [{ ...progression.slots[0], bars: 0 }, ...progression.slots.slice(1)],
+          slots: progression.slots.map((slot) => ({ ...slot, bars: 1 })),
         } as never),
       BASS_ERROR_CODES.invalidBassTiming,
-      "progression.slots[0].bars",
+      "progression.slots",
     );
   });
 

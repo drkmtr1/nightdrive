@@ -1,20 +1,4 @@
-import { createChord, type Chord } from "./chord";
-import { createChordInversion } from "./chord-inversion";
-import {
-  createChordVoicing,
-  isChordVoicingCompatibleWithChord,
-  isChordVoicingCompatibleWithChordInversion,
-} from "./chord-voicing";
-import {
-  getHarmonyTemplate,
-  isHarmonyProfileId,
-  isHarmonyTemplateSupportedForProfile,
-  type HarmonyProgressionRealization,
-  type HarmonyProgressionSlot,
-} from "./harmony";
-import { createKey } from "./key";
-import { createMidiPitch, createPitchClass, type MidiPitch, type PitchClass } from "./pitch";
-import { createScaleDegree } from "./scale";
+import type { HarmonyProgressionRealization } from "./harmony";
 import {
   createDurationTicks,
   createTick,
@@ -24,6 +8,7 @@ import {
   type DurationTicks,
   type Tick,
 } from "./musical-time";
+import { createMidiPitch, createPitchClass, type MidiPitch, type PitchClass } from "./pitch";
 
 const bassRangeBrand: unique symbol = Symbol("BassRange");
 
@@ -246,7 +231,7 @@ export function resolveSubsequentBassPitch(
 }
 
 type ValidatedBassSlot = Readonly<{
-  chord: Chord;
+  root: PitchClass;
   bars: number;
 }>;
 
@@ -262,13 +247,7 @@ function validateHarmonySlot(value: unknown, index: number): ValidatedBassSlot {
     );
   }
 
-  const slot = value as Partial<HarmonyProgressionSlot>;
-  if (slot.index !== index) {
-    return invalidHarmonicContext(
-      `progression.slots[${index}].index`,
-      "progression slot indices must match their ordered position.",
-    );
-  }
+  const slot = value as Record<string, unknown>;
 
   if (typeof slot.bars !== "number" || !Number.isSafeInteger(slot.bars) || slot.bars <= 0) {
     return invalidBassTiming(
@@ -277,78 +256,25 @@ function validateHarmonySlot(value: unknown, index: number): ValidatedBassSlot {
     );
   }
 
-  try {
-    createScaleDegree(slot.degree as number);
-    const chordValue = slot.chord;
-    if (typeof chordValue !== "object" || chordValue === null || Array.isArray(chordValue)) {
-      return invalidHarmonicContext(
-        `progression.slots[${index}].chord`,
-        "progression slot chord must be a canonical Chord.",
-      );
-    }
-    const chord = createChord(chordValue.root, chordValue.quality);
-
-    const inversion = createChordInversion(slot.inversion as number);
-    const voicingValue = slot.voicing;
-    if (typeof voicingValue !== "object" || voicingValue === null || Array.isArray(voicingValue)) {
-      return invalidHarmonicContext(
-        `progression.slots[${index}].voicing`,
-        "progression slot voicing must be canonical.",
-      );
-    }
-    const voicing = createChordVoicing(voicingValue.midiPitches);
-    if (
-      !isChordVoicingCompatibleWithChord(voicing, chord) ||
-      !isChordVoicingCompatibleWithChordInversion(voicing, chord, inversion)
-    ) {
-      return invalidHarmonicContext(
-        `progression.slots[${index}]`,
-        "progression slot chord, inversion, and voicing must be compatible.",
-      );
-    }
-
-    if (index === 0) {
-      if (slot.adjacentCost !== null) {
-        return invalidHarmonicContext(
-          `progression.slots[${index}].adjacentCost`,
-          "the first progression slot must not have an adjacent cost.",
-        );
-      }
-    } else if (
-      typeof slot.adjacentCost !== "number" ||
-      !Number.isSafeInteger(slot.adjacentCost) ||
-      slot.adjacentCost < 0
-    ) {
-      return invalidHarmonicContext(
-        `progression.slots[${index}].adjacentCost`,
-        "later progression slots must have a nonnegative adjacent cost.",
-      );
-    }
-
-    const rationale = slot.rationale;
-    if (
-      typeof rationale !== "object" ||
-      rationale === null ||
-      Array.isArray(rationale) ||
-      typeof rationale.preferenceRank !== "number" ||
-      !Number.isSafeInteger(rationale.preferenceRank) ||
-      rationale.preferenceRank < 0 ||
-      typeof rationale.tieBreak !== "string" ||
-      rationale.tieBreak.length === 0
-    ) {
-      return invalidHarmonicContext(
-        `progression.slots[${index}].rationale`,
-        "progression slot rationale must be canonical.",
-      );
-    }
-
-    return Object.freeze({ chord, bars: slot.bars });
-  } catch {
+  const chord = slot.chord;
+  if (typeof chord !== "object" || chord === null || Array.isArray(chord)) {
     return invalidHarmonicContext(
-      `progression.slots[${index}]`,
-      "progression slot values must be canonical music-domain values.",
+      `progression.slots[${index}].chord`,
+      "progression slot chord must expose a canonical root.",
     );
   }
+
+  let root: PitchClass;
+  try {
+    root = createPitchClass((chord as Record<string, unknown>).root as number);
+  } catch {
+    return invalidHarmonicContext(
+      `progression.slots[${index}].chord.root`,
+      "progression slot chord root must be a canonical PitchClass.",
+    );
+  }
+
+  return Object.freeze({ root, bars: slot.bars });
 }
 
 function validateHarmonyContext(value: unknown): ValidatedHarmonyContext {
@@ -356,47 +282,7 @@ function validateHarmonyContext(value: unknown): ValidatedHarmonyContext {
     return invalidHarmonicContext("progression", "progression must be an object.");
   }
 
-  const input = value as Partial<HarmonyProgressionRealization>;
-  if (!isHarmonyProfileId(input.profile)) {
-    return invalidHarmonicContext("progression.profile", "progression profile is not canonical.");
-  }
-  if (typeof input.templateId !== "string" || input.templateId.trim() === "") {
-    return invalidHarmonicContext(
-      "progression.templateId",
-      "progression template identity must be canonical.",
-    );
-  }
-  if (input.templateVersion !== "v1") {
-    return invalidHarmonicContext(
-      "progression.templateVersion",
-      "progression template version is unsupported.",
-    );
-  }
-
-  try {
-    const template = getHarmonyTemplate(input.templateId);
-    if (!isHarmonyTemplateSupportedForProfile(input.profile, template)) {
-      return invalidHarmonicContext(
-        "progression.templateId",
-        "progression template is not supported for its profile.",
-      );
-    }
-    if (typeof input.key !== "object" || input.key === null || Array.isArray(input.key)) {
-      return invalidHarmonicContext("progression.key", "progression key must be canonical.");
-    }
-    const key = createKey(input.key.tonic, input.key.scale);
-    if (key.scale !== template.scale) {
-      return invalidHarmonicContext(
-        "progression.key.scale",
-        "progression key scale must match its template.",
-      );
-    }
-  } catch {
-    return invalidHarmonicContext(
-      "progression",
-      "progression metadata must be canonical Harmony values.",
-    );
-  }
+  const input = value as Record<string, unknown>;
 
   if (!Array.isArray(input.slots) || input.slots.length === 0) {
     return invalidHarmonicContext(
@@ -405,7 +291,16 @@ function validateHarmonyContext(value: unknown): ValidatedHarmonyContext {
     );
   }
 
-  const slots = input.slots.map((slot, index) => validateHarmonySlot(slot, index));
+  const slots: ValidatedBassSlot[] = [];
+  for (let index = 0; index < input.slots.length; index += 1) {
+    if (!Object.hasOwn(input.slots, index)) {
+      return invalidHarmonicContext(
+        `progression.slots[${index}]`,
+        "progression slots must not contain sparse entries.",
+      );
+    }
+    slots.push(validateHarmonySlot(input.slots[index], index));
+  }
   const totalBars = slots.reduce((sum, slot) => {
     const next = sum + slot.bars;
     if (!Number.isSafeInteger(next)) {
@@ -470,8 +365,8 @@ export function generateBassEvents(
     try {
       pitch =
         previousBassPitch === undefined
-          ? resolveFirstBassPitch(slot.chord.root, validatedRange)
-          : resolveSubsequentBassPitch(slot.chord.root, previousBassPitch, validatedRange);
+          ? resolveFirstBassPitch(slot.root, validatedRange)
+          : resolveSubsequentBassPitch(slot.root, previousBassPitch, validatedRange);
     } catch (error) {
       if (error instanceof BassValueError && error.code === BASS_ERROR_CODES.noLegalRootPitch) {
         throw new BassValueError(
