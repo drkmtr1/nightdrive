@@ -1,6 +1,6 @@
 # V1 Harmony policy contract (Stage 4A)
 
-This document originated as the documentation-only Stage 4A Harmony policy boundary; Stage 4A itself authorized no implementation. Separately reviewed Stage 4B1, Stage 4B2, and Stage 4B3 slices now implement bounded portions of this contract, while remaining future Harmony behavior remains separately gated. Canonical musical validity remains deterministic and uses the existing `Key`, `Scale`, `PitchClass`, `ChordQuality`, `Chord`, `ChordInversion`, `ChordVoicing`, and `nightdrive.prng.mulberry32.v1` contracts.
+This document originated as the documentation-only Stage 4A Harmony policy boundary; Stage 4A itself authorized no implementation. Separately reviewed Stage 4B1, Stage 4B2, Stage 4B3, and Stage 4B4 slices now implement bounded portions of this contract, while remaining future Harmony behavior remains separately gated. Canonical musical validity remains deterministic and uses the existing `Key`, `Scale`, `PitchClass`, `ChordQuality`, `Chord`, `ChordInversion`, `ChordVoicing`, and `nightdrive.prng.mulberry32.v1` contracts.
 
 ## Versioned template representation
 
