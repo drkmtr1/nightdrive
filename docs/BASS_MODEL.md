@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-This document defines the Stage 6 V1 Bass contract. The separately bounded Stage 6A1 root-pitch and Stage 6A2 canonical event implementations realize the sustained root-aligned baseline. The straight-rhythm contract is merged through PR #52; its production implementation remains separately gated.
+This document defines the Stage 6 V1 Bass contract. The separately bounded Stage 6A1 root-pitch and Stage 6A2 canonical event implementations realize the sustained root-aligned baseline. The straight-rhythm contract is merged through PR #52, and its bounded production implementation is complete on the current unmerged review branch.
 
 The contract reuses the existing `PitchClass`, `MidiPitch`, `Tick`, `DurationTicks`, `HarmonyProgressionRealization`, and shared composition-generator boundaries. It does not change Harmony semantics or create a second timing, provenance, or generator framework.
 
@@ -54,7 +54,7 @@ For `offbeat-eighth`, each bar local to the slot is silent for its first `480` t
 
 Each slot resolves one Bass root pitch through the existing Stage 6A1 policy before expanding rhythm events. Every event within that slot uses that same resolved pitch. At the next slot, the new root pitch is resolved nearest to the prior slot's resolved Bass pitch, which is also the immediately previous emitted pitch for every nonempty mode here. Rhythm never changes pitch, octave, chord-tone choice, or continuity policy.
 
-For identical validated Harmony progression, Bass range, normalized rhythm identifier, accepted generator/schema versions, and provenance seed, the canonical ordered `BassEvent` sequence is identical. The seed remains provenance-only: changing only the seed does not change any event. Events and returned collections remain frozen, and generation must not mutate Harmony or parameter inputs.
+For identical validated Harmony progression, Bass range, and normalized rhythm identifier, the canonical ordered `BassEvent` sequence is identical. The current Bass API has no runtime seed/provenance envelope and reads no ambient randomness. Seed lineage remains owned by the future enclosing composition-generator boundary; seed-driven musical variation remains deferred. Events and returned collections remain frozen, and generation must not mutate Harmony or parameter inputs.
 
 ## Bass range
 
@@ -86,13 +86,13 @@ BassEvent {
 }
 ```
 
-`BassEvent` is owned by the framework-independent music domain. Its fields are immutable validated values. The enclosing canonical component/track owns the stable `bass` component identity; MIDI channel, velocity, serialization, and browser-delivery fields do not belong here. Events are in canonical Harmony slot order (equivalently ascending start tick in this one-event-per-slot policy); no unordered collection or iteration order may decide output.
+`BassEvent` is owned by the framework-independent music domain. Its fields are immutable validated values. The enclosing canonical component/track owns the stable `bass` component identity; MIDI channel, velocity, serialization, and browser-delivery fields do not belong here. Events are in ascending start-tick order—Harmony slot order, then local onset order within each slot. No unordered collection or iteration order may decide output.
 
 Generator provenance remains in the shared generation-result/lineage envelope rather than being duplicated on each event. That envelope records the target component, input/version references, normalized V1 parameters, and explicit seed according to the existing composition-engine contract. The Bass event itself has no redundant schema, seed, hash, or hypothetical later-archetype fields.
 
 ## Generator boundary
 
-The bounded V1 implementation receives:
+The accepted future enclosing generator boundary contains:
 
 | Field | V1 status |
 |---|---|
@@ -104,7 +104,7 @@ The bounded V1 implementation receives:
 | approved `{ minMidiPitch: 36, maxMidiPitch: 60 }` | Required and fixed for V1 |
 | normalized Bass rhythm selection | `BassGenerationParameters.rhythm`; one closed `BassRhythmId` |
 
-The output is a canonical immutable Bass component containing ordered `BassEvent` values plus the shared decisions/provenance/result envelope. It is not MIDI IR, serialized MIDI, a browser download, UI state, or a persistence record. The implementation must not read ambient randomness, clocks, locale, network, AI output, database order, or an unvalidated voicing.
+The current Bass projection implements the validated Harmony progression, approved range, and normalized Bass rhythm inputs and returns ordered immutable `BassEvent` values. It does not yet implement the shared decisions/provenance/result envelope. At that future enclosing boundary, the output is a canonical immutable Bass component plus shared provenance. Neither boundary is MIDI IR, serialized MIDI, a browser download, UI state, or a persistence record. The implementation must not read ambient randomness, clocks, locale, network, AI output, database order, or an unvalidated voicing.
 
 **Generator-selection decision: C.** Rhythm selection belongs to the existing shared generator contract's bounded-parameters envelope, not a parallel Bass configuration framework:
 
@@ -114,7 +114,7 @@ BassGenerationParameters {
 }
 ```
 
-The future implementation boundary receives the normalized closed identifier from that envelope. The outer envelope continues to own seed and version provenance. Omitting rhythm selection maps exactly to `sustained`, preserving existing Stage 6A2 callers and byte-equivalent event behavior. A supplied `sustained` value and an omitted value are behaviorally identical after normalization.
+The implemented Bass boundary receives and normalizes the closed identifier without creating a parallel shared generator framework. A future outer envelope continues to own seed and version provenance. Omitting rhythm selection maps exactly to `sustained`, preserving existing Stage 6A2 callers and canonical-value-equivalent event behavior. A supplied `sustained` value and an omitted value are behaviorally identical after normalization.
 
 ## Parameter and archetype boundary
 
@@ -123,7 +123,7 @@ Only parameters with V1 meaning are exposed:
 | Roadmap parameter | V1 classification |
 |---|---|
 | range | **ACTIVE IN V1:** approved inclusive `36..60` |
-| rhythm | **CONTRACTED, NOT IMPLEMENTED:** one of the five closed straight-rhythm identifiers; omitted means `sustained` |
+| rhythm | **IMPLEMENTED ON THE CURRENT REVIEW BRANCH:** one of the five closed straight-rhythm identifiers; omitted means `sustained` |
 | density | **DERIVED BY RHYTHM:** no independent density control |
 | syncopation | **FIXED BY V1 POLICY:** only the exact `offbeat-eighth` placement above; no general control |
 | movement | **FIXED BY V1 POLICY:** slot/chord aligned |
@@ -139,11 +139,11 @@ The repository names six eventual archetypes—Driving 8ths, Driving 16ths, Midt
 The intended sequencing keeps the first implementation narrow:
 
 1. **Foundation (V1):** chord-root-only Bass, deterministic register continuity, Harmony-slot-aligned events, no syncopation, no inserted rests, and no seed-driven variation.
-2. **Straight rhythm expansion (contract defined; implementation gated):** sustained, quarter, eighth, sixteenth, and offbeat-eighth patterns with exact slot-local timing.
+2. **Straight rhythm expansion (implemented on the current review branch):** sustained, quarter, eighth, sixteenth, and offbeat-eighth patterns with exact slot-local timing.
 3. **Compound rhythm expansion (future):** triplets, dotted figures, and gallop/reverse-gallop families.
 4. **Expressive deterministic rhythm (future):** controlled syncopation, rests, density, movement, octave behavior, and later seeded variation.
 
-These are sequencing directions rather than new roadmap substage IDs. This milestone authorizes only the straight-rhythm documentation contract; every implementation remains separately gated. Other components may define their own Arp-, Lead-, or Drum-specific pattern sets without changing this shared timing ownership principle.
+These are sequencing directions rather than new roadmap substage IDs. This milestone implements only the accepted straight-rhythm contract; the implementation remains unmerged pending review. Other components may define their own Arp-, Lead-, or Drum-specific pattern sets without changing this shared timing ownership principle.
 
 ## Structured errors
 
@@ -157,7 +157,7 @@ The implementation must use the established structured-error shape (stable `code
 | `INVALID_BASS_TIMING` | Derived slot timing is non-integer, non-positive, outside the existing eight-bar boundary, or inconsistent with slot bar spans | `slots[i].bars`, `startTick`, or `durationTicks` | Input validation |
 | `INVALID_BASS_RHYTHM` | Runtime input is not one of the five closed `BassRhythmId` values | `parameters.rhythm` | Input validation |
 
-The future implementation uses a closed `BassRhythmId` type and validates untrusted runtime input at the bounded-parameter boundary. `INVALID_BASS_TIMING` remains sufficient for malformed or impossible onset/duration projection; an invalid identifier is not misreported as timing and therefore uses `INVALID_BASS_RHYTHM`. No separate public Bass invariant code is invented. An impossible post-validation invariant must use the repository's existing internal/assertion or shared structured-failure convention rather than silently emitting data. No error is coerced, wrapped, or replaced with a MIDI-layer error.
+The implementation uses a closed `BassRhythmId` type and validates untrusted runtime input at the bounded-parameter boundary. `INVALID_BASS_TIMING` remains sufficient for malformed or impossible onset/duration projection; an invalid identifier is not misreported as timing and therefore uses `INVALID_BASS_RHYTHM`. No separate public Bass invariant code is invented. An impossible post-validation invariant must use the repository's existing internal/assertion or shared structured-failure convention rather than silently emitting data. No error is coerced, wrapped, or replaced with a MIDI-layer error.
 
 ## Requirement trace
 
@@ -174,12 +174,10 @@ This contract adds no new global requirement IDs. It operationalizes the accepte
 
 ## Test evidence
 
-Stage 6A1/A2 evidence for the implemented `sustained` baseline verifies:
-
 Deterministic automated evidence must verify:
 
 - equal validated input produces byte-equivalent canonical Bass output;
-- changing only the required seed does not change V1 musical events;
+- no ambient randomness participates in Bass generation; no seed-change fixture is claimed because the current runtime Bass API has no seed/provenance input;
 - input Harmony context and returned values are mutation-safe and frozen according to repository conventions;
 - every event pitch equals its slot Chord root modulo 12 and lies within the approved inclusive range;
 - lower and upper range boundaries, every root pitch class, first-event selection nearest anchor `43`, and subsequent continuity selection are covered;
@@ -191,10 +189,10 @@ Deterministic automated evidence must verify:
 
 Human listening and profile-fit review remain separate evidence. Listening cannot replace these deterministic assertions.
 
-The future straight-rhythm implementation must additionally verify exact starts, durations, and counts for quarter (`960`), eighth (`480`), and sixteenth (`240`) pulses; `offbeat-eighth` starts at `480`, `1,440`, `2,400`, and `3,360` per local bar with duration `480`, including multi-bar repetition and no onset at a slot boundary. `sustained` must remain byte-equivalent to Stage 6A2. Every mode must prove slot-boundary phase reset, no crossing, correct per-slot root pitch, Stage 6A1 continuity between slots, frozen values and collections, input mutation isolation, identical repeated output, section-boundary safety, and seed independence. Runtime rejection of unsupported rhythm identifiers and malformed timing must assert the structured codes above.
+The current branch additionally verifies exact starts, durations, and counts for quarter (`960`), eighth (`480`), and sixteenth (`240`) pulses; `offbeat-eighth` starts at `480`, `1,440`, `2,400`, and `3,360` per local bar with duration `480`, including multi-bar repetition and no onset at a slot boundary. `sustained` remains canonical-value equivalent to Stage 6A2. Every mode proves slot-boundary phase reset, no crossing, correct per-slot root pitch, Stage 6A1 continuity between slots, frozen values and collections, input mutation isolation, identical repeated output, section-boundary safety, and ambient-randomness isolation. Runtime rejection of unsupported rhythm identifiers and malformed timing asserts the structured codes above.
 
 ## Deferred behavior and implementation gate
 
 Deferred until separately authorized Stage 6 slices are passing V1 evidence: eighth-note and sixteenth-note triplets; dotted-eighth/sixteenth figures; gallop and reverse gallop; broader syncopated-eighth patterns; rests beyond the exact offbeat spaces above; cross-slot ties; gate percentages; velocity patterns; accents; ghost notes; passing and approach tones; pedal tones; slash-bass and inversion-aware Bass; octave pulses; seeded pattern variation; density, movement, and aggression controls; profile-specific ranges; full composition orchestration; and any MIDI, browser, UI, persistence, audio, or AI behavior.
 
-The Stage 6A1/A2 implementation remains limited to the generic `sustained` root-aligned baseline with the approved range, pitch-resolution policy, and slot-aligned canonical events. The straight-rhythm contract above changes no production behavior and preserves the shared generator contract, existing Harmony and musical-time primitives, immutable canonical state, and the MIDI-derived boundary.
+The current unmerged branch expands the Stage 6A1/A2 baseline only with the five accepted straight-rhythm projections. It preserves the approved range, pitch-resolution policy, existing Harmony and musical-time primitives, immutable canonical state, and MIDI-derived boundary.

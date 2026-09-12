@@ -3,6 +3,7 @@ import {
   createDurationTicks,
   createTick,
   isEventStartTick,
+  SUBDIVISION_TICKS,
   V1_SECTION_LENGTH_TICKS,
   V1_TICKS_PER_BAR,
   type DurationTicks,
@@ -24,11 +25,26 @@ export type BassEvent = Readonly<{
   durationTicks: DurationTicks;
 }>;
 
+export const BASS_RHYTHM_IDS = Object.freeze({
+  sustained: "sustained",
+  quarterPulse: "quarter-pulse",
+  eighthPulse: "eighth-pulse",
+  sixteenthPulse: "sixteenth-pulse",
+  offbeatEighth: "offbeat-eighth",
+} as const);
+
+export type BassRhythmId = (typeof BASS_RHYTHM_IDS)[keyof typeof BASS_RHYTHM_IDS];
+
+export type BassGenerationParameters = Readonly<{
+  rhythm: BassRhythmId;
+}>;
+
 export const BASS_ERROR_CODES = {
   invalidHarmonicContext: "INVALID_HARMONIC_CONTEXT",
   invalidBassRange: "INVALID_BASS_RANGE",
   noLegalRootPitch: "NO_LEGAL_ROOT_PITCH",
   invalidBassTiming: "INVALID_BASS_TIMING",
+  invalidBassRhythm: "INVALID_BASS_RHYTHM",
 } as const;
 
 export type BassErrorCode = (typeof BASS_ERROR_CODES)[keyof typeof BASS_ERROR_CODES];
@@ -61,6 +77,28 @@ function invalidHarmonicContext(field: string, message: string): never {
 
 function invalidBassTiming(field: string, message: string): never {
   throw new BassValueError(BASS_ERROR_CODES.invalidBassTiming, field, message);
+}
+
+function invalidBassRhythm(message: string): never {
+  throw new BassValueError(BASS_ERROR_CODES.invalidBassRhythm, "parameters.rhythm", message);
+}
+
+function normalizeBassGenerationParameters(
+  value: Readonly<Partial<BassGenerationParameters>> | undefined,
+): BassGenerationParameters {
+  if (value === undefined) {
+    return Object.freeze({ rhythm: BASS_RHYTHM_IDS.sustained });
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return invalidBassRhythm("parameters must be an object with a supported rhythm.");
+  }
+
+  const input = value as Record<string, unknown>;
+  const rhythm = Object.hasOwn(input, "rhythm") ? input.rhythm : BASS_RHYTHM_IDS.sustained;
+  if (!Object.values(BASS_RHYTHM_IDS).includes(rhythm as BassRhythmId)) {
+    return invalidBassRhythm("parameters.rhythm must be a supported Bass rhythm identifier.");
+  }
+  return Object.freeze({ rhythm: rhythm as BassRhythmId });
 }
 
 function validateRoot(root: unknown): PitchClass {
@@ -318,12 +356,13 @@ function validateHarmonyContext(value: unknown): ValidatedHarmonyContext {
   return Object.freeze({ slots: Object.freeze(slots) });
 }
 
-function createBassEventTiming(
+function createBassEvent(
+  pitch: MidiPitch,
   startTickValue: number,
-  bars: number,
+  durationValue: number,
+  slotEndTick: number,
   index: number,
-): Readonly<{ startTick: Tick; durationTicks: DurationTicks }> {
-  const durationValue = bars * V1_TICKS_PER_BAR;
+): BassEvent {
   if (!Number.isSafeInteger(startTickValue) || !Number.isSafeInteger(durationValue)) {
     return invalidBassTiming(
       `progression.slots[${index}]`,
@@ -334,13 +373,17 @@ function createBassEventTiming(
   try {
     const startTick = createTick(startTickValue);
     const durationTicks = createDurationTicks(durationValue);
-    if (!isEventStartTick(startTick) || startTickValue + durationValue > V1_SECTION_LENGTH_TICKS) {
+    if (
+      !isEventStartTick(startTick) ||
+      startTickValue + durationValue > slotEndTick ||
+      startTickValue + durationValue > V1_SECTION_LENGTH_TICKS
+    ) {
       return invalidBassTiming(
         `progression.slots[${index}]`,
         "Bass event timing must remain inside the eight-bar section.",
       );
     }
-    return Object.freeze({ startTick, durationTicks });
+    return Object.freeze({ pitch, startTick, durationTicks });
   } catch {
     return invalidBassTiming(
       `progression.slots[${index}]`,
@@ -349,18 +392,52 @@ function createBassEventTiming(
   }
 }
 
+function rhythmTiming(
+  rhythm: BassRhythmId,
+  slotStartTick: number,
+  slotBars: number,
+): readonly Readonly<{ startTick: number; durationTicks: number }>[] {
+  const slotDuration = slotBars * V1_TICKS_PER_BAR;
+  if (rhythm === BASS_RHYTHM_IDS.sustained) {
+    return [{ startTick: slotStartTick, durationTicks: slotDuration }];
+  }
+
+  const durationTicks =
+    rhythm === BASS_RHYTHM_IDS.quarterPulse
+      ? SUBDIVISION_TICKS.quarter
+      : rhythm === BASS_RHYTHM_IDS.sixteenthPulse
+        ? SUBDIVISION_TICKS.sixteenth
+        : SUBDIVISION_TICKS.eighth;
+  const timing: Array<{ startTick: number; durationTicks: number }> = [];
+
+  for (let bar = 0; bar < slotBars; bar += 1) {
+    const barStart = slotStartTick + bar * V1_TICKS_PER_BAR;
+    const firstOffset = rhythm === BASS_RHYTHM_IDS.offbeatEighth ? durationTicks : 0;
+    const step =
+      rhythm === BASS_RHYTHM_IDS.offbeatEighth ? SUBDIVISION_TICKS.quarter : durationTicks;
+    for (let offset = firstOffset; offset < V1_TICKS_PER_BAR; offset += step) {
+      timing.push({ startTick: barStart + offset, durationTicks });
+    }
+  }
+
+  return timing;
+}
+
 export function generateBassEvents(
   progression: HarmonyProgressionRealization,
   range: BassRange = BASS_V1_RANGE,
+  parameters: Readonly<Partial<BassGenerationParameters>> = {},
 ): readonly BassEvent[] {
   const validatedRange = validatedRangeValue(range);
   const context = validateHarmonyContext(progression);
+  const normalizedParameters = normalizeBassGenerationParameters(parameters);
   const events: BassEvent[] = [];
   let startTick = 0;
   let previousBassPitch: MidiPitch | undefined;
 
   for (const [index, slot] of context.slots.entries()) {
-    const timing = createBassEventTiming(startTick, slot.bars, index);
+    const slotDuration = slot.bars * V1_TICKS_PER_BAR;
+    const slotEndTick = startTick + slotDuration;
     let pitch: MidiPitch;
     try {
       pitch =
@@ -377,15 +454,13 @@ export function generateBassEvents(
       }
       throw error;
     }
-    events.push(
-      Object.freeze({
-        pitch,
-        startTick: timing.startTick,
-        durationTicks: timing.durationTicks,
-      }),
-    );
+    for (const timing of rhythmTiming(normalizedParameters.rhythm, startTick, slot.bars)) {
+      events.push(
+        createBassEvent(pitch, timing.startTick, timing.durationTicks, slotEndTick, index),
+      );
+    }
     previousBassPitch = pitch;
-    startTick += timing.durationTicks;
+    startTick = slotEndTick;
   }
 
   return Object.freeze(events);

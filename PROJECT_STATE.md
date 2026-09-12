@@ -6,7 +6,7 @@ Stage 6 contract-led Bass development.
 
 ## Current Milestone
 
-Post-audit F-001 status reconciliation is complete; Bass straight-rhythm production implementation remains separately gated.
+The bounded Bass straight-rhythm production implementation is complete on its review branch and remains unmerged.
 
 The project-state maintenance milestone is complete.
 
@@ -20,11 +20,11 @@ The project-state maintenance workflow is merged through PR #53 at `45f831c6ea5f
 
 ## Repository State
 
-The accepted repository baseline is `main` after PR #53; `main` and `origin/main` were reconciled at merge. No feature implementation is currently authorized.
+The accepted repository baseline is `main` at `58b0a5a6a3bf37fa4c7f2e4c40943ef27f86aa9c`. The straight-rhythm implementation branch is based on that accepted state.
 
 ## Current Gate
 
-The next engineering gate is a separately authorized Stage 6 Bass straight-rhythm implementation task. Bass straight-rhythm production implementation is not authorized until that task is reviewed and explicitly approved.
+The current gate is review of the bounded Bass straight-rhythm implementation. It must not be described as merged until its PR is accepted and integrated.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ An existing local observation reports a timeout in the Harmony test `covers all 
 
 ## Relevant Deferred Work
 
-Bass rhythm implementation, compound and expressive rhythms, seeded variation, and later Bass/MIDI/application capabilities remain separately gated. See [Bass model](docs/BASS_MODEL.md) and [roadmap](docs/ROADMAP.md).
+Compound and expressive Bass rhythms, seeded variation, and later Bass/MIDI/application capabilities remain separately gated. See [Bass model](docs/BASS_MODEL.md) and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Prepare a bounded Stage 6 Bass straight-rhythm production implementation task for ChatGPT review. Do not begin Bass rhythm production implementation before explicit authorization.
+Review the bounded Bass straight-rhythm implementation. Do not begin compound or expressive rhythm work.
 
 ## Maintenance
 

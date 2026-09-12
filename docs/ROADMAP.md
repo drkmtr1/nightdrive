@@ -344,14 +344,14 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 ## Stage 6 — Bass engine
 
-**Status:** Stage 6A1 root-pitch foundation and Stage 6A2 canonical event projection are merged; the straight-rhythm contract is merged through PR #52 (merge commit `fddc268e30bd365a9b6c04f3bc85fd2c4396f02e`), and rhythm implementation remains separately gated.
+**Status:** Stage 6A1 root-pitch foundation and Stage 6A2 canonical event projection are merged; the straight-rhythm contract is merged through PR #52 (merge commit `fddc268e30bd365a9b6c04f3bc85fd2c4396f02e`). Its bounded production implementation is complete on the current unmerged review branch; later Bass work remains separately gated.
 **Objective:** Preserve the deterministic root-aligned Bass V1 baseline while defining the smallest component-owned straight-rhythm expansion.
 **V1 contract:** Require validated Harmony progression context; preserve the approved root-pitch range/continuity policy; select one of the closed identifiers `sustained`, `quarter-pulse`, `eighth-pulse`, `sixteenth-pulse`, or `offbeat-eighth` through the shared bounded-parameter envelope; restart pattern phase at every slot; use only exact integer `960`/`480`/`240` tick subdivisions and the exact per-bar offbeat offsets; never cross a slot or the eight-bar boundary; keep seed provenance-only. Omitted rhythm maps to the implemented `sustained` Stage 6A2 behavior.
-**Capabilities:** Documentation contract for sustained, straight quarter/eighth/sixteenth pulses, and offbeat eighths. Compound rhythms, generalized syncopation, independent density, pitch movement, octave behavior, aggression, and seeded musical variation remain separately gated.
+**Capabilities:** Bounded implementation of sustained, straight quarter/eighth/sixteenth pulses, and offbeat eighths. Compound rhythms, generalized syncopation, independent density, pitch movement, octave behavior, aggression, and seeded musical variation remain separately gated.
 **Dependencies:** Stages 3–4.
 **Non-goals:** Triplets, dotted figures, gallop/reverse-gallop, broader syncopation or rests, cross-slot ties, gate/velocity/accent patterns, passing/approach/pedal/slash/inversion behavior, octave patterns, seeded musical variation, profile-specific ranges, audio synthesis, arbitrary style libraries, MIDI, browser, UI, persistence, or AI behavior.
-**Tests:** Future implementation evidence must cover exact per-mode starts/durations/counts, slot-local phase reset, offbeat multi-bar offsets and initial silence, no boundary crossing, root/continuity preservation, immutability, structured failures, repeatability, and seed independence; current Stage 6A1/A2 evidence remains the `sustained` fixture.
-**Exit:** The documentation contract traces FR-002/AC-002, MUS-001, MUS-002/AC-010, MUS-006/AC-013, NFR-001/AC-004, and NFR-005/AC-029. Straight-rhythm implementation and its evidence require a separately authorized task.
+**Tests:** Branch evidence covers exact per-mode starts/durations/counts, slot-local phase reset, offbeat multi-bar offsets and initial silence, no boundary crossing, root/continuity preservation, immutability, structured failures, repeatability, and ambient-randomness isolation. No seed-change fixture is claimed because the runtime Bass API has no seed/provenance input.
+**Exit:** FR-002/AC-002, MUS-001, MUS-002/AC-010, MUS-006/AC-013, NFR-001/AC-004, and NFR-005/AC-029 evidence passes for the bounded implementation without compound/expressive rhythms, new dependencies, or later capabilities; merge remains a review decision.
 
 ## Stage 7 — Arpeggiator
 
