@@ -20,6 +20,7 @@ Nightdrive helps producers create original, editable musical material. Stage 1, 
 ## Engineering rules
 
 - Work on one bounded roadmap task at a time. Do not continue to the next task automatically.
+- Before meaningful engineering work, read `PROJECT_STATE.md` when it exists; update it when project coordination state materially changes, replacing stale state rather than accumulating a log. Keep requirements, architecture, contracts, tests, and decisions in their authoritative documents, and use Git for detailed history.
 - Trace behavior to requirement IDs and acceptance criteria. Update authoritative documentation with behavior changes.
 - Use explicit units, UTC timestamps, stable ordering, typed interfaces, structured errors, and idempotency where relevant.
 - Preserve user work and generation history. Never weaken tests to make a build pass.
