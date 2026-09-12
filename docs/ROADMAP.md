@@ -344,7 +344,7 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 ## Stage 6 — Bass engine
 
-**Status:** Stage 6 V1 Bass contract is documented in [BASS_MODEL.md](BASS_MODEL.md); Bass production implementation remains separately gated.
+**Status:** Stage 6A1 root-pitch foundation and Stage 6A2 canonical event projection are implemented on the current bounded branch; the generic root-aligned V1 baseline remains limited to this scope, and later rhythm/archetype behavior remains separately gated.
 **Objective:** Establish the smallest deterministic, domain-owned Bass V1 baseline before authorizing implementation of the eventual bounded archetypes.
 **V1 contract:** Require validated Harmony progression context; emit one immutable chord-root event per slot with slot-aligned integer timing inside the eight-bar boundary; select the first legal root pitch nearest MIDI `43`, then each later root pitch nearest the previous Bass pitch, choosing the lower pitch on ties, within the inclusive approved range `36..60`; keep the required seed in provenance without using it for V1 pitch or rhythm selection.
 **Capabilities:** V1 root-aligned baseline only. Six planned archetypes and density/syncopation/movement/root/octave/aggression behavior remain future slices; provenance follows the shared generator contract.

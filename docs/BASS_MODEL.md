@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-This document defines the smallest Stage 6 V1 Bass contract. It is a documentation-only contract milestone; no Bass generator or Bass production type is implemented by this document. A separate bounded implementation task remains required.
+This document defines the smallest Stage 6 V1 Bass contract. It was established as a documentation-only contract milestone; the separately bounded Stage 6A1 root-pitch and Stage 6A2 canonical event implementations now realize this baseline without extending the contract.
 
 The contract reuses the existing `PitchClass`, `MidiPitch`, `Tick`, `DurationTicks`, `HarmonyProgressionRealization`, and shared composition-generator boundaries. It does not change Harmony semantics or create a second timing, provenance, or generator framework.
 
@@ -54,7 +54,7 @@ For the first event, select the member minimizing `abs(p - 43)`. For each subseq
 
 ## Domain event ownership
 
-The existing `NoteEvent`/`Track` shape in [MUSIC_DOMAIN_MODEL.md](MUSIC_DOMAIN_MODEL.md) is a conceptual composition model, not a reusable production TypeScript type. It also carries broader optional composition concerns. The minimum future Bass domain projection is therefore:
+The existing `NoteEvent`/`Track` shape in [MUSIC_DOMAIN_MODEL.md](MUSIC_DOMAIN_MODEL.md) is a conceptual composition model, not a reusable production TypeScript type. It also carries broader optional composition concerns. The minimum Bass domain projection is therefore:
 
 ```text
 BassEvent {
@@ -70,7 +70,7 @@ Generator provenance remains in the shared generation-result/lineage envelope ra
 
 ## Generator boundary
 
-The future bounded implementation receives:
+The bounded V1 implementation receives:
 
 | Field | V1 status |
 |---|---|
@@ -141,7 +141,7 @@ This contract adds no new global requirement IDs. It operationalizes the accepte
 | reproducible canonical output for equal inputs/versions/seed | `NFR-001` / `AC-004` |
 | complete validation gates | `NFR-005` / `AC-029` |
 
-## Test contract for the first implementation
+## Test evidence for the first implementation
 
 Deterministic automated evidence must verify:
 
@@ -162,4 +162,4 @@ Human listening and profile-fit review remain separate evidence. Listening canno
 
 Deferred until separately authorized Stage 6 slices are passing V1 evidence: the six named archetypes; density variation; syncopation; rests; cross-chord ties; passing and approach tones; pedal tones; slash-bass and inversion-aware bass; octave pulses; seeded musical variation; profile-specific ranges; movement/aggression policy; full composition orchestration; and any MIDI, browser, UI, persistence, audio, or AI behavior.
 
-The next implementation task may implement only the generic root-aligned baseline with the approved range and pitch-resolution policy. It must preserve the shared generator contract, existing Harmony and musical-time primitives, immutable canonical state, and the MIDI-derived boundary.
+The Stage 6A1/A2 implementation is limited to the generic root-aligned baseline with the approved range, pitch-resolution policy, and slot-aligned canonical events. It preserves the shared generator contract, existing Harmony and musical-time primitives, immutable canonical state, and the MIDI-derived boundary.
