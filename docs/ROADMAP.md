@@ -242,7 +242,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ### Stage 4B4 — Harmony progression realization contract
 
-**Status:** Implemented bounded progression-realization slice; review and merge remain separate decisions.
+**Status:** Merged and complete through PR #37 (merge commit `d5c11ef7a512cc2cbec1953591c25e5a74b5b31f`).
 **Objective:** Define deterministic sequential realization of one complete ordered Harmony progression from the accepted template, Key, candidate, and adjacent-selection contracts.
 **Capabilities:** Deterministic first-slot anchor, sequential greedy later-slot selection, explicit soft-preference ranks, hard restriction interaction, slot-duration preservation, specific failure propagation, immutable non-canonical result shape, and explanatory provenance boundary. Later-slot ranking is a separate Stage 4B4 orchestration policy that reuses Stage 4B3 adjacent cost and pitch tie-break definitions without modifying the Stage 4B3 selector.
 **Dependencies:** Accepted Stage 4A, Stage 4B1, Stage 4B2, and Stage 4B3 contracts.
@@ -261,7 +261,7 @@ This roadmap has no calendar promises. Each stage requires explicit authorizatio
 
 ## Stage 5 — MIDI engine and export
 
-Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1, Stage 5B2a, Stage 5B2b, and Stage 5C1 are merged bounded implementation/evidence slices, and Stage 5D1 is the current bounded browser-delivery implementation slice; MIDI-004 is accepted only for the declared tested FL Studio environment, while broader compatibility and later MIDI behavior remain separately gated.
+Stage 5A below is the accepted boundary and dependency-spike definition. Stage 5B1, Stage 5B2a, Stage 5B2b, Stage 5C1, and Stage 5D1 are merged bounded implementation/evidence slices; MIDI-004 is accepted only for the declared tested FL Studio environment, while broader compatibility and later MIDI behavior remain separately gated.
 
 ### Stage 5A — MIDI boundary and dependency-spike definition
 
@@ -319,7 +319,7 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 #### Stage 5D1 — Browser MIDI download delivery adapter
 
-**Status:** Current bounded implementation slice; full export UX and later delivery workflows remain separately gated.
+**Status:** Merged and complete through PR #47 (merge commit `62066db63a2dbf8f7a44498780a89ba27daa34f7`); full export UX and later delivery workflows remain separately gated.
 **Objective:** Deliver already-produced deterministic MIDI bytes through a browser-only download adapter without changing MIDI semantics or requiring a server route.
 **Capabilities:** Strict `Uint8Array` input, deterministic safe `.mid` filename normalization, `audio/midi` Blob creation, temporary-anchor download triggering, and deterministic anchor/object-URL cleanup.
 **Dependencies:** Existing Stage 5B2a serializer adapter and browser platform APIs; no new package.
