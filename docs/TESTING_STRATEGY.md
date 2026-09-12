@@ -109,6 +109,14 @@ Stage 6A1/A2 implementation evidence covers the documented Bass V1 baseline: a v
 
 The merged implementation covers all five closed identifiers. `sustained` is canonical-value equivalent to Stage 6A2. Quarter, eighth, and sixteenth pulses assert exact starts, durations, and event counts at `960`, `480`, and `240` ticks. `offbeat-eighth` asserts no slot-start onset, duration `480`, per-local-bar starts `480`, `1,440`, `2,400`, and `3,360`, and exact repetition in multi-bar slots. Every mode proves that phase restarts at each Harmony slot, no event crosses a slot or section boundary, every event uses its slot's single resolved root pitch, Stage 6A1 continuity is preserved between slots, outputs and events are frozen, inputs are unchanged, repeated calls are canonical-value identical, and `Math.random()` is not called. Runtime invalid rhythm identifiers produce `INVALID_BASS_RHYTHM`; malformed or impossible projections continue to produce `INVALID_BASS_TIMING`.
 
+## Stage 7A Arpeggiator deterministic foundation contract
+
+Stage 7A is documentation-only and provides no implementation evidence. Future Stage 7B1 candidate tests must cover validated Harmony input; Chord/inversion/voicing compatibility; exact selected-voicing pitch ownership; inclusive range boundaries; exact one-, two-, and three-candidate results; no-candidate failure; forged and malformed values; stable ordering; immutability; and input non-mutation.
+
+Future Stage 7B2 event evidence must cover exact pitches, starts, and durations; variable slot spans; the complete eight-bar boundary; no slot or section crossing; slot-local traversal reset; equal-input replay; frozen output; non-mutation; and failure if ambient `Math.random()` is consulted. Stage 7B3 must prove exact `960`/`480`/`240` mappings and all exact up/down/up-down/down-up cycles for one-, two-, and three-candidate sets, including no repeated turning endpoint, slot reset, and malformed identifier rejection. Stage 7B4 must prove a one-tick gate, full-step gate at every rate, rejection of zero, negative, fractional, unsafe, and over-rate gates, same-pitch adjacent steps, and the terminal section boundary.
+
+Octave expansion, density/rest masks, seed-driven choices, generator/provenance integration, and concrete profile policy require later contracts and evidence. Foundation tests must not claim full AC-004 seeded replay, seeded AC-011 behavior, or complete profile-appropriate Stage 7 acceptance.
+
 ## Stage 3B2b2g ChordInversion primitive
 
 The implementation tests exactly three valid indices (`0..2`), reject malformed and forged runtime values, cover all 9 ordered equality pairs, and assert exact `nightdrive.chord-inversion.v1` fixtures for `0`, `1`, and `2`. They verify repeated byte-stable serialization, forbidden-field absence, and no coercion or wrapping. No Chord, voicing, harmony, MIDI realization, or wider-cardinality behavior is included.

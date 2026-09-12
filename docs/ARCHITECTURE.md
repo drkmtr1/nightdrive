@@ -42,6 +42,8 @@ Dependencies point inward: web/persistence/AI/MIDI adapters depend on domain con
 
 Commodity mechanisms may use evaluated third-party libraries behind adapters, but canonical Nightdrive musical semantics remain defined by the framework-independent domain contracts.
 
+Stage 7A defines the documentation-only [Arpeggiator foundation](ARPEGGIATOR_MODEL.md). The future Arpeggiator consumes validated Harmony progression slots and their selected `ChordVoicing`, owns only component-specific pitch traversal and `ArpEvent` projection, and reuses canonical musical-time primitives. Harmony retains Chord, inversion, voicing, slot-order, and bar-span ownership; MIDI, aggregate provenance, browser/audio, persistence, and AI remain downstream or enclosing boundaries. No Arpeggiator runtime exists in Stage 7A.
+
 Stage 5A defined the MIDI boundary. Stage 5B1 provides a framework-independent Nightdrive-owned intermediate representation and strict validators for validated canonical composition/timing inputs. Stage 5B2a passes that validated IR through an isolated Standard MIDI adapter using `midi-file` only for commodity byte encoding; the public boundary remains Nightdrive-owned and third-party MIDI types do not cross it. Stage 5B2b adds a test-only independent validation/reference reader and semantic round-trip evidence; it is not canonical state or a production parser. Stage 5C1 prepares a committed serializer-generated interoperability fixture and manual FL Studio protocol; it does not automate FL Studio or claim compatibility.
 
 ### Implemented boundaries

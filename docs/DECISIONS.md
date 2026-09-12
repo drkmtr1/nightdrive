@@ -125,7 +125,7 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 ## ADR-014 — Versioned deterministic PRNG contract
 
 **Date:** 2026-09-09
-**Status:** Accepted for the Stage 3B2c1 contract-definition milestone; implementation remains separately gated.
+**Status:** Accepted; the Stage 3B2c1 contract definition and Stage 3B2c2 deterministic PRNG primitive are merged. Musical-policy helpers, streams/forks, and generator-specific seed integration remain separately gated.
 
 **Context:** Future randomized music generation requires reproducible, versioned randomness across supported JavaScript runtimes.
 **Decision:** Use an in-repository Mulberry32 uint32 transition identified as `nightdrive.prng.mulberry32.v1`. Accept only canonical uint32 seeds (`0..4,294,967,295`), including zero, with no coercion. Keep the PRNG independent of musical policy, ambient randomness, and security-sensitive randomness.
