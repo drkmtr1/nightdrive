@@ -5,12 +5,55 @@ import {
   BASS_V1_REGISTER_ANCHOR,
   BassValueError,
   createBassRange,
+  generateBassEvents,
   getBassPitchCandidates,
   resolveFirstBassPitch,
   resolveSubsequentBassPitch,
 } from "./bass";
+import { createChord } from "./chord";
+import {
+  enumerateChordVoicingCandidates,
+  getHarmonyTemplate,
+  HARMONY_PROFILE_IDS,
+  realizeHarmonyProgression,
+  type HarmonyProgressionRealization,
+} from "./harmony";
 import * as musicDomain from "./index";
+import { createKey } from "./key";
 import { createMidiPitch, createPitchClass, pitchClassOf } from "./pitch";
+
+function validProgression(): HarmonyProgressionRealization {
+  return realizeHarmonyProgression(
+    HARMONY_PROFILE_IDS.darkSynthwave,
+    getHarmonyTemplate("degree-0654-natural-minor-v1"),
+    createKey(createPitchClass(0), "natural-minor"),
+  );
+}
+
+function progressionWithRoots(
+  progression: HarmonyProgressionRealization,
+  roots: readonly (number | undefined)[],
+): HarmonyProgressionRealization {
+  return {
+    ...progression,
+    slots: Object.freeze(
+      progression.slots.map((slot, index) => {
+        const root = roots[index];
+        if (root === undefined) return slot;
+        const chord = createChord(createPitchClass(root), slot.chord.quality);
+        const candidate = enumerateChordVoicingCandidates(chord, progression.profile)[0];
+        if (candidate === undefined) throw new Error("Expected a valid voicing candidate.");
+        return Object.freeze({
+          ...slot,
+          chord,
+          inversion: candidate.inversion,
+          voicing: candidate.voicing,
+          adjacentCost: index === 0 ? null : 0,
+        });
+      }),
+    ),
+  };
+}
 
 function expectBassError(
   operation: () => unknown,
@@ -135,6 +178,130 @@ describe("Bass V1 deterministic root-pitch resolution", () => {
     expect(resolveFirstBassPitch(root)).toBe(resolveFirstBassPitch(root));
     expect(resolveSubsequentBassPitch(root, previous)).toBe(
       resolveSubsequentBassPitch(root, previous),
+    );
+  });
+});
+
+describe("Bass V1 Harmony-slot event generation", () => {
+  it("emits one frozen slot-aligned event per Harmony slot", () => {
+    const progression = validProgression();
+    const before = JSON.stringify(progression);
+    const events = generateBassEvents(progression);
+
+    expect(events).toHaveLength(progression.slots.length);
+    expect(Object.isFrozen(events)).toBe(true);
+    expect(events.every((event) => Object.isFrozen(event))).toBe(true);
+    expect(Object.keys(events[0])).toEqual(["pitch", "startTick", "durationTicks"]);
+    expect(events.map(({ startTick, durationTicks }) => [startTick, durationTicks])).toEqual([
+      [0, 7_680],
+      [7_680, 7_680],
+      [15_360, 7_680],
+      [23_040, 7_680],
+    ]);
+    expect(events.every((event) => event.durationTicks > 0)).toBe(true);
+    expect(events.every((event) => event.startTick + event.durationTicks <= 30_720)).toBe(true);
+    expect(JSON.stringify(progression)).toBe(before);
+  });
+
+  it("uses the Stage 6A1 anchor, continuity, and root-membership policy", () => {
+    const progression = validProgression();
+    const events = generateBassEvents(progression);
+
+    expect(events.map((event) => event.pitch)).toEqual([48, 46, 44, 43]);
+    expect(
+      events.every(
+        (event, index) => pitchClassOf(event.pitch) === progression.slots[index].chord.root,
+      ),
+    ).toBe(true);
+    expect(generateBassEvents(progression)).toEqual(events);
+  });
+
+  it("keeps a B-to-C transition near the prior register", () => {
+    const progression = progressionWithRoots(validProgression(), [11, 0]);
+    const events = generateBassEvents(progression);
+
+    expect(events.slice(0, 2).map((event) => event.pitch)).toEqual([47, 48]);
+  });
+
+  it("permits repeated roots and upward continuity without inserting movement", () => {
+    const progression = progressionWithRoots(validProgression(), [0, 0, 7, undefined]);
+    const events = generateBassEvents(progression);
+
+    expect(events.slice(0, 3).map((event) => event.pitch)).toEqual([48, 48, 43]);
+  });
+
+  it("applies the lower-pitch continuity tie through event generation", () => {
+    const progression = progressionWithRoots(validProgression(), [6, 0]);
+    const events = generateBassEvents(progression);
+
+    expect(events.slice(0, 2).map((event) => event.pitch)).toEqual([42, 36]);
+  });
+
+  it("mirrors arbitrary positive slot bar spans to the section boundary", () => {
+    const progression = validProgression();
+    const variableBars = {
+      ...progression,
+      slots: Object.freeze(
+        progression.slots.map((slot, index) =>
+          Object.freeze({ ...slot, bars: [1, 2, 3, 2][index] }),
+        ),
+      ),
+    } as HarmonyProgressionRealization;
+    const events = generateBassEvents(variableBars);
+
+    expect(events.map(({ startTick, durationTicks }) => [startTick, durationTicks])).toEqual([
+      [0, 3_840],
+      [3_840, 7_680],
+      [11_520, 11_520],
+      [23_040, 7_680],
+    ]);
+    expect(events[3].startTick + events[3].durationTicks).toBe(30_720);
+  });
+
+  it("rejects malformed harmonic context and timing", () => {
+    const progression = validProgression();
+    expectBassError(
+      () => generateBassEvents(null as never),
+      BASS_ERROR_CODES.invalidHarmonicContext,
+      "progression",
+    );
+    expectBassError(
+      () => generateBassEvents({ ...progression, slots: [] } as never),
+      BASS_ERROR_CODES.invalidHarmonicContext,
+      "progression.slots",
+    );
+    expectBassError(
+      () =>
+        generateBassEvents({
+          ...progression,
+          slots: [
+            { ...progression.slots[0], chord: { root: "0", quality: "major-triad" } },
+            ...progression.slots.slice(1),
+          ],
+        } as never),
+      BASS_ERROR_CODES.invalidHarmonicContext,
+      "progression.slots[0]",
+    );
+    expectBassError(
+      () =>
+        generateBassEvents({
+          ...progression,
+          slots: [{ ...progression.slots[0], bars: 0 }, ...progression.slots.slice(1)],
+        } as never),
+      BASS_ERROR_CODES.invalidBassTiming,
+      "progression.slots[0].bars",
+    );
+  });
+
+  it("propagates no-legal-root failure for a range without the slot root", () => {
+    expectBassError(
+      () =>
+        generateBassEvents(
+          validProgression(),
+          createBassRange({ minMidiPitch: 37, maxMidiPitch: 37 }),
+        ),
+      BASS_ERROR_CODES.noLegalRootPitch,
+      "progression.slots[0].chord.root",
     );
   });
 });

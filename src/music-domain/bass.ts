@@ -1,4 +1,29 @@
+import { createChord, type Chord } from "./chord";
+import { createChordInversion } from "./chord-inversion";
+import {
+  createChordVoicing,
+  isChordVoicingCompatibleWithChord,
+  isChordVoicingCompatibleWithChordInversion,
+} from "./chord-voicing";
+import {
+  getHarmonyTemplate,
+  isHarmonyProfileId,
+  isHarmonyTemplateSupportedForProfile,
+  type HarmonyProgressionRealization,
+  type HarmonyProgressionSlot,
+} from "./harmony";
+import { createKey } from "./key";
 import { createMidiPitch, createPitchClass, type MidiPitch, type PitchClass } from "./pitch";
+import { createScaleDegree } from "./scale";
+import {
+  createDurationTicks,
+  createTick,
+  isEventStartTick,
+  V1_SECTION_LENGTH_TICKS,
+  V1_TICKS_PER_BAR,
+  type DurationTicks,
+  type Tick,
+} from "./musical-time";
 
 const bassRangeBrand: unique symbol = Symbol("BassRange");
 
@@ -6,6 +31,12 @@ export type BassRange = Readonly<{
   minMidiPitch: MidiPitch;
   maxMidiPitch: MidiPitch;
   readonly [bassRangeBrand]: true;
+}>;
+
+export type BassEvent = Readonly<{
+  pitch: MidiPitch;
+  startTick: Tick;
+  durationTicks: DurationTicks;
 }>;
 
 export const BASS_ERROR_CODES = {
@@ -41,6 +72,10 @@ export const BASS_V1_RANGE: BassRange = Object.freeze({
 
 function invalidHarmonicContext(field: string, message: string): never {
   throw new BassValueError(BASS_ERROR_CODES.invalidHarmonicContext, field, message);
+}
+
+function invalidBassTiming(field: string, message: string): never {
+  throw new BassValueError(BASS_ERROR_CODES.invalidBassTiming, field, message);
 }
 
 function validateRoot(root: unknown): PitchClass {
@@ -208,4 +243,255 @@ export function resolveSubsequentBassPitch(
     );
   }
   return selectNearestBassPitch(getBassPitchCandidates(root, range), validatedPrevious);
+}
+
+type ValidatedBassSlot = Readonly<{
+  chord: Chord;
+  bars: number;
+}>;
+
+type ValidatedHarmonyContext = Readonly<{
+  slots: readonly ValidatedBassSlot[];
+}>;
+
+function validateHarmonySlot(value: unknown, index: number): ValidatedBassSlot {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return invalidHarmonicContext(
+      `progression.slots[${index}]`,
+      "progression slots must be objects.",
+    );
+  }
+
+  const slot = value as Partial<HarmonyProgressionSlot>;
+  if (slot.index !== index) {
+    return invalidHarmonicContext(
+      `progression.slots[${index}].index`,
+      "progression slot indices must match their ordered position.",
+    );
+  }
+
+  if (typeof slot.bars !== "number" || !Number.isSafeInteger(slot.bars) || slot.bars <= 0) {
+    return invalidBassTiming(
+      `progression.slots[${index}].bars`,
+      "progression slot bars must be positive safe integers.",
+    );
+  }
+
+  try {
+    createScaleDegree(slot.degree as number);
+    const chordValue = slot.chord;
+    if (typeof chordValue !== "object" || chordValue === null || Array.isArray(chordValue)) {
+      return invalidHarmonicContext(
+        `progression.slots[${index}].chord`,
+        "progression slot chord must be a canonical Chord.",
+      );
+    }
+    const chord = createChord(chordValue.root, chordValue.quality);
+
+    const inversion = createChordInversion(slot.inversion as number);
+    const voicingValue = slot.voicing;
+    if (typeof voicingValue !== "object" || voicingValue === null || Array.isArray(voicingValue)) {
+      return invalidHarmonicContext(
+        `progression.slots[${index}].voicing`,
+        "progression slot voicing must be canonical.",
+      );
+    }
+    const voicing = createChordVoicing(voicingValue.midiPitches);
+    if (
+      !isChordVoicingCompatibleWithChord(voicing, chord) ||
+      !isChordVoicingCompatibleWithChordInversion(voicing, chord, inversion)
+    ) {
+      return invalidHarmonicContext(
+        `progression.slots[${index}]`,
+        "progression slot chord, inversion, and voicing must be compatible.",
+      );
+    }
+
+    if (index === 0) {
+      if (slot.adjacentCost !== null) {
+        return invalidHarmonicContext(
+          `progression.slots[${index}].adjacentCost`,
+          "the first progression slot must not have an adjacent cost.",
+        );
+      }
+    } else if (
+      typeof slot.adjacentCost !== "number" ||
+      !Number.isSafeInteger(slot.adjacentCost) ||
+      slot.adjacentCost < 0
+    ) {
+      return invalidHarmonicContext(
+        `progression.slots[${index}].adjacentCost`,
+        "later progression slots must have a nonnegative adjacent cost.",
+      );
+    }
+
+    const rationale = slot.rationale;
+    if (
+      typeof rationale !== "object" ||
+      rationale === null ||
+      Array.isArray(rationale) ||
+      typeof rationale.preferenceRank !== "number" ||
+      !Number.isSafeInteger(rationale.preferenceRank) ||
+      rationale.preferenceRank < 0 ||
+      typeof rationale.tieBreak !== "string" ||
+      rationale.tieBreak.length === 0
+    ) {
+      return invalidHarmonicContext(
+        `progression.slots[${index}].rationale`,
+        "progression slot rationale must be canonical.",
+      );
+    }
+
+    return Object.freeze({ chord, bars: slot.bars });
+  } catch {
+    return invalidHarmonicContext(
+      `progression.slots[${index}]`,
+      "progression slot values must be canonical music-domain values.",
+    );
+  }
+}
+
+function validateHarmonyContext(value: unknown): ValidatedHarmonyContext {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return invalidHarmonicContext("progression", "progression must be an object.");
+  }
+
+  const input = value as Partial<HarmonyProgressionRealization>;
+  if (!isHarmonyProfileId(input.profile)) {
+    return invalidHarmonicContext("progression.profile", "progression profile is not canonical.");
+  }
+  if (typeof input.templateId !== "string" || input.templateId.trim() === "") {
+    return invalidHarmonicContext(
+      "progression.templateId",
+      "progression template identity must be canonical.",
+    );
+  }
+  if (input.templateVersion !== "v1") {
+    return invalidHarmonicContext(
+      "progression.templateVersion",
+      "progression template version is unsupported.",
+    );
+  }
+
+  try {
+    const template = getHarmonyTemplate(input.templateId);
+    if (!isHarmonyTemplateSupportedForProfile(input.profile, template)) {
+      return invalidHarmonicContext(
+        "progression.templateId",
+        "progression template is not supported for its profile.",
+      );
+    }
+    if (typeof input.key !== "object" || input.key === null || Array.isArray(input.key)) {
+      return invalidHarmonicContext("progression.key", "progression key must be canonical.");
+    }
+    const key = createKey(input.key.tonic, input.key.scale);
+    if (key.scale !== template.scale) {
+      return invalidHarmonicContext(
+        "progression.key.scale",
+        "progression key scale must match its template.",
+      );
+    }
+  } catch {
+    return invalidHarmonicContext(
+      "progression",
+      "progression metadata must be canonical Harmony values.",
+    );
+  }
+
+  if (!Array.isArray(input.slots) || input.slots.length === 0) {
+    return invalidHarmonicContext(
+      "progression.slots",
+      "progression must contain at least one ordered slot.",
+    );
+  }
+
+  const slots = input.slots.map((slot, index) => validateHarmonySlot(slot, index));
+  const totalBars = slots.reduce((sum, slot) => {
+    const next = sum + slot.bars;
+    if (!Number.isSafeInteger(next)) {
+      return invalidBassTiming("progression.slots", "progression bar span exceeds safe timing.");
+    }
+    return next;
+  }, 0);
+  if (totalBars !== 8) {
+    return invalidBassTiming(
+      "progression.slots",
+      "progression slot bars must total exactly eight bars.",
+    );
+  }
+
+  return Object.freeze({ slots: Object.freeze(slots) });
+}
+
+function createBassEventTiming(
+  startTickValue: number,
+  bars: number,
+  index: number,
+): Readonly<{ startTick: Tick; durationTicks: DurationTicks }> {
+  const durationValue = bars * V1_TICKS_PER_BAR;
+  if (!Number.isSafeInteger(startTickValue) || !Number.isSafeInteger(durationValue)) {
+    return invalidBassTiming(
+      `progression.slots[${index}]`,
+      "Bass event timing must remain within safe integer bounds.",
+    );
+  }
+
+  try {
+    const startTick = createTick(startTickValue);
+    const durationTicks = createDurationTicks(durationValue);
+    if (!isEventStartTick(startTick) || startTickValue + durationValue > V1_SECTION_LENGTH_TICKS) {
+      return invalidBassTiming(
+        `progression.slots[${index}]`,
+        "Bass event timing must remain inside the eight-bar section.",
+      );
+    }
+    return Object.freeze({ startTick, durationTicks });
+  } catch {
+    return invalidBassTiming(
+      `progression.slots[${index}]`,
+      "Bass event timing must be positive and inside the eight-bar section.",
+    );
+  }
+}
+
+export function generateBassEvents(
+  progression: HarmonyProgressionRealization,
+  range: BassRange = BASS_V1_RANGE,
+): readonly BassEvent[] {
+  const validatedRange = validatedRangeValue(range);
+  const context = validateHarmonyContext(progression);
+  const events: BassEvent[] = [];
+  let startTick = 0;
+  let previousBassPitch: MidiPitch | undefined;
+
+  for (const [index, slot] of context.slots.entries()) {
+    const timing = createBassEventTiming(startTick, slot.bars, index);
+    let pitch: MidiPitch;
+    try {
+      pitch =
+        previousBassPitch === undefined
+          ? resolveFirstBassPitch(slot.chord.root, validatedRange)
+          : resolveSubsequentBassPitch(slot.chord.root, previousBassPitch, validatedRange);
+    } catch (error) {
+      if (error instanceof BassValueError && error.code === BASS_ERROR_CODES.noLegalRootPitch) {
+        throw new BassValueError(
+          error.code,
+          `progression.slots[${index}].chord.root`,
+          error.message,
+        );
+      }
+      throw error;
+    }
+    events.push(
+      Object.freeze({
+        pitch,
+        startTick: timing.startTick,
+        durationTicks: timing.durationTicks,
+      }),
+    );
+    previousBassPitch = pitch;
+    startTick += timing.durationTicks;
+  }
+
+  return Object.freeze(events);
 }
