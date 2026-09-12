@@ -10,3 +10,4 @@ export * from "./prng";
 export * from "./chord-voicing";
 export * from "./harmony";
 export * from "./bass";
+export * from "./arpeggiator";

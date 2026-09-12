@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7 Arpeggiator contract definition.
+Stage 7 Arpeggiator deterministic foundation implementation.
 
 ## Current Milestone
 
-Stage 7A is the current documentation-only deterministic Arpeggiator foundation contract milestone. It authorizes no production implementation.
+Stage 7A is merged through PR #58. Stage 7B1 is the current bounded candidate-foundation implementation/review slice; it adds no Arp events or later policy behavior.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Only Stage 7A contract documentation is authorized. Stage 7B1 and every later Arpeggiator implementation or policy milestone require separate review and authorization.
+Only Stage 7B1 candidate-foundation implementation and review are authorized. Stage 7B2 and every later Arpeggiator implementation or policy milestone require separate review and authorization.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ An existing local observation reports a timeout in the Harmony test `covers all 
 
 ## Relevant Deferred Work
 
-Arpeggiator implementation, octave expansion, density, seeded behavior, concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Arp event generation, rate/direction/gate execution, octave expansion, density, seeded behavior, concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Complete and review the Stage 7A documentation contract; do not begin Stage 7B1 automatically.
+Complete and review Stage 7B1; do not begin Stage 7B2 automatically.
 
 ## Maintenance
 

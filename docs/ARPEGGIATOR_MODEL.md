@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation as documentation only. It authorizes no production code or tests. The foundation supports later bounded implementation while preserving the eventual Stage 7 requirement for profile-appropriate rate, direction, range, gate, octave, density, and seeded behavior. It cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the current bounded implementation/review slice for Harmony validation and exact selected-voicing range filtering; it adds no event generation. The foundation supports later bounded implementation while preserving the eventual Stage 7 requirement for profile-appropriate rate, direction, range, gate, octave, density, and seeded behavior. It cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -124,7 +124,7 @@ No accepted concrete Arp mappings currently exist for Dark Synthwave, Classic Sy
 ## Bounded delivery sequence
 
 1. **Stage 7A — contract definition:** this documentation-only foundation.
-2. **Stage 7B1 — candidate foundation:** validate Harmony and compatibility, filter the exact selected voicing by range, and return immutable stable candidates or structured failure; no events or traversal.
+2. **Stage 7B1 — candidate foundation (current implementation/review slice):** validate Harmony and compatibility, filter the exact selected voicing by range, and return immutable stable candidates or structured failure; no events or traversal.
 3. **Stage 7B2 — simple event projection:** fixed eighth rate, up direction, full gate, monophonic events, and slot-local reset.
 4. **Stage 7B3 — rate and direction expansion:** quarter/eighth/sixteenth and the four exact direction cycles.
 5. **Stage 7B4 — integer gate control:** `gateTicks` from `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
@@ -137,3 +137,5 @@ This sequence describes review boundaries; it authorizes none of the implementat
 The foundation traces to MUS-003/AC-011, MUS-006/AC-013, and NFR-001/AC-004 only for behavior it actually implements later. Candidate and event evidence must cover active-Harmony derivation, compatibility, exact selected-voicing pitch source, inclusive range boundaries, one/two/three candidate sets, exact timings and cycles, slot/section containment, gate bounds, structured rejection, immutability, input non-mutation, repeatability, and ambient-randomness isolation.
 
 Full Stage 7 remains pending until separately accepted octave, density, seeded, generator/provenance, and profile-policy contracts and evidence satisfy the complete AC-011 and AC-004 scope. Human musical review of profile fit remains separate from deterministic correctness.
+
+Stage 7B1 implementation evidence covers canonical Harmony progression identity and ordered-slot validation, Chord/inversion/voicing compatibility, inclusive `MidiPitch` range validation, exact one/two/three-pitch filtering, whole-operation `NO_LEGAL_ARP_PITCH` failure, stable frozen per-slot output, input non-mutation, repeatability, and ambient-randomness isolation. It does not provide event, timing, rate, direction, gate, octave, density, seed, or profile-policy evidence.
