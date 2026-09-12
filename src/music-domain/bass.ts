@@ -137,7 +137,7 @@ function validatedRangeValue(value: BassRange): BassRange {
   }
 }
 
-export function selectNearestBassPitch(
+function selectNearestBassPitch(
   candidates: readonly MidiPitch[],
   targetMidiPitch: MidiPitch,
 ): MidiPitch {

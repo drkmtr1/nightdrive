@@ -8,8 +8,8 @@ import {
   getBassPitchCandidates,
   resolveFirstBassPitch,
   resolveSubsequentBassPitch,
-  selectNearestBassPitch,
 } from "./bass";
+import * as musicDomain from "./index";
 import { createMidiPitch, createPitchClass, pitchClassOf } from "./pitch";
 
 function expectBassError(
@@ -111,13 +111,22 @@ describe("Bass V1 deterministic root-pitch resolution", () => {
     expect(resolveSubsequentBassPitch(createPitchClass(1), createMidiPitch(43))).toBe(37);
   });
 
-  it("is independent of candidate enumeration order", () => {
-    const candidates = getBassPitchCandidates(createPitchClass(0));
-    const target = createMidiPitch(43);
-    expect(selectNearestBassPitch(candidates, target)).toBe(48);
-    expect(selectNearestBassPitch([...candidates].reverse(), target)).toBe(48);
-    expect(selectNearestBassPitch([48, 36, 60].map(createMidiPitch), target)).toBe(48);
-    expect(selectNearestBassPitch([48, 36].map(createMidiPitch), createMidiPitch(42))).toBe(36);
+  it("keeps canonical public resolution deterministic across repeated calls", () => {
+    // The generic selector is private by design; public callers provide roots and ranges,
+    // so canonical candidate derivation remains the only supported input surface.
+    for (let root = 0; root < 12; root += 1) {
+      const canonicalRoot = createPitchClass(root);
+      const first = resolveFirstBassPitch(canonicalRoot);
+      const previous = createMidiPitch(43);
+      expect(resolveFirstBassPitch(canonicalRoot)).toBe(first);
+      expect(resolveSubsequentBassPitch(canonicalRoot, previous)).toBe(
+        resolveSubsequentBassPitch(canonicalRoot, previous),
+      );
+    }
+  });
+
+  it("does not expose the low-level generic selector through the public barrel", () => {
+    expect(Object.hasOwn(musicDomain, "selectNearestBassPitch")).toBe(false);
   });
 
   it("returns the same result for repeated calls", () => {
@@ -126,14 +135,6 @@ describe("Bass V1 deterministic root-pitch resolution", () => {
     expect(resolveFirstBassPitch(root)).toBe(resolveFirstBassPitch(root));
     expect(resolveSubsequentBassPitch(root, previous)).toBe(
       resolveSubsequentBassPitch(root, previous),
-    );
-  });
-
-  it("rejects an empty candidate set", () => {
-    expectBassError(
-      () => selectNearestBassPitch([], createMidiPitch(43)),
-      BASS_ERROR_CODES.noLegalRootPitch,
-      "candidates",
     );
   });
 });
