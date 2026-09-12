@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-This document defines the Stage 6 V1 Bass contract. The separately bounded Stage 6A1 root-pitch and Stage 6A2 canonical event implementations realize the sustained root-aligned baseline. The straight-rhythm contract is merged through PR #52, and its bounded production implementation is complete on the current unmerged review branch.
+This document defines the Stage 6 V1 Bass contract. The separately bounded Stage 6A1 root-pitch and Stage 6A2 canonical event implementations realize the sustained root-aligned baseline. The straight-rhythm contract is merged through PR #52, and its bounded production implementation is merged through PR #56.
 
 The contract reuses the existing `PitchClass`, `MidiPitch`, `Tick`, `DurationTicks`, `HarmonyProgressionRealization`, and shared composition-generator boundaries. It does not change Harmony semantics or create a second timing, provenance, or generator framework.
 
@@ -123,7 +123,7 @@ Only parameters with V1 meaning are exposed:
 | Roadmap parameter | V1 classification |
 |---|---|
 | range | **ACTIVE IN V1:** approved inclusive `36..60` |
-| rhythm | **IMPLEMENTED ON THE CURRENT REVIEW BRANCH:** one of the five closed straight-rhythm identifiers; omitted means `sustained` |
+| rhythm | **IMPLEMENTED:** one of the five closed straight-rhythm identifiers; omitted means `sustained` |
 | density | **DERIVED BY RHYTHM:** no independent density control |
 | syncopation | **FIXED BY V1 POLICY:** only the exact `offbeat-eighth` placement above; no general control |
 | movement | **FIXED BY V1 POLICY:** slot/chord aligned |
@@ -139,11 +139,11 @@ The repository names six eventual archetypes—Driving 8ths, Driving 16ths, Midt
 The intended sequencing keeps the first implementation narrow:
 
 1. **Foundation (V1):** chord-root-only Bass, deterministic register continuity, Harmony-slot-aligned events, no syncopation, no inserted rests, and no seed-driven variation.
-2. **Straight rhythm expansion (implemented on the current review branch):** sustained, quarter, eighth, sixteenth, and offbeat-eighth patterns with exact slot-local timing.
+2. **Straight rhythm expansion (implemented through PR #56):** sustained, quarter, eighth, sixteenth, and offbeat-eighth patterns with exact slot-local timing.
 3. **Compound rhythm expansion (future):** triplets, dotted figures, and gallop/reverse-gallop families.
 4. **Expressive deterministic rhythm (future):** controlled syncopation, rests, density, movement, octave behavior, and later seeded variation.
 
-These are sequencing directions rather than new roadmap substage IDs. This milestone implements only the accepted straight-rhythm contract; the implementation remains unmerged pending review. Other components may define their own Arp-, Lead-, or Drum-specific pattern sets without changing this shared timing ownership principle.
+These are sequencing directions rather than new roadmap substage IDs. This milestone implements only the accepted straight-rhythm contract; compound and expressive behavior remains separately gated. Other components may define their own Arp-, Lead-, or Drum-specific pattern sets without changing this shared timing ownership principle.
 
 ## Structured errors
 
@@ -195,4 +195,4 @@ The current branch additionally verifies exact starts, durations, and counts for
 
 Deferred until separately authorized Stage 6 slices are passing V1 evidence: eighth-note and sixteenth-note triplets; dotted-eighth/sixteenth figures; gallop and reverse gallop; broader syncopated-eighth patterns; rests beyond the exact offbeat spaces above; cross-slot ties; gate percentages; velocity patterns; accents; ghost notes; passing and approach tones; pedal tones; slash-bass and inversion-aware Bass; octave pulses; seeded pattern variation; density, movement, and aggression controls; profile-specific ranges; full composition orchestration; and any MIDI, browser, UI, persistence, audio, or AI behavior.
 
-The current unmerged branch expands the Stage 6A1/A2 baseline only with the five accepted straight-rhythm projections. It preserves the approved range, pitch-resolution policy, existing Harmony and musical-time primitives, immutable canonical state, and MIDI-derived boundary.
+The merged Stage 6A1/A2 implementation expands the baseline only with the five accepted straight-rhythm projections. It preserves the approved range, pitch-resolution policy, existing Harmony and musical-time primitives, immutable canonical state, and MIDI-derived boundary.

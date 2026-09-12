@@ -6,7 +6,7 @@ Stage 6 contract-led Bass development.
 
 ## Current Milestone
 
-The bounded Bass straight-rhythm production implementation is complete on its review branch and remains unmerged.
+The bounded Bass straight-rhythm production implementation is merged through PR #56 at `4cb0444d10cdd500bea1947680012e64087ad71b`.
 
 The project-state maintenance milestone is complete.
 
@@ -20,11 +20,11 @@ The project-state maintenance workflow is merged through PR #53 at `45f831c6ea5f
 
 ## Repository State
 
-The accepted repository baseline is `main` at `58b0a5a6a3bf37fa4c7f2e4c40943ef27f86aa9c`. The straight-rhythm implementation branch is based on that accepted state.
+The accepted repository baseline is `main` at `4cb0444d10cdd500bea1947680012e64087ad71b`; local `main` and `origin/main` are reconciled.
 
 ## Current Gate
 
-The current gate is review of the bounded Bass straight-rhythm implementation. It must not be described as merged until its PR is accepted and integrated.
+The previous Stage 6 straight-rhythm implementation-review gate is complete. No subsequent implementation milestone is automatically authorized.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Compound and expressive Bass rhythms, seeded variation, and later Bass/MIDI/appl
 
 ## Next Eligible Task
 
-Review the bounded Bass straight-rhythm implementation. Do not begin compound or expressive rhythm work.
+Select and review the next bounded milestone from the authoritative roadmap; do not begin it automatically.
 
 ## Maintenance
 
