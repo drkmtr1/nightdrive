@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   BASS_ERROR_CODES,
+  BASS_RHYTHM_IDS,
   BASS_V1_RANGE,
   BASS_V1_REGISTER_ANCHOR,
   BassValueError,
@@ -45,6 +46,18 @@ function progressionWithRoots(
       }),
     ),
   };
+}
+
+function progressionWithBars(
+  progression: HarmonyProgressionRealization,
+  bars: readonly number[],
+): HarmonyProgressionRealization {
+  return {
+    ...progression,
+    slots: Object.freeze(
+      progression.slots.map((slot, index) => Object.freeze({ ...slot, bars: bars[index] })),
+    ),
+  } as HarmonyProgressionRealization;
 }
 
 function expectBassError(
@@ -319,4 +332,168 @@ describe("Bass V1 Harmony-slot event generation", () => {
       "progression.slots[0].chord.root",
     );
   });
+});
+
+describe("Bass V1 straight-rhythm generation", () => {
+  it("exposes exactly the five frozen canonical rhythm identifiers", () => {
+    expect(BASS_RHYTHM_IDS).toEqual({
+      sustained: "sustained",
+      quarterPulse: "quarter-pulse",
+      eighthPulse: "eighth-pulse",
+      sixteenthPulse: "sixteenth-pulse",
+      offbeatEighth: "offbeat-eighth",
+    });
+    expect(Object.isFrozen(BASS_RHYTHM_IDS)).toBe(true);
+  });
+
+  it("normalizes omitted rhythm to the exact sustained Stage 6A2 result", () => {
+    const progression = validProgression();
+    const omitted = generateBassEvents(progression);
+
+    expect(generateBassEvents(progression, BASS_V1_RANGE, {})).toEqual(omitted);
+    expect(
+      generateBassEvents(progression, BASS_V1_RANGE, {
+        rhythm: BASS_RHYTHM_IDS.sustained,
+      }),
+    ).toEqual(omitted);
+    expect(omitted.map(({ startTick, durationTicks }) => [startTick, durationTicks])).toEqual([
+      [0, 7_680],
+      [7_680, 7_680],
+      [15_360, 7_680],
+      [23_040, 7_680],
+    ]);
+  });
+
+  it.each([
+    {
+      rhythm: BASS_RHYTHM_IDS.quarterPulse,
+      duration: 960,
+      count: 32,
+    },
+    {
+      rhythm: BASS_RHYTHM_IDS.eighthPulse,
+      duration: 480,
+      count: 64,
+    },
+    {
+      rhythm: BASS_RHYTHM_IDS.sixteenthPulse,
+      duration: 240,
+      count: 128,
+    },
+  ])("projects exact $rhythm timing", ({ rhythm, duration, count }) => {
+    const events = generateBassEvents(validProgression(), BASS_V1_RANGE, { rhythm });
+
+    expect(events).toHaveLength(count);
+    expect(events.map((event) => event.startTick)).toEqual(
+      Array.from({ length: count }, (_, index) => index * duration),
+    );
+    expect(events.every((event) => event.durationTicks === duration)).toBe(true);
+    expect(events.at(-1)).toMatchObject({
+      startTick: 30_720 - duration,
+      durationTicks: duration,
+    });
+  });
+
+  it("projects offbeat eighths at exact local bar offsets without an onset at zero", () => {
+    const events = generateBassEvents(validProgression(), BASS_V1_RANGE, {
+      rhythm: BASS_RHYTHM_IDS.offbeatEighth,
+    });
+
+    expect(events).toHaveLength(32);
+    expect(events.map((event) => event.startTick)).toEqual(
+      Array.from({ length: 8 }, (_, bar) =>
+        [480, 1_440, 2_400, 3_360].map((offset) => bar * 3_840 + offset),
+      ).flat(),
+    );
+    expect(events.every((event) => event.durationTicks === 480)).toBe(true);
+    expect(events.some((event) => event.startTick % 3_840 === 0)).toBe(false);
+    expect(events.at(-1)).toMatchObject({ startTick: 30_240, durationTicks: 480 });
+  });
+
+  it.each(Object.values(BASS_RHYTHM_IDS))(
+    "resets %s phase per slot and repeats it per local bar",
+    (rhythm) => {
+      const progression = progressionWithBars(validProgression(), [1, 2, 3, 2]);
+      const events = generateBassEvents(progression, BASS_V1_RANGE, { rhythm });
+      const slotStarts = [0, 3_840, 11_520, 23_040];
+      const firstOffset = rhythm === BASS_RHYTHM_IDS.offbeatEighth ? 480 : 0;
+
+      for (const slotStart of slotStarts) {
+        expect(events.some((event) => event.startTick === slotStart + firstOffset)).toBe(true);
+      }
+      if (rhythm !== BASS_RHYTHM_IDS.sustained) {
+        for (let barStart = 0; barStart < 30_720; barStart += 3_840) {
+          expect(events.some((event) => event.startTick === barStart + firstOffset)).toBe(true);
+        }
+      }
+    },
+  );
+
+  it.each(Object.values(BASS_RHYTHM_IDS))(
+    "resolves one Stage 6A1 pitch per slot for %s and never crosses slot boundaries",
+    (rhythm) => {
+      const progression = progressionWithBars(
+        progressionWithRoots(validProgression(), [0, 0, 7, 8]),
+        [1, 2, 3, 2],
+      );
+      const events = generateBassEvents(progression, BASS_V1_RANGE, { rhythm });
+      const boundaries = [0, 3_840, 11_520, 23_040, 30_720];
+      const expectedPitches = [48, 48, 43, 44];
+
+      for (let index = 0; index < expectedPitches.length; index += 1) {
+        const slotEvents = events.filter(
+          (event) =>
+            event.startTick >= boundaries[index] && event.startTick < boundaries[index + 1],
+        );
+        expect(slotEvents.length).toBeGreaterThan(0);
+        expect(slotEvents.every((event) => event.pitch === expectedPitches[index])).toBe(true);
+        expect(
+          slotEvents.every(
+            (event) => event.startTick + event.durationTicks <= boundaries[index + 1],
+          ),
+        ).toBe(true);
+      }
+      expect(events.every((event) => event.startTick + event.durationTicks <= 30_720)).toBe(true);
+    },
+  );
+
+  it("rejects unsupported or malformed rhythm inputs with the dedicated field", () => {
+    for (const parameters of [
+      { rhythm: "triplet" },
+      { rhythm: "SUSTAINED" },
+      { rhythm: undefined },
+      null,
+      "sustained",
+      [],
+    ]) {
+      expectBassError(
+        () => generateBassEvents(validProgression(), BASS_V1_RANGE, parameters as never),
+        BASS_ERROR_CODES.invalidBassRhythm,
+        "parameters.rhythm",
+      );
+    }
+  });
+
+  it.each(Object.values(BASS_RHYTHM_IDS))(
+    "returns frozen deterministic %s output without ambient randomness or input mutation",
+    (rhythm) => {
+      const progression = validProgression();
+      const parameters = { rhythm };
+      const before = JSON.stringify({ progression, parameters });
+      const random = vi.spyOn(Math, "random").mockImplementation(() => {
+        throw new Error("ambient randomness is prohibited");
+      });
+      try {
+        const first = generateBassEvents(progression, BASS_V1_RANGE, parameters);
+        const second = generateBassEvents(progression, BASS_V1_RANGE, parameters);
+        expect(second).toEqual(first);
+        expect(Object.isFrozen(first)).toBe(true);
+        expect(first.every((event) => Object.isFrozen(event))).toBe(true);
+        expect(random).not.toHaveBeenCalled();
+        expect(JSON.stringify({ progression, parameters })).toBe(before);
+      } finally {
+        random.mockRestore();
+      }
+    },
+  );
 });
