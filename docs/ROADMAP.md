@@ -355,7 +355,7 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 ## Stage 7 — Arpeggiator
 
-**Status:** Stage 7A is the current documentation-only deterministic foundation contract milestone; no Stage 7 implementation is authorized. Full Stage 7 remains pending.
+**Status:** Stage 7A is merged through PR #58; Stage 7B1 is the current bounded candidate-foundation implementation/review slice. Full Stage 7 remains pending.
 **Objective:** Generate profile-appropriate arpeggios from harmony.
 **Foundation contract:** Consume validated Harmony progression slots without replacing their Chord, inversion, or selected voicing; filter exact selected-voicing MIDI pitches through an inclusive range; project immutable monophonic events at exact integer quarter/eighth/sixteenth rates; use exact up/down/up-down/down-up traversal with slot-local reset; and constrain integer `gateTicks` to `1..rateTicks`. See [Arpeggiator model](ARPEGGIATOR_MODEL.md).
 **Eventual capabilities:** Rate, direction, range, gate, octave, density, seeded patterns, and concrete profile policy. Octave expansion, density, seeded behavior, and profile mappings remain separately gated and are not removed from Stage 7 completion.
@@ -370,7 +370,7 @@ Documentation only: freeze ownership, component event shape, exact rates/directi
 
 ### Stage 7B1 — Candidate foundation
 
-Future bounded implementation: validate Harmony input and Chord/inversion/voicing compatibility; derive the immutable stable in-range subset of the exact selected voicing; return structured failures. No events, timing, traversal, gate, seed, density, or octave expansion.
+Current bounded implementation/review slice: validate Harmony input and Chord/inversion/voicing compatibility; derive the immutable stable in-range subset of the exact selected voicing; return structured failures. No events, timing, traversal, gate, seed, density, or octave expansion. Merge remains a review decision.
 
 ### Stage 7B2 — Simple canonical event projection
 
