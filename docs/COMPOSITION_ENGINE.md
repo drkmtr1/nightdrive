@@ -27,7 +27,7 @@ Inputs: key/scale, profile/section, tension, complexity, movement, voicing width
 
 ## Bass engine
 
-Archetypes: Driving 8ths, Driving 16ths, Midtempo Stomp, Pedal Tone, Octave Pulse, Syncopated Darkwave. Parameters: density, syncopation, movement, root loyalty, octave behavior, aggression, range. Strong-beat/chord-tone rules and passing/approach exceptions are explicit per archetype/profile.
+Stage 6 V1 defines a generic root-aligned baseline: it receives a validated Harmony progression, emits one immutable domain-level bass event per chord slot, uses the slot Chord root, derives slot-aligned integer start/duration ticks from the existing bar spans, and chooses the lowest legal root pitch in the approved range. The required seed is retained in shared provenance but does not alter V1 musical output. Passing, approach, pedal, slash/inversion, syncopation, rest, cross-slot-tie, and profile-specific behavior are not active in this baseline. The six named archetypes—Driving 8ths, Driving 16ths, Midtempo Stomp, Pedal Tone, Octave Pulse, and Syncopated Darkwave—and their eventual parameters remain separately authorized future slices; they must not be inferred from this contract.
 
 ## Arpeggiator
 
