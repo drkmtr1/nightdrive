@@ -2,13 +2,11 @@
 
 ## Current Phase
 
-Stage 6 contract-led Bass development.
+Stage 7 Arpeggiator contract definition.
 
 ## Current Milestone
 
-The bounded Bass straight-rhythm production implementation is merged through PR #56 at `4cb0444d10cdd500bea1947680012e64087ad71b`.
-
-The project-state maintenance milestone is complete.
+Stage 7A is the current documentation-only deterministic Arpeggiator foundation contract milestone. It authorizes no production implementation.
 
 ## Recent Accepted Work
 
@@ -18,13 +16,15 @@ The straight-rhythm contract is merged through PR #52 at `fddc268e30bd365a9b6c04
 
 The project-state maintenance workflow is merged through PR #53 at `45f831c6ea5fdc549a0176a2b3ed43b7f20ab842`.
 
+The bounded Bass straight-rhythm production implementation is merged through PR #56 at `4cb0444d10cdd500bea1947680012e64087ad71b`.
+
 ## Repository State
 
-The accepted repository baseline is `main` at `4cb0444d10cdd500bea1947680012e64087ad71b`; local `main` and `origin/main` are reconciled.
+Git refs are authoritative for the current `HEAD` and local/remote synchronization. This snapshot records coordination state and stable accepted PR/merge references; it does not predict or store the commit SHA that will contain its own current update.
 
 ## Current Gate
 
-The previous Stage 6 straight-rhythm implementation-review gate is complete. No subsequent implementation milestone is automatically authorized.
+Only Stage 7A contract documentation is authorized. Stage 7B1 and every later Arpeggiator implementation or policy milestone require separate review and authorization.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ An existing local observation reports a timeout in the Harmony test `covers all 
 
 ## Relevant Deferred Work
 
-Compound and expressive Bass rhythms, seeded variation, and later Bass/MIDI/application capabilities remain separately gated. See [Bass model](docs/BASS_MODEL.md) and [roadmap](docs/ROADMAP.md).
+Arpeggiator implementation, octave expansion, density, seeded behavior, concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Select and review the next bounded milestone from the authoritative roadmap; do not begin it automatically.
+Complete and review the Stage 7A documentation contract; do not begin Stage 7B1 automatically.
 
 ## Maintenance
 

@@ -355,12 +355,38 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 ## Stage 7 — Arpeggiator
 
+**Status:** Stage 7A is the current documentation-only deterministic foundation contract milestone; no Stage 7 implementation is authorized. Full Stage 7 remains pending.
 **Objective:** Generate profile-appropriate arpeggios from harmony.
-**Capabilities:** Rate/direction/range/gate/octave/density and seeded patterns.
+**Foundation contract:** Consume validated Harmony progression slots without replacing their Chord, inversion, or selected voicing; filter exact selected-voicing MIDI pitches through an inclusive range; project immutable monophonic events at exact integer quarter/eighth/sixteenth rates; use exact up/down/up-down/down-up traversal with slot-local reset; and constrain integer `gateTicks` to `1..rateTicks`. See [Arpeggiator model](ARPEGGIATOR_MODEL.md).
+**Eventual capabilities:** Rate, direction, range, gate, octave, density, seeded patterns, and concrete profile policy. Octave expansion, density, seeded behavior, and profile mappings remain separately gated and are not removed from Stage 7 completion.
 **Dependencies:** Stages 3–4.
-**Non-goals:** Free-running audio arp or VST automation.
-**Tests:** Active-chord derivation, boundary/gate/range, all directions, replay/golden review.
-**Exit:** AC-011/004/013 pass.
+**Non-goals:** Free-running audio Arp, VST automation, MIDI ownership, browser/audio behavior, UI, persistence, or AI-authored canonical notes.
+**Tests:** Active-Harmony derivation, selected-voicing compatibility, boundary/gate/range, exact direction cycles, slot reset, immutability, ambient-randomness isolation, replay, and golden review; later evidence must cover accepted octave, density, seed, and profile behavior.
+**Exit:** AC-011/004/013 pass in full. The deterministic foundation may satisfy only its applicable structural subset and must not be treated as full Stage 7 acceptance.
+
+### Stage 7A — Deterministic foundation contract definition
+
+Documentation only: freeze ownership, component event shape, exact rates/directions, selected-voicing range filtering, integer gate, slot reset, errors, determinism, test expectations, and explicit deferrals. No runtime implementation.
+
+### Stage 7B1 — Candidate foundation
+
+Future bounded implementation: validate Harmony input and Chord/inversion/voicing compatibility; derive the immutable stable in-range subset of the exact selected voicing; return structured failures. No events, timing, traversal, gate, seed, density, or octave expansion.
+
+### Stage 7B2 — Simple canonical event projection
+
+Future bounded implementation: project monophonic slot-local events using the fixed baseline of eighth-note rate, up direction, and full-step gate. No configurable rate/direction/gate expansion.
+
+### Stage 7B3 — Rate and direction expansion
+
+Future bounded implementation: add exact quarter/eighth/sixteenth rates and up/down/up-down/down-up cycles. No compound rates, seed, density, or octave expansion.
+
+### Stage 7B4 — Integer gate control
+
+Future bounded implementation: add `gateTicks` in `1..rateTicks` without ratios, floating percentages, overlap, velocity, ties, or MIDI articulation.
+
+### Stage 7C — Remaining policy definition
+
+Research/documentation first for octave behavior, density, seeded behavior, generator/provenance integration, and concrete profile policy. No implementation is authorized by this roadmap decomposition.
 
 ## Stage 8 — Melody and motif engine
 
