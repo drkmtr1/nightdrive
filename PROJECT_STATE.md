@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7 Arpeggiator deterministic foundation, positioned at the Stage 7B3 authorization gate.
+Stage 7 Arpeggiator deterministic foundation, with the bounded Stage 7B3 rate/direction implementation locally complete and in review.
 
 ## Current Milestone
 
-Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 simple canonical event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; no later Arpeggiator policy behavior is implemented.
+Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 simple canonical event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 rate/direction expansion is implemented locally and in review; it is not accepted or merged, and no later Arpeggiator policy behavior is implemented.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7B2 is complete. Stage 7B3 rate/direction expansion is the next separately gated milestone and has not begun; Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated.
+Stage 7B3 rate/direction expansion is the current bounded implementation/review milestone. Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated and have not begun.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Configurable rate/direction/gate execution, octave expansion, density, seeded behavior, concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Configurable gate execution, octave expansion, density, seeded behavior, concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review/define and separately authorize Stage 7B3 rate/direction expansion; do not begin implementation automatically.
+Review the bounded Stage 7B3 rate/direction implementation and evidence; do not accept, merge, or begin Stage 7B4 automatically.
 
 ## Maintenance
 
