@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is the current bounded implementation/review slice for fixed-eighth, ascending, full-gate event projection with slot-local traversal reset; it is not yet accepted or merged. Later rate, direction, gate, octave, density, seed, and profile-policy capabilities remain separately gated. The foundation cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. This document freezes Stage 7B3 rate/direction contract readiness, but Stage 7B3 implementation has not begun and remains separately gated. Gate, octave, density, seed, and profile-policy capabilities remain separately gated. The foundation cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -46,7 +46,22 @@ ArpGenerationParametersV1 {
 }
 ```
 
-The parameter object contains no density, seed, octave span, profile pattern, `alternate`, `seededRandom`, probability, velocity, MIDI field, ID, or provenance field.
+`ArpGenerationParametersV1` is the eventual conceptual Stage 7 parameter shape. Stage 7B3 introduces only this bounded runtime parameter object:
+
+```text
+ArpTraversalParametersV1 = Readonly<{
+  rate: ArpRateId
+  direction: ArpDirectionId
+}>
+
+generateArpEvents(
+  progression: HarmonyProgressionRealization,
+  range: ArpRange,
+  parameters?: ArpTraversalParametersV1,
+): readonly ArpEvent[]
+```
+
+The optionality applies only to the complete third argument. Omitting it is canonically equivalent to supplying `{ rate: "eighth", direction: "up" }`, preserving the Stage 7B2 call `generateArpEvents(progression, range)`. If supplied, the object must contain both fields; Stage 7B3 defines no `Partial<ArpTraversalParametersV1>` semantics. Missing, explicitly `undefined`, malformed, or unsupported rate/direction values are rejected under the precedence below. Stage 7B3 does not accept `gateTicks`; range remains the second argument. The conceptual encompassing parameter object contains no density, seed, octave span, profile pattern, `alternate`, `seededRandom`, probability, velocity, MIDI field, ID, or provenance field.
 
 ## Pitch source and range
 
@@ -64,9 +79,9 @@ Rates map exactly to existing musical-time constants:
 | `eighth` | `480` |
 | `sixteenth` | `240` |
 
-Each Harmony slot duration is its positive integer `bars` span multiplied by the authoritative `3,840` ticks per bar. The duration must be exactly divisible by the selected rate. A partial final step is rejected rather than truncated, rounded, or carried into the next slot.
+Each Harmony slot duration is its positive integer `bars` span multiplied by the authoritative `3,840` ticks per bar. The duration must be exactly divisible by the selected rate. A partial final step is rejected rather than truncated, rounded, or carried into the next slot. For the canonical eight-bar section, quarter, eighth, and sixteenth rates produce exactly `32`, `64`, and `128` events respectively, and the final event always ends at tick `30,720`.
 
-`gateTicks` is an integer canonical `DurationTicks` from `1` through the selected `rateTicks`, inclusive. Zero, negative, fractional, unsafe, or over-rate values are invalid. An event therefore cannot overlap beyond its current rate step. Full gate means `gateTicks === rateTicks`; same-pitch adjacent events remain distinct canonical events whose boundary is exact.
+Stage 7B3 remains full-step gate only: every event has `durationTicks === selected rateTicks`. It accepts no `gateTicks` input, ratio, percentage, overlap, or legato policy. The later Stage 7B4 contract owns configurable integer `gateTicks` from `1` through `rateTicks`, inclusive. Same-pitch adjacent events remain distinct canonical events whose boundary is exact.
 
 Emit one monophonic `ArpEvent` at every configured rate step. Every start is inside its owning slot, every duration is positive, and no event may extend past its rate step, Harmony slot, or the canonical eight-bar boundary at tick `30,720`. Event starts remain strictly before that boundary; event ends may equal it.
 
@@ -83,25 +98,29 @@ down-up:  n-1,n-2,...,0,1,...,n-2
 
 Turning endpoints are not duplicated inside a cycle. `up` and `up-down` start at the lowest retained pitch; `down` and `down-up` start at the highest.
 
-For one candidate, every direction repeats index `0`. For two candidates, `up` and `up-down` repeat `0,1`; `down` and `down-up` repeat `1,0`.
+For one candidate, every direction repeats `[0]`. For two candidates, `up` and `up-down` repeat `[0,1]`; `down` and `down-up` repeat `[1,0]`. For three candidates, `up` repeats `[0,1,2]`, `down` repeats `[2,1,0]`, `up-down` repeats `[0,1,2,1]`, and `down-up` repeats `[2,1,0,1]`.
 
 Traversal resets at the beginning of every Harmony slot. A chord or slot change always begins a fresh direction cycle. Direction position never crosses a slot boundary, so differing candidate counts in successive slots cannot inherit or reinterpret the previous slot's index.
 
+Public-output tests must assert that every slot begins at the first index of the selected direction. Valid Harmony slots span integer bars, and the canonical rates produce slot event counts aligned with some bounce-cycle lengths; in those `up-down`/`down-up` cases, canonical public output cannot distinguish reset from carry. The implementation must nevertheless reset traversal state structurally for every slot. Tests must not invent noncanonical Harmony fixtures merely to force that distinction.
+
 ## Structured errors
 
-Future implementation uses the existing stable `code`, `field`, and message convention:
+Stage 7B3 activates the rate and direction entries in the existing stable `code`, `field`, and message convention. Errors gain no captured-value property:
 
 | Code | Trigger |
 |---|---|
 | `INVALID_HARMONIC_CONTEXT` | Missing, empty, malformed, forged, incompatible, or non-eight-bar Harmony progression/slot input |
-| `INVALID_ARP_RATE` | Runtime rate is outside the closed foundation vocabulary |
-| `INVALID_ARP_DIRECTION` | Runtime direction is outside the closed foundation vocabulary |
+| `INVALID_ARP_RATE` | A supplied parameter object is malformed, incomplete at `rate`, or has a rate outside the closed vocabulary; field `parameters.rate` |
+| `INVALID_ARP_DIRECTION` | A supplied complete-rate parameter object is incomplete at `direction` or has a direction outside the closed vocabulary; field `parameters.direction` |
 | `INVALID_ARP_RANGE` | Bounds are malformed, outside `MidiPitch`, or reversed |
 | `INVALID_ARP_GATE` | Gate is malformed or outside `1..rateTicks` |
 | `NO_LEGAL_ARP_PITCH` | A validated slot has no selected-voicing pitch inside the range |
 | `INVALID_ARP_TIMING` | Slot/rate projection is unsafe, non-integral, non-divisible, or outside slot/section boundaries |
 
-There are no seed, density, octave-expansion, or profile-policy errors before those contracts exist. Impossible post-validation invariants use the repository's established internal assertion/failure convention rather than expanding the public vocabulary speculatively.
+Mixed-invalid Stage 7B3 input is validated in this normative order: range; Harmony context; whole-operation `NO_LEGAL_ARP_PITCH`; rate; direction; internal timing invariant. Omitting the entire parameter argument selects the Stage 7B2 compatibility defaults before rate/direction validation; a supplied parameter object must be complete. There are no seed, density, octave-expansion, or profile-policy errors before those contracts exist.
+
+`INVALID_ARP_TIMING` remains in the documented vocabulary but is unreachable for validated V1 Harmony at the Stage 7B3 rates: Harmony-valid slots span positive integer bars, and the canonical `3,840` ticks per bar is exactly divisible by `960`, `480`, and `240`. Forged or malformed bar spans fail earlier as `INVALID_HARMONIC_CONTEXT`. Impossible post-validation timing conditions use the repository's internal assertion/failure convention rather than manufacturing a public Stage 7B3 error path.
 
 ## Immutability and determinism
 
@@ -111,7 +130,7 @@ Candidate derivation, range filtering, rate projection, direction traversal, and
 
 ## PRNG and provenance boundary
 
-The versioned `nightdrive.prng.mulberry32.v1` primitive, canonical uint32 seed/state validation, and deterministic stepping are implemented. No accepted Arp-specific seed-bearing runtime boundary or seed-consuming production Arp consumer exists; Stage 7B1 and the current Stage 7B2 slice have no seed input. Bounded choice, shuffle, weighting, stream/fork mechanics, Arp seed derivation, and the shared Arp generator/provenance envelope are not implemented contracts.
+The versioned `nightdrive.prng.mulberry32.v1` primitive, canonical uint32 seed/state validation, and deterministic stepping are implemented. No accepted Arp-specific seed-bearing runtime boundary or seed-consuming production Arp consumer exists; Stage 7B1 and Stage 7B2 have no seed input, and Stage 7B3 adds none. Bounded choice, shuffle, weighting, stream/fork mechanics, Arp seed derivation, and the shared Arp generator/provenance envelope are not implemented contracts.
 
 Foundation parameters therefore contain no seed. Foundation behavior is structurally deterministic and must not invent seed plumbing. The existence of the PRNG primitive alone does not establish full AC-004 replay evidence or seeded AC-011 completion.
 
@@ -125,8 +144,8 @@ No accepted concrete Arp mappings currently exist for Dark Synthwave, Classic Sy
 
 1. **Stage 7A — contract definition:** this documentation-only foundation.
 2. **Stage 7B1 — candidate foundation (accepted and merged through PR #59):** validate Harmony and compatibility, filter the exact selected voicing by range, and return immutable stable candidates or structured failure; no events or traversal.
-3. **Stage 7B2 — simple event projection (current bounded implementation/review slice):** fixed eighth rate, up direction, full gate, monophonic events, and slot-local reset; not yet accepted or merged.
-4. **Stage 7B3 — rate and direction expansion:** quarter/eighth/sixteenth and the four exact direction cycles.
+3. **Stage 7B2 — simple event projection (accepted and merged through PR #62):** fixed eighth rate, up direction, full-step gate, monophonic events, and slot-local reset.
+4. **Stage 7B3 — rate and direction expansion (contract readiness frozen; implementation not begun):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
 5. **Stage 7B4 — integer gate control:** `gateTicks` from `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
 6. **Stage 7C — remaining policy definition:** research/documentation first for octave behavior, density, seeded behavior, generator/provenance integration, and concrete profile policy.
 
@@ -140,4 +159,4 @@ Full Stage 7 remains pending until separately accepted octave, density, seeded, 
 
 Stage 7B1 implementation evidence covers canonical Harmony progression identity and ordered-slot validation, Chord/inversion/voicing compatibility, inclusive `MidiPitch` range validation, exact one/two/three-pitch filtering, whole-operation `NO_LEGAL_ARP_PITCH` failure, stable frozen per-slot output, input non-mutation, repeatability, and ambient-randomness isolation. It does not provide event, timing, rate, direction, gate, octave, density, seed, or profile-policy evidence.
 
-Stage 7B2 implementation evidence covers the exact three-field frozen `ArpEvent`, fixed `480`-tick starts and durations, ascending cycles for one/two/three retained pitches, traversal reset at every canonical slot, exact canonical slot boundaries, the complete 64-event eight-bar section ending at tick `30,720`, slot/section containment, selected-voicing candidate ownership, input non-mutation, replay, and ambient-randomness isolation. The fixed V1 Harmony catalog currently uses uniform two-bar slots; no noncanonical variable-span fixture is invented. Configurable rate, direction, gate, octave, density, seed, provenance, and profile policy remain outside this slice.
+Stage 7B2 implementation evidence covers the exact three-field frozen `ArpEvent`, fixed `480`-tick starts and durations, ascending cycles for one/two/three retained pitches, traversal reset at every canonical slot, exact canonical slot boundaries, the complete 64-event eight-bar section ending at tick `30,720`, slot/section containment, selected-voicing candidate ownership, input non-mutation, replay, and ambient-randomness isolation. The fixed V1 Harmony catalog currently uses uniform two-bar slots; no noncanonical variable-span fixture is invented. Configurable rate, direction, gate, octave, density, seed, provenance, and profile policy remain outside the merged Stage 7B2 slice. Stage 7B3 implementation evidence does not yet exist.
