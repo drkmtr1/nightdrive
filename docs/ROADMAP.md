@@ -355,7 +355,7 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 ## Stage 7 — Arpeggiator
 
-**Status:** Stage 7A is merged through PR #58; Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; Stage 7B2 simple event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 contract readiness is frozen, but its implementation has not begun and remains separately gated. Full Stage 7 remains pending.
+**Status:** Stage 7A is merged through PR #58; Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; Stage 7B2 simple event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 rate/direction expansion is implemented locally and in review, but is not accepted or merged. Full Stage 7 remains pending.
 **Objective:** Generate profile-appropriate arpeggios from harmony.
 **Foundation contract:** Consume validated Harmony progression slots without replacing their Chord, inversion, or selected voicing; filter exact selected-voicing MIDI pitches through an inclusive range; project immutable monophonic events at exact integer quarter/eighth/sixteenth rates; use exact up/down/up-down/down-up traversal with slot-local reset; and constrain integer `gateTicks` to `1..rateTicks`. See [Arpeggiator model](ARPEGGIATOR_MODEL.md).
 **Eventual capabilities:** Rate, direction, range, gate, octave, density, seeded patterns, and concrete profile policy. Octave expansion, density, seeded behavior, and profile mappings remain separately gated and are not removed from Stage 7 completion.
@@ -378,7 +378,7 @@ Merged and accepted through PR #62: project monophonic slot-local events using t
 
 ### Stage 7B3 — Rate and direction expansion
 
-Next separately gated implementation milestone: accept an optional complete `ArpTraversalParametersV1` containing exact quarter/eighth/sixteenth rate and up/down/up-down/down-up direction, while omission preserves the Stage 7B2 eighth/up behavior. Duration remains the full selected rate step. The contract is frozen, but implementation has not begun. No partial parameter objects, gate input, compound rates, seed, density, or octave expansion.
+Implemented locally and in review: accept an optional complete `ArpTraversalParametersV1` containing exact quarter/eighth/sixteenth rate and up/down/up-down/down-up direction, while omission preserves the Stage 7B2 eighth/up behavior. Duration remains the full selected rate step. This milestone is not accepted or merged. No partial parameter objects, gate input, compound rates, seed, density, or octave expansion.
 
 ### Stage 7B4 — Integer gate control
 

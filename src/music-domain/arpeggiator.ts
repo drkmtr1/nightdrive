@@ -1,28 +1,28 @@
-import { createChord, chordsEqual, type Chord } from "./chord";
-import { createChordInversion, type ChordInversion } from "./chord-inversion";
+import { type Chord, chordsEqual, createChord } from "./chord";
+import { type ChordInversion, createChordInversion } from "./chord-inversion";
 import {
+  type ChordVoicing,
   createChordVoicing,
   isChordVoicingCompatibleWithChord,
   isChordVoicingCompatibleWithChordInversion,
-  type ChordVoicing,
 } from "./chord-voicing";
 import {
   getHarmonyTemplate,
+  type HarmonyProfileId,
+  type HarmonyProgressionRealization,
+  type HarmonyTemplate,
   isHarmonyProfileId,
   isHarmonyTemplateSupportedForProfile,
   realizeHarmonyTemplate,
-  type HarmonyProgressionRealization,
-  type HarmonyProfileId,
-  type HarmonyTemplate,
 } from "./harmony";
 import { createKey, type Key } from "./key";
 import {
   createTick,
+  type DurationTicks,
   SUBDIVISION_TICKS,
+  type Tick,
   V1_SECTION_LENGTH_TICKS,
   V1_TICKS_PER_BAR,
-  type DurationTicks,
-  type Tick,
 } from "./musical-time";
 import { createMidiPitch, type MidiPitch } from "./pitch";
 import { createScaleDegree, type ScaleDegree } from "./scale";
@@ -46,10 +46,35 @@ export type ArpEvent = Readonly<{
   durationTicks: DurationTicks;
 }>;
 
+export const ARP_RATE_IDS = Object.freeze({
+  quarter: "quarter",
+  eighth: "eighth",
+  sixteenth: "sixteenth",
+} as const);
+
+export type ArpRateId = (typeof ARP_RATE_IDS)[keyof typeof ARP_RATE_IDS];
+
+export const ARP_DIRECTION_IDS = Object.freeze({
+  up: "up",
+  down: "down",
+  upDown: "up-down",
+  downUp: "down-up",
+} as const);
+
+export type ArpDirectionId = (typeof ARP_DIRECTION_IDS)[keyof typeof ARP_DIRECTION_IDS];
+
+export type ArpTraversalParametersV1 = Readonly<{
+  rate: ArpRateId;
+  direction: ArpDirectionId;
+}>;
+
 export const ARP_ERROR_CODES = {
   invalidHarmonicContext: "INVALID_HARMONIC_CONTEXT",
   invalidArpRange: "INVALID_ARP_RANGE",
   noLegalArpPitch: "NO_LEGAL_ARP_PITCH",
+  invalidArpRate: "INVALID_ARP_RATE",
+  invalidArpDirection: "INVALID_ARP_DIRECTION",
+  invalidArpTiming: "INVALID_ARP_TIMING",
 } as const;
 
 export type ArpErrorCode = (typeof ARP_ERROR_CODES)[keyof typeof ARP_ERROR_CODES];
@@ -76,6 +101,67 @@ function invalidHarmonicContext(field: string, message: string): never {
 
 function invalidArpRange(field: string, message: string): never {
   return fail(ARP_ERROR_CODES.invalidArpRange, field, message);
+}
+
+function normalizeArpTraversalParameters(
+  value: ArpTraversalParametersV1 | undefined,
+): ArpTraversalParametersV1 {
+  if (value === undefined) {
+    return Object.freeze({
+      rate: ARP_RATE_IDS.eighth,
+      direction: ARP_DIRECTION_IDS.up,
+    });
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return fail(
+      ARP_ERROR_CODES.invalidArpRate,
+      "parameters.rate",
+      "parameters must be an object containing a supported rate and direction.",
+    );
+  }
+
+  const input = value as Record<string, unknown>;
+  if (!Object.values(ARP_RATE_IDS).includes(input.rate as ArpRateId)) {
+    return fail(
+      ARP_ERROR_CODES.invalidArpRate,
+      "parameters.rate",
+      "parameters.rate must be a supported Arp rate identifier.",
+    );
+  }
+  if (!Object.values(ARP_DIRECTION_IDS).includes(input.direction as ArpDirectionId)) {
+    return fail(
+      ARP_ERROR_CODES.invalidArpDirection,
+      "parameters.direction",
+      "parameters.direction must be a supported Arp direction identifier.",
+    );
+  }
+
+  return Object.freeze({
+    rate: input.rate as ArpRateId,
+    direction: input.direction as ArpDirectionId,
+  });
+}
+
+function rateTicks(rate: ArpRateId): DurationTicks {
+  if (rate === ARP_RATE_IDS.quarter) return SUBDIVISION_TICKS.quarter;
+  if (rate === ARP_RATE_IDS.sixteenth) return SUBDIVISION_TICKS.sixteenth;
+  return SUBDIVISION_TICKS.eighth;
+}
+
+function createDirectionCycle(
+  candidateCount: number,
+  direction: ArpDirectionId,
+): readonly number[] {
+  if (candidateCount === 1) return Object.freeze([0]);
+
+  const ascending = Array.from({ length: candidateCount }, (_, index) => index);
+  const descending = [...ascending].reverse();
+  if (direction === ARP_DIRECTION_IDS.up) return Object.freeze(ascending);
+  if (direction === ARP_DIRECTION_IDS.down) return Object.freeze(descending);
+  if (direction === ARP_DIRECTION_IDS.upDown) {
+    return Object.freeze([...ascending, ...ascending.slice(1, -1).reverse()]);
+  }
+  return Object.freeze([...descending, ...ascending.slice(1, -1)]);
 }
 
 function requireRecord(value: unknown, field: string): Record<string, unknown> {
@@ -313,26 +399,36 @@ export function deriveArpSlotCandidates(
 export function generateArpEvents(
   progression: HarmonyProgressionRealization,
   range: ArpRange,
+  parameters?: ArpTraversalParametersV1,
 ): readonly ArpEvent[] {
   const candidatesBySlot = deriveArpSlotCandidates(progression, range);
-  const rateTicks = SUBDIVISION_TICKS.eighth;
+  const normalizedParameters = normalizeArpTraversalParameters(parameters);
+  const selectedRateTicks = rateTicks(normalizedParameters.rate);
   const events: ArpEvent[] = [];
   let slotStartTick = 0;
 
   for (const candidates of candidatesBySlot) {
     const slotDurationTicks = progression.slots[candidates.slotIndex].bars * V1_TICKS_PER_BAR;
+    if (slotDurationTicks % selectedRateTicks !== 0) {
+      throw new Error("Validated Stage 7B3 slot duration must be divisible by the selected rate.");
+    }
     const slotEndTick = slotStartTick + slotDurationTicks;
+    const directionCycle = createDirectionCycle(
+      candidates.pitches.length,
+      normalizedParameters.direction,
+    );
 
     for (
-      let eventStartTick = slotStartTick, candidateIndex = 0;
+      let eventStartTick = slotStartTick, slotEventIndex = 0;
       eventStartTick < slotEndTick;
-      eventStartTick += rateTicks, candidateIndex += 1
+      eventStartTick += selectedRateTicks, slotEventIndex += 1
     ) {
+      const candidateIndex = directionCycle[slotEventIndex % directionCycle.length];
       events.push(
         Object.freeze({
-          pitch: candidates.pitches[candidateIndex % candidates.pitches.length],
+          pitch: candidates.pitches[candidateIndex],
           startTick: createTick(eventStartTick),
-          durationTicks: rateTicks,
+          durationTicks: selectedRateTicks,
         }),
       );
     }
@@ -341,7 +437,7 @@ export function generateArpEvents(
   }
 
   if (slotStartTick !== V1_SECTION_LENGTH_TICKS) {
-    throw new Error("Stage 7B2 projection must end at the canonical section boundary.");
+    throw new Error("Stage 7B3 projection must end at the canonical section boundary.");
   }
 
   return Object.freeze(events);

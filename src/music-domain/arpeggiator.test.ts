@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  ARP_DIRECTION_IDS,
   ARP_ERROR_CODES,
+  ARP_RATE_IDS,
+  type ArpTraversalParametersV1,
   ArpValueError,
   createArpRange,
   deriveArpSlotCandidates,
@@ -12,8 +15,8 @@ import {
   enumerateChordVoicingCandidates,
   getHarmonyTemplate,
   HARMONY_PROFILE_IDS,
-  realizeHarmonyProgression,
   type HarmonyProgressionRealization,
+  realizeHarmonyProgression,
 } from "./harmony";
 import * as musicDomain from "./index";
 import { createKey } from "./key";
@@ -475,6 +478,244 @@ describe("Stage 7B2 simple canonical event projection", () => {
       const second = generateArpEvents(progression, range);
       expect(second).toEqual(first);
       expect(JSON.stringify({ progression, range })).toBe(before);
+      expect(random).not.toHaveBeenCalled();
+    } finally {
+      random.mockRestore();
+    }
+  });
+});
+
+describe("Stage 7B3 rate and direction expansion", () => {
+  const fullRange = () => createArpRange({ minMidiPitch: 0, maxMidiPitch: 127 });
+  const runtimeParameters = (value: unknown): ArpTraversalParametersV1 =>
+    value as ArpTraversalParametersV1;
+
+  it.each([
+    [ARP_RATE_IDS.quarter, SUBDIVISION_TICKS.quarter, 32],
+    [ARP_RATE_IDS.eighth, SUBDIVISION_TICKS.eighth, 64],
+    [ARP_RATE_IDS.sixteenth, SUBDIVISION_TICKS.sixteenth, 128],
+  ] as const)(
+    "projects the %s rate at %i ticks for %i exact section events",
+    (rate, expectedTicks, expectedCount) => {
+      const progression = validProgression();
+      const events = generateArpEvents(progression, fullRange(), {
+        rate,
+        direction: ARP_DIRECTION_IDS.up,
+      });
+      let slotStartTick = 0;
+
+      expect(events).toHaveLength(expectedCount);
+      expect(events.map((event) => event.startTick)).toEqual(
+        Array.from({ length: expectedCount }, (_, index) => index * expectedTicks),
+      );
+      expect(events.every((event) => event.durationTicks === expectedTicks)).toBe(true);
+      expect((events.at(-1)?.startTick ?? 0) + (events.at(-1)?.durationTicks ?? 0)).toBe(
+        V1_SECTION_LENGTH_TICKS,
+      );
+
+      for (const slot of progression.slots) {
+        const slotEndTick = slotStartTick + slot.bars * V1_TICKS_PER_BAR;
+        expect(
+          events
+            .filter((event) => event.startTick >= slotStartTick && event.startTick < slotEndTick)
+            .every((event) => event.startTick + event.durationTicks <= slotEndTick),
+        ).toBe(true);
+        slotStartTick = slotEndTick;
+      }
+      expect(slotStartTick).toBe(V1_SECTION_LENGTH_TICKS);
+      expect(events.every((event) => event.startTick < V1_SECTION_LENGTH_TICKS)).toBe(true);
+    },
+  );
+
+  it.each([
+    [ARP_DIRECTION_IDS.up, 1, [0]],
+    [ARP_DIRECTION_IDS.down, 1, [0]],
+    [ARP_DIRECTION_IDS.upDown, 1, [0]],
+    [ARP_DIRECTION_IDS.downUp, 1, [0]],
+    [ARP_DIRECTION_IDS.up, 2, [0, 1]],
+    [ARP_DIRECTION_IDS.down, 2, [1, 0]],
+    [ARP_DIRECTION_IDS.upDown, 2, [0, 1]],
+    [ARP_DIRECTION_IDS.downUp, 2, [1, 0]],
+    [ARP_DIRECTION_IDS.up, 3, [0, 1, 2]],
+    [ARP_DIRECTION_IDS.down, 3, [2, 1, 0]],
+    [ARP_DIRECTION_IDS.upDown, 3, [0, 1, 2, 1]],
+    [ARP_DIRECTION_IDS.downUp, 3, [2, 1, 0, 1]],
+  ] as const)(
+    "repeats the exact %s cycle for %i retained candidates",
+    (direction, count, cycle) => {
+      const progression = validProgression();
+      const range = findRangeForFirstSlotCount(progression, count);
+      const candidates = deriveArpSlotCandidates(progression, range)[0].pitches;
+      const firstSlotEnd = progression.slots[0].bars * V1_TICKS_PER_BAR;
+      const events = generateArpEvents(progression, range, {
+        rate: ARP_RATE_IDS.eighth,
+        direction,
+      }).filter((event) => event.startTick < firstSlotEnd);
+      const prefixLength = cycle.length * 2 + 1;
+
+      expect(candidates).toHaveLength(count);
+      expect(events.slice(0, prefixLength).map((event) => event.pitch)).toEqual(
+        Array.from({ length: prefixLength }, (_, index) => candidates[cycle[index % cycle.length]]),
+      );
+    },
+  );
+
+  it.each([
+    [ARP_DIRECTION_IDS.up, "lowest"],
+    [ARP_DIRECTION_IDS.down, "highest"],
+    [ARP_DIRECTION_IDS.upDown, "lowest"],
+    [ARP_DIRECTION_IDS.downUp, "highest"],
+  ] as const)("resets %s traversal at every Harmony slot", (direction, endpoint) => {
+    const progression = validProgression();
+    const range = fullRange();
+    const candidates = deriveArpSlotCandidates(progression, range);
+    const events = generateArpEvents(progression, range, {
+      rate: ARP_RATE_IDS.eighth,
+      direction,
+    });
+    let slotStartTick = 0;
+
+    for (const [index, slot] of progression.slots.entries()) {
+      const firstEvent = events.find((event) => event.startTick === slotStartTick);
+      const expectedPitch =
+        endpoint === "lowest" ? candidates[index].pitches[0] : candidates[index].pitches.at(-1);
+      expect(firstEvent?.pitch).toBe(expectedPitch);
+      slotStartTick += slot.bars * V1_TICKS_PER_BAR;
+    }
+  });
+
+  it("preserves the exact Stage 7B2 two-argument compatibility output", () => {
+    const progression = validProgression();
+    const range = fullRange();
+
+    expect(generateArpEvents(progression, range)).toEqual(
+      generateArpEvents(progression, range, {
+        rate: ARP_RATE_IDS.eighth,
+        direction: ARP_DIRECTION_IDS.up,
+      }),
+    );
+  });
+
+  it("rejects malformed or incomplete rates with the exact structured field", () => {
+    const progression = validProgression();
+    const range = fullRange();
+    const invalidRates = ["half", "EIGHTH", 480, null, undefined];
+
+    for (const rate of invalidRates) {
+      expectArpError(
+        () =>
+          generateArpEvents(
+            progression,
+            range,
+            runtimeParameters({ rate, direction: ARP_DIRECTION_IDS.up }),
+          ),
+        ARP_ERROR_CODES.invalidArpRate,
+        "parameters.rate",
+      );
+    }
+    expectArpError(
+      () =>
+        generateArpEvents(
+          progression,
+          range,
+          runtimeParameters({ direction: ARP_DIRECTION_IDS.up }),
+        ),
+      ARP_ERROR_CODES.invalidArpRate,
+      "parameters.rate",
+    );
+    for (const parameters of [null, 480, "eighth", []]) {
+      expectArpError(
+        () => generateArpEvents(progression, range, runtimeParameters(parameters)),
+        ARP_ERROR_CODES.invalidArpRate,
+        "parameters.rate",
+      );
+    }
+  });
+
+  it("rejects malformed or incomplete directions with the exact structured field", () => {
+    const progression = validProgression();
+    const range = fullRange();
+    const invalidDirections = ["alternate", "UP", 1, null, undefined];
+
+    for (const direction of invalidDirections) {
+      expectArpError(
+        () =>
+          generateArpEvents(
+            progression,
+            range,
+            runtimeParameters({ rate: ARP_RATE_IDS.eighth, direction }),
+          ),
+        ARP_ERROR_CODES.invalidArpDirection,
+        "parameters.direction",
+      );
+    }
+    expectArpError(
+      () => generateArpEvents(progression, range, runtimeParameters({ rate: ARP_RATE_IDS.eighth })),
+      ARP_ERROR_CODES.invalidArpDirection,
+      "parameters.direction",
+    );
+  });
+
+  it("enforces the normative mixed-invalid validation precedence", () => {
+    const progression = validProgression();
+    const invalidParameters = runtimeParameters({ rate: "half", direction: "alternate" });
+
+    expectArpError(
+      () =>
+        generateArpEvents(
+          null as unknown as HarmonyProgressionRealization,
+          { minMidiPitch: -1, maxMidiPitch: 127 } as ReturnType<typeof createArpRange>,
+          invalidParameters,
+        ),
+      ARP_ERROR_CODES.invalidArpRange,
+      "range.minMidiPitch",
+    );
+
+    const incompatible = progressionWithFirstVoicing(progression, 0, [48, 51, 55]);
+    expectArpError(
+      () =>
+        generateArpEvents(
+          incompatible,
+          createArpRange({ minMidiPitch: 0, maxMidiPitch: 0 }),
+          invalidParameters,
+        ),
+      ARP_ERROR_CODES.invalidHarmonicContext,
+      "progression.slots[0].voicing",
+    );
+
+    const { range, emptySlotIndex } = findRangeWithLaterEmptySlot(progression);
+    expectArpError(
+      () => generateArpEvents(progression, range, invalidParameters),
+      ARP_ERROR_CODES.noLegalArpPitch,
+      `progression.slots[${emptySlotIndex}].voicing.midiPitches`,
+    );
+
+    expectArpError(
+      () => generateArpEvents(progression, fullRange(), invalidParameters),
+      ARP_ERROR_CODES.invalidArpRate,
+      "parameters.rate",
+    );
+  });
+
+  it("is immutable, input-safe, replay-stable, and independent of ambient randomness", () => {
+    const progression = validProgression();
+    const range = createArpRange({ minMidiPitch: 40, maxMidiPitch: 88 });
+    const parameters: ArpTraversalParametersV1 = {
+      rate: ARP_RATE_IDS.sixteenth,
+      direction: ARP_DIRECTION_IDS.downUp,
+    };
+    const before = JSON.stringify({ progression, range, parameters });
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("ambient randomness is prohibited");
+    });
+
+    try {
+      const first = generateArpEvents(progression, range, parameters);
+      const second = generateArpEvents(progression, range, parameters);
+      expect(second).toEqual(first);
+      expect(Object.isFrozen(first)).toBe(true);
+      expect(first.every(Object.isFrozen)).toBe(true);
+      expect(JSON.stringify({ progression, range, parameters })).toBe(before);
       expect(random).not.toHaveBeenCalled();
     } finally {
       random.mockRestore();
