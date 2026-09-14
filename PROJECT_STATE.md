@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7 Arpeggiator deterministic foundation post-merge correction.
+Stage 7 Arpeggiator deterministic foundation, positioned at the Stage 7B2 authorization gate.
 
 ## Current Milestone
 
-Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; it adds no Arp events or later policy behavior. MIA-001 Harmony-boundary test stabilization is accepted corrective work awaiting integration, and MIA-002 is the current bounded status reconciliation.
+Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. MIA-001 Harmony-boundary test stabilization and MIA-002 post-audit status reconciliation are resolved and integrated through PR #60 at `c48d28c9c4bfed0ae44533c930e1cd09e5f71e13`; no Arp events or later policy behavior are implemented.
 
 ## Recent Accepted Work
 
@@ -24,11 +24,11 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-MIA-001 test stabilization and MIA-002 status reconciliation remain the current bounded corrective work. Stage 7B2 and every later Arpeggiator implementation or policy milestone require separate review and authorization; Stage 7B2 remains blocked until the corrective work is reviewed and accepted.
+Stage 7B2 simple canonical event projection is the next eligible separately gated milestone for ChatGPT review and authorization. Stage 7B2 has not begun, and Stage 7B3, Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated.
 
 ## Unresolved Risks
 
-MIA-001 reproduced the Harmony test `covers all V1 qualities and exact policy boundaries` as load-sensitive under the configured 5-second limit. The test-only profile decomposition and five consecutive parallel-suite passes establish the corrective evidence; final review and integration remain pending. This is no longer an unexplained timeout risk.
+MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact Arpeggiator structured-error assertions remain deferred, non-blocking technical debt. The previously reported Harmony timeout was resolved by MIA-001's test-only profile decomposition and five consecutive parallel-suite passes.
 
 ## Relevant Deferred Work
 
@@ -36,7 +36,7 @@ Arp event generation, rate/direction/gate execution, octave expansion, density, 
 
 ## Next Eligible Task
 
-Review and integrate MIA-001 and MIA-002; do not begin Stage 7B2 automatically.
+Review and authorize Stage 7B2 simple canonical event projection; do not begin it automatically.
 
 ## Maintenance
 
