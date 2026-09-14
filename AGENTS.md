@@ -20,6 +20,7 @@ Nightdrive helps producers create original, editable musical material. Stage 1, 
 ## Engineering rules
 
 - Work on one bounded roadmap task at a time. Do not continue to the next task automatically.
+- Use the [Engineering Review Playbook](docs/ENGINEERING_REVIEW_PLAYBOOK.md) for read-only review procedures when justified by risk/change or explicitly authorized; reviews inspect and report only, and corrective implementation requires separate authorization. This playbook does not supersede AGENTS.md or accepted repository requirements, decisions, architecture, contracts, testing strategy, or milestone authorization.
 - Before meaningful engineering work, read `PROJECT_STATE.md` when it exists; update it when project coordination state materially changes, replacing stale state rather than accumulating a log. Keep requirements, architecture, contracts, tests, and decisions in their authoritative documents, and use Git for detailed history.
 - Trace behavior to requirement IDs and acceptance criteria. Update authoritative documentation with behavior changes.
 - Use explicit units, UTC timestamps, stable ordering, typed interfaces, structured errors, and idempotency where relevant.
