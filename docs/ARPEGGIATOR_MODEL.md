@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. Stage 7C is a documentation-only policy checkpoint; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. The foundation cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. The Stage 7C documentation-only policy checkpoint is accepted and merged through PR #70; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. Stage 7C1 is the current documentation-only density/rest-mask contract slice under review. The foundation cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -150,9 +150,9 @@ normalized composition intent
 → canonical Arp event projection
 ```
 
-The resolved plan conceptually contains `rate`, `direction`, `gateTicks`, `octaveRange`, and either a versioned rhythm/rest-mask identifier or its exact resolved deterministic mask. It is bounded structured musical policy output, not an opaque random-note instruction. Stage 7B event projection remains responsible for canonical starts, durations, traversal, immutability, and boundary validation. Harmony remains authoritative for progression, Chord, inversion, and selected voicing. The future enclosing composition/generator schema owns the exact aggregate persistence representation; `ArpEvent` gains no seed, provenance, profile, policy, AI, MIDI, UI, or persistence fields.
+The resolved plan conceptually contains `rate`, `direction`, `gateTicks`, `octaveRange`, and `maskId: ArpDensityMaskIdV1` governed by the versioned mask catalog. It is bounded structured musical policy output, not an opaque random-note instruction. Stage 7B event projection remains responsible for canonical starts, durations, traversal, immutability, and boundary validation. Harmony remains authoritative for progression, Chord, inversion, and selected voicing. The future enclosing composition/generator schema owns the exact aggregate persistence representation; `ArpEvent` gains no seed, provenance, profile, policy, AI, MIDI, UI, or persistence fields.
 
-Backward compatibility is mandatory. A resolved plan using octave range `1`, a full-on mask, and the accepted Stage 7B default or explicit traversal values must reproduce Stage 7B pitch/event behavior exactly. Existing Stage 7B public calls remain valid; Stage 7C does not silently reinterpret them.
+Backward compatibility is mandatory. A resolved plan using octave range `1`, mask ID `full`, and the accepted Stage 7B default or explicit traversal values must reproduce Stage 7B pitch/event behavior exactly. Existing Stage 7B public calls remain valid; Stage 7C does not silently reinterpret them.
 
 ### Upward octave expansion
 
@@ -168,7 +168,44 @@ Expansion is upward only. For each slot the normative transformation order is: (
 
 Density is policy input that resolves to an exact ordered on/rest mask; floating per-step probability is not canonical Arpeggiator behavior. Event projection advances one timeline step and one underlying direction-cycle position for every mask step. An `on` step emits the corresponding event; a `rest` step emits nothing but still consumes that pitch position. Therefore masking `C E G C` with `ON ON REST ON` yields `C E [rest] C`, not `C E [rest] G`. Changing only the mask cannot change the underlying full-density pitch cycle, rate grid, or slot-local traversal reset.
 
-No canonical V1 mask identifiers, lengths, repetition/reset rules, profile mask weights, or serialization are frozen by this checkpoint. Those exact catalog mechanics must be defined in a bounded follow-on contract before runtime implementation; implementations must not infer them from the illustrative terminology in profile documentation.
+Stage 7C1 proposes the versioned catalog identity `nightdrive.arp-density-mask.v1` and this closed, case-sensitive V1 domain:
+
+```ts
+type ArpMaskStepV1 = "on" | "rest";
+
+type ArpDensityMaskIdV1 =
+  | "full"
+  | "three-of-four"
+  | "alternating-on-rest"
+  | "alternating-rest-on"
+  | "one-of-four";
+```
+
+Every V1 mask contains exactly four rate steps:
+
+| `ArpDensityMaskIdV1` | Exact ordered steps | On steps |
+|---|---|---:|
+| `full` | `on, on, on, on` | 4 |
+| `three-of-four` | `on, on, rest, on` | 3 |
+| `alternating-on-rest` | `on, rest, on, rest` | 2 |
+| `alternating-rest-on` | `rest, on, rest, on` | 2 |
+| `one-of-four` | `on, rest, rest, rest` | 1 |
+
+This five-entry catalog is the smallest V1 set that represents full, three-quarter, half, and quarter density while retaining both possible alternating half-density phases. The table order is explanatory only; it does not define candidate order, selection weights, or PRNG bucket behavior. No all-rest mask exists in V1.
+
+Mask positions operate over the selected Arpeggiator rate steps. At quarter, eighth, and sixteenth rates, one 4/4 bar contains exactly `4`, `8`, and `16` mask positions respectively. Every validated Harmony slot spans a positive integer number of bars, so its step count is an exact positive multiple of four at every accepted V1 rate. The four-step mask repeats by `maskIndex = slotStepIndex % 4` until the slot ends. It is never stretched, resampled, rotated, truncated mid-cycle, or carried into the next slot. A future rate or slot structure that does not preserve this exact relationship requires a separately versioned contract rather than implementation-defined partial-mask behavior.
+
+Mask phase and traversal phase both reset at every Harmony slot. The first rate step of every slot uses mask index `0` and traversal index `0`; neither phase is free-running across slots. For each slot-local step, the projector first determines the pitch at the current traversal index, then reads the mask step. `on` emits that pitch and `rest` emits no event, but either value consumes the timeline step and advances traversal exactly once. Thus `on, on, rest, on` over `C, E, G, C` emits `C, E, [rest], C`; pausing traversal would incorrectly emit `C, E, [rest], G` and is prohibited.
+
+Rate changes only the integer tick spacing of mask positions: quarter, eighth, and sixteenth use `960`, `480`, and `240` ticks per position. Rate does not change the four mask values, their order, repetition, reset, or traversal consumption. Gate continues to control only the duration of emitted events; a rest creates no `ArpEvent`.
+
+`full` is the full-density identity. With octave range `1` and otherwise identical Stage 7B-compatible rate, direction, range, and gate values, it emits every traversal step and must produce canonical-value-equivalent Stage 7B events. The other masks may remove emissions only; they cannot change rate-step starts, the underlying full-density pitch cycle, selected-voicing ownership, or slot-local reset.
+
+The resolved Arp plan carries `maskId: ArpDensityMaskIdV1`, not a caller-supplied free-form step array. The versioned catalog deterministically maps that ID to its frozen four-step sequence. The enclosing generator remains responsible for any eventual aggregate serialization and replay provenance, including the Arpeggiator policy/catalog version and resolved mask ID. `ArpEvent` remains only `pitch`, `startTick`, and `durationTicks`; it gains no mask, density, seed, profile, AI, MIDI, UI, or persistence field. No standalone mask serializer is defined here.
+
+Future runtime validation must reject every value that is not one of the exact identifiers above, including non-strings, empty strings, unknown values, wrong-case or whitespace variants, arrays, and objects; it must not coerce aliases or accept caller-defined masks. Internal catalog evidence must prove unique IDs, exactly four frozen `on`/`rest` steps per entry, and at least one `on` step. Stage 7C1 does not define a public error code, field, or mixed-invalid precedence for these failures; those remain inputs to the separately gated structured-error contract.
+
+The catalog ID-to-sequence mapping, identifier vocabulary, step order, length, repetition rule, slot-reset rule, and rest-consumes-traversal rule are replay-relevant policy semantics. Adding, removing, renaming, or reinterpreting an identifier, or changing any of those mechanics, requires a new appropriate Arpeggiator policy/catalog version and must not silently reinterpret historical output. Candidate ordering, profile membership, weights, and weighted-choice mechanics remain unfrozen and separately gated.
 
 ### Component seed isolation and policy stream
 
@@ -206,7 +243,7 @@ Future Stage 7C runtime work will require structured validation for malformed oc
 
 ## Deferred Stage 7 behavior
 
-The following remain separately gated for runtime implementation but are not removed from eventual Stage 7 scope: the documented upward octave expansion; deterministic density/rest masks; seeded bounded policy resolution; concrete profile policy; and aggregate generator/provenance integration. Exact mask catalogs, weighted-choice mechanics and weights, component-seed vectors, and Stage 7C error precedence require follow-on contract review. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
+The following remain separately gated for runtime implementation but are not removed from eventual Stage 7 scope: the documented upward octave expansion; the Stage 7C1 deterministic density/rest-mask contract while it remains under review; seeded bounded policy resolution; concrete profile policy; and aggregate generator/provenance integration. Weighted-choice mechanics and weights, component-seed vectors, exact profile mappings, and Stage 7C error precedence require separate follow-on contract review. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
 
 Stage 7C records bounded candidate tendencies for Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk in the genre-profile model. They are not an executable profile catalog, exact weights, universal genre claims, or implementation authorization. Stage 7 cannot be declared profile-appropriate or complete until the remaining exact policy contracts, deterministic evidence, and structured human listening review are accepted.
 
@@ -217,7 +254,7 @@ Stage 7C records bounded candidate tendencies for Dark Synthwave, Classic Synthw
 3. **Stage 7B2 — simple event projection (accepted and merged through PR #62):** fixed eighth rate, up direction, full-step gate, monophonic events, and slot-local reset.
 4. **Stage 7B3 — rate and direction expansion (accepted and merged through PR #65):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
 5. **Stage 7B4 — integer gate control (accepted and merged through PR #68):** add optional `gateTicks` to the complete Stage 7B3 traversal argument; absence or explicit `undefined` defaults to the selected rate, while other values are validated in `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
-6. **Stage 7C — remaining policy definition (documentation checkpoint under review):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Exact masks, weights, seed vectors, runtime errors, implementation, and acceptance remain separately gated.
+6. **Stage 7C — remaining policy definition (documentation checkpoint accepted through PR #70):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Stage 7C1 proposes the exact density/rest-mask catalog for review; weights, seed vectors, exact profile mappings, runtime errors, implementation, and full Stage 7 acceptance remain separately gated.
 
 This sequence describes review boundaries; it authorizes none of the implementation milestones.
 
