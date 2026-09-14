@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C Arpeggiator policy-contract completion / pre-implementation contract.
+Stage 7C1 deterministic Arpeggiator density/rest-mask contract documentation.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70 (approved head `294a93ed665120f0a0b99cb2ca7cd05ac12cfdcf`, merge commit `02c03de62bda6ef8b6b167dcae624d48a5890126`); no Stage 7C runtime implementation is authorized or started.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is the current documentation-only density/rest-mask contract slice under review; no Stage 7C runtime implementation is authorized or started.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Complete the bounded unresolved Stage 7C contracts before any runtime implementation; runtime implementation and every later Arpeggiator milestone remain separately gated and unstarted.
+Review and accept the bounded Stage 7C1 density/rest-mask contract before treating that contract as complete. Weighted choice, component-seed derivation and vectors, exact profile choices, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution,
 
 ## Next Eligible Task
 
-One separately authorized bounded Stage 7C contract slice; do not select or authorize a slice here, and do not begin implementation automatically.
+ChatGPT review of the Stage 7C1 documentation contract; do not begin implementation or another Stage 7C contract slice automatically.
 
 ## Maintenance
 
