@@ -4,6 +4,7 @@ import {
   ArpValueError,
   createArpRange,
   deriveArpSlotCandidates,
+  generateArpEvents,
 } from "./arpeggiator";
 import { createChordInversion } from "./chord-inversion";
 import { createChordVoicing } from "./chord-voicing";
@@ -16,6 +17,7 @@ import {
 } from "./harmony";
 import * as musicDomain from "./index";
 import { createKey } from "./key";
+import { SUBDIVISION_TICKS, V1_SECTION_LENGTH_TICKS, V1_TICKS_PER_BAR } from "./musical-time";
 import { createMidiPitch, createPitchClass } from "./pitch";
 
 function validProgression(): HarmonyProgressionRealization {
@@ -108,7 +110,7 @@ describe("Stage 7B1 Arp range", () => {
     expect(Object.isFrozen(range)).toBe(true);
     expect(Object.hasOwn(musicDomain, "createArpRange")).toBe(true);
     expect(Object.hasOwn(musicDomain, "deriveArpSlotCandidates")).toBe(true);
-    expect(Object.hasOwn(musicDomain, "generateArpEvents")).toBe(false);
+    expect(Object.hasOwn(musicDomain, "generateArpEvents")).toBe(true);
   });
 
   it("rejects reversed, malformed, and forged bounds with stable fields", () => {
@@ -337,6 +339,140 @@ describe("Stage 7B1 selected-voicing candidate derivation", () => {
     try {
       const first = deriveArpSlotCandidates(progression, range);
       const second = deriveArpSlotCandidates(progression, range);
+      expect(second).toEqual(first);
+      expect(JSON.stringify({ progression, range })).toBe(before);
+      expect(random).not.toHaveBeenCalled();
+    } finally {
+      random.mockRestore();
+    }
+  });
+});
+
+describe("Stage 7B2 simple canonical event projection", () => {
+  it("emits the exact frozen event shape on the fixed eighth grid through the section end", () => {
+    const progression = validProgression();
+    const range = createArpRange({ minMidiPitch: 0, maxMidiPitch: 127 });
+    const candidates = deriveArpSlotCandidates(progression, range);
+    const events = generateArpEvents(progression, range);
+
+    expect(events).toHaveLength(64);
+    expect(events[0]).toEqual({
+      pitch: candidates[0].pitches[0],
+      startTick: 0,
+      durationTicks: SUBDIVISION_TICKS.eighth,
+    });
+    expect(Object.keys(events[0])).toEqual(["pitch", "startTick", "durationTicks"]);
+    expect(events.map((event) => event.startTick)).toEqual(
+      Array.from({ length: 64 }, (_, index) => index * SUBDIVISION_TICKS.eighth),
+    );
+    expect(events.at(-1)).toEqual({
+      pitch: candidates.at(-1)?.pitches[15 % (candidates.at(-1)?.pitches.length ?? 1)],
+      startTick: 30_240,
+      durationTicks: SUBDIVISION_TICKS.eighth,
+    });
+    expect((events.at(-1)?.startTick ?? 0) + (events.at(-1)?.durationTicks ?? 0)).toBe(
+      V1_SECTION_LENGTH_TICKS,
+    );
+    expect(events.every((event) => event.durationTicks === 480 && Object.isFrozen(event))).toBe(
+      true,
+    );
+    expect(Object.isFrozen(events)).toBe(true);
+  });
+
+  it("cycles upward for exact one-, two-, and three-candidate sets", () => {
+    const progression = validProgression();
+    const firstSlotEnd = progression.slots[0].bars * V1_TICKS_PER_BAR;
+
+    for (const count of [1, 2, 3]) {
+      const range = findRangeForFirstSlotCount(progression, count);
+      const candidates = deriveArpSlotCandidates(progression, range)[0].pitches;
+      const events = generateArpEvents(progression, range).filter(
+        (event) => event.startTick < firstSlotEnd,
+      );
+
+      expect(candidates).toHaveLength(count);
+      expect(events.slice(0, 7).map((event) => event.pitch)).toEqual(
+        Array.from({ length: 7 }, (_, index) => candidates[index % candidates.length]),
+      );
+      expect(events[0]).not.toBe(events[1]);
+    }
+  });
+
+  it("resets traversal and preserves exact candidate, slot, and section boundaries", () => {
+    const progression = validProgression();
+    const range = createArpRange({ minMidiPitch: 0, maxMidiPitch: 127 });
+    const candidates = deriveArpSlotCandidates(progression, range);
+    const events = generateArpEvents(progression, range);
+    let slotStart = 0;
+
+    expect(progression.slots.map((slot) => slot.bars)).toEqual([2, 2, 2, 2]);
+    expect(
+      progression.slots.map((slot) => {
+        const boundary = [slotStart, slotStart + slot.bars * V1_TICKS_PER_BAR];
+        slotStart = boundary[1];
+        return boundary;
+      }),
+    ).toEqual([
+      [0, 7_680],
+      [7_680, 15_360],
+      [15_360, 23_040],
+      [23_040, 30_720],
+    ]);
+    slotStart = 0;
+    for (const [index, slot] of progression.slots.entries()) {
+      const slotEnd = slotStart + slot.bars * V1_TICKS_PER_BAR;
+      const slotEvents = events.filter(
+        (event) => event.startTick >= slotStart && event.startTick < slotEnd,
+      );
+
+      expect(slotEvents).toHaveLength((slot.bars * V1_TICKS_PER_BAR) / 480);
+      expect(slotEvents[0].startTick).toBe(slotStart);
+      expect(slotEvents[0].pitch).toBe(candidates[index].pitches[0]);
+      expect(slotEvents.map((event) => event.pitch)).toEqual(
+        slotEvents.map(
+          (_, eventIndex) =>
+            candidates[index].pitches[eventIndex % candidates[index].pitches.length],
+        ),
+      );
+      expect(
+        slotEvents.every(
+          (event) =>
+            candidates[index].pitches.includes(event.pitch) &&
+            event.startTick >= slotStart &&
+            event.startTick < slotEnd &&
+            event.startTick + event.durationTicks <= slotEnd &&
+            event.startTick + event.durationTicks <= V1_SECTION_LENGTH_TICKS,
+        ),
+      ).toBe(true);
+      slotStart = slotEnd;
+    }
+
+    expect(slotStart).toBe(V1_SECTION_LENGTH_TICKS);
+    expect(events.every((event) => event.startTick < V1_SECTION_LENGTH_TICKS)).toBe(true);
+  });
+
+  it("preserves Stage 7B1 whole-operation range failure semantics", () => {
+    const progression = validProgression();
+    const { range, emptySlotIndex } = findRangeWithLaterEmptySlot(progression);
+
+    expectArpError(
+      () => generateArpEvents(progression, range),
+      ARP_ERROR_CODES.noLegalArpPitch,
+      `progression.slots[${emptySlotIndex}].voicing.midiPitches`,
+    );
+  });
+
+  it("is replay-stable, input-safe, and isolated from ambient randomness", () => {
+    const progression = validProgression();
+    const range = createArpRange({ minMidiPitch: 40, maxMidiPitch: 88 });
+    const before = JSON.stringify({ progression, range });
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("ambient randomness is prohibited");
+    });
+
+    try {
+      const first = generateArpEvents(progression, range);
+      const second = generateArpEvents(progression, range);
       expect(second).toEqual(first);
       expect(JSON.stringify({ progression, range })).toBe(before);
       expect(random).not.toHaveBeenCalled();

@@ -31,7 +31,7 @@ Stage 6 V1 receives a validated Harmony progression, uses each slot's Chord root
 
 ## Arpeggiator
 
-Stage 7A defines a documentation-only deterministic foundation over a validated Harmony progression. Its future parameter boundary is exactly rate (`quarter|eighth|sixteenth`), direction (`up|down|up-down|down-up`), inclusive absolute MIDI range, and integer `gateTicks`. It uses only the exact selected Harmony voicing pitches, filters rather than revoices them, projects monophonic immutable `ArpEvent` values, and resets traversal for every Harmony slot. See [Arpeggiator model](ARPEGGIATOR_MODEL.md) for normative cycles, validation, and boundary behavior.
+Stage 7A defines the deterministic foundation over a validated Harmony progression. Stage 7B1 implements exact selected-voicing range filtering, and the current bounded Stage 7B2 implementation/review slice projects monophonic immutable `ArpEvent` values at fixed eighth rate, ascending direction, full gate, and slot-local reset. The later parameter boundary remains exactly rate (`quarter|eighth|sixteenth`), direction (`up|down|up-down|down-up`), inclusive absolute MIDI range, and integer `gateTicks`; configurable execution remains separately gated. See [Arpeggiator model](ARPEGGIATOR_MODEL.md) for normative cycles, validation, and boundary behavior.
 
 Octave expansion, density/rest masks, seeded choice, `alternate` or `seededRandom` semantics, profile pattern selection, scale-tone transforms, and concrete profile musical policy remain future Stage 7 targets rather than accepted foundation enum values. They require separately reviewed contracts and evidence; the generic foundation alone cannot complete Stage 7 or AC-011.
 

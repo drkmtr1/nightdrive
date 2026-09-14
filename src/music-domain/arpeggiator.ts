@@ -16,6 +16,14 @@ import {
   type HarmonyTemplate,
 } from "./harmony";
 import { createKey, type Key } from "./key";
+import {
+  createTick,
+  SUBDIVISION_TICKS,
+  V1_SECTION_LENGTH_TICKS,
+  V1_TICKS_PER_BAR,
+  type DurationTicks,
+  type Tick,
+} from "./musical-time";
 import { createMidiPitch, type MidiPitch } from "./pitch";
 import { createScaleDegree, type ScaleDegree } from "./scale";
 
@@ -30,6 +38,12 @@ export type ArpRange = Readonly<{
 export type ArpSlotCandidates = Readonly<{
   slotIndex: number;
   pitches: readonly MidiPitch[];
+}>;
+
+export type ArpEvent = Readonly<{
+  pitch: MidiPitch;
+  startTick: Tick;
+  durationTicks: DurationTicks;
 }>;
 
 export const ARP_ERROR_CODES = {
@@ -294,4 +308,41 @@ export function deriveArpSlotCandidates(
   }
 
   return Object.freeze(result);
+}
+
+export function generateArpEvents(
+  progression: HarmonyProgressionRealization,
+  range: ArpRange,
+): readonly ArpEvent[] {
+  const candidatesBySlot = deriveArpSlotCandidates(progression, range);
+  const rateTicks = SUBDIVISION_TICKS.eighth;
+  const events: ArpEvent[] = [];
+  let slotStartTick = 0;
+
+  for (const candidates of candidatesBySlot) {
+    const slotDurationTicks = progression.slots[candidates.slotIndex].bars * V1_TICKS_PER_BAR;
+    const slotEndTick = slotStartTick + slotDurationTicks;
+
+    for (
+      let eventStartTick = slotStartTick, candidateIndex = 0;
+      eventStartTick < slotEndTick;
+      eventStartTick += rateTicks, candidateIndex += 1
+    ) {
+      events.push(
+        Object.freeze({
+          pitch: candidates.pitches[candidateIndex % candidates.pitches.length],
+          startTick: createTick(eventStartTick),
+          durationTicks: rateTicks,
+        }),
+      );
+    }
+
+    slotStartTick = slotEndTick;
+  }
+
+  if (slotStartTick !== V1_SECTION_LENGTH_TICKS) {
+    throw new Error("Stage 7B2 projection must end at the canonical section boundary.");
+  }
+
+  return Object.freeze(events);
 }
