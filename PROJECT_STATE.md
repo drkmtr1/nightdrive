@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7 Arpeggiator deterministic foundation, with Stage 7B3 rate/direction expansion accepted and merged; positioned at the Stage 7B4 authorization gate.
+Stage 7 Arpeggiator deterministic foundation, with Stage 7B3 rate/direction expansion accepted and merged; the Stage 7B4 integer-gate contract is the current documentation-only slice.
 
 ## Current Milestone
 
-Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 simple canonical event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`; no later Arpeggiator policy behavior is implemented.
+Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 simple canonical event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 now has a reviewable documentation contract; its implementation has not started or been accepted.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7B3 rate/direction expansion is complete. Stage 7B4 integer gate control is the next separately gated milestone and has not begun; Stage 7C and every later Arpeggiator implementation or policy milestone remain separately gated.
+Stage 7B3 rate/direction expansion is complete. The Stage 7B4 integer-gate contract is defined for review, but Stage 7B4 implementation remains separately gated and unstarted; Stage 7C and every later Arpeggiator implementation or policy milestone remain separately gated.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Configurable gate execution, octave expansion, density, seeded behavior, concret
 
 ## Next Eligible Task
 
-Review/define and separately authorize Stage 7B4 integer gate control; do not begin implementation automatically.
+Review and accept the Stage 7B4 integer-gate contract; authorize its implementation only through a separate bounded task.
 
 ## Maintenance
 
