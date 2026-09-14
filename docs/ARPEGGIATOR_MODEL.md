@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. The Stage 7C documentation-only policy checkpoint is accepted and merged through PR #70; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. Stage 7C1 is the current documentation-only density/rest-mask contract slice under review. The foundation cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. The Stage 7C documentation-only policy checkpoint is accepted and merged through PR #70; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is the current documentation-only deterministic weighted-choice contract slice under review. The foundation cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -223,7 +223,47 @@ Exactly one PRNG uint32 output is consumed for every decision slot even when tha
 
 ### Deterministic weighted choice
 
-Profile-bounded choices use deterministic integer weights rather than floating probabilities. The exact weighted-choice contract is not yet frozen and no weights are invented here. Before implementation, a bounded follow-on contract must define candidate ordering, allowed integer-weight representation, total/normalization rules, zero-weight semantics, exact mapping from one uint32 PRNG output to a bucket, and boundary behavior. Until those rules and fixtures are accepted, no Stage 7C weighted resolver is authorized.
+Stage 7C2 proposes the generic weighted-choice contract identity `nightdrive.weighted-choice.uint32-modulo.v1`. It operates on a non-empty ordered list with this conceptual shape; it does not freeze a production TypeScript API:
+
+```ts
+type WeightedCandidate<T> = Readonly<{
+  value: T;
+  weight: number;
+}>;
+```
+
+Each candidate weight must be a JavaScript `number` that is finite, a safe integer, and in the inclusive range `0..65,535`. Negative, fractional, non-number, non-finite, unsafe, or larger values are invalid without coercion. Zero is permitted, but the exact left-to-right sum of all weights must be in `1..65,535`; an empty list, an all-zero list, or a running/final total above `65,535` is invalid. The total is ordinary exact integer addition in declared order. V1 deliberately uses this small bounded integer domain: `65,535` is far beyond expected musical-policy weighting needs while keeping cumulative arithmetic and validation simple, exact, and deterministic. The ceiling is replay-relevant V1 behavior, not a requirement or implication that persistence, storage, or serialization use a uint16 representation. Expanding the weight or total domain requires an appropriate version change rather than silently altering V1. Weights are raw versioned policy data: there is no normalization, rescaling, clamping, wrapping, greatest-common-divisor reduction, or floating-point probability calculation.
+
+Candidate order is semantically significant versioned policy data. Runtime selection must preserve the declared array order and must not sort candidates or derive order from object keys, maps, sets, discovery order, locale, display labels, or AI output. The generic weighted-choice mechanism defines no equality or canonical-identity operation for arbitrary `T`; it must not infer one through object identity, deep equality, JSON serialization, locale comparison, or another implicit generic rule. Each owning policy dimension constructs its ordered candidate list according to that domain's closed vocabulary and domain-specific uniqueness rules, then weighted choice consumes that already-constructed list without adding, removing, merging, or comparing candidate values.
+
+For one supplied canonical uint32 output `u` in `0..4,294,967,295`, compute exactly:
+
+```text
+totalWeight = left-to-right sum of candidate weights
+bucket = u % totalWeight
+```
+
+`bucket` is an integer in the half-open range `[0, totalWeight)`. Iterate candidates in declared order while accumulating `cumulativeExclusive`; a candidate owns the half-open interval `[previousCumulative, cumulativeExclusive)` and the first candidate for which `bucket < cumulativeExclusive` is selected. A zero-weight candidate owns an empty interval, remains present in versioned policy order, and can never be selected. A legal one-candidate list follows the same weight rules and still consumes exactly one PRNG output; every bucket selects that sole positive-weight candidate.
+
+V1 explicitly accepts the small modulo bias that occurs whenever `totalWeight` does not divide `2^32`. Every bucket has either `floor(2^32 / totalWeight)` or `ceil(2^32 / totalWeight)` uint32 preimages, so bucket counts differ by at most one. With `totalWeight <= 65,535`, each bucket has at least `65,537` preimages, making the maximum relative count imbalance less than `1 / 65,537`; that bounded non-cryptographic bias is acceptable for musical-policy selection. Rejection sampling is prohibited because it would consume a variable number of PRNG outputs and violate the accepted fixed decision-slot schedule.
+
+The selector is pure and immutable. It receives rather than produces the one uint32 output, consumes no additional PRNG values, never mutates candidates, and does not depend on `Math.random()`, wall clock, network, locale, ambient state, object iteration, or AI behavior. The existing `nightdrive.prng.mulberry32.v1` state transition and stepping semantics do not change.
+
+Normative golden vectors use the declared candidate order shown:
+
+| Ordered candidates | uint32 `u` | `totalWeight` | `bucket` | Half-open intervals | Selected |
+|---|---:|---:|---:|---|---|
+| `A:1, B:1, C:1` | `0` | `3` | `0` | `A [0,1)`, `B [1,2)`, `C [2,3)` | `A` |
+| `A:1, B:1, C:1` | `2` | `3` | `2` | `A [0,1)`, `B [1,2)`, `C [2,3)` | `C` |
+| `A:2, B:3, C:1` | `2` | `6` | `2` | `A [0,2)`, `B [2,5)`, `C [5,6)` | `B` |
+| `A:2, B:3, C:1` | `5` | `6` | `5` | `A [0,2)`, `B [2,5)`, `C [5,6)` | `C` |
+| `A:2, B:3, C:1` | `0xffffffff` | `6` | `3` | `A [0,2)`, `B [2,5)`, `C [5,6)` | `B` |
+| `A:0, B:2, C:0` | `0` | `2` | `0` | `A [0,0)`, `B [0,2)`, `C [2,2)` | `B` |
+| `A:7` | `0xffffffff` | `7` | `3` | `A [0,7)` | `A` |
+
+Future runtime validation must reject an empty list; malformed candidates; weights outside the exact domain; zero or overflowing totals; and a supplied output that is not a canonical uint32. Domain-specific candidate construction remains responsible for its own closed vocabulary and uniqueness validation before invoking weighted choice. Stage 7C2 does not define public error codes, fields, or mixed-invalid precedence; those remain inputs to the separately gated structured-error contract.
+
+The weighted-choice identity, mapping algorithm, modulo-bias policy, candidate order, weight domain and total bound, raw-weight/no-normalization rule, zero-weight semantics, summation order, cumulative half-open boundary algorithm, and single-candidate consumption rule are replay-relevant. Changing any of them requires a new appropriate weighted-choice or Arpeggiator policy version rather than silently reinterpreting historical output. Stage 7C2 freezes no profile-specific candidates or weights and authorizes no runtime implementation.
 
 ### Proposed component-seed derivation contract
 
@@ -243,7 +283,7 @@ Future Stage 7C runtime work will require structured validation for malformed oc
 
 ## Deferred Stage 7 behavior
 
-The following remain separately gated for runtime implementation but are not removed from eventual Stage 7 scope: the documented upward octave expansion; the Stage 7C1 deterministic density/rest-mask contract while it remains under review; seeded bounded policy resolution; concrete profile policy; and aggregate generator/provenance integration. Weighted-choice mechanics and weights, component-seed vectors, exact profile mappings, and Stage 7C error precedence require separate follow-on contract review. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
+The following remain separately gated for runtime implementation but are not removed from eventual Stage 7 scope: the accepted Stage 7C1 deterministic density/rest-mask contract; the Stage 7C2 deterministic weighted-choice contract while it remains under review; the documented upward octave expansion; seeded bounded policy resolution; concrete profile policy; and aggregate generator/provenance integration. Profile weights, component-seed vectors, exact profile mappings, and Stage 7C error precedence require separate follow-on contract review. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
 
 Stage 7C records bounded candidate tendencies for Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk in the genre-profile model. They are not an executable profile catalog, exact weights, universal genre claims, or implementation authorization. Stage 7 cannot be declared profile-appropriate or complete until the remaining exact policy contracts, deterministic evidence, and structured human listening review are accepted.
 
@@ -254,7 +294,7 @@ Stage 7C records bounded candidate tendencies for Dark Synthwave, Classic Synthw
 3. **Stage 7B2 — simple event projection (accepted and merged through PR #62):** fixed eighth rate, up direction, full-step gate, monophonic events, and slot-local reset.
 4. **Stage 7B3 — rate and direction expansion (accepted and merged through PR #65):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
 5. **Stage 7B4 — integer gate control (accepted and merged through PR #68):** add optional `gateTicks` to the complete Stage 7B3 traversal argument; absence or explicit `undefined` defaults to the selected rate, while other values are validated in `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
-6. **Stage 7C — remaining policy definition (documentation checkpoint accepted through PR #70):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Stage 7C1 proposes the exact density/rest-mask catalog for review; weights, seed vectors, exact profile mappings, runtime errors, implementation, and full Stage 7 acceptance remain separately gated.
+6. **Stage 7C — remaining policy definition (documentation checkpoint accepted through PR #70):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Stage 7C1 is accepted and merged through PR #72; Stage 7C2 proposes the exact generic weighted-choice mechanics for review. Profile weights, seed vectors, exact profile mappings, runtime errors, implementation, and full Stage 7 acceptance remain separately gated.
 
 This sequence describes review boundaries; it authorizes none of the implementation milestones.
 

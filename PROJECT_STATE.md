@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C1 deterministic Arpeggiator density/rest-mask contract documentation.
+Stage 7C2 deterministic Arpeggiator weighted-choice contract documentation.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is the current documentation-only density/rest-mask contract slice under review; no Stage 7C runtime implementation is authorized or started.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is the current documentation-only weighted-choice contract slice under review; no Stage 7C runtime implementation is authorized or started.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Review and accept the bounded Stage 7C1 density/rest-mask contract before treating that contract as complete. Weighted choice, component-seed derivation and vectors, exact profile choices, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
+Review and accept the bounded Stage 7C2 deterministic weighted-choice contract before treating that contract as complete. Component-seed derivation and vectors, exact profile choices and weights, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution,
 
 ## Next Eligible Task
 
-ChatGPT review of the Stage 7C1 documentation contract; do not begin implementation or another Stage 7C contract slice automatically.
+ChatGPT review of the Stage 7C2 documentation contract; do not begin implementation or another Stage 7C contract slice automatically.
 
 ## Maintenance
 

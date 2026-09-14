@@ -8,7 +8,7 @@ A genre profile is versioned structured configuration that bounds deterministic 
 
 A published immutable profile version includes stable ID/name/version/status; supported scales/keys and weighted defaults; BPM guidance as soft validated ranges; section mappings; harmonic templates/degrees/cadence/tension; voicing ranges/width/movement; allowed bass/arp archetypes and parameter bounds; motif range/density/leap/repetition rules; energy/complexity mappings; explanation labels; evaluation cases; provenance/authorship/license; engine/schema compatibility.
 
-Weights are normalized by deterministic code and consumed with the explicit seed. Object key or database row order never determines a choice. Hard constraints, soft preferences, and display copy are separate.
+Weights are raw bounded integers consumed by the versioned deterministic weighted-choice contract without normalization, rescaling, or floating-point probability. Candidate array order is explicit versioned policy data; object key, map, set, database row, discovery, locale, or display-label order never determines a choice. Exact profile candidates and weights remain separately gated. Hard constraints, soft preferences, and display copy are separate.
 
 ## Mood and section mapping
 
