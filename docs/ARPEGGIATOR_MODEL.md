@@ -150,6 +150,8 @@ normalized composition intent
 → canonical Arp event projection
 ```
 
+Stage 7C-P1 defines energy and complexity upstream as independent explicit `EnergyV1` and `ComplexityV1` values on the validated normalized composition brief. Their shared five-value vocabulary, ordinal order, `medium` omission defaults, and strict canonical validation are owned by the composition-brief boundary rather than the Arpeggiator. This prerequisite freezes no Arpeggiator candidate set, weight, gate candidate, or profile mapping; Stage 7C4 remains separately gated and unstarted.
+
 The resolved plan conceptually contains `rate`, `direction`, `gateTicks`, `octaveRange`, and `maskId: ArpDensityMaskIdV1` governed by the versioned mask catalog. It is bounded structured musical policy output, not an opaque random-note instruction. Stage 7B event projection remains responsible for canonical starts, durations, traversal, immutability, and boundary validation. Harmony remains authoritative for progression, Chord, inversion, and selected voicing. The future enclosing composition/generator schema owns the exact aggregate persistence representation; `ArpEvent` gains no seed, provenance, profile, policy, AI, MIDI, UI, or persistence fields.
 
 Backward compatibility is mandatory. A resolved plan using octave range `1`, mask ID `full`, and the accepted Stage 7B default or explicit traversal values must reproduce Stage 7B pitch/event behavior exactly. Existing Stage 7B public calls remain valid; Stage 7C does not silently reinterpret them.

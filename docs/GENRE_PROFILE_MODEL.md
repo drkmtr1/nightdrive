@@ -16,7 +16,7 @@ Mood descriptors map to a small versioned parameter vocabulary (for example tens
 
 ## Stage 7C Arpeggiator policy candidates
 
-The Stage 7C policy resolver may select only from the allowed set in the active immutable profile version. Preferred sets rank or weight allowed candidates; they do not bypass Arpeggiator validation. These candidates are Nightdrive policy hypotheses for structured evaluation, not claims that a genre has one objectively correct formula.
+The shared `EnergyV1` and `ComplexityV1` domains are owned by the normalized composition brief and defined in the [composition engine](COMPOSITION_ENGINE.md); profiles consume but do not redefine those identifiers, their order, their independence, or their `medium` defaults. The Stage 7C policy resolver may select only from the allowed set in the active immutable profile version. Preferred sets rank or weight allowed candidates; they do not bypass Arpeggiator validation. These candidates are Nightdrive policy hypotheses for structured evaluation, not claims that a genre has one objectively correct formula.
 
 | Profile | Rate allowed / preferred | Direction allowed / preferred | Octave range allowed / preferred | Density tendency | Gate tendency |
 |---|---|---|---|---|---|
@@ -27,7 +27,7 @@ The Stage 7C policy resolver may select only from the allowed set in the active 
 
 Rate, direction, and octave entries above are bounded candidate sets. Density and gate descriptions are qualitative tendencies only: they are not canonical mask IDs, exact `gateTicks`, weights, probabilities, or executable mappings. The exact V1 mask catalog, gate candidates, candidate order, and integer weights require a separately reviewed contract and deterministic fixtures before implementation.
 
-Energy and complexity operate only through these profile bounds. Higher Classic Synthwave energy may bias toward sixteenth rate, octave range `2`, and fuller masks. Higher Darkwave energy should bias density before widening the register. Higher Midtempo Cyberpunk complexity may bias mask complexity rather than merely note count. No numeric threshold or input scale is invented here; exact mappings require the authoritative energy/complexity domain and profile-version review. These inputs never mutate canonical notes directly.
+Energy and complexity operate only through these profile bounds. Higher Classic Synthwave energy may bias toward sixteenth rate, octave range `2`, and fuller masks. Higher Darkwave energy should bias density before widening the register. Higher Midtempo Cyberpunk complexity may bias mask complexity rather than merely note count. Stage 7C-P1 freezes the upstream five-level ordinal input domains, but it does not freeze any profile candidate list, weight, threshold, or generator mapping; those exact mappings still require the separately gated Stage 7C4 profile-version review. These inputs never mutate canonical notes directly.
 
 ## Governance
 

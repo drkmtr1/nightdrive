@@ -6,7 +6,7 @@ Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Accepta
 
 | ID | Pri | Requirement | Acceptance | Stage |
 |---|---:|---|---|---:|
-| FR-001 | P0 | The user can create an 8-bar composition brief with supported genre, mood, BPM, key/auto-key, scale, section, energy, and complexity. | AC-001 | 2–4 |
+| FR-001 | P0 | The user can create an 8-bar composition brief with supported genre, mood, BPM, key/auto-key, scale, section, and independent energy and complexity values from the exact shared V1 domain `very-low|low|medium|high|very-high`; omission at brief creation defaults each field to explicit canonical `medium` before deterministic generation. | AC-001 | 2–4 |
 | FR-002 | P0 | The system produces separate chord, bass, arp, and lead components from a valid brief. | AC-002 | 4–8 |
 | FR-003 | P0 | The user can audition components independently and together with synchronized transport. | AC-014 | 9 |
 | FR-004 | P0 | The user can perform the limited note edits defined in scope with undo/redo. | AC-015 | 10 |
