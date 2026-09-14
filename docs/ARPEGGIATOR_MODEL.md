@@ -168,7 +168,7 @@ Expansion is upward only. For each slot the normative transformation order is: (
 
 Density is policy input that resolves to an exact ordered on/rest mask; floating per-step probability is not canonical Arpeggiator behavior. Event projection advances one timeline step and one underlying direction-cycle position for every mask step. An `on` step emits the corresponding event; a `rest` step emits nothing but still consumes that pitch position. Therefore masking `C E G C` with `ON ON REST ON` yields `C E [rest] C`, not `C E [rest] G`. Changing only the mask cannot change the underlying full-density pitch cycle, rate grid, or slot-local traversal reset.
 
-Stage 7C1 proposes the versioned catalog identity `nightdrive.arp-density-mask.v1` and this closed, case-sensitive V1 domain:
+Stage 7C1 freezes the versioned catalog identity `nightdrive.arp-density-mask.v1` and this closed, case-sensitive V1 domain:
 
 ```ts
 type ArpMaskStepV1 = "on" | "rest";
