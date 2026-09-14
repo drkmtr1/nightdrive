@@ -355,7 +355,7 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 ## Stage 7 — Arpeggiator
 
-**Status:** Stage 7A is merged through PR #58; Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; Stage 7B2 simple event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 rate/direction expansion is implemented locally and in review, but is not accepted or merged. Full Stage 7 remains pending.
+**Status:** Stage 7A is merged through PR #58; Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; Stage 7B2 simple event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Full Stage 7 remains pending.
 **Objective:** Generate profile-appropriate arpeggios from harmony.
 **Foundation contract:** Consume validated Harmony progression slots without replacing their Chord, inversion, or selected voicing; filter exact selected-voicing MIDI pitches through an inclusive range; project immutable monophonic events at exact integer quarter/eighth/sixteenth rates; use exact up/down/up-down/down-up traversal with slot-local reset; and constrain integer `gateTicks` to `1..rateTicks`. See [Arpeggiator model](ARPEGGIATOR_MODEL.md).
 **Eventual capabilities:** Rate, direction, range, gate, octave, density, seeded patterns, and concrete profile policy. Octave expansion, density, seeded behavior, and profile mappings remain separately gated and are not removed from Stage 7 completion.
@@ -378,7 +378,7 @@ Merged and accepted through PR #62: project monophonic slot-local events using t
 
 ### Stage 7B3 — Rate and direction expansion
 
-Implemented locally and in review: accept an optional complete `ArpTraversalParametersV1` containing exact quarter/eighth/sixteenth rate and up/down/up-down/down-up direction, while omission preserves the Stage 7B2 eighth/up behavior. Duration remains the full selected rate step. This milestone is not accepted or merged. No partial parameter objects, gate input, compound rates, seed, density, or octave expansion.
+Merged and accepted through PR #65: accept an optional complete `ArpTraversalParametersV1` containing exact quarter/eighth/sixteenth rate and up/down/up-down/down-up direction, while omission preserves the Stage 7B2 eighth/up behavior. Duration remains the full selected rate step. No partial parameter objects, gate input, compound rates, seed, density, or octave expansion.
 
 ### Stage 7B4 — Integer gate control
 
@@ -396,6 +396,14 @@ Research/documentation first for octave behavior, density, seeded behavior, gene
 **Non-goals:** LLM notes, vocal melody, full-song development.
 **Tests:** Transformation/constraint/property fixtures, deterministic replay, structured human review.
 **Exit:** AC-012/004/013 and agreed human-review disposition pass.
+
+## Deferred UI Visual Reference Gate
+
+**Status:** Deferred checkpoint; not reached or authorized.
+**Trigger:** Reach this gate only when accepted Version 1 capabilities and primary workflows are sufficiently defined to enumerate the required screens, panels, controls, interaction states, information hierarchy, user-facing feedback, and important empty/loading/error states. The trigger is based on project state, not a date or milestone number.
+**Required sequence:** Before substantial UI implementation, define the UI/UX requirements and interface inventory, establish the interaction architecture, obtain the product owner's visual-direction decision, translate that decision into a visual design brief, create a comprehensive ChatGPT Image reference package, obtain product-owner review/acceptance, and record accepted design-system decisions. Only then may bounded UI implementation be separately authorized.
+**Visual authority:** Cyberpunk is only a current provisional direction until the product owner confirms, refines, combines, or replaces it. Visual references are design references, not functional specifications; accepted product requirements, architecture, contracts, and UI/UX requirements remain authoritative. Codex must not independently select or formalize the final visual identity.
+**Scope protection:** This checkpoint does not authorize UI/UX definition, visual-reference generation, visual styling, frontend infrastructure, or any current milestone work.
 
 ## Stage 9 — Browser audition
 

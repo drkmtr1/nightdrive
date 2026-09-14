@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7 Arpeggiator deterministic foundation, with the bounded Stage 7B3 rate/direction implementation locally complete and in review.
+Stage 7 Arpeggiator deterministic foundation, with Stage 7B3 rate/direction expansion accepted and merged; positioned at the Stage 7B4 authorization gate.
 
 ## Current Milestone
 
-Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 simple canonical event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 rate/direction expansion is implemented locally and in review; it is not accepted or merged, and no later Arpeggiator policy behavior is implemented.
+Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 simple canonical event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`; no later Arpeggiator policy behavior is implemented.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7B3 rate/direction expansion is the current bounded implementation/review milestone. Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated and have not begun.
+Stage 7B3 rate/direction expansion is complete. Stage 7B4 integer gate control is the next separately gated milestone and has not begun; Stage 7C and every later Arpeggiator implementation or policy milestone remain separately gated.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Configurable gate execution, octave expansion, density, seeded behavior, concret
 
 ## Next Eligible Task
 
-Review the bounded Stage 7B3 rate/direction implementation and evidence; do not accept, merge, or begin Stage 7B4 automatically.
+Review/define and separately authorize Stage 7B4 integer gate control; do not begin implementation automatically.
 
 ## Maintenance
 
