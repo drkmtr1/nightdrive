@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C Arpeggiator policy-definition documentation.
+Stage 7C Arpeggiator policy-contract completion / pre-implementation contract.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint defines remaining Arpeggiator policy boundaries for review; no Stage 7C runtime implementation is authorized or started.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70 (approved head `294a93ed665120f0a0b99cb2ca7cd05ac12cfdcf`, merge commit `02c03de62bda6ef8b6b167dcae624d48a5890126`); no Stage 7C runtime implementation is authorized or started.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C documentation is under review. Runtime implementation, its bounded follow-on contract decisions, and every later Arpeggiator milestone remain separately gated and unstarted.
+Complete the bounded unresolved Stage 7C contracts before any runtime implementation; runtime implementation and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution,
 
 ## Next Eligible Task
 
-ChatGPT review of the Stage 7C documentation checkpoint; do not begin Stage 7C implementation automatically.
+One separately authorized bounded Stage 7C contract slice; do not select or authorize a slice here, and do not begin implementation automatically.
 
 ## Maintenance
 

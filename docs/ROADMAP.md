@@ -386,7 +386,7 @@ Accepted and merged through PR #68 (approved head `0878f77a5b6c5e31f142ab04771cc
 
 ### Stage 7C — Remaining policy definition
 
-**Status:** Documentation-only contract checkpoint under review. No Stage 7C runtime implementation is authorized or started.
+**Status:** Documentation-only contract checkpoint accepted and merged through PR #70 (approved head `294a93ed665120f0a0b99cb2ca7cd05ac12cfdcf`, merge commit `02c03de62bda6ef8b6b167dcae624d48a5890126`). No Stage 7C runtime implementation is authorized or started.
 **Architecture:** Separate deterministic policy resolution from canonical event projection. Resolve bounded rate, octave range, direction, exact mask, and gate choices from normalized intent, profile/version, energy/complexity, and one component-isolated Arpeggiator seed; then project events without changing Harmony ownership or placing seed/provenance in `ArpEvent`.
 **Contract direction:** V1 upward octave range is exactly `1|2|3`; octave range `1` is Stage 7B-compatible. Density resolves to an exact on/rest mask, and a rest consumes both its timeline step and underlying traversal position. One Arpeggiator Mulberry32 stream consumes exactly one output for each versioned decision slot in rate, octave-range, direction, mask, then gate order, including single-candidate slots. Stable named component seeds prevent Harmony/Bass/motif PRNG consumption from perturbing Arpeggiator output.
 **Profile direction:** Four V1 profiles bound allowed/preferred rate, direction, octave, density, and gate candidates. Energy/complexity may bias choices only inside those bounds. Candidate sets are Nightdrive policy hypotheses requiring deterministic and structured human evaluation, not universal genre formulas.
