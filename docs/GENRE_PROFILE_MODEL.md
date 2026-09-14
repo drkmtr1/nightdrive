@@ -93,4 +93,4 @@ Profile changes create new versions and require deterministic fixtures plus stru
 
 ## Failure behavior
 
-Unsupported combinations return an explanation and closest valid choices; they are not silently coerced. If hard profile constraints yield no valid candidate, generation returns a structured unsatisfiable error with constraint codes.
+Unsupported combinations fail canonical generation with the owning structured code and field; they are never silently coerced or resolved through a closest-version fallback. User-facing guidance may explain the failure and suggest supported or closest valid choices only after that failure, without changing it or automatically generating. A malformed known Arpeggiator profile version is invalid versioned configuration rather than an ordinary caller mask/octave/gate error; the exact Stage 7C taxonomy and precedence live in the [Arpeggiator model](ARPEGGIATOR_MODEL.md). If hard profile constraints yield no valid musical candidate, generation returns the owning structured unsatisfiable error rather than partial output.
