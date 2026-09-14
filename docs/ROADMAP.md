@@ -355,7 +355,7 @@ Stage 5B is delivered through separately bounded implementation slices. Stage 5B
 
 ## Stage 7 — Arpeggiator
 
-**Status:** Stage 7A is merged through PR #58; Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; Stage 7B2 simple event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Full Stage 7 remains pending.
+**Status:** Stage 7A is merged through PR #58; Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; Stage 7B2 simple event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. The Stage 7B4 integer-gate contract is defined for review; implementation has not started or been accepted. Full Stage 7 remains pending.
 **Objective:** Generate profile-appropriate arpeggios from harmony.
 **Foundation contract:** Consume validated Harmony progression slots without replacing their Chord, inversion, or selected voicing; filter exact selected-voicing MIDI pitches through an inclusive range; project immutable monophonic events at exact integer quarter/eighth/sixteenth rates; use exact up/down/up-down/down-up traversal with slot-local reset; and constrain integer `gateTicks` to `1..rateTicks`. See [Arpeggiator model](ARPEGGIATOR_MODEL.md).
 **Eventual capabilities:** Rate, direction, range, gate, octave, density, seeded patterns, and concrete profile policy. Octave expansion, density, seeded behavior, and profile mappings remain separately gated and are not removed from Stage 7 completion.
@@ -382,7 +382,7 @@ Merged and accepted through PR #65: accept an optional complete `ArpTraversalPar
 
 ### Stage 7B4 — Integer gate control
 
-Future bounded implementation: add `gateTicks` in `1..rateTicks` without ratios, floating percentages, overlap, velocity, ties, or MIDI articulation.
+Documentation contract defined for review; implementation remains separately gated. Extend the complete Stage 7B3 traversal argument with optional integer `gateTicks`. Absence or explicit `gateTicks: undefined` defaults to the selected `rateTicks`, including existing rate/direction-only calls; every other supplied value must be a finite safe integer in `1..rateTicks`. Gate changes event duration only: rate continues to own event starts, counts, pitch traversal, and slot-local reset. Reject invalid values as `INVALID_ARP_GATE` at `parameters.gateTicks` after rate and direction validation and before internal timing validation. No ratios, floating percentages, overlap, velocity, ties, MIDI articulation, octave expansion, density, seed, or profile policy.
 
 ### Stage 7C — Remaining policy definition
 
