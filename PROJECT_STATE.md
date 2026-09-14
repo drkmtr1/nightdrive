@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C4 exact Arpeggiator profile-policy contract definition.
+Stage 7C5 Arpeggiator structured-error taxonomy and precedence contract definition.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C3 contracts are accepted and merged. Stage 7C-P1 is accepted and merged through PR #79 at approved head `5a3f4cabd2dec99a309e50bf18a42d8c67ba17c0` with merge commit `2c138e67b8ed6003e2de273482f483289c4ce970`. Stage 7C4 is the current documentation-only contract under review; Stage 7C runtime remains unauthorized and unstarted.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C3 contracts are accepted and merged. Stage 7C-P1 is accepted and merged through PR #79. Stage 7C4 is accepted and merged through PR #80 at approved head `2fb30286e9856e67b2ada775f187218a15303f95` with merge commit `4a1c8789e80087b66140740d71ec6663c3c8c6d0`. Stage 7C5 is the current documentation-only contract under review; Stage 7C runtime remains unauthorized and unstarted.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C-P1 resolved the shared energy/complexity prerequisite. Stage 7C4 now freezes exact profile candidate order, raw integer weights, energy/complexity mappings, and integer gate candidates for review. Structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C4 resolved exact profile candidate order, raw integer weights, energy/complexity mappings, and integer gate candidates. Stage 7C5 now freezes structured-error codes, fields, ownership, and mixed-invalid precedence for review. Runtime implementation and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution,
 
 ## Next Eligible Task
 
-Review and publish the Stage 7C4 documentation contract. Do not begin the structured-error contract or Stage 7C runtime automatically.
+Review and publish the Stage 7C5 documentation contract. Do not begin Stage 7C runtime automatically.
 
 ## Maintenance
 
