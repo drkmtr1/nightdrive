@@ -33,7 +33,9 @@ Stage 6 V1 receives a validated Harmony progression, uses each slot's Chord root
 
 Stage 7A defines the deterministic foundation over a validated Harmony progression. Stage 7B1 implements exact selected-voicing range filtering, and accepted merged Stage 7B2 projects monophonic immutable `ArpEvent` values at fixed eighth rate, ascending direction, full-step gate, and slot-local reset. Stage 7B3 rate/direction expansion is accepted and merged through a complete optional third `ArpTraversalParametersV1` argument containing required rate (`quarter|eighth|sixteenth`) and direction (`up|down|up-down|down-up`) fields; omitting the argument preserves the Stage 7B2 defaults. Stage 7B4 integer gate control is accepted and merged through PR #68: it adds optional integer `gateTicks` to that same argument, treats absence or explicit `undefined` as the selected-rate full-step default, and changes duration only. Inclusive absolute MIDI range remains the second argument. See [Arpeggiator model](ARPEGGIATOR_MODEL.md) for normative cycles, validation, and boundary behavior.
 
-Octave expansion, density/rest masks, seeded choice, `alternate` or `seededRandom` semantics, profile pattern selection, scale-tone transforms, and concrete profile musical policy remain future Stage 7 targets rather than accepted foundation enum values. They require separately reviewed contracts and evidence; the generic foundation alone cannot complete Stage 7 or AC-011.
+Stage 7C defines two separate conceptual layers. A deterministic policy resolver consumes normalized intent, profile/version, energy/complexity, and an Arpeggiator component seed and returns a bounded resolved Arp plan containing rate, direction, gate, octave range, and an exact mask reference or resolved mask. Canonical event projection consumes that plan and the validated Harmony realization. It may add only permitted upward octave equivalents of Harmony-selected pitches and may mask traversal steps, but it never selects a replacement voicing, invents chord/scale tones, or makes random note decisions. Stage 7B calls remain compatible: octave range `1`, a full-on mask, and the existing explicit/default traversal parameters reproduce the accepted pitch and event behavior.
+
+The enclosing generator, not `ArpEvent`, owns root seed, component-seed derivation version, PRNG version, Arp policy version, profile version, generator/schema versions, normalized inputs, lineage, and hashes. It derives one component seed per stable named musical component; a single mutable composition-wide PRNG stream and per-parameter seed trees are prohibited. Exact component-seed vectors, mask catalogs, weighted-choice buckets, profile weights, runtime errors, and Stage 7C implementation remain separately gated.
 
 ## Melody/motif engine
 
@@ -41,7 +43,7 @@ Represent motif identity as a base interval/rhythm contour plus transformations.
 
 ## Reproducibility and lineage
 
-Specify and version the PRNG/seed encoding, parameter normalization, generator ordering, candidate sorting, and canonical serializer. A variation creates a child run/revision. Manual edits create a new revision with command provenance. History is not overwritten.
+Specify and version PRNG state advancement, root-to-component seed derivation, generator policy, profile data, parameter normalization, generator ordering, candidate sorting, and the canonical serializer. Replay-relevant changes use the appropriate version boundary rather than silently changing historical output. A variation creates a child run/revision. Manual edits create a new revision with command provenance. History is not overwritten.
 
 ## Explanation records
 
