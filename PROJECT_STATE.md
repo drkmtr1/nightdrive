@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7 Arpeggiator deterministic foundation, positioned at the Stage 7B2 authorization gate.
+Stage 7B2 simple canonical Arpeggiator event projection implementation/review.
 
 ## Current Milestone
 
-Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. MIA-001 Harmony-boundary test stabilization and MIA-002 post-audit status reconciliation are resolved and integrated through PR #60 at `c48d28c9c4bfed0ae44533c930e1cd09e5f71e13`; no Arp events or later policy behavior are implemented.
+Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 fixed-eighth, ascending, full-gate event projection is the current bounded implementation/review slice; it is not yet accepted or merged, and no later Arpeggiator policy behavior is implemented.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7B2 simple canonical event projection is the next eligible separately gated milestone for ChatGPT review and authorization. Stage 7B2 has not begun, and Stage 7B3, Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated.
+Stage 7B2 requires ChatGPT review and acceptance before merge. Stage 7B3, Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated and have not begun.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Arp event generation, rate/direction/gate execution, octave expansion, density, seeded behavior, concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Configurable rate/direction/gate execution, octave expansion, density, seeded behavior, concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and authorize Stage 7B2 simple canonical event projection; do not begin it automatically.
+Review the bounded Stage 7B2 implementation; do not merge it or begin Stage 7B3 automatically.
 
 ## Maintenance
 
