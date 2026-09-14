@@ -20,6 +20,7 @@ Start with:
 - [Roadmap](docs/ROADMAP.md)
 - [Framework validation](docs/FRAMEWORK_VALIDATION.md)
 - [Dependency register](docs/DEPENDENCIES.md)
+- [Engineering Review Playbook](docs/ENGINEERING_REVIEW_PLAYBOOK.md)
 - [Operating rules](AGENTS.md)
 
 ## Local foundation
