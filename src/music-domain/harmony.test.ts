@@ -312,14 +312,14 @@ describe("Harmony template runtime", () => {
     expect(actual).toHaveLength(expected.length);
   });
 
-  it("covers all V1 qualities and exact policy boundaries", () => {
-    const qualities = [
-      CHORD_QUALITIES.majorTriad,
-      CHORD_QUALITIES.minorTriad,
-      CHORD_QUALITIES.diminishedTriad,
-    ];
-    const profiles = Object.values(HARMONY_PROFILE_IDS);
-    for (const profile of profiles) {
+  it.each(Object.values(HARMONY_PROFILE_IDS))(
+    "covers all V1 qualities and exact policy boundaries for %s",
+    (profile) => {
+      const qualities = [
+        CHORD_QUALITIES.majorTriad,
+        CHORD_QUALITIES.minorTriad,
+        CHORD_QUALITIES.diminishedTriad,
+      ];
       const policy = getHarmonyVoicingPolicy(profile);
       const profileCandidates = [];
       for (const quality of qualities) {
@@ -352,15 +352,10 @@ describe("Harmony template runtime", () => {
       expect(
         profileCandidates.some(({ voicing }) => voicing.midiPitches[2] === policy.maxMidiPitch),
       ).toBe(true);
-    }
-    const allCandidates = profiles.flatMap((profile) =>
-      qualities.flatMap((quality) =>
-        enumerateChordVoicingCandidates(createChord(createPitchClass(0), quality), profile),
-      ),
-    );
-    expect(allCandidates.every(({ voicing }) => voicing.midiPitches[0] >= 0)).toBe(true);
-    expect(allCandidates.every(({ voicing }) => voicing.midiPitches[2] <= 127)).toBe(true);
-  });
+      expect(profileCandidates.every(({ voicing }) => voicing.midiPitches[0] >= 0)).toBe(true);
+      expect(profileCandidates.every(({ voicing }) => voicing.midiPitches[2] <= 127)).toBe(true);
+    },
+  );
 
   it("supports multiple allowed inversions while excluding omitted inversions", () => {
     const chord = createChord(createPitchClass(11), CHORD_QUALITIES.diminishedTriad);

@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7 Arpeggiator deterministic foundation implementation.
+Stage 7 Arpeggiator deterministic foundation post-merge correction.
 
 ## Current Milestone
 
-Stage 7A is merged through PR #58. Stage 7B1 is the current bounded candidate-foundation implementation/review slice; it adds no Arp events or later policy behavior.
+Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`; it adds no Arp events or later policy behavior. MIA-001 Harmony-boundary test stabilization is accepted corrective work awaiting integration, and MIA-002 is the current bounded status reconciliation.
 
 ## Recent Accepted Work
 
@@ -24,11 +24,11 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Only Stage 7B1 candidate-foundation implementation and review are authorized. Stage 7B2 and every later Arpeggiator implementation or policy milestone require separate review and authorization.
+MIA-001 test stabilization and MIA-002 status reconciliation remain the current bounded corrective work. Stage 7B2 and every later Arpeggiator implementation or policy milestone require separate review and authorization; Stage 7B2 remains blocked until the corrective work is reviewed and accepted.
 
 ## Unresolved Risks
 
-An existing local observation reports a timeout in the Harmony test `covers all V1 qualities and exact policy boundaries` at the configured 5-second limit; it is an unresolved reported test risk, not a blocker to the already-completed PR #52 or PR #53 merges. Its root cause has not been established.
+MIA-001 reproduced the Harmony test `covers all V1 qualities and exact policy boundaries` as load-sensitive under the configured 5-second limit. The test-only profile decomposition and five consecutive parallel-suite passes establish the corrective evidence; final review and integration remain pending. This is no longer an unexplained timeout risk.
 
 ## Relevant Deferred Work
 
@@ -36,7 +36,7 @@ Arp event generation, rate/direction/gate execution, octave expansion, density, 
 
 ## Next Eligible Task
 
-Complete and review Stage 7B1; do not begin Stage 7B2 automatically.
+Review and integrate MIA-001 and MIA-002; do not begin Stage 7B2 automatically.
 
 ## Maintenance
 
