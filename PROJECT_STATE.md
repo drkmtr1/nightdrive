@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C3 component-seed derivation contract documentation.
+Post-Stage 7C3 component-seed derivation contract merge reconciliation.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is accepted and merged through PR #72. Stage 7C2 is accepted and merged through PR #73. Stage 7C3 is the current documentation-only component-seed derivation contract slice under review; no Stage 7C runtime implementation is authorized or started.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is accepted and merged through PR #72. Stage 7C2 is accepted and merged through PR #73. Stage 7C3 component-seed derivation is accepted and merged through PR #75 at approved head `81b3c878daed262e18a50a2a539235c7bbc7e772` with merge commit `ec90258658a789d186f297cbc7041983bbbbea8a`; it was documentation-only and no Stage 7C runtime implementation is authorized or started.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Review and accept the bounded Stage 7C3 component-seed derivation contract before treating it as complete. Exact profile choices and weights, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C3 is complete. Exact profile choices and weights, gate candidates, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution,
 
 ## Next Eligible Task
 
-ChatGPT review of the Stage 7C3 documentation contract; do not begin implementation or another Stage 7C contract slice automatically.
+One separately authorized bounded Stage 7C contract slice for ChatGPT review; do not select or begin it automatically.
 
 ## Maintenance
 
