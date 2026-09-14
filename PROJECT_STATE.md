@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7B2 simple canonical Arpeggiator event projection implementation/review.
+Stage 7 Arpeggiator deterministic foundation, positioned at the Stage 7B3 authorization gate.
 
 ## Current Milestone
 
-Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 fixed-eighth, ascending, full-gate event projection is the current bounded implementation/review slice; it is not yet accepted or merged, and no later Arpeggiator policy behavior is implemented.
+Stage 7A is merged through PR #58. Stage 7B1 candidate foundation is accepted and merged through PR #59 at `c6593f38ef1987c5156a3000d2a0325a1da40aaa`. Stage 7B2 simple canonical event projection is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; no later Arpeggiator policy behavior is implemented.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7B2 requires ChatGPT review and acceptance before merge. Stage 7B3, Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated and have not begun.
+Stage 7B2 is complete. Stage 7B3 rate/direction expansion is the next separately gated milestone and has not begun; Stage 7B4, Stage 7C, and every later Arpeggiator implementation or policy milestone remain separately gated.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Configurable rate/direction/gate execution, octave expansion, density, seeded be
 
 ## Next Eligible Task
 
-Review the bounded Stage 7B2 implementation; do not merge it or begin Stage 7B3 automatically.
+Review/define and separately authorize Stage 7B3 rate/direction expansion; do not begin implementation automatically.
 
 ## Maintenance
 
