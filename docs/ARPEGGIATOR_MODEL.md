@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the current bounded implementation/review slice for Harmony validation and exact selected-voicing range filtering; it adds no event generation. The foundation supports later bounded implementation while preserving the eventual Stage 7 requirement for profile-appropriate rate, direction, range, gate, octave, density, and seeded behavior. It cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering; it adds no event generation. The foundation supports later bounded implementation while preserving the eventual Stage 7 requirement for profile-appropriate rate, direction, range, gate, octave, density, and seeded behavior. It cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -111,7 +111,7 @@ Candidate derivation, range filtering, rate projection, direction traversal, and
 
 ## PRNG and provenance boundary
 
-The versioned `nightdrive.prng.mulberry32.v1` primitive, canonical uint32 seed/state validation, and deterministic stepping are implemented. No accepted Arp-specific seed-bearing runtime boundary or production Arp consumer exists. Bounded choice, shuffle, weighting, stream/fork mechanics, Arp seed derivation, and the shared Arp generator/provenance envelope are not implemented contracts.
+The versioned `nightdrive.prng.mulberry32.v1` primitive, canonical uint32 seed/state validation, and deterministic stepping are implemented. No accepted Arp-specific seed-bearing runtime boundary or seed-consuming production Arp consumer exists; the merged Stage 7B1 candidate foundation has no seed input. Bounded choice, shuffle, weighting, stream/fork mechanics, Arp seed derivation, and the shared Arp generator/provenance envelope are not implemented contracts.
 
 Foundation parameters therefore contain no seed. Foundation behavior is structurally deterministic and must not invent seed plumbing. The existence of the PRNG primitive alone does not establish full AC-004 replay evidence or seeded AC-011 completion.
 
@@ -124,7 +124,7 @@ No accepted concrete Arp mappings currently exist for Dark Synthwave, Classic Sy
 ## Bounded delivery sequence
 
 1. **Stage 7A — contract definition:** this documentation-only foundation.
-2. **Stage 7B1 — candidate foundation (current implementation/review slice):** validate Harmony and compatibility, filter the exact selected voicing by range, and return immutable stable candidates or structured failure; no events or traversal.
+2. **Stage 7B1 — candidate foundation (accepted and merged through PR #59):** validate Harmony and compatibility, filter the exact selected voicing by range, and return immutable stable candidates or structured failure; no events or traversal.
 3. **Stage 7B2 — simple event projection:** fixed eighth rate, up direction, full gate, monophonic events, and slot-local reset.
 4. **Stage 7B3 — rate and direction expansion:** quarter/eighth/sixteenth and the four exact direction cycles.
 5. **Stage 7B4 — integer gate control:** `gateTicks` from `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
