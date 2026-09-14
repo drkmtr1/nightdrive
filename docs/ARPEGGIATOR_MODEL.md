@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. The Stage 7C documentation-only policy checkpoint is accepted and merged through PR #70; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is accepted and merged through PR #73 at approved head `ef0f5f897eef215e01cf0857a0b1e92aa7979214` with merge commit `05a6f1a4b9e352bb8850c4f3ec3f034432d302bb`. The foundation cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. The Stage 7C documentation-only policy checkpoint is accepted and merged through PR #70; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is accepted and merged through PR #73 at approved head `ef0f5f897eef215e01cf0857a0b1e92aa7979214` with merge commit `05a6f1a4b9e352bb8850c4f3ec3f034432d302bb`. Stage 7C3 is the current documentation-only component-seed derivation contract under review; it authorizes no runtime implementation. The foundation cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -265,11 +265,111 @@ Future runtime validation must reject an empty list; malformed candidates; weigh
 
 The weighted-choice identity, mapping algorithm, modulo-bias policy, candidate order, weight domain and total bound, raw-weight/no-normalization rule, zero-weight semantics, summation order, cumulative half-open boundary algorithm, and single-candidate consumption rule are replay-relevant. Changing any of them requires a new appropriate weighted-choice or Arpeggiator policy version rather than silently reinterpreting historical output. Stage 7C2 freezes no profile-specific candidates or weights and authorizes no runtime implementation.
 
-### Proposed component-seed derivation contract
+### Component-seed derivation contract
 
-`nightdrive.seed-derivation.component.v1` is the proposed versioned identity for a pure, deterministic, synchronous, framework-independent function from a canonical uint32 root seed and supported component ID to a canonical uint32 component seed. It performs no I/O, uses no ambient randomness, mutable shared stream, locale behavior, object iteration order, trimming, case folding, or Unicode normalization. Unsupported or differently cased component IDs are rejected rather than coerced.
+Stage 7C3 proposes `nightdrive.seed-derivation.component.v1` as the exact versioned identity for a pure, deterministic, synchronous, framework-independent function from one canonical root seed and one supported component ID to one canonical component seed. This version owns the closed component vocabulary, input validation semantics, domain tag and delimiter, byte encoding and concatenation order, hash variant and initialization, every arithmetic operation, and unsigned output extraction specified below. It performs no I/O and uses no ambient randomness, mutable shared stream, locale behavior, object iteration order, or platform-native integer serialization.
 
-The research recommendation is an in-repository, dependency-free MurmurHash3 x86_32-style hash over an exact canonical byte representation. This algorithm is **provisional**: constants, operation order, uint32 coercion points, `Math.imul` use, unsigned shifts, root-seed byte order, identifier bytes/encoding, final extraction, rejection behavior, and golden cross-runtime vectors are not fully frozen here. Proposed contract pending exact algorithm/byte-layout vectors before production implementation. No dependency is recommended because this small non-cryptographic replay mechanism must remain Nightdrive-owned and replaceable without giving a package authority over historical output.
+The canonical root seed is a mathematical unsigned 32-bit integer in the inclusive domain `0..0xffffffff` (`0..4,294,967,295`). Zero is valid. The public contract does not reinterpret signed integers or coerce strings, `bigint`, floats, negative numbers, non-finite numbers, or other values into that domain.
+
+The closed, case-sensitive V1 component-ID vocabulary is exactly:
+
+- `harmony`
+- `bass`
+- `arpeggiator`
+- `motif`
+
+No aliasing, trimming, case folding, or Unicode normalization occurs. Unsupported IDs, wrong-case spellings, whitespace variants, and non-string values are invalid. Adding or changing an identifier is not a silent extension of this V1 vocabulary.
+
+#### Canonical input bytes and domain separation
+
+The exact byte sequence supplied to the hash is:
+
+```text
+UTF8("nightdrive.seed-derivation.component.v1")
+|| 0x00
+|| uint32LE(rootSeed)
+|| uint8(componentIdByteLength)
+|| UTF8(componentId)
+```
+
+The fixed domain tag contains exactly 39 ASCII characters, encoded as their identical 39 UTF-8 bytes. Its hexadecimal representation is:
+
+```text
+6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e7631
+```
+
+Exactly one `00` delimiter follows that tag. The root seed then occupies exactly four bytes in little-endian order. The component identifier is UTF-8 encoded; its byte count is encoded immediately before it as exactly one unsigned byte. The four accepted identifiers have lengths `07`, `04`, `0b`, and `05`, respectively. There is no byte-order mark, trailing NUL, platform-native representation, JSON representation, additional separator, or additional length prefix.
+
+The fixed tag and delimiter make the hash input specific to this derivation/version rather than an unlabelled byte sequence that another future hash use might interpret differently. The component length makes the final field boundary explicit even though the accepted ASCII identifiers are already distinct.
+
+#### Exact MurmurHash3 x86_32 algorithm
+
+Hash the complete canonical byte sequence with MurmurHash3 x86_32 initialized with hash seed `0`. All values and intermediate results are unsigned 32-bit bit patterns; additions and multiplications discard all but the low 32 bits. `rotl32(x, r)` is `((x << r) | (x >>> (32 - r))) >>> 0`. JavaScript/TypeScript implementations use `Math.imul` for every multiplication; other runtimes must use equivalent low-32-bit multiplication. Every right shift below is unsigned.
+
+1. Set `h = 0`, `c1 = 0xcc9e2d51`, and `c2 = 0x1b873593`.
+2. Process complete four-byte blocks in increasing byte-offset order. Decode each block little-endian as `k = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)`, coerced to uint32.
+3. For each block, perform exactly:
+
+   ```text
+   k = low32(k * 0xcc9e2d51)
+   k = rotl32(k, 15)
+   k = low32(k * 0x1b873593)
+   h = h XOR k
+   h = rotl32(h, 13)
+   h = low32(low32(h * 5) + 0xe6546b64)
+   ```
+
+4. Build one tail `k = 0` from the remaining zero to three bytes in their original order. For three remaining bytes, XOR `b2 << 16`; for two or more, XOR `b1 << 8`; for one or more, XOR `b0`. If at least one tail byte exists, perform exactly the same `c1`, rotate-left-15, and `c2` mix shown above, then set `h = h XOR k`. Do not apply the per-block rotate-left-13/add step to the tail.
+5. XOR `h` with the total byte length of the complete canonical input and finalize exactly:
+
+   ```text
+   h = h XOR (h >>> 16)
+   h = low32(h * 0x85ebca6b)
+   h = h XOR (h >>> 13)
+   h = low32(h * 0xc2b2ae35)
+   h = h XOR (h >>> 16)
+   ```
+
+6. Extract `h >>> 0` as the canonical result.
+
+No floating-point multiplication, signed right shift, locale operation, or implementation-defined overflow may affect the result. JavaScript's bitwise signed views are incidental only; `Math.imul`, explicit unsigned shifts, and `>>> 0` preserve the specified bit patterns.
+
+#### Output and isolation semantics
+
+The output is one canonical uint32 in `0..0xffffffff`. Every output, including zero, is valid. A zero result is not retried, remapped, rehashed, or passed through a hidden PRNG step. This derivation does not alter `nightdrive.prng.mulberry32.v1`; the Arpeggiator later initializes its one accepted component stream with the derived Arpeggiator seed.
+
+Each child seed is a direct pure function of only the root seed, this derivation version, and the stable component ID. It never depends on component discovery/order or on PRNG consumption by Harmony, Bass, motif, or Arpeggiator. Consequently, changing Harmony or Bass consumption cannot alter the Arpeggiator seed. Adding a future component cannot alter existing V1 outputs; supporting a new identifier requires an appropriate new derivation version rather than mutating the closed V1 vocabulary.
+
+#### Normative golden vectors
+
+Every conforming implementation must reproduce the exact canonical input bytes and result for all 16 vectors below.
+
+| Root decimal | Root hex | Component ID | Canonical input bytes (hex) | Result decimal | Result hex |
+| ---: | ---: | --- | --- | ---: | ---: |
+| `0` | `0x00000000` | `harmony` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e76310000000000076861726d6f6e79` | `622364116` | `0x251885d4` |
+| `0` | `0x00000000` | `bass` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100000000000462617373` | `3844702028` | `0xe5297f4c` |
+| `0` | `0x00000000` | `arpeggiator` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100000000000b6172706567676961746f72` | `2011937067` | `0x77ebb92b` |
+| `0` | `0x00000000` | `motif` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e76310000000000056d6f746966` | `3256624460` | `0xc21c254c` |
+| `1` | `0x00000001` | `harmony` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e76310001000000076861726d6f6e79` | `2090515199` | `0x7c9abaff` |
+| `1` | `0x00000001` | `bass` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100010000000462617373` | `4258129003` | `0xfdcde46b` |
+| `1` | `0x00000001` | `arpeggiator` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100010000000b6172706567676961746f72` | `2926668988` | `0xae716cbc` |
+| `1` | `0x00000001` | `motif` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e76310001000000056d6f746966` | `3484630024` | `0xcfb33c08` |
+| `4294967295` | `0xffffffff` | `harmony` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100ffffffff076861726d6f6e79` | `1380703219` | `0x524bdbf3` |
+| `4294967295` | `0xffffffff` | `bass` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100ffffffff0462617373` | `1905880034` | `0x71996be2` |
+| `4294967295` | `0xffffffff` | `arpeggiator` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100ffffffff0b6172706567676961746f72` | `561390553` | `0x217623d9` |
+| `4294967295` | `0xffffffff` | `motif` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100ffffffff056d6f746966` | `1158484109` | `0x450d108d` |
+| `305419896` | `0x12345678` | `harmony` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e76310078563412076861726d6f6e79` | `4067537834` | `0xf271b3aa` |
+| `305419896` | `0x12345678` | `bass` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100785634120462617373` | `1025326744` | `0x3d1d3e98` |
+| `305419896` | `0x12345678` | `arpeggiator` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e763100785634120b6172706567676961746f72` | `3753044731` | `0xdfb2eafb` |
+| `305419896` | `0x12345678` | `motif` | `6e6967687464726976652e736565642d64657269766174696f6e2e636f6d706f6e656e742e76310078563412056d6f746966` | `2373523338` | `0x8d79178a` |
+
+Equivalent implementations in JavaScript/TypeScript and any later supported native or DSP runtime must reproduce these vectors byte-for-byte and bit-for-bit. Implementations must model modulo-`2^32` arithmetic explicitly; language-specific signed 32-bit display or wider-integer arithmetic must not change the canonical unsigned result.
+
+Changing the component-vocabulary semantics, byte order, encoding, domain tag or delimiter, field lengths/order, hash algorithm or variant, constants, operation order, initialization, tail handling, finalization, or unsigned output extraction requires a new derivation version. Historical outputs retain their original version semantics and must never be silently reinterpreted.
+
+Future runtime validation must reject malformed root seeds and unsupported, wrong-case, whitespace-varied, or non-string component IDs exactly as described above. Stage 7C3 does not define public error codes, fields, or precedence when multiple inputs are invalid; that remains a separately gated structured-error contract.
+
+No dependency is justified. This is small, replay-critical Nightdrive infrastructure whose exact historical behavior must remain locally auditable and under Nightdrive ownership. A third-party hashing package would add authority, lifecycle, and replacement risk without meaningful value over the specified in-repository operations.
 
 ### Provenance and version boundaries
 
@@ -283,7 +383,7 @@ Future Stage 7C runtime work will require structured validation for malformed oc
 
 ## Deferred Stage 7 behavior
 
-The following remain separately gated for runtime implementation but are not removed from eventual Stage 7 scope: the accepted Stage 7C1 deterministic density/rest-mask contract; the accepted Stage 7C2 deterministic weighted-choice contract; the documented upward octave expansion; seeded bounded policy resolution; concrete profile policy; and aggregate generator/provenance integration. Profile weights, component-seed vectors, exact profile mappings, and Stage 7C error precedence require separate follow-on contract review. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
+The following remain separately gated for runtime implementation but are not removed from eventual Stage 7 scope: the accepted Stage 7C1 deterministic density/rest-mask contract; the accepted Stage 7C2 deterministic weighted-choice contract; the Stage 7C3 component-seed derivation contract currently under review; the documented upward octave expansion; seeded bounded policy resolution; concrete profile policy; and aggregate generator/provenance integration. Profile weights, exact profile mappings, and Stage 7C error precedence require separate follow-on contract review. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
 
 Stage 7C records bounded candidate tendencies for Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk in the genre-profile model. They are not an executable profile catalog, exact weights, universal genre claims, or implementation authorization. Stage 7 cannot be declared profile-appropriate or complete until the remaining exact policy contracts, deterministic evidence, and structured human listening review are accepted.
 
@@ -294,7 +394,7 @@ Stage 7C records bounded candidate tendencies for Dark Synthwave, Classic Synthw
 3. **Stage 7B2 — simple event projection (accepted and merged through PR #62):** fixed eighth rate, up direction, full-step gate, monophonic events, and slot-local reset.
 4. **Stage 7B3 — rate and direction expansion (accepted and merged through PR #65):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
 5. **Stage 7B4 — integer gate control (accepted and merged through PR #68):** add optional `gateTicks` to the complete Stage 7B3 traversal argument; absence or explicit `undefined` defaults to the selected rate, while other values are validated in `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
-6. **Stage 7C — remaining policy definition (documentation checkpoint accepted through PR #70):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Stage 7C1 is accepted and merged through PR #72; Stage 7C2 is accepted and merged through PR #73. Profile weights, seed vectors, exact profile mappings, runtime errors, implementation, and full Stage 7 acceptance remain separately gated.
+6. **Stage 7C — remaining policy definition (documentation checkpoint accepted through PR #70):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Stage 7C1 is accepted and merged through PR #72; Stage 7C2 is accepted and merged through PR #73; Stage 7C3 exact component-seed derivation and normative vectors are under documentation review. Profile weights, exact profile mappings, runtime errors, implementation, and full Stage 7 acceptance remain separately gated.
 
 This sequence describes review boundaries; it authorizes none of the implementation milestones.
 
