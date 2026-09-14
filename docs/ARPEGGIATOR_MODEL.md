@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. Octave, density, seed, and profile-policy capabilities remain separately gated. The foundation cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. Stage 7C is a documentation-only policy checkpoint; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. The foundation cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -46,7 +46,7 @@ ArpGenerationParametersV1 {
 }
 ```
 
-`ArpGenerationParametersV1` is the eventual conceptual Stage 7 parameter shape. Stage 7B3 introduces only this bounded runtime parameter object:
+`ArpGenerationParametersV1` is the conceptual Stage 7A/B manual range/traversal shape. Stage 7C does not silently add seed, profile, octave, or mask policy to this accepted runtime API; a future separately reviewed resolver boundary composes the accepted traversal values into its resolved plan. Stage 7B3 introduces only this bounded runtime parameter object:
 
 ```text
 ArpTraversalParametersV1 = Readonly<{
@@ -62,7 +62,7 @@ generateArpEvents(
 ): readonly ArpEvent[]
 ```
 
-The optionality of the complete third argument remains unchanged. Omitting it is canonically equivalent to supplying `{ rate: "eighth", direction: "up" }`, with the absent gate defaulting to the selected eighth-note `rateTicks`; this preserves the Stage 7B2 call `generateArpEvents(progression, range)`. If the argument is supplied, `rate` and `direction` remain required and Stage 7B4 introduces only the optional `gateTicks` property. Existing Stage 7B3 calls containing exactly rate and direction remain valid and default to a full-step gate. The gate default depends on the validated selected rate, not a fixed tick constant. A missing `gateTicks` property and an own `gateTicks` property whose value is explicitly `undefined` both select that default. No other `Partial<ArpTraversalParametersV1>` semantics exist. Range remains the second argument. The conceptual encompassing parameter object contains no density, seed, octave span, profile pattern, `alternate`, `seededRandom`, probability, velocity, MIDI field, ID, or provenance field.
+The optionality of the complete third argument remains unchanged. Omitting it is canonically equivalent to supplying `{ rate: "eighth", direction: "up" }`, with the absent gate defaulting to the selected eighth-note `rateTicks`; this preserves the Stage 7B2 call `generateArpEvents(progression, range)`. If the argument is supplied, `rate` and `direction` remain required and Stage 7B4 introduces only the optional `gateTicks` property. Existing Stage 7B3 calls containing exactly rate and direction remain valid and default to a full-step gate. The gate default depends on the validated selected rate, not a fixed tick constant. A missing `gateTicks` property and an own `gateTicks` property whose value is explicitly `undefined` both select that default. No other `Partial<ArpTraversalParametersV1>` semantics exist. Range remains the second argument. The accepted Stage 7B parameter object contains no density, seed, octave span, profile pattern, `alternate`, `seededRandom`, probability, velocity, MIDI field, ID, or provenance field.
 
 ## Pitch source and range
 
@@ -137,11 +137,78 @@ The versioned `nightdrive.prng.mulberry32.v1` primitive, canonical uint32 seed/s
 
 Foundation parameters therefore contain no seed. Foundation behavior is structurally deterministic and must not invent seed plumbing. The existence of the PRNG primitive alone does not establish full AC-004 replay evidence or seeded AC-011 completion.
 
+## Stage 7C policy-resolution boundary
+
+Stage 7C preserves two distinct layers:
+
+```text
+normalized composition intent
++ genre profile/version
++ energy/complexity
++ Arpeggiator component seed
+→ deterministic resolved Arp plan
+→ canonical Arp event projection
+```
+
+The resolved plan conceptually contains `rate`, `direction`, `gateTicks`, `octaveRange`, and either a versioned rhythm/rest-mask identifier or its exact resolved deterministic mask. It is bounded structured musical policy output, not an opaque random-note instruction. Stage 7B event projection remains responsible for canonical starts, durations, traversal, immutability, and boundary validation. Harmony remains authoritative for progression, Chord, inversion, and selected voicing. The future enclosing composition/generator schema owns the exact aggregate persistence representation; `ArpEvent` gains no seed, provenance, profile, policy, AI, MIDI, UI, or persistence fields.
+
+Backward compatibility is mandatory. A resolved plan using octave range `1`, a full-on mask, and the accepted Stage 7B default or explicit traversal values must reproduce Stage 7B pitch/event behavior exactly. Existing Stage 7B public calls remain valid; Stage 7C does not silently reinterpret them.
+
+### Upward octave expansion
+
+The closed V1 octave-range domain is `1 | 2 | 3`:
+
+- `1` uses the exact Harmony-selected absolute pitches and reproduces Stage 7B pitch-source behavior.
+- `2` considers each selected pitch at its original value and `+12` semitones.
+- `3` considers each selected pitch at its original value, `+12`, and `+24` semitones.
+
+Expansion is upward only. For each slot the normative transformation order is: (1) obtain the exact Harmony-selected pitches; (2) derive only the permitted upward octave equivalents; (3) discard values outside valid `MidiPitch` or the inclusive `ArpRange`; (4) deduplicate equal absolute pitches; (5) sort into stable ascending absolute-pitch order; and (6) apply the accepted direction traversal. The operation may create octave-equivalent copies only. It cannot invent a chord member, add a scale or chromatic passing tone, select a new voicing, change inversion, or reinterpret Harmony. A slot with no legal expanded pitch retains the existing whole-operation `NO_LEGAL_ARP_PITCH` meaning; validation of a malformed octave-range value and its exact precedence remain a separately frozen runtime contract.
+
+### Deterministic density and rest masks
+
+Density is policy input that resolves to an exact ordered on/rest mask; floating per-step probability is not canonical Arpeggiator behavior. Event projection advances one timeline step and one underlying direction-cycle position for every mask step. An `on` step emits the corresponding event; a `rest` step emits nothing but still consumes that pitch position. Therefore masking `C E G C` with `ON ON REST ON` yields `C E [rest] C`, not `C E [rest] G`. Changing only the mask cannot change the underlying full-density pitch cycle, rate grid, or slot-local traversal reset.
+
+No canonical V1 mask identifiers, lengths, repetition/reset rules, profile mask weights, or serialization are frozen by this checkpoint. Those exact catalog mechanics must be defined in a bounded follow-on contract before runtime implementation; implementations must not infer them from the illustrative terminology in profile documentation.
+
+### Component seed isolation and policy stream
+
+The enclosing generator derives one canonical uint32 component seed from the canonical uint32 composition root seed and a closed stable component identity. V1 uses the conceptual identities `harmony`, `bass`, `arpeggiator`, and `motif`; `motif` is the generator identity for the scoped lead/motif component. Stable names, never positional child indices or discovery order, identify components. Harmony, Bass, or motif PRNG consumption cannot alter the Arpeggiator seed. A single mutable composition-wide stream is prohibited.
+
+The Arpeggiator receives one component seed and uses one `nightdrive.prng.mulberry32.v1` stream inside its versioned policy. V1 does not create per-parameter seeds. The fixed policy decision-slot order is:
+
+1. rate;
+2. octave range;
+3. direction;
+4. rhythm/rest mask;
+5. gate.
+
+Exactly one PRNG uint32 output is consumed for every decision slot even when that decision slot has only one legal candidate. This keeps later decisions stable when an earlier dimension changes between one and several allowed candidates. Candidate order and decision-slot order are versioned policy data; changing either is a new Arpeggiator policy version.
+
+### Deterministic weighted choice
+
+Profile-bounded choices use deterministic integer weights rather than floating probabilities. The exact weighted-choice contract is not yet frozen and no weights are invented here. Before implementation, a bounded follow-on contract must define candidate ordering, allowed integer-weight representation, total/normalization rules, zero-weight semantics, exact mapping from one uint32 PRNG output to a bucket, and boundary behavior. Until those rules and fixtures are accepted, no Stage 7C weighted resolver is authorized.
+
+### Proposed component-seed derivation contract
+
+`nightdrive.seed-derivation.component.v1` is the proposed versioned identity for a pure, deterministic, synchronous, framework-independent function from a canonical uint32 root seed and supported component ID to a canonical uint32 component seed. It performs no I/O, uses no ambient randomness, mutable shared stream, locale behavior, object iteration order, trimming, case folding, or Unicode normalization. Unsupported or differently cased component IDs are rejected rather than coerced.
+
+The research recommendation is an in-repository, dependency-free MurmurHash3 x86_32-style hash over an exact canonical byte representation. This algorithm is **provisional**: constants, operation order, uint32 coercion points, `Math.imul` use, unsigned shifts, root-seed byte order, identifier bytes/encoding, final extraction, rejection behavior, and golden cross-runtime vectors are not fully frozen here. Proposed contract pending exact algorithm/byte-layout vectors before production implementation. No dependency is recommended because this small non-cryptographic replay mechanism must remain Nightdrive-owned and replaceable without giving a package authority over historical output.
+
+### Provenance and version boundaries
+
+Canonical generation lineage retains the root seed, seed-derivation version, PRNG version, Arpeggiator policy version, genre-profile ID/version, generator/engine/schema versions, normalized inputs, parent lineage, and canonical hashes already required by ADR-010 and ADR-014. Component child seeds, PRNG internal state, raw outputs, cumulative-weight calculations, temporary candidate arrays, and resolved intermediates are derived/transient values and need not be persisted as canonical composition state.
+
+These version boundaries are independent: PRNG version controls uint32 state advancement; seed-derivation version controls root-seed/component-ID derivation; Arpeggiator policy version controls decision dimensions, order, and resolution mechanics; genre-profile version controls allowed/preferred choices and weights; generator/schema versions control the enclosing generation representation. Replay-relevant behavior changes at the boundary that owns them and never silently reinterpret historical output.
+
+### Runtime validation gate
+
+Future Stage 7C runtime work will require structured validation for malformed octave range, mask/pattern identity or shape, profile/policy input, root/component seed input, and unsupported component IDs. This checkpoint does not freeze new error codes or insert them into the accepted Stage 7B precedence. Exact taxonomy and precedence interactions must be reviewed in a bounded follow-on contract before implementation.
+
 ## Deferred Stage 7 behavior
 
-The following remain separately gated but are not removed from eventual Stage 7 scope: octave expansion; independently configurable density and deterministic rest/subsampling masks; seed-driven pattern, direction, octave, or density choices; `alternate` and `seededRandom` semantics; profile-specific patterns and musical policy; scale-tone transforms or other non-selected-voicing pitch sources; triplets; dotted and thirty-second rates; free-running Arp; VST automation; velocity/accent; MIDI; browser/audio; UI; persistence; and AI behavior.
+The following remain separately gated for runtime implementation but are not removed from eventual Stage 7 scope: the documented upward octave expansion; deterministic density/rest masks; seeded bounded policy resolution; concrete profile policy; and aggregate generator/provenance integration. Exact mask catalogs, weighted-choice mechanics and weights, component-seed vectors, and Stage 7C error precedence require follow-on contract review. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
 
-No accepted concrete Arp mappings currently exist for Dark Synthwave, Classic Synthwave, Darkwave, or Midtempo Cyberpunk. The generic deterministic foundation may precede that musical policy, but Stage 7 cannot be declared profile-appropriate or complete until a separately reviewed policy contract and evidence exist.
+Stage 7C records bounded candidate tendencies for Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk in the genre-profile model. They are not an executable profile catalog, exact weights, universal genre claims, or implementation authorization. Stage 7 cannot be declared profile-appropriate or complete until the remaining exact policy contracts, deterministic evidence, and structured human listening review are accepted.
 
 ## Bounded delivery sequence
 
@@ -150,7 +217,7 @@ No accepted concrete Arp mappings currently exist for Dark Synthwave, Classic Sy
 3. **Stage 7B2 — simple event projection (accepted and merged through PR #62):** fixed eighth rate, up direction, full-step gate, monophonic events, and slot-local reset.
 4. **Stage 7B3 — rate and direction expansion (accepted and merged through PR #65):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
 5. **Stage 7B4 — integer gate control (accepted and merged through PR #68):** add optional `gateTicks` to the complete Stage 7B3 traversal argument; absence or explicit `undefined` defaults to the selected rate, while other values are validated in `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
-6. **Stage 7C — remaining policy definition:** research/documentation first for octave behavior, density, seeded behavior, generator/provenance integration, and concrete profile policy.
+6. **Stage 7C — remaining policy definition (documentation checkpoint under review):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Exact masks, weights, seed vectors, runtime errors, implementation, and acceptance remain separately gated.
 
 This sequence describes review boundaries; it authorizes none of the implementation milestones.
 
@@ -158,7 +225,7 @@ This sequence describes review boundaries; it authorizes none of the implementat
 
 The foundation traces to MUS-003/AC-011, MUS-006/AC-013, and NFR-001/AC-004 only for behavior it actually implements later. Candidate and event evidence must cover active-Harmony derivation, compatibility, exact selected-voicing pitch source, inclusive range boundaries, one/two/three candidate sets, exact timings and cycles, slot/section containment, gate bounds, structured rejection, immutability, input non-mutation, repeatability, and ambient-randomness isolation.
 
-Full Stage 7 remains pending until separately accepted octave, density, seeded, generator/provenance, and profile-policy contracts and evidence satisfy the complete AC-011 and AC-004 scope. Human musical review of profile fit remains separate from deterministic correctness.
+Full Stage 7 remains pending until the Stage 7C contract and separately authorized runtime evidence satisfy the complete AC-011 and AC-004 scope. Human musical review of profile fit remains separate from deterministic correctness.
 
 Stage 7B1 implementation evidence covers canonical Harmony progression identity and ordered-slot validation, Chord/inversion/voicing compatibility, inclusive `MidiPitch` range validation, exact one/two/three-pitch filtering, whole-operation `NO_LEGAL_ARP_PITCH` failure, stable frozen per-slot output, input non-mutation, repeatability, and ambient-randomness isolation. It does not provide event, timing, rate, direction, gate, octave, density, seed, or profile-policy evidence.
 

@@ -40,6 +40,10 @@ The anchor question is: **Would a producer actually use or develop this material
 
 Use multiple reviewers when feasible, blind case/version identity where practical, consistent preview sounds and level, randomized order, and declared expertise/context. Collect consent and only necessary metadata. Review both browser preview and exported MIDI in FL Studio because preview timbre can bias judgment.
 
+### Stage 7C Arpeggiator profile review
+
+Stage 7C profile acceptance requires deterministic evidence plus structured listening across Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk. Reviewers assess whether the profiles are meaningfully distinguishable; the Arpeggiator supports rather than obscures Harmony; repetition remains useful; energy changes feel intuitive; complexity increases musical interest rather than noise; and seed variation stays recognizably within the selected profile. Preserve individual judgments and disagreements. No numeric acceptance threshold is established until baseline evidence exists, and candidate profile tendencies must not be reported as universal genre facts.
+
 ## AI evaluation
 
 Measure schema validity, allowed-parameter adherence, observation grounding, deterministic-fact accuracy, recommendation labeling, prompt-injection resistance, unsafe direct-mutation attempts, latency, tokens, and estimated cost. Human review covers clarity and actionability. Provider/model/prompt changes require regression comparison.
