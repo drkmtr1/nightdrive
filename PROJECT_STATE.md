@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Post-Stage 7C3 component-seed derivation contract merge reconciliation.
+Stage 7C-P1 energy/complexity composition-intent domain contract definition.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is accepted and merged through PR #72. Stage 7C2 is accepted and merged through PR #73. Stage 7C3 component-seed derivation is accepted and merged through PR #75 at approved head `81b3c878daed262e18a50a2a539235c7bbc7e772` with merge commit `ec90258658a789d186f297cbc7041983bbbbea8a`; it was documentation-only and no Stage 7C runtime implementation is authorized or started.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C3 contracts are accepted and merged. Stage 7C-P1 is the current documentation-only prerequisite contract under review; Stage 7C4 and Stage 7C runtime remain unauthorized and unstarted.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C3 is complete. Exact profile choices and weights, gate candidates, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C4 stopped because the shared energy/complexity input domain was not frozen. Stage 7C-P1 now defines that prerequisite for review; exact profile choices and weights, gate candidates, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution,
 
 ## Next Eligible Task
 
-One separately authorized bounded Stage 7C contract slice for ChatGPT review; do not select or begin it automatically.
+Review and publish the Stage 7C-P1 documentation contract. After acceptance, Stage 7C4 may be separately reviewed and authorized; do not resume it automatically.
 
 ## Maintenance
 

@@ -27,7 +27,7 @@ erDiagram
 | Entity | Purpose and representative fields | Constraints/indexes |
 |---|---|---|
 | `project` | `id`, `owner_id`, name, timestamps, current revision | owner FK; `(owner_id, updated_at)`; nonblank bounded name |
-| `composition_brief` | project, genre/profile version, mood tags, BPM, key/scale, section, energy, complexity | one per project; bounded enums/ranges; version explicit |
+| `composition_brief` | project, genre/profile version, mood tags, BPM, key/scale, section, explicit `EnergyV1`, explicit `ComplexityV1` | one per project; each intent field stores the exact ordered `very-low|low|medium|high|very-high` vocabulary after the creation boundary normalizes raw omission to `medium`; schema/version explicit |
 | `section` | project, name/type, bar count, time signature, order | V1 requires 8 bars/4-4; unique order per project |
 | `composition_revision` | immutable canonical snapshot/version, schema version, hash, source kind, author/time | unique `(project_id, version)` and canonical hash; current pointer updated transactionally |
 | `track` | revision, stable role, name, MIDI channel policy, locked flag | unique role per V1 revision; role enum |
