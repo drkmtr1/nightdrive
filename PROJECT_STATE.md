@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C2 deterministic Arpeggiator weighted-choice contract documentation.
+Post-Stage 7C2 Arpeggiator weighted-choice contract reconciliation.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is the current documentation-only weighted-choice contract slice under review; no Stage 7C runtime implementation is authorized or started.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint is accepted and merged through PR #70. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is accepted and merged through PR #73 at approved head `ef0f5f897eef215e01cf0857a0b1e92aa7979214` with merge commit `05a6f1a4b9e352bb8850c4f3ec3f034432d302bb`; it remains documentation-only and does not authorize Stage 7C runtime implementation.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Review and accept the bounded Stage 7C2 deterministic weighted-choice contract before treating that contract as complete. Component-seed derivation and vectors, exact profile choices and weights, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C2 is accepted; one separately authorized bounded Stage 7C contract slice may be proposed next. Component-seed derivation and vectors, exact profile choices and weights, structured errors, runtime implementation, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution,
 
 ## Next Eligible Task
 
-ChatGPT review of the Stage 7C2 documentation contract; do not begin implementation or another Stage 7C contract slice automatically.
+One separately authorized bounded Stage 7C contract slice for ChatGPT review; do not select, define, or begin it automatically.
 
 ## Maintenance
 
