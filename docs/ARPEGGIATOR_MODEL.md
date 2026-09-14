@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is implemented locally and in review, but is not accepted or merged. Gate, octave, density, seed, and profile-policy capabilities remain separately gated. The foundation cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Gate, octave, density, seed, and profile-policy capabilities remain separately gated. The foundation cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -145,7 +145,7 @@ No accepted concrete Arp mappings currently exist for Dark Synthwave, Classic Sy
 1. **Stage 7A — contract definition:** this documentation-only foundation.
 2. **Stage 7B1 — candidate foundation (accepted and merged through PR #59):** validate Harmony and compatibility, filter the exact selected voicing by range, and return immutable stable candidates or structured failure; no events or traversal.
 3. **Stage 7B2 — simple event projection (accepted and merged through PR #62):** fixed eighth rate, up direction, full-step gate, monophonic events, and slot-local reset.
-4. **Stage 7B3 — rate and direction expansion (implemented locally; in review):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
+4. **Stage 7B3 — rate and direction expansion (accepted and merged through PR #65):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
 5. **Stage 7B4 — integer gate control:** `gateTicks` from `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
 6. **Stage 7C — remaining policy definition:** research/documentation first for octave behavior, density, seeded behavior, generator/provenance integration, and concrete profile policy.
 
