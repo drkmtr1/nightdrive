@@ -66,6 +66,13 @@ export type ArpDirectionId = (typeof ARP_DIRECTION_IDS)[keyof typeof ARP_DIRECTI
 export type ArpTraversalParametersV1 = Readonly<{
   rate: ArpRateId;
   direction: ArpDirectionId;
+  gateTicks?: DurationTicks;
+}>;
+
+type NormalizedArpTraversalParametersV1 = Readonly<{
+  rate: ArpRateId;
+  direction: ArpDirectionId;
+  gateTicks: DurationTicks;
 }>;
 
 export const ARP_ERROR_CODES = {
@@ -74,6 +81,7 @@ export const ARP_ERROR_CODES = {
   noLegalArpPitch: "NO_LEGAL_ARP_PITCH",
   invalidArpRate: "INVALID_ARP_RATE",
   invalidArpDirection: "INVALID_ARP_DIRECTION",
+  invalidArpGate: "INVALID_ARP_GATE",
   invalidArpTiming: "INVALID_ARP_TIMING",
 } as const;
 
@@ -105,11 +113,12 @@ function invalidArpRange(field: string, message: string): never {
 
 function normalizeArpTraversalParameters(
   value: ArpTraversalParametersV1 | undefined,
-): ArpTraversalParametersV1 {
+): NormalizedArpTraversalParametersV1 {
   if (value === undefined) {
     return Object.freeze({
       rate: ARP_RATE_IDS.eighth,
       direction: ARP_DIRECTION_IDS.up,
+      gateTicks: SUBDIVISION_TICKS.eighth,
     });
   }
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -136,9 +145,28 @@ function normalizeArpTraversalParameters(
     );
   }
 
+  const selectedRate = input.rate as ArpRateId;
+  const selectedRateTicks = rateTicks(selectedRate);
+  const gateTicksValue = input.gateTicks;
+  if (
+    gateTicksValue !== undefined &&
+    (typeof gateTicksValue !== "number" ||
+      !Number.isFinite(gateTicksValue) ||
+      !Number.isSafeInteger(gateTicksValue) ||
+      gateTicksValue < 1 ||
+      gateTicksValue > selectedRateTicks)
+  ) {
+    return fail(
+      ARP_ERROR_CODES.invalidArpGate,
+      "parameters.gateTicks",
+      "parameters.gateTicks must be a finite safe integer from 1 through the selected rate ticks.",
+    );
+  }
+
   return Object.freeze({
-    rate: input.rate as ArpRateId,
+    rate: selectedRate,
     direction: input.direction as ArpDirectionId,
+    gateTicks: (gateTicksValue ?? selectedRateTicks) as DurationTicks,
   });
 }
 
@@ -428,7 +456,7 @@ export function generateArpEvents(
         Object.freeze({
           pitch: candidates.pitches[candidateIndex],
           startTick: createTick(eventStartTick),
-          durationTicks: selectedRateTicks,
+          durationTicks: normalizedParameters.gateTicks,
         }),
       );
     }

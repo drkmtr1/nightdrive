@@ -20,7 +20,12 @@ import {
 } from "./harmony";
 import * as musicDomain from "./index";
 import { createKey } from "./key";
-import { SUBDIVISION_TICKS, V1_SECTION_LENGTH_TICKS, V1_TICKS_PER_BAR } from "./musical-time";
+import {
+  createDurationTicks,
+  SUBDIVISION_TICKS,
+  V1_SECTION_LENGTH_TICKS,
+  V1_TICKS_PER_BAR,
+} from "./musical-time";
 import { createMidiPitch, createPitchClass } from "./pitch";
 
 function validProgression(): HarmonyProgressionRealization {
@@ -703,6 +708,243 @@ describe("Stage 7B3 rate and direction expansion", () => {
     const parameters: ArpTraversalParametersV1 = {
       rate: ARP_RATE_IDS.sixteenth,
       direction: ARP_DIRECTION_IDS.downUp,
+    };
+    const before = JSON.stringify({ progression, range, parameters });
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("ambient randomness is prohibited");
+    });
+
+    try {
+      const first = generateArpEvents(progression, range, parameters);
+      const second = generateArpEvents(progression, range, parameters);
+      expect(second).toEqual(first);
+      expect(Object.isFrozen(first)).toBe(true);
+      expect(first.every(Object.isFrozen)).toBe(true);
+      expect(JSON.stringify({ progression, range, parameters })).toBe(before);
+      expect(random).not.toHaveBeenCalled();
+    } finally {
+      random.mockRestore();
+    }
+  });
+});
+
+describe("Stage 7B4 integer gate control", () => {
+  const fullRange = () => createArpRange({ minMidiPitch: 0, maxMidiPitch: 127 });
+  const runtimeParameters = (value: unknown): ArpTraversalParametersV1 =>
+    value as ArpTraversalParametersV1;
+
+  it("preserves the two-argument default and treats omitted or undefined gate as full-step", () => {
+    const progression = validProgression();
+    const range = fullRange();
+    const defaultEvents = generateArpEvents(progression, range);
+    const omittedGateEvents = generateArpEvents(progression, range, {
+      rate: ARP_RATE_IDS.eighth,
+      direction: ARP_DIRECTION_IDS.up,
+    });
+    const undefinedGateEvents = generateArpEvents(progression, range, {
+      rate: ARP_RATE_IDS.eighth,
+      direction: ARP_DIRECTION_IDS.up,
+      gateTicks: undefined,
+    });
+
+    expect(defaultEvents).toEqual(omittedGateEvents);
+    expect(undefinedGateEvents).toEqual(omittedGateEvents);
+    expect(defaultEvents.every((event) => event.durationTicks === SUBDIVISION_TICKS.eighth)).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    [ARP_RATE_IDS.quarter, SUBDIVISION_TICKS.quarter],
+    [ARP_RATE_IDS.eighth, SUBDIVISION_TICKS.eighth],
+    [ARP_RATE_IDS.sixteenth, SUBDIVISION_TICKS.sixteenth],
+  ] as const)("makes an explicit full-step %s gate equal to omission", (rate, ticks) => {
+    const progression = validProgression();
+    const range = fullRange();
+
+    expect(
+      generateArpEvents(progression, range, {
+        rate,
+        direction: ARP_DIRECTION_IDS.downUp,
+        gateTicks: ticks,
+      }),
+    ).toEqual(
+      generateArpEvents(progression, range, {
+        rate,
+        direction: ARP_DIRECTION_IDS.downUp,
+      }),
+    );
+  });
+
+  it.each([
+    [ARP_RATE_IDS.quarter, 480],
+    [ARP_RATE_IDS.eighth, 240],
+    [ARP_RATE_IDS.sixteenth, 120],
+  ] as const)("changes only duration for a shortened %s gate", (rate, gateTicks) => {
+    const progression = validProgression();
+    const range = fullRange();
+    const parameters = {
+      rate,
+      direction: ARP_DIRECTION_IDS.upDown,
+    } as const;
+    const fullStep = generateArpEvents(progression, range, parameters);
+    const shortened = generateArpEvents(progression, range, {
+      ...parameters,
+      gateTicks: createDurationTicks(gateTicks),
+    });
+
+    expect(shortened).toHaveLength(fullStep.length);
+    expect(shortened.map(({ pitch, startTick }) => ({ pitch, startTick }))).toEqual(
+      fullStep.map(({ pitch, startTick }) => ({ pitch, startTick })),
+    );
+    expect(shortened.every((event) => event.durationTicks === gateTicks)).toBe(true);
+    expect(
+      shortened.every(
+        (event) =>
+          event.startTick + event.durationTicks <= event.startTick + SUBDIVISION_TICKS[rate] &&
+          event.startTick + event.durationTicks <= V1_SECTION_LENGTH_TICKS,
+      ),
+    ).toBe(true);
+    let slotStartTick = 0;
+    for (const slot of progression.slots) {
+      const slotEndTick = slotStartTick + slot.bars * V1_TICKS_PER_BAR;
+      expect(
+        shortened
+          .filter((event) => event.startTick >= slotStartTick && event.startTick < slotEndTick)
+          .every((event) => event.startTick + event.durationTicks <= slotEndTick),
+      ).toBe(true);
+      slotStartTick = slotEndTick;
+    }
+    expect(
+      (shortened.at(-1)?.startTick ?? 0) + (shortened.at(-1)?.durationTicks ?? 0),
+    ).toBeLessThan(V1_SECTION_LENGTH_TICKS);
+    expect((fullStep.at(-1)?.startTick ?? 0) + (fullStep.at(-1)?.durationTicks ?? 0)).toBe(
+      V1_SECTION_LENGTH_TICKS,
+    );
+  });
+
+  it.each([
+    [ARP_RATE_IDS.quarter, SUBDIVISION_TICKS.quarter],
+    [ARP_RATE_IDS.eighth, SUBDIVISION_TICKS.eighth],
+    [ARP_RATE_IDS.sixteenth, SUBDIVISION_TICKS.sixteenth],
+  ] as const)("accepts both inclusive %s gate boundaries", (rate, rateTicks) => {
+    const progression = validProgression();
+    const range = fullRange();
+
+    for (const gateTicks of [createDurationTicks(1), rateTicks]) {
+      const events = generateArpEvents(progression, range, {
+        rate,
+        direction: ARP_DIRECTION_IDS.down,
+        gateTicks,
+      });
+      expect(events.every((event) => event.durationTicks === gateTicks)).toBe(true);
+    }
+  });
+
+  it.each([
+    0,
+    -1,
+    481,
+    1.5,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1,
+    "240",
+    true,
+    null,
+    {},
+    [],
+  ])("rejects malformed gate value %s with the exact structured error", (gateTicks) => {
+    expectArpError(
+      () =>
+        generateArpEvents(
+          validProgression(),
+          fullRange(),
+          runtimeParameters({
+            rate: ARP_RATE_IDS.eighth,
+            direction: ARP_DIRECTION_IDS.up,
+            gateTicks,
+          }),
+        ),
+      ARP_ERROR_CODES.invalidArpGate,
+      "parameters.gateTicks",
+    );
+  });
+
+  it("preserves every earlier validation layer before gate validation", () => {
+    const progression = validProgression();
+    const invalidGate = runtimeParameters({
+      rate: ARP_RATE_IDS.eighth,
+      direction: ARP_DIRECTION_IDS.up,
+      gateTicks: 0,
+    });
+
+    expectArpError(
+      () =>
+        generateArpEvents(
+          progression,
+          { minMidiPitch: -1, maxMidiPitch: 127 } as ReturnType<typeof createArpRange>,
+          invalidGate,
+        ),
+      ARP_ERROR_CODES.invalidArpRange,
+      "range.minMidiPitch",
+    );
+
+    expectArpError(
+      () =>
+        generateArpEvents(
+          progressionWithFirstVoicing(progression, 0, [48, 51, 55]),
+          fullRange(),
+          invalidGate,
+        ),
+      ARP_ERROR_CODES.invalidHarmonicContext,
+      "progression.slots[0].voicing",
+    );
+
+    const { range, emptySlotIndex } = findRangeWithLaterEmptySlot(progression);
+    expectArpError(
+      () => generateArpEvents(progression, range, invalidGate),
+      ARP_ERROR_CODES.noLegalArpPitch,
+      `progression.slots[${emptySlotIndex}].voicing.midiPitches`,
+    );
+
+    expectArpError(
+      () =>
+        generateArpEvents(
+          progression,
+          fullRange(),
+          runtimeParameters({ rate: "half", direction: ARP_DIRECTION_IDS.up, gateTicks: 0 }),
+        ),
+      ARP_ERROR_CODES.invalidArpRate,
+      "parameters.rate",
+    );
+
+    expectArpError(
+      () =>
+        generateArpEvents(
+          progression,
+          fullRange(),
+          runtimeParameters({ rate: ARP_RATE_IDS.eighth, direction: "alternate", gateTicks: 0 }),
+        ),
+      ARP_ERROR_CODES.invalidArpDirection,
+      "parameters.direction",
+    );
+
+    expectArpError(
+      () => generateArpEvents(progression, fullRange(), invalidGate),
+      ARP_ERROR_CODES.invalidArpGate,
+      "parameters.gateTicks",
+    );
+  });
+
+  it("is immutable, input-safe, replay-stable, and independent of ambient randomness", () => {
+    const progression = validProgression();
+    const range = createArpRange({ minMidiPitch: 40, maxMidiPitch: 88 });
+    const parameters: ArpTraversalParametersV1 = {
+      rate: ARP_RATE_IDS.sixteenth,
+      direction: ARP_DIRECTION_IDS.downUp,
+      gateTicks: createDurationTicks(120),
     };
     const before = JSON.stringify({ progression, range, parameters });
     const random = vi.spyOn(Math, "random").mockImplementation(() => {
