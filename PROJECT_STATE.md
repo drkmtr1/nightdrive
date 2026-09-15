@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C6 Arpeggiator runtime-interface contract definition.
+Stage 7C7a1 component-seed derivation runtime implementation.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C4 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C5 is accepted and merged through PR #81 at approved head `935f1570348d0b5565061e232f1783b9d2928291` with merge commit `d0dcd47c1568b448dae6b69ca425d174b95f49de`. Stage 7C6 is the current documentation-only runtime-interface contract; Stage 7C runtime remains unauthorized and unstarted.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C6 is accepted and merged through PR #82 at approved head `82ca76bbb046669529d1515a2f534649e4d5675e` with merge commit `5d512548e4683ad90ec1c0eb5af3cdc9e72a73fb`. Stage 7C7a1 is the current bounded first runtime milestone and implements only the reusable component-seed derivation primitive; all later Stage 7C runtime remains unauthorized and unstarted.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C5 resolved structured-error codes, fields, ownership, and mixed-invalid precedence. Stage 7C6 now freezes the exact seed-bearing request, resolved-plan/result shape, internal resolver/projector boundaries, error ownership, and compatibility needed before implementation. Runtime implementation and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C6 freezes the exact seed-bearing request, resolved-plan/result shape, internal resolver/projector boundaries, error ownership, and compatibility needed before implementation. Stage 7C7a1 is limited to the neutral reusable component-seed derivation boundary and its deterministic evidence. Weighted choice, policy resolution, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Stage 7C runtime octave expansion, density/rest masks, seeded policy resolution, runtime use of concrete profile policy, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Stage 7C weighted choice, octave expansion, density/rest masks, seeded policy resolution, runtime use of concrete profile policy, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and publish the Stage 7C6 documentation contract. Do not begin Stage 7C runtime automatically.
+Review and publish the bounded Stage 7C7a1 component-seed runtime. Do not begin Stage 7C7a2 or any later runtime milestone automatically.
 
 ## Maintenance
 
