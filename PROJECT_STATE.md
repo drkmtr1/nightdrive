@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C7a5 shared Arpeggiator policy-configuration foundation implementation and review.
+Stage 7C7a6 genre-profile Arpeggiator configuration runtime definition and documentation review.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1 is accepted and merged through PR #83 at approved head `0d81cbed4797999a4f0ef4669e3a22feab47e974` with merge commit `a56cbb3f235c56f11551dac3773dda2741a6eb9d`. Stage 7C7a2 is accepted and merged through PR #84 at approved head `365b1855f008f2acf4a4a0642acea1cc057f60f7` with merge commit `0eb74c45174abd0659b8264313e483b6eb3e7e2a`; it implements only the internal deterministic weighted-choice primitive. Stage 7C7a3 is accepted and merged through PR #86 at approved head `b82651327e2dece6cb2c9d6462d3fb61d53179cb` with merge commit `adddaa0c5a6227583dd73c46b9b59747ac79b8d6`; it implements only the internal immutable density-mask catalog and deterministic lookup. Stage 7C7a4 is accepted and merged through PR #88 at approved head `5844ef48bdaf98bb638b081d8eb610842b90cc42` with merge commit `8ebc73a71703893ca1afa608b96264d0db51ee12`; it implements only the shared canonical Energy/Complexity runtime boundary. Stage 7C7a5 is the current shared-policy-configuration implementation/review slice; it is not accepted or merged, and no later Stage 7C behavior has begun.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a4 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, and shared Energy/Complexity runtime boundaries. Stage 7C7a5 is accepted and merged through PR #90 at approved head `d2b18ca3156d358693e1d00456cde1558afcca51` with merge commit `e87e270745b6fe219df8b0cd76f47f47ded03400`; it implements only the shared Arpeggiator policy-configuration foundation. Stage 7C7a6 is a documentation-only definition for the next separately gated genre-profile configuration runtime and is not implemented, accepted, or merged.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a4 supply the accepted component-seed, weighted-choice, immutable density-mask catalog, and shared normalized-composition Energy/Complexity runtime boundaries. Stage 7C7a5 now implements only the shared policy identity, closed shared domains, fixed decision schedule, mechanism/catalog identities, profile-version compatibility, exact semantic gate mappings, private structural validation, and `policy.version`-owned internal failure boundary for review. Genre-profile configuration, policy resolution, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C7a1–C7a5 supply the accepted primitive and shared-policy runtime prerequisites. The current gate is review and separate authorization of Stage 7C7a6: immutable literal data and deterministic structural validation/construction for the accepted four-profile `nightdrive.genre-profile.arpeggiator.v1` policy only. Its runtime, policy selection, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain unstarted and separately gated.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Stage 7C genre-profile configuration, octave expansion, density/rest-mask execution, seeded policy resolution, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. The Stage 7C7a5 implementation/review slice does not authorize those later behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Stage 7C7a6 runtime implementation, policy resolution, octave expansion, density/rest-mask execution, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. This documentation checkpoint does not authorize those behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and accept the Stage 7C7a5 shared Arpeggiator policy-configuration foundation implementation. Do not begin later Stage 7C milestones automatically.
+Review and accept the Stage 7C7a6 genre-profile Arpeggiator configuration runtime definition. Do not implement it or name/begin a later Stage 7C milestone automatically.
 
 ## Maintenance
 
