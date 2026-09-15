@@ -26,6 +26,7 @@ import {
 } from "./musical-time";
 import { createMidiPitch, type MidiPitch } from "./pitch";
 import { createScaleDegree, type ScaleDegree } from "./scale";
+import { createArpDirectionCycleV1, getArpRateTicksV1 } from "./arpeggiator-projection-primitives";
 
 const arpRangeBrand: unique symbol = Symbol("ArpRange");
 
@@ -146,7 +147,7 @@ function normalizeArpTraversalParameters(
   }
 
   const selectedRate = input.rate as ArpRateId;
-  const selectedRateTicks = rateTicks(selectedRate);
+  const selectedRateTicks = getArpRateTicksV1(selectedRate);
   const gateTicksValue = input.gateTicks;
   if (
     gateTicksValue !== undefined &&
@@ -168,28 +169,6 @@ function normalizeArpTraversalParameters(
     direction: input.direction as ArpDirectionId,
     gateTicks: (gateTicksValue ?? selectedRateTicks) as DurationTicks,
   });
-}
-
-function rateTicks(rate: ArpRateId): DurationTicks {
-  if (rate === ARP_RATE_IDS.quarter) return SUBDIVISION_TICKS.quarter;
-  if (rate === ARP_RATE_IDS.sixteenth) return SUBDIVISION_TICKS.sixteenth;
-  return SUBDIVISION_TICKS.eighth;
-}
-
-function createDirectionCycle(
-  candidateCount: number,
-  direction: ArpDirectionId,
-): readonly number[] {
-  if (candidateCount === 1) return Object.freeze([0]);
-
-  const ascending = Array.from({ length: candidateCount }, (_, index) => index);
-  const descending = [...ascending].reverse();
-  if (direction === ARP_DIRECTION_IDS.up) return Object.freeze(ascending);
-  if (direction === ARP_DIRECTION_IDS.down) return Object.freeze(descending);
-  if (direction === ARP_DIRECTION_IDS.upDown) {
-    return Object.freeze([...ascending, ...ascending.slice(1, -1).reverse()]);
-  }
-  return Object.freeze([...descending, ...ascending.slice(1, -1)]);
 }
 
 function requireRecord(value: unknown, field: string): Record<string, unknown> {
@@ -431,7 +410,7 @@ export function generateArpEvents(
 ): readonly ArpEvent[] {
   const candidatesBySlot = deriveArpSlotCandidates(progression, range);
   const normalizedParameters = normalizeArpTraversalParameters(parameters);
-  const selectedRateTicks = rateTicks(normalizedParameters.rate);
+  const selectedRateTicks = getArpRateTicksV1(normalizedParameters.rate);
   const events: ArpEvent[] = [];
   let slotStartTick = 0;
 
@@ -441,7 +420,7 @@ export function generateArpEvents(
       throw new Error("Validated Stage 7B3 slot duration must be divisible by the selected rate.");
     }
     const slotEndTick = slotStartTick + slotDurationTicks;
-    const directionCycle = createDirectionCycle(
+    const directionCycle = createArpDirectionCycleV1(
       candidates.pitches.length,
       normalizedParameters.direction,
     );
