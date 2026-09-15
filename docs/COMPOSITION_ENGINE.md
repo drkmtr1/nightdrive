@@ -34,9 +34,9 @@ These identifiers, their order, meanings, independence, and omission defaults be
 
 ### Stage 7C7a4 canonical runtime boundary
 
-Stage 7C7a4 is a documentation-only definition checkpoint for the smallest shared runtime representation of the already accepted Stage 7C-P1 domains. The future implementation belongs in the framework-independent composition-intent domain at `src/music-domain/composition-intent.ts`; it must not live in an Arpeggiator-specific module or implement the broader future composition-brief schema. The module owns only these two shared fields, their creation defaults, canonical validation, immutable normalized pair, and neutral shared-domain failures.
+Stage 7C7a4 is the bounded implementation/review slice for the smallest shared runtime representation of the already accepted Stage 7C-P1 domains. The implementation belongs in the framework-independent composition-intent domain at `src/music-domain/composition-intent.ts`; it does not live in an Arpeggiator-specific module or implement the broader future composition-brief schema. The module owns only these two shared fields, their creation defaults, canonical validation, immutable normalized pair, and neutral shared-domain failures.
 
-The exact future TypeScript boundary is:
+The exact TypeScript boundary is:
 
 ```ts
 export const ENERGY_V1_VALUES = Object.freeze([
@@ -97,7 +97,7 @@ The canonical constants, canonical types, normalized result type, shared error t
 
 The boundary is pure and deterministic. It consumes no PRNG or seed and cannot depend on `Math.random()`, time, locale, network, AI, persistence, database state, environment, object/discovery order, or another ambient input. Equal valid inputs produce canonical-value-equivalent frozen outputs. No dependency is justified for these tiny replay-relevant Nightdrive-owned domains and rules.
 
-Stage 7C7a4 does not implement the Stage 7C4 profile tables, candidate construction or validation, energy/complexity lookup additions, gate mappings, weighted selection, PRNG consumption, policy resolution, resolved plans, mask execution, octave expansion, event projection, the Stage 7C enclosing operation or public preflight, provenance, persistence, MIA-004, human evaluation, UI, MIDI, or browser/audio behavior. Runtime implementation remains separately gated after this definition is reviewed and accepted.
+Stage 7C7a4 implements only this shared canonical boundary. It does not implement the Stage 7C4 profile tables, candidate construction or validation, energy/complexity lookup additions, gate mappings, weighted selection, PRNG consumption, policy resolution, resolved plans, mask execution, octave expansion, event projection, the Stage 7C enclosing operation or public preflight, provenance, persistence, MIA-004, human evaluation, UI, MIDI, or browser/audio behavior. Acceptance and merge of this implementation remain subject to review, and all later runtime work remains separately gated.
 
 ## Pipeline
 
