@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C7a7 module-private Arpeggiator policy-resolution implementation under review.
+Stage 7C7a7 policy resolution is accepted and merged; Stage 7C7a8 resolved-plan projection is the next separately gated milestone.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a4 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, and shared Energy/Complexity runtime boundaries. Stage 7C7a5 is accepted and merged through PR #90 at approved head `d2b18ca3156d358693e1d00456cde1558afcca51` with merge commit `e87e270745b6fe219df8b0cd76f47f47ded03400`; it implements only the shared Arpeggiator policy-configuration foundation. Stage 7C7a6 is accepted and merged through PR #92 at approved head `a7193128e9d8febcee6cca306a0f07fc1c6cc41a` with merge commit `e4ae8e8675a83e69752362565f94b73907ded10a`; it implements only the internal immutable four-profile configuration boundary. Stage 7C7a7 now implements the bounded module-private policy resolver and is under review, not accepted or merged.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a6 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, Energy/Complexity, shared-policy, and genre-profile runtime prerequisites. Stage 7C7a7 policy resolution is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a6 supply the accepted primitive, shared-policy, and genre-profile runtime prerequisites. The current gate is review and acceptance of the bounded Stage 7C7a7 module-private policy resolver. Event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain unstarted and separately gated.
+Stage 7C7a1–C7a7 supply the accepted primitive, configuration, and policy-resolution prerequisites. The current gate is separate authorization for Stage 7C7a8 resolved-plan projection. The enclosing Stage 7C operation and every later Arpeggiator milestone remain unstarted and separately gated.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Event projection, enclosing generator integration, octave expansion, density/rest-mask execution, compound and expressive Bass rhythms, and later application capabilities remain separately gated. The Stage 7C7a7 implementation authorizes none of those later behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+The enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. Stage 7C7a8 may implement only the already accepted internal projection boundary; it does not authorize the enclosing operation or any later behavior. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review the bounded Stage 7C7a7 policy-resolution implementation. Do not authorize, name, or begin a later projection or integration milestone automatically.
+Review and separately authorize Stage 7C7a8 resolved-plan projection. Do not begin its implementation automatically.
 
 ## Maintenance
 
