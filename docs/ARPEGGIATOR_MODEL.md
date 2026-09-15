@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. The Stage 7C documentation-only policy checkpoint is accepted and merged through PR #70; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is accepted and merged through PR #73 at approved head `ef0f5f897eef215e01cf0857a0b1e92aa7979214` with merge commit `05a6f1a4b9e352bb8850c4f3ec3f034432d302bb`. Stage 7C3 component-seed derivation is accepted and merged through PR #75 at approved head `81b3c878daed262e18a50a2a539235c7bbc7e772` with merge commit `ec90258658a789d186f297cbc7041983bbbbea8a`; it was documentation-only and authorizes no runtime implementation. Stage 7C-P1 is accepted and merged through PR #79 at approved head `5a3f4cabd2dec99a309e50bf18a42d8c67ba17c0` with merge commit `2c138e67b8ed6003e2de273482f483289c4ce970`. Stage 7C4 is accepted and merged through PR #80 at approved head `2fb30286e9856e67b2ada775f187218a15303f95` with merge commit `4a1c8789e80087b66140740d71ec6663c3c8c6d0`. Stage 7C5 is accepted and merged through PR #81 at approved head `935f1570348d0b5565061e232f1783b9d2928291` with merge commit `d0dcd47c1568b448dae6b69ca425d174b95f49de`. Stage 7C6 is accepted and merged through PR #82 at approved head `82ca76bbb046669529d1515a2f534649e4d5675e` with merge commit `5d512548e4683ad90ec1c0eb5af3cdc9e72a73fb`. Stage 7C7a1 is accepted and merged through PR #83 at approved head `0d81cbed4797999a4f0ef4669e3a22feab47e974` with merge commit `a56cbb3f235c56f11551dac3773dda2741a6eb9d`. Stage 7C7a2 is accepted and merged through PR #84 at approved head `365b1855f008f2acf4a4a0642acea1cc057f60f7` with merge commit `0eb74c45174abd0659b8264313e483b6eb3e7e2a`; it implements only the internal deterministic weighted-choice primitive. Stage 7C7a3 is accepted and merged through PR #86 at approved head `b82651327e2dece6cb2c9d6462d3fb61d53179cb` with merge commit `adddaa0c5a6227583dd73c46b9b59747ac79b8d6`; it implements only the internal immutable Stage 7C1 density-mask catalog and deterministic lookup. Stage 7C7a4 is the current bounded implementation/review slice for the shared canonical Energy/Complexity runtime boundary; it is not yet accepted or merged and does not authorize later behavior. All later Stage 7C runtime remains separately gated. The foundation cannot by itself complete Stage 7 or AC-011.
+Stage 7A freezes the smallest deterministic Arpeggiator foundation. Stage 7B1 is the accepted and merged bounded candidate foundation for Harmony validation and exact selected-voicing range filtering. Stage 7B2 is accepted and merged through PR #62 at approved head `b103a7c4e054f8b62ca81b660b53a2c6c2cdc797` with merge commit `acaea6da15dc3a97fc30421a181e0e7ca9d22c96`; it provides fixed-eighth, ascending, full-step event projection with slot-local traversal reset. Stage 7B3 rate/direction expansion is accepted and merged through PR #65 at approved head `7548055fe28c78d5f752481009e3f37970182054` with merge commit `74a77ebdee3a8d437697c47066adf14e934acff9`. Stage 7B4 integer gate control is accepted and merged through PR #68 at approved head `0878f77a5b6c5e31f142ab04771cc8bf1f7f0a8a` with merge commit `a061bb91d3fe3d973d0795df240cdd46d118a7af`. The Stage 7C documentation-only policy checkpoint is accepted and merged through PR #70; it defines future octave, density/mask, seeded resolution, provenance, and profile boundaries without authorizing runtime implementation. Stage 7C1 is accepted and merged through PR #72 at approved head `8d0a2d5ba3919e64b96cc2267cab0a0efd66d75e` with merge commit `77fde7d939f8da563cfbff28f4c5e69c37d754b2`. Stage 7C2 is accepted and merged through PR #73 at approved head `ef0f5f897eef215e01cf0857a0b1e92aa7979214` with merge commit `05a6f1a4b9e352bb8850c4f3ec3f034432d302bb`. Stage 7C3 component-seed derivation is accepted and merged through PR #75 at approved head `81b3c878daed262e18a50a2a539235c7bbc7e772` with merge commit `ec90258658a789d186f297cbc7041983bbbbea8a`; it was documentation-only and authorizes no runtime implementation. Stage 7C-P1 is accepted and merged through PR #79 at approved head `5a3f4cabd2dec99a309e50bf18a42d8c67ba17c0` with merge commit `2c138e67b8ed6003e2de273482f483289c4ce970`. Stage 7C4 is accepted and merged through PR #80 at approved head `2fb30286e9856e67b2ada775f187218a15303f95` with merge commit `4a1c8789e80087b66140740d71ec6663c3c8c6d0`. Stage 7C5 is accepted and merged through PR #81 at approved head `935f1570348d0b5565061e232f1783b9d2928291` with merge commit `d0dcd47c1568b448dae6b69ca425d174b95f49de`. Stage 7C6 is accepted and merged through PR #82 at approved head `82ca76bbb046669529d1515a2f534649e4d5675e` with merge commit `5d512548e4683ad90ec1c0eb5af3cdc9e72a73fb`. Stage 7C7a1 is accepted and merged through PR #83 at approved head `0d81cbed4797999a4f0ef4669e3a22feab47e974` with merge commit `a56cbb3f235c56f11551dac3773dda2741a6eb9d`. Stage 7C7a2 is accepted and merged through PR #84 at approved head `365b1855f008f2acf4a4a0642acea1cc057f60f7` with merge commit `0eb74c45174abd0659b8264313e483b6eb3e7e2a`; it implements only the internal deterministic weighted-choice primitive. Stage 7C7a3 is accepted and merged through PR #86 at approved head `b82651327e2dece6cb2c9d6462d3fb61d53179cb` with merge commit `adddaa0c5a6227583dd73c46b9b59747ac79b8d6`; it implements only the internal immutable Stage 7C1 density-mask catalog and deterministic lookup. Stage 7C7a4 is accepted and merged through PR #88 at approved head `5844ef48bdaf98bb638b081d8eb610842b90cc42` with merge commit `8ebc73a71703893ca1afa608b96264d0db51ee12`; it implements only the shared canonical Energy/Complexity runtime boundary. Stage 7C7a5 is the current documentation-only checkpoint for the shared Arpeggiator policy-configuration foundation; it does not authorize runtime implementation. All later Stage 7C runtime remains separately gated. The foundation cannot by itself complete Stage 7 or AC-011.
 
 ## Ownership and boundaries
 
@@ -313,6 +313,113 @@ The profile-data version fixes candidate membership, candidate order, raw energy
 
 Stage 7C4 assigns no public error code, field, or mixed-invalid precedence. Stage 7C5 below freezes that separate contract without changing any Stage 7C4 policy data. This section defines no runtime type, selector, resolver, octave expansion, mask application, seed derivation, or event-projection implementation.
 
+### Stage 7C7a5 shared policy-configuration foundation
+
+Stage 7C7a5 is a documentation-only checkpoint for the shared `nightdrive.arpeggiator-policy.v1` configuration boundary. A future implementation belongs in the framework-independent direct module `src/music-domain/arpeggiator-policy-configuration.ts`. It must not live in genre-profile configuration, composition intent, projection, or generic configuration infrastructure. The module owns only shared policy identities, closed shared domains, the fixed decision schedule, the one supported profile/policy compatibility pair, exact semantic gate mappings, recursive immutability, and shared-policy structural validation. It contains no profile candidate or weight data and consumes no seed or PRNG output.
+
+The exact direct-module types and constants are:
+
+```ts
+export const ARP_PROFILE_DATA_VERSION_V1 =
+  "nightdrive.genre-profile.arpeggiator.v1" as const;
+export type ArpProfileDataVersionV1 = typeof ARP_PROFILE_DATA_VERSION_V1;
+
+export const ARP_POLICY_VERSION_V1 = "nightdrive.arpeggiator-policy.v1" as const;
+export type ArpPolicyVersionV1 = typeof ARP_POLICY_VERSION_V1;
+
+export const ARP_OCTAVE_RANGE_V1_VALUES = Object.freeze([1, 2, 3] as const);
+export type ArpOctaveRangeV1 = (typeof ARP_OCTAVE_RANGE_V1_VALUES)[number];
+
+export const ARP_GATE_ID_V1_VALUES = Object.freeze(["short", "medium", "long"] as const);
+export type ArpGateIdV1 = (typeof ARP_GATE_ID_V1_VALUES)[number];
+
+export const ARP_POLICY_DECISION_SLOT_V1_VALUES = Object.freeze([
+  "rate",
+  "octave-range",
+  "direction",
+  "mask",
+  "gate",
+] as const);
+export type ArpPolicyDecisionSlotV1 =
+  (typeof ARP_POLICY_DECISION_SLOT_V1_VALUES)[number];
+
+export const ARP_WEIGHTED_CHOICE_VERSION_V1 =
+  "nightdrive.weighted-choice.uint32-modulo.v1" as const;
+export const ARP_DENSITY_MASK_CATALOG_VERSION_V1 =
+  "nightdrive.arp-density-mask.v1" as const;
+```
+
+`ArpOctaveRangeV1` is a discrete policy domain, not an arbitrary positive-integer range, and Stage 7C7a5 performs no octave expansion. `ArpGateIdV1` is policy-only semantic data and never becomes a Stage 7B caller gate input. The tuple constants are the canonical order; neither their representation nor validation may derive order from object keys, `Map`, `Set`, database rows, discovery, display labels, locale, or AI output.
+
+The smallest shared configuration shape is:
+
+```ts
+export type SharedArpPolicyConfigurationV1 = Readonly<{
+  version: ArpPolicyVersionV1;
+  compatibleProfileDataVersion: ArpProfileDataVersionV1;
+  decisionSlots: readonly ["rate", "octave-range", "direction", "mask", "gate"];
+  weightedChoiceVersion: typeof ARP_WEIGHTED_CHOICE_VERSION_V1;
+  densityMaskCatalogVersion: typeof ARP_DENSITY_MASK_CATALOG_VERSION_V1;
+  octaveRanges: readonly [1, 2, 3];
+  gateIds: readonly ["short", "medium", "long"];
+  gateTicksByRate: Readonly<{
+    quarter: Readonly<{ short: DurationTicks; medium: DurationTicks; long: DurationTicks }>;
+    eighth: Readonly<{ short: DurationTicks; medium: DurationTicks; long: DurationTicks }>;
+    sixteenth: Readonly<{ short: DurationTicks; medium: DurationTicks; long: DurationTicks }>;
+  }>;
+}>;
+
+export const SHARED_ARP_POLICY_CONFIGURATION_V1: SharedArpPolicyConfigurationV1;
+```
+
+This single explicit V1 object is the complete compatibility declaration: `nightdrive.arpeggiator-policy.v1` accepts only `nightdrive.genre-profile.arpeggiator.v1`. No generalized version registry, arbitrary configuration injection, profile records, candidate arrays, weight vectors, intent lookup tables, PRNG state, component seed, resolved plan, or event data belongs in it.
+
+The canonical `gateTicksByRate` values are:
+
+| Rate | `rateTicks` | `short` | `medium` | `long` |
+|---|---:|---:|---:|---:|
+| `quarter` | `960` | `480` | `720` | `960` |
+| `eighth` | `480` | `240` | `360` | `480` |
+| `sixteenth` | `240` | `120` | `180` | `240` |
+
+These nine table values are canonical integers, not results of a canonical runtime percentage or floating calculation. Every value is in `1..rateTicks`, and `long` equals `rateTicks` for every rate. The accepted factor relationship may explain the values but supplies no rounding or alternate derivation semantics.
+
+The direct shared validator has this boundary:
+
+```ts
+export type SharedArpPolicyConfigurationFailureKindV1 =
+  | "INVALID_CONFIGURATION_SHAPE"
+  | "INVALID_POLICY_VERSION"
+  | "INCOMPATIBLE_PROFILE_DATA_VERSION"
+  | "INVALID_DECISION_SLOTS"
+  | "INVALID_WEIGHTED_CHOICE_VERSION"
+  | "INVALID_DENSITY_MASK_CATALOG_VERSION"
+  | "INVALID_OCTAVE_RANGES"
+  | "INVALID_GATE_IDS"
+  | "INVALID_GATE_MAPPINGS";
+
+export class SharedArpPolicyConfigurationError extends RangeError {
+  readonly owner: "policy.version";
+  readonly kind: SharedArpPolicyConfigurationFailureKindV1;
+}
+
+export function validateSharedArpPolicyConfigurationV1(
+  value: unknown,
+): SharedArpPolicyConfigurationV1;
+```
+
+This error is direct-module/internal infrastructure, not `ArpValueError`, `CompositionIntentValueError`, or a new public Stage 7C5 code. It captures no arbitrary invalid payload. Its fixed owner preserves the future enclosing operation's sole responsibility to translate every shared-policy configuration failure to `INVALID_ARP_POLICY_CONFIGURATION` at `policy.version`; diagnostic message prose is not a machine discriminator. The validator returns the recursively frozen canonical configuration by reference after exact validation and never mutates its input.
+
+Direct validation precedence is exact: (1) plain non-array object with exactly the shared configuration properties; (2) policy identity; (3) compatible profile-data identity; (4) exact decision-slot tuple; (5) weighted-choice identity; (6) density-mask catalog identity; (7) exact octave-range tuple; (8) exact semantic-gate tuple; then (9) exact gate mapping in `quarter`, `eighth`, `sixteenth` rate order and `short`, `medium`, `long` gate order. At each tuple or mapping step, missing entries fail before extras, extras before duplicates where duplicates are representable, then order, type/integer/safe-integer status, lower bound, upper bound, exact canonical value, and the `long === rateTicks` invariant. This private order does not alter Stage 7C5's public mixed-invalid precedence.
+
+The outer configuration, both ordered tuples, every nested rate mapping, and any identity/compatibility tuple used by the implementation must be frozen recursively. Mutation attempts cannot change subsequent reads. Validation is pure, deterministic, and input-preserving, and it cannot depend on `Math.random()`, the Nightdrive PRNG, root/component seeds, energy, complexity, profile selection, clock, locale, network, AI, persistence, database state, environment, or discovery/object order.
+
+All Stage 7C7a5 configuration objects, validators, error types, and closed policy types remain direct-module exports only and are not re-exported from `src/music-domain/index.ts`. `ArpDensityMaskIdV1` and `WeightedCandidate<T>` remain non-barrel. Broad Stage 7C request, plan, result, and version exposure remains deferred until required by the accepted enclosing operation. Later internal Stage 7C modules may import the direct module, but callers cannot inject arbitrary shared policy configuration.
+
+No dependency is justified. This is small replay-critical Nightdrive-owned policy data and exact structural validation; a schema, configuration, or policy framework would add cost without owning the canonical semantics.
+
+Stage 7C7a5 does not include the four genre-profile records, profile candidate membership/order, energy weights, complexity additions, construction of the 500 final lists, profile-owned validation or `profile.version` failures, component-seed or PRNG use, weighted selection, resolution, `ResolvedArpPlanV1`, density-mask execution, octave expansion, projection, enclosing integration, Stage 7C5 public error translation, Stage 7B changes, MIA-004, human evaluation, UI, MIDI, persistence, browser/audio, AI, or dependencies. Runtime implementation remains separately gated, and the subsequent profile-data milestone is intentionally not named here.
+
 ### Stage 7C5 structured-error taxonomy and precedence
 
 Stage 7C5 is documentation-only. It freezes the public `code` and `field` behavior needed by a future Stage 7C operation while retaining the existing Stage 7B `ArpValueError` convention: a structured failure exposes `code`, `field`, and a diagnostic message, with no captured invalid-value property. Code and field are stable API behavior. Message prose is diagnostic, must not contradict them, and is not a machine discriminator or replay value.
@@ -621,7 +728,7 @@ These version boundaries are independent: PRNG version controls uint32 state adv
 
 ### Runtime validation gate
 
-Stage 7C5 freezes the taxonomy, field ownership, and two-phase precedence above, and Stage 7C6 freezes the public enclosing interface and private helper ownership. Stage 7C7a1 implements only the reusable neutral component-seed derivation boundary, Stage 7C7a2 implements only the internal generic weighted-choice primitive, and Stage 7C7a3 implements only the internal immutable density-mask catalog and deterministic lookup. Stage 7C7a4 implements only the upstream shared canonical Energy/Complexity boundary consumed by the future request; it remains under review. Its direct shared-domain errors remain distinct from the later enclosing operation's `ArpValueError` behavior. The public enclosing operation and its Arpeggiator-owned runtime behavior remain unimplemented. Future runtime work must supply the specified structured public failures, internal-assertion distinction, no-consumption preflight, no-partial-output behavior, and exact Stage 7B regression compatibility before it may claim this gate.
+Stage 7C5 freezes the taxonomy, field ownership, and two-phase precedence above, and Stage 7C6 freezes the public enclosing interface and private helper ownership. Stage 7C7a1 implements only the reusable neutral component-seed derivation boundary, Stage 7C7a2 implements only the internal generic weighted-choice primitive, Stage 7C7a3 implements only the internal immutable density-mask catalog and deterministic lookup, and accepted Stage 7C7a4 implements only the upstream shared canonical Energy/Complexity boundary consumed by the future request. Stage 7C7a5 defines only the shared policy-configuration foundation and its private `policy.version`-owned failure boundary; runtime implementation remains separately gated. Direct shared-domain and shared-configuration errors remain distinct from the later enclosing operation's `ArpValueError` behavior. The public enclosing operation and its Arpeggiator-owned runtime behavior remain unimplemented. Future runtime work must supply the specified structured public failures, internal-assertion distinction, no-consumption preflight, no-partial-output behavior, and exact Stage 7B regression compatibility before it may claim this gate.
 
 ## Deferred Stage 7 behavior
 
@@ -636,7 +743,7 @@ Stage 7C4 freezes exact ordered candidates and raw integer weights for Dark Synt
 3. **Stage 7B2 — simple event projection (accepted and merged through PR #62):** fixed eighth rate, up direction, full-step gate, monophonic events, and slot-local reset.
 4. **Stage 7B3 — rate and direction expansion (accepted and merged through PR #65):** quarter/eighth/sixteenth and the four exact direction cycles through the complete optional runtime parameter object defined above.
 5. **Stage 7B4 — integer gate control (accepted and merged through PR #68):** add optional `gateTicks` to the complete Stage 7B3 traversal argument; absence or explicit `undefined` defaults to the selected rate, while other values are validated in `1..rateTicks` without ratios, percentages, overlap, velocity, or MIDI articulation.
-6. **Stage 7C — remaining policy definition and bounded runtime delivery (documentation checkpoint accepted through PR #70):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Stage 7C1 is accepted and merged through PR #72; Stage 7C2 is accepted and merged through PR #73; Stage 7C3 exact component-seed derivation and normative vectors are accepted and merged through PR #75; Stage 7C-P1 is accepted and merged through PR #79; Stage 7C4 exact profile policy is accepted and merged through PR #80; Stage 7C5 structured errors are accepted and merged through PR #81; Stage 7C6 runtime interfaces are accepted and merged through PR #82; Stage 7C7a1 component-seed runtime is accepted and merged through PR #83; Stage 7C7a2 weighted-choice runtime is accepted and merged through PR #84; Stage 7C7a3 immutable density-mask catalog runtime is accepted and merged through PR #86; and Stage 7C7a4 is the current bounded implementation/review slice for the shared canonical Energy/Complexity runtime boundary. Stage 7C7a4 acceptance/merge and all later runtime work remain separately gated.
+6. **Stage 7C — remaining policy definition and bounded runtime delivery (documentation checkpoint accepted through PR #70):** define octave behavior, deterministic density/rest-mask architecture, seeded policy resolution, component isolation, generator/provenance integration, and bounded profile candidates. Stage 7C1 is accepted and merged through PR #72; Stage 7C2 is accepted and merged through PR #73; Stage 7C3 exact component-seed derivation and normative vectors are accepted and merged through PR #75; Stage 7C-P1 is accepted and merged through PR #79; Stage 7C4 exact profile policy is accepted and merged through PR #80; Stage 7C5 structured errors are accepted and merged through PR #81; Stage 7C6 runtime interfaces are accepted and merged through PR #82; Stage 7C7a1 component-seed runtime is accepted and merged through PR #83; Stage 7C7a2 weighted-choice runtime is accepted and merged through PR #84; Stage 7C7a3 immutable density-mask catalog runtime is accepted and merged through PR #86; Stage 7C7a4 canonical Energy/Complexity runtime is accepted and merged through PR #88; and Stage 7C7a5 is the current documentation-only shared policy-configuration foundation checkpoint. Stage 7C7a5 runtime and all later work remain separately gated.
 
 This sequence describes review boundaries; it authorizes none of the implementation milestones.
 
