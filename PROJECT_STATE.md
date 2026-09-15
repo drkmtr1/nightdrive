@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C7a6 genre-profile Arpeggiator configuration runtime implementation and review.
+Stage 7C7a6 genre-profile Arpeggiator configuration runtime accepted and merged; Stage 7C7a7 policy-resolution gate.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a4 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, and shared Energy/Complexity runtime boundaries. Stage 7C7a5 is accepted and merged through PR #90 at approved head `d2b18ca3156d358693e1d00456cde1558afcca51` with merge commit `e87e270745b6fe219df8b0cd76f47f47ded03400`; it implements only the shared Arpeggiator policy-configuration foundation. Stage 7C7a6 is implemented locally as the current bounded genre-profile configuration runtime review slice and is not accepted or merged.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a4 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, and shared Energy/Complexity runtime boundaries. Stage 7C7a5 is accepted and merged through PR #90 at approved head `d2b18ca3156d358693e1d00456cde1558afcca51` with merge commit `e87e270745b6fe219df8b0cd76f47f47ded03400`; it implements only the shared Arpeggiator policy-configuration foundation. Stage 7C7a6 is accepted and merged through PR #92 at approved head `a7193128e9d8febcee6cca306a0f07fc1c6cc41a` with merge commit `e4ae8e8675a83e69752362565f94b73907ded10a`; it implements only the internal immutable four-profile configuration boundary.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a5 supply the accepted primitive and shared-policy runtime prerequisites. The current gate is review and acceptance of the Stage 7C7a6 implementation: immutable literal data and deterministic structural validation/construction for the accepted four-profile `nightdrive.genre-profile.arpeggiator.v1` policy only. Policy selection, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain unstarted and separately gated.
+Stage 7C7a1–C7a6 supply the accepted primitive, shared-policy, and genre-profile runtime prerequisites. The current gate is review and separate authorization of Stage 7C7a7 policy resolution. Policy selection, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain unstarted and separately gated.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Stage 7C7a6 acceptance/integration, policy resolution, octave expansion, density/rest-mask execution, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. The current implementation slice authorizes none of those later behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Stage 7C7a7 policy resolution, event projection, enclosing generator integration, octave expansion, density/rest-mask execution, compound and expressive Bass rhythms, and later application capabilities remain separately gated. The accepted Stage 7C7a6 slice authorizes none of those later behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and accept the Stage 7C7a6 genre-profile Arpeggiator configuration runtime implementation. Do not name or begin a later Stage 7C milestone automatically.
+Review and separately authorize the bounded Stage 7C7a7 policy-resolution runtime slice. Do not begin implementation automatically.
 
 ## Maintenance
 
