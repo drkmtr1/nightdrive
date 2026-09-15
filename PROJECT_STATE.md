@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C7a3 deterministic immutable density-mask catalog runtime implementation and review.
+Stage 7C7a4 canonical Energy/Complexity domain runtime documentation definition.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1 is accepted and merged through PR #83 at approved head `0d81cbed4797999a4f0ef4669e3a22feab47e974` with merge commit `a56cbb3f235c56f11551dac3773dda2741a6eb9d`. Stage 7C7a2 is accepted and merged through PR #84 at approved head `365b1855f008f2acf4a4a0642acea1cc057f60f7` with merge commit `0eb74c45174abd0659b8264313e483b6eb3e7e2a`; it implements only the internal deterministic weighted-choice primitive. Stage 7C7a3 is the current bounded runtime implementation/review slice and implements only the internal immutable density-mask catalog, deterministic lookup, and direct evidence; it is not yet accepted or merged. All later Stage 7C runtime remains unauthorized and unstarted.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1 is accepted and merged through PR #83 at approved head `0d81cbed4797999a4f0ef4669e3a22feab47e974` with merge commit `a56cbb3f235c56f11551dac3773dda2741a6eb9d`. Stage 7C7a2 is accepted and merged through PR #84 at approved head `365b1855f008f2acf4a4a0642acea1cc057f60f7` with merge commit `0eb74c45174abd0659b8264313e483b6eb3e7e2a`; it implements only the internal deterministic weighted-choice primitive. Stage 7C7a3 is accepted and merged through PR #86 at approved head `b82651327e2dece6cb2c9d6462d3fb61d53179cb` with merge commit `adddaa0c5a6227583dd73c46b9b59747ac79b8d6`; it implements only the internal immutable density-mask catalog and deterministic lookup. Stage 7C7a4 is the current documentation-definition checkpoint for the shared canonical Energy/Complexity runtime boundary; it is not implemented, accepted, or merged. All later Stage 7C runtime remains unauthorized and unstarted.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1 supplies the accepted neutral reusable component-seed derivation boundary and deterministic evidence. Stage 7C7a2 supplies the accepted internal generic weighted-choice mechanism and its deterministic evidence. The current Stage 7C7a3 implementation is limited to the internal immutable Stage 7C1 density-mask catalog, deterministic lookup, and focused evidence; it does not execute mask behavior. Profile configuration, policy resolution, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C7a1–C7a3 supply the accepted component-seed, weighted-choice, and immutable density-mask catalog primitives. Stage 7C7a4 defines only the shared normalized-composition Energy/Complexity runtime boundary, including creation defaulting, strict canonical validation, immutable output, neutral shared errors, and shared visibility. Its runtime implementation, profile configuration, policy resolution, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Stage 7C octave expansion, density/rest-mask execution, seeded policy resolution, runtime use of concrete profile policy, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. The Stage 7C7a3 catalog runtime does not authorize those later behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Stage 7C octave expansion, density/rest-mask execution, seeded policy resolution, runtime use of concrete profile policy, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. The Stage 7C7a4 definition does not authorize implementation or those later behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and publish the bounded Stage 7C7a3 immutable density-mask catalog runtime. Do not begin later Stage 7C runtime milestones automatically.
+Review and publish the Stage 7C7a4 canonical Energy/Complexity runtime definition. Do not begin its implementation or later Stage 7C milestones automatically.
 
 ## Maintenance
 
