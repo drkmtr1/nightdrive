@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C7a2 deterministic weighted-choice runtime implementation.
+Stage 7C7a3 deterministic immutable density-mask catalog runtime definition.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1 is accepted and merged through PR #83 at approved head `0d81cbed4797999a4f0ef4669e3a22feab47e974` with merge commit `a56cbb3f235c56f11551dac3773dda2741a6eb9d`. Stage 7C7a2 is the current bounded runtime milestone and implements only the internal deterministic weighted-choice primitive; all later Stage 7C runtime remains unauthorized and unstarted.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1 is accepted and merged through PR #83 at approved head `0d81cbed4797999a4f0ef4669e3a22feab47e974` with merge commit `a56cbb3f235c56f11551dac3773dda2741a6eb9d`. Stage 7C7a2 is accepted and merged through PR #84 at approved head `365b1855f008f2acf4a4a0642acea1cc057f60f7` with merge commit `0eb74c45174abd0659b8264313e483b6eb3e7e2a`; it implements only the internal deterministic weighted-choice primitive. Stage 7C7a3 is the current bounded documentation-defined next runtime slice for the internal immutable density-mask catalog and deterministic lookup; all later Stage 7C runtime remains unauthorized and unstarted.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1 supplies the accepted neutral reusable component-seed derivation boundary and deterministic evidence. Stage 7C7a2 is limited to the internal generic weighted-choice mechanism and its deterministic evidence. Masks, profile configuration, policy resolution, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain separately gated and unstarted.
+Stage 7C7a1 supplies the accepted neutral reusable component-seed derivation boundary and deterministic evidence. Stage 7C7a2 supplies the internal generic weighted-choice mechanism and its deterministic evidence. Stage 7C7a3 is limited to the internal immutable Stage 7C1 density-mask catalog and deterministic lookup; it does not execute mask behavior. Profile configuration, policy resolution, event projection, enclosing Stage 7C integration, and every later Arpeggiator milestone remain separately gated and unstarted.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-Stage 7C octave expansion, density/rest masks, seeded policy resolution, runtime use of concrete profile policy, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Stage 7C octave expansion, density/rest-mask execution, seeded policy resolution, runtime use of concrete profile policy, enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. The Stage 7C7a3 catalog runtime does not authorize those later behaviors. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and publish the bounded Stage 7C7a2 weighted-choice runtime. Do not begin Stage 7C7a3 or any later runtime milestone automatically.
+Review and separately authorize the bounded Stage 7C7a3 immutable density-mask catalog runtime. Do not begin later Stage 7C runtime milestones automatically.
 
 ## Maintenance
 
