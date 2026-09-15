@@ -32,6 +32,73 @@ Composition-brief creation/defaulting owns omission normalization. If the raw cr
 
 These identifiers, their order, meanings, independence, and omission defaults belong to the composition-brief schema/version boundary, not to Arpeggiator, Harmony, Bass, motif, a genre profile, AI, or UI state. Historical normalized briefs retain explicit energy and complexity values with their schema and generation lineage. Adding, removing, or renaming an identifier, changing order or meaning, or changing omission/default behavior requires an appropriate new composition-brief schema version rather than silently reinterpreting history. Each downstream generator consumes the two explicit values and maps them only through its own separately versioned bounded policy; different genre profiles may therefore produce different deterministic consequences from the same canonical pair.
 
+### Stage 7C7a4 canonical runtime boundary
+
+Stage 7C7a4 is a documentation-only definition checkpoint for the smallest shared runtime representation of the already accepted Stage 7C-P1 domains. The future implementation belongs in the framework-independent composition-intent domain at `src/music-domain/composition-intent.ts`; it must not live in an Arpeggiator-specific module or implement the broader future composition-brief schema. The module owns only these two shared fields, their creation defaults, canonical validation, immutable normalized pair, and neutral shared-domain failures.
+
+The exact future TypeScript boundary is:
+
+```ts
+export const ENERGY_V1_VALUES = Object.freeze([
+  "very-low",
+  "low",
+  "medium",
+  "high",
+  "very-high",
+] as const);
+
+export const COMPLEXITY_V1_VALUES = Object.freeze([
+  "very-low",
+  "low",
+  "medium",
+  "high",
+  "very-high",
+] as const);
+
+export type EnergyV1 = (typeof ENERGY_V1_VALUES)[number];
+export type ComplexityV1 = (typeof COMPLEXITY_V1_VALUES)[number];
+
+export type CompositionIntentCreationInputV1 = Readonly<{
+  energy?: unknown;
+  complexity?: unknown;
+}>;
+
+export type NormalizedCompositionIntentV1 = Readonly<{
+  energy: EnergyV1;
+  complexity: ComplexityV1;
+}>;
+
+export type CompositionIntentErrorCode = "INVALID_ENERGY" | "INVALID_COMPLEXITY";
+export type CompositionIntentErrorField = "energy" | "complexity";
+
+export class CompositionIntentValueError extends RangeError {
+  readonly code: CompositionIntentErrorCode;
+  readonly field: CompositionIntentErrorField;
+}
+
+export function normalizeCompositionIntentV1(
+  input: CompositionIntentCreationInputV1,
+): NormalizedCompositionIntentV1;
+
+export function validateNormalizedCompositionIntentV1(
+  input: Readonly<{ energy: unknown; complexity: unknown }>,
+): NormalizedCompositionIntentV1;
+```
+
+`ENERGY_V1_VALUES` and `COMPLEXITY_V1_VALUES` are distinct frozen tuples even though they contain the same V1 vocabulary. Their array positions preserve only the accepted ordinal order; positions are not scores, distances, percentages, probabilities, interpolation inputs, or authorization for arithmetic. The distinct derived types preserve independent semantic ownership and must not be collapsed into one interchangeable domain type. Internal membership machinery may be shared without changing that distinction.
+
+`normalizeCompositionIntentV1` is the raw creation/defaulting boundary for these two fields only. An absent property or a property whose value is explicitly `undefined` is omission and becomes exact `medium`; therefore `{}`, `{ energy: undefined }`, `{ complexity: undefined }`, and `{ energy: undefined, complexity: undefined }` normalize to the corresponding explicit `medium` values. Every other present value must already be one exact case-sensitive identifier. Malformed present energy fails before malformed present complexity. This function performs no trimming, case folding, aliasing, parsing, clamping, interpolation, synonym translation, or other coercion, and it never falls back to `medium` for a malformed non-`undefined` value.
+
+`validateNormalizedCompositionIntentV1` is the canonical boundary used before deterministic generators consume the pair. Both properties are required and explicit; an absent property or explicit `undefined` is invalid. It validates energy before complexity and accepts only the exact case-sensitive identifiers. Wrong-case or whitespace variants, aliases or synonyms, unknown strings, every number including integers, fractions, `NaN`, and infinities, booleans, `null`, arrays, and objects fail without coercion. Both functions return a newly frozen `NormalizedCompositionIntentV1` and never mutate their input or the frozen vocabulary tuples.
+
+Direct failures use `CompositionIntentValueError`: malformed energy uses `INVALID_ENERGY` at `energy`, and malformed complexity uses `INVALID_COMPLEXITY` at `complexity`. The error contains no captured invalid-value property. These errors belong to the shared composition-intent boundary and are not `ArpValueError`. The future `generateArpEventsWithPolicyV1` boundary continues to own its already accepted Stage 7C5 `ArpValueError` fields `intent.energy` and `intent.complexity` and their precedence; Stage 7C7a4 neither adds nor changes an Arpeggiator code, field, message contract, translation, or precedence.
+
+The canonical constants, canonical types, normalized result type, shared error types/class, and `validateNormalizedCompositionIntentV1` are shared music-domain exports through `src/music-domain/index.ts` for legitimate deterministic-generator use. `CompositionIntentCreationInputV1` and `normalizeCompositionIntentV1` remain direct-module exports only for the future composition-brief creation/defaulting boundary; they are not re-exported through the broad music-domain barrel. Downstream generators consume the already normalized explicit pair and must not invoke creation defaulting.
+
+The boundary is pure and deterministic. It consumes no PRNG or seed and cannot depend on `Math.random()`, time, locale, network, AI, persistence, database state, environment, object/discovery order, or another ambient input. Equal valid inputs produce canonical-value-equivalent frozen outputs. No dependency is justified for these tiny replay-relevant Nightdrive-owned domains and rules.
+
+Stage 7C7a4 does not implement the Stage 7C4 profile tables, candidate construction or validation, energy/complexity lookup additions, gate mappings, weighted selection, PRNG consumption, policy resolution, resolved plans, mask execution, octave expansion, event projection, the Stage 7C enclosing operation or public preflight, provenance, persistence, MIA-004, human evaluation, UI, MIDI, or browser/audio behavior. Runtime implementation remains separately gated after this definition is reviewed and accepted.
+
 ## Pipeline
 
 ```mermaid
