@@ -1,5 +1,9 @@
 export type ComponentSeedComponentIdV1 = "harmony" | "bass" | "arpeggiator" | "motif";
 
+export const COMPONENT_SEED_DERIVATION_VERSION_V1 =
+  "nightdrive.seed-derivation.component.v1" as const;
+export type ComponentSeedDerivationVersionV1 = typeof COMPONENT_SEED_DERIVATION_VERSION_V1;
+
 export type ComponentSeedErrorCode = "INVALID_ROOT_SEED" | "INVALID_COMPONENT_ID";
 
 export type ComponentSeedErrorField = "rootSeed" | "componentId";
@@ -17,7 +21,7 @@ export class ComponentSeedValueError extends RangeError {
 }
 
 const UINT32_MAX = 0xffff_ffff;
-const DOMAIN_TAG = "nightdrive.seed-derivation.component.v1";
+const DOMAIN_TAG = COMPONENT_SEED_DERIVATION_VERSION_V1;
 const DOMAIN_TAG_BYTES = new TextEncoder().encode(DOMAIN_TAG);
 const UTF8_ENCODER = new TextEncoder();
 const MURMUR_C1 = 0xcc9e_2d51;

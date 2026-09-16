@@ -274,7 +274,7 @@ describe("Stage 7C7a5 shared Arpeggiator policy configuration", () => {
   });
 
   it("keeps the shared configuration boundary out of the public music-domain barrel", () => {
-    expect(musicDomain).not.toHaveProperty("ARP_POLICY_VERSION_V1");
+    expect(musicDomain.ARP_POLICY_VERSION_V1).toBe(ARP_POLICY_VERSION_V1);
     expect(musicDomain).not.toHaveProperty("SHARED_ARP_POLICY_CONFIGURATION_V1");
     expect(musicDomain).not.toHaveProperty("validateSharedArpPolicyConfigurationV1");
     expect(musicDomain).not.toHaveProperty("SharedArpPolicyConfigurationError");
