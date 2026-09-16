@@ -13,6 +13,23 @@ export * from "./harmony";
 export * from "./bass";
 export * from "./arpeggiator";
 export {
+  ARP_POLICY_VERSION_V1,
+  ARP_PROFILE_DATA_VERSION_V1,
+  COMPONENT_SEED_DERIVATION_VERSION_V1,
+  generateArpEventsWithPolicyV1,
+} from "./arpeggiator-policy-generator";
+export type {
+  ArpDensityMaskIdV1,
+  ArpOctaveRangeV1,
+  ArpPolicyGenerationRequestV1,
+  ArpPolicyGenerationResultV1,
+  ArpPolicyVersionV1,
+  ArpPrngVersionV1,
+  ArpProfileDataVersionV1,
+  ComponentSeedDerivationVersionV1,
+  ResolvedArpPlanV1,
+} from "./arpeggiator-policy-generator";
+export {
   COMPLEXITY_V1_VALUES,
   CompositionIntentValueError,
   ENERGY_V1_VALUES,

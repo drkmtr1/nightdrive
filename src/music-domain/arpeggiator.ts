@@ -77,6 +77,17 @@ type NormalizedArpTraversalParametersV1 = Readonly<{
 }>;
 
 export const ARP_ERROR_CODES = {
+  invalidEnergy: "INVALID_ENERGY",
+  invalidComplexity: "INVALID_COMPLEXITY",
+  invalidArpProfile: "INVALID_ARP_PROFILE",
+  unsupportedArpProfileVersion: "UNSUPPORTED_ARP_PROFILE_VERSION",
+  unsupportedArpPolicyVersion: "UNSUPPORTED_ARP_POLICY_VERSION",
+  incompatibleArpProfilePolicy: "INCOMPATIBLE_ARP_PROFILE_POLICY",
+  unsupportedSeedDerivationVersion: "UNSUPPORTED_SEED_DERIVATION_VERSION",
+  unsupportedPrngVersion: "UNSUPPORTED_PRNG_VERSION",
+  invalidRootSeed: "INVALID_ROOT_SEED",
+  invalidArpPolicyConfiguration: "INVALID_ARP_POLICY_CONFIGURATION",
+  incompatibleArpProfileContext: "INCOMPATIBLE_ARP_PROFILE_CONTEXT",
   invalidHarmonicContext: "INVALID_HARMONIC_CONTEXT",
   invalidArpRange: "INVALID_ARP_RANGE",
   noLegalArpPitch: "NO_LEGAL_ARP_PITCH",

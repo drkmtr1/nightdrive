@@ -13,6 +13,16 @@ function invariant(condition: boolean, message: string): asserts condition {
   }
 }
 
+export class ArpProjectionNoLegalPitchError extends Error {
+  readonly slotIndex: number;
+
+  constructor(slotIndex: number) {
+    super(`Resolved Arpeggiator projection has no legal pitch for slot ${slotIndex}.`);
+    this.name = "ArpProjectionNoLegalPitchError";
+    this.slotIndex = slotIndex;
+  }
+}
+
 function assertResolvedPlanV1(plan: ResolvedArpPlanV1): void {
   invariant(Object.values(ARP_RATE_IDS).includes(plan.rate), "unsupported rate");
   invariant(Object.values(ARP_DIRECTION_IDS).includes(plan.direction), "unsupported direction");
@@ -69,7 +79,9 @@ export function projectResolvedArpPlanV1(
     );
     const slotEndTick = slotStartTick + slotDurationTicks;
     const candidates = deriveExpandedCandidates(slot.voicing.midiPitches, range, plan.octaveRange);
-    invariant(candidates.length > 0, `slot ${slot.index} has no legal expanded pitch`);
+    if (candidates.length === 0) {
+      throw new ArpProjectionNoLegalPitchError(slot.index);
+    }
     const directionCycle = createArpDirectionCycleV1(candidates.length, plan.direction);
 
     for (
