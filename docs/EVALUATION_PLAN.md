@@ -13,6 +13,8 @@ Start with versioned briefs and expected invariants for:
 - `cyberpunk-build-001`
 - `classic-synthwave-chorus-001`
 
+The fixed source context for these cases is frozen in [Stage 7 Arpeggiator golden-case source records](reviews/STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). Energy, Complexity, additional seeds, fixture outputs, and evaluation results remain outside that source-selection checkpoint.
+
 Each record includes dataset version, full brief, engine/generator/profile/schema versions, seed, expected structural invariants, canonical result/hash, MIDI artifact/validator result, reviewer ratings, build/commit, and date. Keep prior results immutable.
 
 ## Deterministic evaluation
