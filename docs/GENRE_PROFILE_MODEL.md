@@ -95,7 +95,7 @@ The four tables above are the literal implementation source of truth. Runtime re
 
 For each of the 500 profile/slot/input combinations, the runtime construction is exactly the existing element-wise `energyWeight + complexityAddition` rule and returns the same candidate order. Stage 7C7a6 does not invoke weighted selection or any PRNG. Its configuration validator must reject any version, profile, slot, candidate, row, vector, numeric bound, final-total, or literal-value mismatch without repair. Direct configuration failure remains internal and attributable to `profile.version`; the future enclosing operation alone translates it to `INVALID_ARP_POLICY_CONFIGURATION` at `profile.version`.
 
-Stage 7C7a7 implements only profile-list selection, supplied component-seed PRNG consumption, canonical gate mapping, and the frozen resolved plan. Stage 7C7a8 may project that plan only through the accepted module-private projection boundary; profile/Harmony compatibility, enclosing integration, and public error translation remain separately gated.
+Stage 7C7a7 implements only profile-list selection, supplied component-seed PRNG consumption, canonical gate mapping, and the frozen resolved plan. Stage 7C7a8 implements only the accepted module-private projection boundary and is accepted and merged through PR #96 at approved head `43d251c4c95d39f60320ad90bd80522c514d721c` with merge commit `a14b6e100d00464e314309b45813943e6f81b83a`; profile/Harmony compatibility, enclosing integration, and public error translation remain separately gated.
 
 ## Governance
 

@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-Stage 7C7a7 policy resolution is accepted and merged; Stage 7C7a8 resolved-plan projection is implemented and awaiting review, not accepted or merged.
+Stage 7C7a8 resolved-plan projection is accepted and merged; the project is positioned at the separately gated enclosing Stage 7C operation.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a6 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, Energy/Complexity, shared-policy, and genre-profile runtime prerequisites. Stage 7C7a7 policy resolution is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`. Stage 7C7a8 now implements only the private deterministic resolved-plan projector and its focused evidence; acceptance and merge remain pending review.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a6 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, Energy/Complexity, shared-policy, and genre-profile runtime prerequisites. Stage 7C7a7 policy resolution is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`. Stage 7C7a8 resolved-plan projection is accepted and merged through PR #96 at approved head `43d251c4c95d39f60320ad90bd80522c514d721c` with merge commit `a14b6e100d00464e314309b45813943e6f81b83a`.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a7 supply the accepted primitive, configuration, and policy-resolution prerequisites. The current gate is review and acceptance of the implemented Stage 7C7a8 resolved-plan projection. The enclosing Stage 7C operation and every later Arpeggiator milestone remain unstarted and separately gated.
+Stage 7C7a1–C7a8 supply the accepted primitive, configuration, policy-resolution, and projection prerequisites. The current gate is the separately authorized enclosing Stage 7C integration/error-precedence operation, `generateArpEventsWithPolicyV1`; it remains unimplemented. Every later Arpeggiator milestone remains separately gated.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy and MIA-004 stronger exact 
 
 ## Relevant Deferred Work
 
-The enclosing generator integration, compound and expressive Bass rhythms, and later application capabilities remain separately gated. Stage 7C7a8 may implement only the already accepted internal projection boundary; it does not authorize the enclosing operation or any later behavior. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+The enclosing generator integration/error-precedence operation, aggregate provenance, compound and expressive Bass rhythms, and later application capabilities remain separately gated. Stage 7C7a8 does not authorize the enclosing operation or any later behavior. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review the Stage 7C7a8 resolved-plan projection implementation and evidence. Do not authorize or begin the enclosing Stage 7C operation automatically.
+Review, define, and separately authorize the enclosing Stage 7C integration/error-precedence operation, `generateArpEventsWithPolicyV1`. Do not begin it automatically.
 
 ## Maintenance
 
