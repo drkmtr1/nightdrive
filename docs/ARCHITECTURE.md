@@ -48,6 +48,8 @@ Stage 7C separates deterministic Arpeggiator policy resolution from canonical ev
 
 Stage 5A defined the MIDI boundary. Stage 5B1 provides a framework-independent Nightdrive-owned intermediate representation and strict validators for validated canonical composition/timing inputs. Stage 5B2a passes that validated IR through an isolated Standard MIDI adapter using `midi-file` only for commodity byte encoding; the public boundary remains Nightdrive-owned and third-party MIDI types do not cross it. Stage 5B2b adds a test-only independent validation/reference reader and semantic round-trip evidence; it is not canonical state or a production parser. Stage 5C1 prepares a committed serializer-generated interoperability fixture and manual FL Studio protocol; it does not automate FL Studio or claim compatibility.
 
+The review-pending [Stage 7 Arpeggiator audition-artifact contract](reviews/STAGE7_ARPEGGIATOR_AUDITION_ARTIFACT.md) defines a future evaluation-only adapter from accepted Harmony plus Arp outputs to the existing Nightdrive MIDI IR and `serializeStandardMidiV1`. The adapter belongs under `src/evaluation/`, remains noncanonical and outside the public music-domain API, and may depend only downstream on `src/music-domain` outputs and `src/midi`; no dependency flows back into the music domain. It introduces no second MIDI schema/serializer, aggregate provenance, browser/Web Audio path, application route, or persistence boundary. Implementation, fixtures, and listening remain separately gated.
+
 ### Implemented boundaries
 
 - `src/app`: Next.js routes, semantic layout, state pages, global tokens/styles, and HTTP adapters only.
