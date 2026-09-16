@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-The enclosing Stage 7C Arpeggiator integration/error-precedence operation is implemented and validation-complete on the current review branch; it remains pending ChatGPT review and acceptance.
+The enclosing Stage 7C Arpeggiator integration/error-precedence operation is accepted and merged through PR #98 at approved head `d4373c60cb3242058df4bc1c898ccb2d465f0741` with merge commit `6f5e1d26e9f48a678f5c995538fdb218d29fd39d`.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a6 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, Energy/Complexity, shared-policy, and genre-profile runtime prerequisites. Stage 7C7a7 policy resolution is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`. Stage 7C7a8 resolved-plan projection is accepted and merged through PR #96 at approved head `43d251c4c95d39f60320ad90bd80522c514d721c` with merge commit `a14b6e100d00464e314309b45813943e6f81b83a`. The public `generateArpEventsWithPolicyV1` boundary, exact Stage 7C5 preflight/errors, component-seed handoff, resolver/projector orchestration, no-partial-result behavior, and frozen result are implemented on the current review branch without aggregate provenance.
+Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a6 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, Energy/Complexity, shared-policy, and genre-profile runtime prerequisites. Stage 7C7a7 policy resolution is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`. Stage 7C7a8 resolved-plan projection is accepted and merged through PR #96 at approved head `43d251c4c95d39f60320ad90bd80522c514d721c` with merge commit `a14b6e100d00464e314309b45813943e6f81b83a`. The public `generateArpEventsWithPolicyV1` boundary, exact Stage 7C5 preflight/errors, component-seed handoff, resolver/projector orchestration, no-partial-result behavior, and frozen result are accepted and merged through PR #98 without aggregate provenance.
 
 ## Recent Accepted Work
 
@@ -24,19 +24,19 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a8 supply the accepted primitive, configuration, policy-resolution, and projection prerequisites. The current gate is review and acceptance of the implemented enclosing Stage 7C integration/error-precedence operation, `generateArpEventsWithPolicyV1`. Aggregate provenance, structured human evaluation, and every later milestone remain separately gated.
+Stage 7C7a1–C7a8 and the enclosing `generateArpEventsWithPolicyV1` operation are accepted and merged. The next gate is structured human profile-fit evaluation of deterministic outputs for all four accepted Stage 7C profiles. Aggregate provenance/integration remains a later separately gated implementation boundary, and every later milestone remains gated.
 
 ## Unresolved Risks
 
-MIA-003 cross-platform line-ending/formatting policy remains deferred, non-blocking technical debt. The current review slice supplies the exact public Stage 7C structured-error assertions previously deferred as MIA-004; that evidence remains review-pending rather than accepted. The previously reported Harmony timeout was resolved by MIA-001's test-only profile decomposition and five consecutive parallel-suite passes.
+MIA-003 cross-platform line-ending/formatting policy remains deferred, non-blocking technical debt. MIA-004 is resolved/closed by PR #98, whose accepted evidence supplies the exact public Stage 7C structured-error codes/fields, mixed-invalid precedence, configuration translation, request-field ownership, and no-partial-result assertions. The previously reported Harmony timeout was resolved by MIA-001's test-only profile decomposition and five consecutive parallel-suite passes.
 
 ## Relevant Deferred Work
 
-Aggregate provenance, structured human evaluation, compound and expressive Bass rhythms, and later application capabilities remain separately gated. This review-pending enclosing operation does not authorize any later behavior. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Structured human profile-fit evaluation is the next separately gated task. Aggregate provenance, compound and expressive Bass rhythms, and later application capabilities remain separately gated; this reconciliation does not authorize implementation of any of them. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review the implemented enclosing Stage 7C integration/error-precedence operation, `generateArpEventsWithPolicyV1`, and either accept it or return bounded findings. Do not begin aggregate provenance, evaluation, or another milestone automatically.
+Perform the separately authorized structured human profile-fit evaluation for the four accepted Stage 7C profiles using deterministic golden outputs. Do not begin aggregate provenance, implementation, or another milestone automatically.
 
 ## Maintenance
 
