@@ -10,8 +10,10 @@ factory 3xOsc reference remains historical evidence. During non-scored setup
 validation with ND7-001, the product owner found that the factory 3xOsc
 `Default.fst` state was insufficiently audible and established the corrected
 preset/template state recorded below. This correction is implemented manually,
-documented here, and review-pending; it is not yet accepted or merged. No Pass 1
-score exists. Codex did not independently control or open FL Studio. This
+documented here, and accepted and merged through PR #106. A subsequent
+Evaluation Integrity Audit is complete; the consolidated execution protocol
+correction is documentation-only and review-pending. Pass 1 remains BLOCKED
+and no rating exists. Codex did not independently control or open FL Studio. This
 document does not generate Stage 7 MIDI, fixtures, audio, or listening results.
 
 The corrected setup is intended to remain fixed for the separately authorized
@@ -80,7 +82,7 @@ Product-owner observation:
 - This factory state is superseded for Stage 7 listening by the corrected
   product-owner-created preset below; it remains historical setup evidence.
 
-#### Corrected Stage 7 listening preset (review-pending)
+#### Corrected Stage 7 listening preset (accepted through PR #106)
 
 Static identity:
 
@@ -106,10 +108,11 @@ was used only for non-scored setup validation with ND7-001. The product owner
 reported that the Arp was clearly audible alongside Chords; no rating was
 recorded.
 
-## Existing MIDI import
+## Historical Stage 5 MIDI import — not the Stage 7 procedure
 
-Only the accepted Stage 5 interoperability fixture was imported; no Stage 7
-fixture was generated or used:
+The following earlier import established the template's historical Stage 5
+setup. Its All tracks/FLEX/Start new project settings must **not** be used
+for the Stage 7 blind fixture procedure below:
 
 - Path: `src/midi/fixtures/stage-5c1-interoperability.mid`
 - SHA-256: `230D6C7EB67EAA512B61F381D6255276F8B575367EE9BC4C634E1F94EB53CE2D`
@@ -135,6 +138,35 @@ Observed after import:
 This record does not claim more detailed timing or velocity round-trip evidence
 than was manually observed; the accepted Stage 5 automated and interoperability
 evidence remains authoritative for deeper MIDI semantics.
+
+## Stage 7 blind fixture Piano-roll import and reset
+
+The product owner manually validated this exact procedure with ND7-001 before
+Pass 1. That fixture was heard repeatedly for setup verification but was not
+scored. For **every** opaque fixture, begin with the corrected empty
+`Nightdrive.flp` and the corresponding blind `ND7-###.mid` file:
+
+1. Open the FL Keys Piano roll. From its Piano roll menu choose
+   **File → Import MIDI file...** and select the blind file. Under
+   **Which Tracks to Import**, select **Chords only**. Set **Blend with existing
+   data**, **Realign events**, **Import time signatures**, and **Import zero
+   velocity notes** all **OFF**, then accept.
+2. Open the corrected 3xOsc Piano roll. Choose **File → Import MIDI file...**
+   and select the **same** blind file. Select **Arp only** under
+   **Which Tracks to Import**. Keep the same four options **OFF**, then accept.
+3. Before listening, confirm FL Keys remains Chords; 3xOsc remains
+   `Nightdrive Stage7 Neutral Arp`; no FLEX channel appears; both Chords and
+   Arp notes exist; Chords, Arp, and Master faders are `0 dB`; no effects are
+   present; tempo is `120 BPM`; and meter is `4/4`. A deviation invalidates
+   the trial—do not record a musical judgment.
+4. After the fixture, close the project **without saving**. Reopen the
+   corrected empty `Nightdrive.flp`, verify both Piano rolls are empty and
+   the corrected instruments and setup remain intact, then proceed to the
+   next opaque fixture. On failure, discard the invalid trial, reset from
+   the clean template, and retry the **same label**.
+
+The detailed Pass 1 listening, response, and lock rules are owned by the
+[evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md).
 
 ## Routing and final template
 
@@ -238,6 +270,7 @@ implement browser audio, or implement aggregate provenance. ND7-001 was used
 only for non-scored setup validation; no Pass 1 score exists. MIA-003 and the
 deferred UI Visual Reference Gate remain unchanged.
 
-The corrected setup is implemented manually and documented for review. After it
-is reviewed and frozen, the next gate is to restart Pass 1 at ND7-001 using the
-corrected setup. No Pass 1 work has begun.
+The corrected setup is accepted through PR #106. The consolidated evaluation
+protocol correction is review-pending; Pass 1 remains BLOCKED until it is
+reviewed and merged, the final workbook and blind-only handoff are prepared,
+and evaluation is separately authorized. No Pass 1 work has begun.

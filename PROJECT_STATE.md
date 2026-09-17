@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-The Stage 7 golden-case source-selection checkpoint, audition-artifact contract, evaluation-only MIDI IR assembler, and baseline evaluation protocol are accepted and merged through PRs #100–#103. The original product-owner FL Studio listening-setup reproducibility checkpoint is merged through PR #104. Deterministic fixture-package construction and temporary-directory materialization tooling is accepted and merged through PR #105; the real 28-fixture baseline package is generated externally and hash-verified. The corrected non-scored audition apparatus is implemented manually, documented, and review-pending; the product-owner-approved Stage 7-specific Pass 1 rubric is documented and review-pending. Pass 1 has not begun.
+The Stage 7 golden-case, audition-artifact, evaluation-only MIDI IR, and baseline-protocol checkpoints are accepted through PRs #100–#103. Fixture tooling is accepted through PR #105 and the external 28-fixture package is hash-verified. The corrected FL Studio setup and categorical Pass 1 direction are accepted and merged through PR #106. The subsequent Evaluation Integrity Audit is complete; its consolidated protocol correction is implemented in documentation and review-pending. Pass 1 is BLOCKED, unstarted, and has no ratings.
 
 ## Current Milestone
 
-Stage 7A and Stage 7B1–B4 are accepted and merged. The Stage 7C documentation-only checkpoint and Stage 7C1–C6 contracts, including prerequisite Stage 7C-P1, are accepted and merged. Stage 7C7a1–C7a6 provide the accepted component-seed, weighted-choice, immutable density-mask catalog, Energy/Complexity, shared-policy, and genre-profile runtime prerequisites. Stage 7C7a7 policy resolution is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`. Stage 7C7a8 resolved-plan projection is accepted and merged through PR #96 at approved head `43d251c4c95d39f60320ad90bd80522c514d721c` with merge commit `a14b6e100d00464e314309b45813943e6f81b83a`. The public `generateArpEventsWithPolicyV1` boundary, exact Stage 7C5 preflight/errors, component-seed handoff, resolver/projector orchestration, no-partial-result behavior, and frozen result are accepted and merged through PR #98 without aggregate provenance. Deterministic fixture-package construction and materialization are accepted and merged through PR #105, and the external 28-fixture baseline package is generated and hash-verified; the corrected listening apparatus and Stage 7-specific Pass 1 rubric remain review-pending.
+Stage 7A, Stage 7B1–B4, Stage 7C contracts and runtime through the public `generateArpEventsWithPolicyV1` operation (PR #98) are accepted and merged; aggregate provenance is not implemented. The evaluation-only fixture package is generated externally and hash-verified. The current milestone is the documentation-only consolidated Evaluation Integrity correction, review-pending after the completed audit. It does not create a final response workbook, blind-only handoff, or human evaluation result.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a8, the enclosing `generateArpEventsWithPolicyV1` operation, four golden-case source records, audition-artifact contract, evaluation-only MIDI IR assembler, baseline protocol, and [FL Studio listening setup](docs/reviews/STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) are accepted and merged. The evaluation-only fixture builder and materializer are accepted and merged through PR #105, and the external deterministic baseline package is generated and hash-verified. The corrected noncanonical audition preset/template state is implemented manually, documented, and review-pending; the product-owner-approved categorical Stage 7 Pass 1 rubric is documented and review-pending. No Pass 1 result exists. Aggregate provenance/integration remains a later gate.
+The corrected noncanonical FL Studio preset/template and Stage 7 categorical evaluation direction are accepted through PR #106. The completed Evaluation Integrity Audit identified protocol-execution gaps now addressed in the [review-pending consolidated protocol](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md). Pass 1 remains BLOCKED until that correction is reviewed and merged; the final workbook and blind-only handoff do not exist, no Pass 1 rating exists, and Pass 2 has not started. Aggregate provenance/integration remains later.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy remains deferred, non-block
 
 ## Relevant Deferred Work
 
-Structured human profile-fit evaluation remains unperformed. The accepted external Stage 7 fixture package has no listening result; the corrected audition setup and Stage 7-specific Pass 1 rubric are review-pending before Pass 1. Aggregate provenance and later capabilities remain separately gated. See [roadmap](docs/ROADMAP.md).
+Structured human profile-fit evaluation remains unperformed. ND7-001 had repeated non-scored setup exposure and will be annotated as such; no fixture has a Pass 1 rating. Aggregate provenance and later capabilities remain separately gated. See [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and freeze the combined corrected Stage 7 listening setup and Pass 1 rubric before restarting Pass 1 at ND7-001. No Pass 1 response or score exists.
+Review and freeze the consolidated Stage 7 Evaluation Integrity protocol correction. Only after its acceptance and merge may a final blind-only handoff and response workbook be prepared under separate authorization; Pass 1 remains unstarted.
 
 ## Maintenance
 

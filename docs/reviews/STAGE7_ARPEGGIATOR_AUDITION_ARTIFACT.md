@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-This document freezes the accepted architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts, merged through PR #101. The bounded evaluation-only Harmony + Arp to `MidiIr` assembler is accepted and merged through PR #102 at approved head `d993519bf862b481f1166021d09143933b4a7fd7` with merge commit `6fbd554456bdd46e50d8be9f6acea0dd3d30cec3`. The [Stage 7 Arpeggiator baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) is accepted and merged through PR #103. The original product-owner [FL Studio listening-setup reproducibility checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is merged through PR #104, while its corrected preset/template state is implemented manually, documented, and review-pending. The product-owner-approved Stage 7-specific blind Pass 1 rubric is documented and review-pending. Fixture-package tooling is accepted and merged through PR #105; the real deterministic baseline package exists externally, but no listening result, browser preview, or aggregate provenance exists.
+This document freezes the accepted architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts, merged through PR #101. The bounded evaluation-only Harmony + Arp to `MidiIr` assembler is accepted and merged through PR #102 at approved head `d993519bf862b481f1166021d09143933b4a7fd7` with merge commit `6fbd554456bdd46e50d8be9f6acea0dd3d30cec3`. The [Stage 7 Arpeggiator baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) is accepted through PR #103; the corrected [FL Studio listening setup](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) and categorical Pass 1 direction are accepted through PR #106. The subsequent Evaluation Integrity Audit is complete and its consolidated execution-protocol correction is documentation-only/review-pending. Fixture-package tooling is accepted through PR #105; the deterministic package exists externally, but the final blind-only handoff, response workbook, listening result, browser preview, and aggregate provenance do not.
 
 The fixed case inputs remain authoritative in [Stage 7 Arpeggiator golden-case source records](STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). The accepted evaluation protocol fixes the initial Energy/Complexity conditions and root seeds without changing those source records.
 
@@ -22,7 +22,7 @@ authoritative golden-case source record
   -> manual audition in FL Studio
 ```
 
-The assembler is noncanonical derived evaluation/preparation tooling. This implementation stops at validated MIDI IR; the serializer and resulting MIDI artifact remain later gates. It is not canonical composition state, a music-domain generator, a public Stage 7 API, another MIDI IR or serializer, Stage 9 Web Audio, aggregate provenance, or persistence state.
+The assembler is noncanonical derived evaluation/preparation tooling. Its own boundary stops at validated MIDI IR; the separately accepted fixture tooling invokes the existing serializer and has produced the external MIDI package. The assembler is not canonical composition state, a music-domain generator, a public Stage 7 API, another MIDI IR or serializer, Stage 9 Web Audio, aggregate provenance, or persistence state.
 
 ## MIDI artifact contract
 
@@ -110,9 +110,9 @@ No MIDI or evaluation dependency flows back into `src/music-domain`. The impleme
 
 The derived `.mid` artifact is intended for manual audition in FL Studio. This contract does not automate FL Studio, create `.flp` files, assign instruments, or expand the Stage 5 compatibility claim beyond its declared tested environment.
 
-A merged [baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) freezes the approved 28-fixture matrix, root seeds, instrument direction, mix/effects policy, presentation order, blinding, listening passes, and interpretation limits. The original product-owner [listening-setup checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md), merged through PR #104, captures the historical FL Keys/3xOsc setup and Stage 7 import/routing, mixer baseline, and external template save/reopen evidence. The corrected preset/template state is implemented manually, documented, and review-pending; the product-owner-approved Stage 7-specific blind Pass 1 rubric is documented and review-pending. Fixture-package tooling is accepted and merged through PR #105, and the real deterministic baseline package is generated externally; human listening remains separately gated.
+A merged [baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) freezes the approved 28-fixture matrix, root seeds, presentation order, and two-pass direction. The [listening-setup checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) records the historical PR #104 apparatus and corrected PR #106 preset/template plus validated Stage 7 Piano-roll import/reset procedure. Fixture tooling is accepted through PR #105, and the deterministic package is generated externally. The post-audit consolidated execution-protocol correction remains review-pending; Pass 1 is BLOCKED and has no ratings.
 
-Human listening remains unauthorized until the combined corrected listening setup and Stage 7-specific blind Pass 1 rubric are reviewed and accepted.
+Human Pass 1 listening remains blocked until the consolidated execution-protocol correction is reviewed and merged, the final blind-only handoff and workbook are prepared, and evaluation is separately authorized.
 
 ## Stage 9 boundary
 
@@ -127,4 +127,4 @@ Human listening remains unauthorized until the combined corrected listening setu
 
 ## Next gate
 
-The assembler is accepted and merged through PR #102. The baseline evaluation protocol is accepted and merged through PR #103. The original product-owner [listening-setup checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is merged through PR #104; its corrected preset/template state is implemented manually, documented, and review-pending. The product-owner-approved Stage 7-specific blind Pass 1 rubric is documented and review-pending. Deterministic fixture-package tooling is accepted and merged through PR #105, and the real baseline package is generated externally. Review and freeze the combined corrected setup and rubric before separately authorizing human listening.
+The assembler, baseline matrix, and fixture tooling are accepted through PRs #102, #103, and #105. The corrected listening setup and categorical Pass 1 direction are accepted through PR #106. The real baseline package is generated externally; the consolidated post-audit evaluation protocol correction is review-pending. Review and freeze that correction before separately preparing the blind handoff/workbook and authorizing human listening.
