@@ -2,16 +2,21 @@
 
 ## Purpose and status
 
-This document records the completed manual reproducibility checkpoint for the
-Stage 7 Arpeggiator evaluation listening setup. The Stage 7 baseline evaluation
-protocol is accepted and merged through PR #103. This setup record is
-documentation-only, accepted and merged through PR #104, and records product-owner observations;
-Codex did not independently control or open FL Studio. It does not generate
-Stage 7 MIDI, fixtures, audio, or listening results.
+This document records the completed manual correction checkpoint for the Stage 7
+Arpeggiator evaluation listening setup. The Stage 7 baseline evaluation
+protocol is accepted and merged through PR #103. The original listening-setup
+checkpoint is documentation-only and accepted and merged through PR #104; its
+factory 3xOsc reference remains historical evidence. During non-scored setup
+validation with ND7-001, the product owner found that the factory 3xOsc
+`Default.fst` state was insufficiently audible and established the corrected
+preset/template state recorded below. This correction is implemented manually,
+documented here, and review-pending; it is not yet accepted or merged. No Pass 1
+score exists. Codex did not independently control or open FL Studio. This
+document does not generate Stage 7 MIDI, fixtures, audio, or listening results.
 
-The setup is intended to remain fixed for the separately authorized Stage 7
-fixture-serialization and artifact-generation work. The external `.flp` file
-is not repository content.
+The corrected setup is intended to remain fixed for the separately authorized
+Stage 7 listening work. The external `.flp` and `.fst` files are not repository
+content.
 
 ## Environment identity
 
@@ -51,6 +56,8 @@ Product-owner observation:
 
 ### 3xOsc
 
+#### Historical factory reference
+
 Static identity:
 
 - Plugin: 3xOsc
@@ -70,6 +77,34 @@ Product-owner observation:
 - Exact parameter values are not claimed beyond what the captured visual
   evidence established.
 - The final empty template close/reopen preserved the 3xOsc state.
+- This factory state is superseded for Stage 7 listening by the corrected
+  product-owner-created preset below; it remains historical setup evidence.
+
+#### Corrected Stage 7 listening preset (review-pending)
+
+Static identity:
+
+- Preset: `Nightdrive Stage7 Neutral Arp.fst`
+- Preset path: `C:\Users\WILLI\OneDrive\Documents\Image-Line\FL Studio\Audio\FL Studio\Presets\Plugin presets\Generators\3x Osc\Nightdrive Stage7 Neutral Arp.fst`
+- Size: `717` bytes
+- SHA-256: `BAF5D3D8AEA2084C252C47A72FFD9239EBF35BFBBD32818BC0FAF1993DCCA1DE`
+- Last-write timestamp observed (UTC): `2026-09-17T03:54:19.8276864Z`
+
+The product owner established the smallest usable candidate state by changing
+only these oscillator controls from the candidate/default state:
+
+- Oscillator 1 waveform: square
+- Oscillator 1 coarse: `0`
+- Oscillator 2 waveform: sine
+- Oscillator 2 coarse: `0`
+- Oscillator 3 waveform: sine
+- Oscillator 3 coarse: `0`
+
+Other controls were intentionally left unchanged from the candidate/default
+state; no additional exact values are established here. This corrected preset
+was used only for non-scored setup validation with ND7-001. The product owner
+reported that the Arp was clearly audible alongside Chords; no rating was
+recorded.
 
 ## Existing MIDI import
 
@@ -107,6 +142,8 @@ Product-owner observation established that:
 
 - The imported Chords channel was replaced/routed to FL Keys.
 - The imported Arp channel was replaced/routed to 3xOsc.
+- The corrected `Nightdrive Stage7 Neutral Arp.fst` was loaded into the empty
+  Nightdrive template.
 - Imported note data remained present after replacement.
 - The final empty template removed all Stage 5 MIDI note data, Bass, and Lead.
 - FL Keys and 3xOsc remained with their mixer assignments.
@@ -134,31 +171,46 @@ The `-1.4 dB` observation is not a guaranteed peak for future Stage 7 fixtures.
 The listening protocol still requires the fixed setup and playback volume to be
 monitored consistently during each review session.
 
+During non-scored setup validation with ND7-001 using the corrected preset, the
+product owner reported that the Arp was clearly audible alongside Chords, a
+Master peak of `-2.22 dB`, and no clipping. This is playback-apparatus evidence
+only: ND7-001 was not rated, the baseline MIDI package was not defective, and
+the canonical Arp events and serialized bytes were unchanged.
+
 ## External template save/reopen
 
 The product owner manually:
 
 1. removed all imported MIDI note data;
 2. removed Bass and Lead;
-3. retained FL Keys and 3xOsc;
-4. retained mixer assignments;
-5. retained `0 dB` Chords, Arp, and Master faders;
-6. retained empty effect slots;
-7. retained 120 BPM and 4/4;
-8. saved `Nightdrive.flp`;
-9. closed and reopened it; and
-10. confirmed the listed settings remained preserved.
+3. loaded the corrected `Nightdrive Stage7 Neutral Arp.fst` into 3xOsc;
+4. retained FL Keys and 3xOsc;
+5. retained mixer assignments;
+6. retained `0 dB` Chords, Arp, and Master faders;
+7. retained empty effect slots;
+8. retained 120 BPM and 4/4;
+9. removed any ND7 MIDI from the template;
+10. saved `Nightdrive.flp`;
+11. closed and reopened it; and
+12. confirmed the corrected state remained preserved.
 
-The exact external template is:
+The earlier accepted template state is retained as historical evidence:
+
+- Previous SHA-256: `9F991E97ED56D1615EC1E71153224F919A62B1AC0356AA4B013DCE8893CA2210`
+- Previous last-write timestamp observed: `2026-09-16T16:08:36.2376158-10:00`
+
+The corrected external template is:
 
 - Path: `C:\Users\WILLI\OneDrive\Documents\Image-Line\FL Studio\Audio\FL Studio\Projects\Nightdrive\Nightdrive.flp`
 - Size: `48228` bytes
-- SHA-256: `9F991E97ED56D1615EC1E71153224F919A62B1AC0356AA4B013DCE8893CA2210`
-- Last-write timestamp observed: `2026-09-16T16:08:36.2376158-10:00`
+- SHA-256: `77B8FD4417ACB12069E3A1DED3F369B5EC37038AF2D0841D7F0F1BBA84D1D9AB`
+- Last-write timestamp observed (UTC): `2026-09-17T03:58:32.4997296Z`
 - Stored in Git: no; the file is outside the Nightdrive repository
 
-The hash and metadata above were read without modifying the file. This setup
-record does not claim that Codex independently opened or verified FL Studio.
+The previous hash is superseded for Stage 7 listening because the product owner
+intentionally updated the Arp instrument state. The corrected hash and metadata
+were read without modifying the file. This setup record does not claim that
+Codex independently opened or verified FL Studio.
 
 ## Evidence provenance
 
@@ -166,6 +218,8 @@ Evidence classes are intentionally separated:
 
 - **Static machine evidence:** executable, plugin, preset, and local-template
   identities and hashes.
+- **Corrected setup static evidence:** the exact corrected `.fst` and `.flp`
+  paths, sizes, hashes, and timestamps above.
 - **Official Image-Line documentation:** [MIDI Import options](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/automation_midiimport.htm), [FL Keys](https://www.image-line.com/fl-studio-learning-content/fl-studio-online-manual/html/plugins/FL%20Keys.htm), [3xOsc](https://cluster.image-line.com/fl-studio-learning/fl-studio-online-manual/html/plugins/3x%20Osc.htm), [Channel Settings and FST state](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/chansettings.htm), [Browser preset defaults](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/browser.htm), and [Master clipping semantics](https://www.image-line.com/fl-studio-learning/fl-studio-online-manual/html/mixer_levelsandmixing.htm).
 - **Manual product-owner observation:** plugin UI/preset state, import-dialog
   configuration, tempo/meter, routing, mixer/effects state, Master peak, and
@@ -178,14 +232,12 @@ evidence.
 
 This checkpoint changes no production or evaluation code, tests, generator
 policy, MIDI assembler/serializer, dependencies, or canonical contract. It
-does not generate Stage 7 MIDI or fixtures, execute presentation
-randomization, perform Stage 7 listening, define numeric acceptance
-thresholds, implement browser audio, or implement aggregate provenance. MIA-003
-and the deferred UI Visual Reference Gate remain unchanged.
+does not regenerate the accepted Stage 7 baseline package, execute presentation
+randomization, perform Stage 7 listening, define numeric acceptance thresholds,
+implement browser audio, or implement aggregate provenance. ND7-001 was used
+only for non-scored setup validation; no Pass 1 score exists. MIA-003 and the
+deferred UI Visual Reference Gate remain unchanged.
 
-After this setup record is accepted, the next separately authorized milestone
-is deterministic Stage 7 fixture serialization/generation preparation. That
-future work may instantiate the frozen 28-case matrix, execute deterministic
-presentation ordering, serialize with the accepted existing serializer, and
-create derived evaluation artifacts and metadata. Human listening remains a
-later separately authorized gate.
+The corrected setup is implemented manually and documented for review. After it
+is reviewed and frozen, the next gate is to restart Pass 1 at ND7-001 using the
+corrected setup. No Pass 1 work has begun.
