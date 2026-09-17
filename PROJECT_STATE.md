@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-The Stage 7 golden-case source-selection checkpoint is accepted and merged through PR #100. The audition-artifact architecture contract is accepted and merged through PR #101. The evaluation-only Harmony + Arp to `MidiIr` assembler is accepted and merged through PR #102 at approved head `d993519bf862b481f1166021d09143933b4a7fd7` with merge commit `6fbd554456bdd46e50d8be9f6acea0dd3d30cec3`. The Stage 7 baseline evaluation protocol is accepted and merged through PR #103. The FL Studio listening-setup reproducibility checkpoint is manually completed by the product owner and is documented for review.
+The Stage 7 golden-case source-selection checkpoint, audition-artifact contract, evaluation-only MIDI IR assembler, and baseline evaluation protocol are accepted and merged through PRs #100–#103. The product-owner-completed FL Studio listening-setup reproducibility checkpoint is merged through PR #104. Deterministic fixture-package construction and temporary-directory materialization tooling is implemented and validation-complete, pending review; the real baseline package has not been generated.
 
 ## Current Milestone
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a8, the enclosing `generateArpEventsWithPolicyV1` operation, four golden-case source records, audition-artifact contract, and evaluation-only MIDI IR assembler are accepted and merged. The baseline evaluation protocol is accepted and merged through PR #103. The [FL Studio listening-setup reproducibility checkpoint](docs/reviews/STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is manually completed by the product owner and review-pending. No Stage 7 fixtures, serialization, or listening have occurred; deterministic fixture serialization/artifact generation and aggregate provenance/integration remain later gates.
+Stage 7C7a1–C7a8, the enclosing `generateArpEventsWithPolicyV1` operation, four golden-case source records, audition-artifact contract, evaluation-only MIDI IR assembler, baseline protocol, and [FL Studio listening setup](docs/reviews/STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) are accepted and merged. The evaluation-only fixture builder now constructs serialized MIDI bytes, hashes, a manifest, and a blind mapping in memory, with file writes tested only under temporary directories; this tooling is review-pending. No real Stage 7 baseline package or listening result exists. Aggregate provenance/integration remains a later gate.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy remains deferred, non-block
 
 ## Relevant Deferred Work
 
-Structured human profile-fit evaluation remains unperformed. The fixed source context, audition-artifact contract, assembler, and [baseline evaluation protocol](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) are accepted; the [FL Studio listening-setup reproducibility checkpoint](docs/reviews/STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is documented and review-pending. No Stage 7 fixtures or listening results exist. Deterministic fixture serialization/artifact generation, listening, aggregate provenance, and later capabilities remain separately gated. See [roadmap](docs/ROADMAP.md).
+Structured human profile-fit evaluation remains unperformed. No real Stage 7 fixture package or listening results exist. Fixture tooling acceptance, subsequent real-package generation, listening, aggregate provenance, and later capabilities remain separately gated. See [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review the documented FL Studio listening-setup reproducibility checkpoint. If accepted, separately authorize deterministic Stage 7 fixture serialization/generation preparation before human listening.
+Review the deterministic Stage 7 fixture-package tooling. If accepted, separately authorize generation of the real 28-fixture baseline package before human listening.
 
 ## Maintenance
 

@@ -2,9 +2,9 @@
 
 ## Authority and status
 
-This document freezes the accepted architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts, merged through PR #101. The bounded evaluation-only Harmony + Arp to `MidiIr` assembler is accepted and merged through PR #102 at approved head `d993519bf862b481f1166021d09143933b4a7fd7` with merge commit `6fbd554456bdd46e50d8be9f6acea0dd3d30cec3`. The [Stage 7 Arpeggiator baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) is accepted and merged through PR #103. The [FL Studio listening-setup reproducibility checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is product-owner-completed and review-pending. No MIDI fixture, audio render, listening result, browser preview, or aggregate provenance implementation exists because of this checkpoint.
+This document freezes the accepted architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts, merged through PR #101. The bounded evaluation-only Harmony + Arp to `MidiIr` assembler is accepted and merged through PR #102 at approved head `d993519bf862b481f1166021d09143933b4a7fd7` with merge commit `6fbd554456bdd46e50d8be9f6acea0dd3d30cec3`. The [Stage 7 Arpeggiator baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) is accepted and merged through PR #103. The product-owner-completed [FL Studio listening-setup reproducibility checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is merged through PR #104. Fixture-package tooling is implemented and review-pending; no real baseline MIDI fixture, audio render, listening result, browser preview, or aggregate provenance exists.
 
-The fixed case inputs remain authoritative in [Stage 7 Arpeggiator golden-case source records](STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). The review-pending evaluation protocol fixes the initial Energy/Complexity conditions and root seeds without changing those source records.
+The fixed case inputs remain authoritative in [Stage 7 Arpeggiator golden-case source records](STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). The accepted evaluation protocol fixes the initial Energy/Complexity conditions and root seeds without changing those source records.
 
 ## Evaluation route
 
@@ -110,7 +110,7 @@ No MIDI or evaluation dependency flows back into `src/music-domain`. The impleme
 
 The derived `.mid` artifact is intended for manual audition in FL Studio. This contract does not automate FL Studio, create `.flp` files, assign instruments, or expand the Stage 5 compatibility claim beyond its declared tested environment.
 
-A merged [baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) freezes the approved 28-fixture matrix, root seeds, instrument direction, mix/effects policy, presentation order, blinding, listening passes, and interpretation limits. The product-owner-completed, review-pending [listening-setup checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) captures exact FL Keys/3xOsc identities and states, Stage 7 import/routing, mixer baseline, and external template save/reopen evidence. Fixture generation and listening remain unauthorized until that checkpoint is accepted.
+A merged [baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) freezes the approved 28-fixture matrix, root seeds, instrument direction, mix/effects policy, presentation order, blinding, listening passes, and interpretation limits. The product-owner-completed [listening-setup checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md), merged through PR #104, captures exact FL Keys/3xOsc identities and states, Stage 7 import/routing, mixer baseline, and external template save/reopen evidence. Fixture-package tooling is review-pending; real baseline generation and listening remain separately gated.
 
 Fixture generation and listening remain unauthorized until their required preparation checkpoints are accepted.
 
@@ -127,4 +127,4 @@ Fixture generation and listening remain unauthorized until their required prepar
 
 ## Next gate
 
-The assembler is accepted and merged through PR #102. The baseline evaluation protocol is accepted and merged through PR #103. The [listening-setup checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is complete by product-owner observation and review-pending. After its acceptance, the next eligible gate is deterministic fixture serialization/artifact generation; human listening remains a later, separately authorized task.
+The assembler is accepted and merged through PR #102. The baseline evaluation protocol is accepted and merged through PR #103. The product-owner-completed [listening-setup checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is merged through PR #104. Deterministic fixture-package tooling is implemented and review-pending; real baseline generation and human listening remain later, separately authorized tasks.
