@@ -163,6 +163,10 @@ Prioritize behavioral/invariant and branch-risk coverage over a single percentag
 
 Fast deterministic checks run on every change. Database/browser suites run in CI with isolated data. Preview smoke tests run after deployment. Production gets non-destructive smoke checks. FL Studio verification remains a controlled human gate until automatable evidence is credible.
 
+## Stage 7 evaluation-only audition MIDI IR assembler
+
+The review-pending assembler suite checks the exact three-track `conductor`/`chords`/`arp` MIDI IR, 960 PPQ, 4/4 at 120 BPM, terminal tick `30720`, selected Harmony voicing pitches at canonical multi-bar slot spans, exact ArpEvent pitches/starts/durations, fixed channels and velocity `100`, absent Bass/Lead and rest notes, simultaneous and same-tick Note Off before Note On ordering, a note ending at the terminal boundary, deterministic replay, non-mutation, recursive MIDI IR immutability, ambient-randomness isolation, and final `createMidiIr` validation. It does not serialize bytes, generate fixtures, define an evaluation matrix, or supply listening evidence.
+
 ## Stage 5A MIDI boundary and dependency-spike definition
 
 This documentation-only milestone freezes the evidence plan for a Nightdrive-owned MIDI IR and isolated Standard MIDI adapter. Review covers validated canonical-composition input, exactly 960-PPQ integer ticks, Format 1 with conductor track 0 and fixed component/channel policy, explicit `0x8n` Note Off with release velocity 0, note-on/off expansion, equal-tick ordering, and the terminal-sentinel rule that places exactly one End-of-Track at tick 30720 on every track after any tick-30720 note-offs. It also covers structured failures, semantic versus binary determinism, and the FL Studio import checklist. It does not claim a writer, parser, browser download, `.mid` fixture, or dependency exists.
