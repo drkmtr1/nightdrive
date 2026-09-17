@@ -2,7 +2,7 @@
 
 ## Authority and status
 
-This document freezes the approved documentation-only architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts. The contract is review-pending: no assembler, MIDI fixture, audio render, evaluation matrix, listening result, browser preview, or aggregate provenance implementation exists because of this checkpoint.
+This document freezes the accepted architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts, merged through PR #101. The bounded evaluation-only Harmony + Arp to `MidiIr` assembler is implemented locally, validation-complete, and review-pending. No MIDI fixture, audio render, evaluation matrix, listening result, browser preview, or aggregate provenance implementation exists because of this checkpoint.
 
 The fixed case inputs remain authoritative in [Stage 7 Arpeggiator golden-case source records](STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). Energy, Complexity, and any additional root seeds remain separately authorized evaluation variables.
 
@@ -22,7 +22,7 @@ authoritative golden-case source record
   -> manual audition in FL Studio
 ```
 
-The assembler is noncanonical derived evaluation/preparation tooling. It is not canonical composition state, a music-domain generator, a public Stage 7 API, another MIDI IR or serializer, Stage 9 Web Audio, aggregate provenance, or persistence state.
+The assembler is noncanonical derived evaluation/preparation tooling. This implementation stops at validated MIDI IR; the serializer and resulting MIDI artifact remain later gates. It is not canonical composition state, a music-domain generator, a public Stage 7 API, another MIDI IR or serializer, Stage 9 Web Audio, aggregate provenance, or persistence state.
 
 ## MIDI artifact contract
 
@@ -62,7 +62,7 @@ It performs no quantization, post-processing, accent generation, expressive tran
 
 ### Ordering and serialization
 
-The assembler does not own another ordering algorithm. It uses the existing source-note validation/expansion boundary, constructs events only in the already-defined MIDI IR order, and passes the complete IR through existing validation. The accepted MIDI contract remains the sole owner of component-track order, pitch order, Note Off before Note On at an equal tick, explicit Note Off release velocity `0`, and the single terminal End-of-Track at tick `30720`. The assembler then calls the existing `serializeStandardMidiV1`; Standard MIDI writing is not reimplemented.
+The assembler does not own another ordering contract. It uses the existing source-note validation/expansion boundary, sorts expanded note events only into the already-defined MIDI IR order, and passes the complete IR through existing validation. The accepted MIDI contract remains the sole owner of component-track order, pitch order, Note Off before Note On at an equal tick, explicit Note Off release velocity `0`, and the single terminal End-of-Track at tick `30720`. Later, separately authorized artifact generation may call the existing `serializeStandardMidiV1`; this assembler does not serialize.
 
 ## Evaluation controls
 
@@ -93,7 +93,7 @@ The MIDI IR and bytes are derived observation surfaces only. MIDI bytes, MIDI IR
 
 ## Implementation boundary
 
-The later bounded implementation belongs in an evaluation-specific `src/evaluation/` module, not `src/music-domain`, `src/app`, or a production route. It is a pure noncanonical mapping callable only by separately authorized evaluation tooling and focused tests; it is not exported through `src/music-domain/index.ts` or a broad application API.
+The bounded implementation is in the evaluation-specific `src/evaluation/stage7-arpeggiator-midi-ir.ts` module, not `src/music-domain`, `src/app`, or a production route. It is a pure noncanonical mapping callable by separately authorized evaluation tooling and focused tests; it is not exported through `src/music-domain/index.ts` or a broad application API.
 
 The dependency direction is one way:
 
@@ -104,7 +104,7 @@ src/music-domain Stage 7 outputs
   -> existing src/midi/adapter serializer
 ```
 
-No MIDI or evaluation dependency flows back into `src/music-domain`. The implementation must reuse the existing `MidiIr` schema/constants, fixed component/channel identities, source-note validation and expansion, `createMidiIr`/`validateMidiIr`, and `serializeStandardMidiV1`. It adds no MIDI dependency, schema, serializer, program-change behavior, browser UI, or file-delivery API.
+No MIDI or evaluation dependency flows back into `src/music-domain`. The implementation reuses the existing `MidiIr` schema/constants, fixed component/channel identities, source-note validation and expansion, and `createMidiIr`. The later serializer stage will reuse `serializeStandardMidiV1`. This implementation adds no MIDI dependency, schema, serializer, program-change behavior, browser UI, or file-delivery API.
 
 ## Human audition and deferred controls
 
@@ -136,4 +136,4 @@ Fixture generation and listening remain unauthorized until their required prepar
 
 ## Next gate
 
-After this checkpoint is accepted, the next separately authorized task is the smallest evaluation-only Harmony + Arp to `MidiIr` assembler implementation with focused deterministic tests. That implementation must precede evaluation-matrix definition, MIDI artifact generation, and human listening.
+The assembler and its focused deterministic tests are locally implemented and awaiting review. After acceptance, serialization/artifact preparation remains a separately authorized task before evaluation-matrix definition and human listening.

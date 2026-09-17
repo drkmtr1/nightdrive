@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-The Stage 7 golden-case source-selection checkpoint is accepted and merged through PR #100 at approved head `4694c15135a293915c13d84042a24eb7a279446d` with merge commit `85b16e3fd84b68584b3f535bc7fbe6cad5c832a5`. The approved Stage 7 audition-artifact architecture contract is locally defined and review-pending.
+The Stage 7 golden-case source-selection checkpoint is accepted and merged through PR #100 at approved head `4694c15135a293915c13d84042a24eb7a279446d` with merge commit `85b16e3fd84b68584b3f535bc7fbe6cad5c832a5`. The audition-artifact architecture contract is accepted and merged through PR #101 at approved head `e69f2b360d353e683e5721eee32528fbd918263c` with merge commit `1755db7e93a704eaea9d0acd1d7ba9c7804b4829`. The evaluation-only Harmony + Arp to `MidiIr` assembler is implemented locally and review-pending.
 
 ## Current Milestone
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7C7a1–C7a8, the enclosing `generateArpEventsWithPolicyV1` operation, and the four golden-case source records are accepted and merged. The review-pending audition-artifact contract defines evaluation-only reuse of the existing MIDI IR and serializer, but no assembler, fixture, evaluation matrix, or listening exists. Aggregate provenance/integration remains a later separately gated implementation boundary, and every later milestone remains gated.
+Stage 7C7a1–C7a8, the enclosing `generateArpEventsWithPolicyV1` operation, the four golden-case source records, and the audition-artifact contract are accepted and merged. The local assembler maps already-realized Harmony and canonical Arp events into validated MIDI IR only; it remains review-pending. MIDI serialization, fixtures, the evaluation matrix, listening, and aggregate provenance/integration remain separately gated.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy remains deferred, non-block
 
 ## Relevant Deferred Work
 
-Structured human profile-fit evaluation remains unperformed. Its fixed source context is accepted in [Stage 7 Arpeggiator golden-case source records](docs/reviews/STAGE7_ARPEGGIATOR_GOLDEN_CASES.md), while the [audition-artifact contract](docs/reviews/STAGE7_ARPEGGIATOR_AUDITION_ARTIFACT.md) is review-pending. Exact listening controls, evaluation matrix, additional seeds, fixture generation, and listening remain separately gated. Aggregate provenance, compound and expressive Bass rhythms, and later application capabilities also remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
+Structured human profile-fit evaluation remains unperformed. Its fixed source context and [audition-artifact contract](docs/reviews/STAGE7_ARPEGGIATOR_AUDITION_ARTIFACT.md) are accepted, while the MIDI IR assembler is review-pending. Exact listening controls, evaluation matrix, additional seeds, serialization/artifact generation, and listening remain separately gated. Aggregate provenance, compound and expressive Bass rhythms, and later application capabilities also remain separately gated. See [Arpeggiator model](docs/ARPEGGIATOR_MODEL.md), [Bass model](docs/BASS_MODEL.md), and [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review the Stage 7 audition-artifact architecture checkpoint. After acceptance, separately authorize the evaluation-only Harmony + Arp to `MidiIr` assembler and focused deterministic tests; do not generate fixtures, define the evaluation matrix, perform listening, begin aggregate provenance, or start another milestone automatically.
+Review the bounded Stage 7 evaluation-only Harmony + Arp to `MidiIr` assembler and its deterministic tests. Any later serialization, artifact generation, evaluation matrix, listening, or aggregate provenance requires separate authorization.
 
 ## Maintenance
 
