@@ -5,7 +5,7 @@
 This document records the completed manual reproducibility checkpoint for the
 Stage 7 Arpeggiator evaluation listening setup. The Stage 7 baseline evaluation
 protocol is accepted and merged through PR #103. This setup record is
-documentation-only, review-pending, and records product-owner observations;
+documentation-only, accepted and merged through PR #104, and records product-owner observations;
 Codex did not independently control or open FL Studio. It does not generate
 Stage 7 MIDI, fixtures, audio, or listening results.
 
