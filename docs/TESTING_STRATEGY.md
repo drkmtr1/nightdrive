@@ -165,7 +165,7 @@ Fast deterministic checks run on every change. Database/browser suites run in CI
 
 ## Stage 7 evaluation-only audition MIDI IR assembler
 
-The review-pending assembler suite checks the exact three-track `conductor`/`chords`/`arp` MIDI IR, 960 PPQ, 4/4 at 120 BPM, terminal tick `30720`, selected Harmony voicing pitches at canonical multi-bar slot spans, exact ArpEvent pitches/starts/durations, fixed channels and velocity `100`, absent Bass/Lead and rest notes, simultaneous and same-tick Note Off before Note On ordering, a note ending at the terminal boundary, deterministic replay, non-mutation, recursive MIDI IR immutability, ambient-randomness isolation, and final `createMidiIr` validation. It does not serialize bytes, generate fixtures, define an evaluation matrix, or supply listening evidence.
+The accepted assembler suite checks the exact three-track `conductor`/`chords`/`arp` MIDI IR, 960 PPQ, 4/4 at 120 BPM, terminal tick `30720`, selected Harmony voicing pitches at canonical multi-bar slot spans, exact ArpEvent pitches/starts/durations, fixed channels and velocity `100`, absent Bass/Lead and rest notes, simultaneous and same-tick Note Off before Note On ordering, a note ending at the terminal boundary, deterministic replay, non-mutation, recursive MIDI IR immutability, ambient-randomness isolation, and final `createMidiIr` validation. It does not serialize bytes, generate fixtures, or supply listening evidence. The locally defined, review-pending [Stage 7 baseline evaluation protocol](reviews/STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) fixes the 28-fixture matrix and two-pass evidence procedure without generating results.
 
 ## Stage 5A MIDI boundary and dependency-spike definition
 

@@ -2,9 +2,9 @@
 
 ## Authority and status
 
-This document freezes the accepted architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts, merged through PR #101. The bounded evaluation-only Harmony + Arp to `MidiIr` assembler is implemented locally, validation-complete, and review-pending. No MIDI fixture, audio render, evaluation matrix, listening result, browser preview, or aggregate provenance implementation exists because of this checkpoint.
+This document freezes the accepted architecture for preparing Stage 7 Arpeggiator human-evaluation audition artifacts, merged through PR #101. The bounded evaluation-only Harmony + Arp to `MidiIr` assembler is accepted and merged through PR #102 at approved head `d993519bf862b481f1166021d09143933b4a7fd7` with merge commit `6fbd554456bdd46e50d8be9f6acea0dd3d30cec3`. The [Stage 7 Arpeggiator baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) is locally defined and review-pending. No MIDI fixture, audio render, listening result, browser preview, or aggregate provenance implementation exists because of this checkpoint.
 
-The fixed case inputs remain authoritative in [Stage 7 Arpeggiator golden-case source records](STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). Energy, Complexity, and any additional root seeds remain separately authorized evaluation variables.
+The fixed case inputs remain authoritative in [Stage 7 Arpeggiator golden-case source records](STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). The review-pending evaluation protocol fixes the initial Energy/Complexity conditions and root seeds without changing those source records.
 
 ## Evaluation route
 
@@ -110,16 +110,7 @@ No MIDI or evaluation dependency flows back into `src/music-domain`. The impleme
 
 The derived `.mid` artifact is intended for manual audition in FL Studio. This contract does not automate FL Studio, create `.flp` files, assign instruments, or expand the Stage 5 compatibility claim beyond its declared tested environment.
 
-A later listening-protocol checkpoint must separately freeze:
-
-- exact Chords instrument and timbre;
-- exact Arp instrument and timbre;
-- mixer levels;
-- effects policy;
-- FL Studio import settings;
-- presentation order and blinding;
-- the Energy/Complexity evaluation matrix; and
-- any additional root seeds.
+A locally defined, review-pending [baseline evaluation protocol](STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) freezes the approved 28-fixture matrix, root seeds, instrument direction, mix/effects policy, presentation order, blinding, listening passes, and interpretation limits. A separately authorized listening-setup checkpoint must still capture exact FL Keys/3xOsc states and Stage 7 import/routing before fixture preparation or listening.
 
 Fixture generation and listening remain unauthorized until their required preparation checkpoints are accepted.
 
@@ -136,4 +127,4 @@ Fixture generation and listening remain unauthorized until their required prepar
 
 ## Next gate
 
-The assembler and its focused deterministic tests are locally implemented and awaiting review. After acceptance, serialization/artifact preparation remains a separately authorized task before evaluation-matrix definition and human listening.
+The assembler is accepted and merged through PR #102. The baseline evaluation protocol is locally defined and awaiting review. Because exact instrument state is not yet reproducibly frozen, the next eligible gate after protocol acceptance is a bounded FL Studio listening-setup reproducibility checkpoint; fixture serialization/artifact generation and human listening remain later, separately authorized tasks.
