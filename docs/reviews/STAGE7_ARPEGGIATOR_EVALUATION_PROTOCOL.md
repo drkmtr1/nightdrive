@@ -4,7 +4,7 @@
 
 Protocol identity: `nightdrive.stage7-arpeggiator-evaluation.v1`.
 
-This documentation-only checkpoint freezes the product-owner-approved 28-fixture baseline design and listening procedure and is accepted and merged through PR #103. The identity versions this matrix, its pre-output sampling rules, audition controls, two listening passes, presentation order, and interpretation rules. The Stage 7-specific blind Pass 1 rubric correction below is product-owner approved, documented, and review-pending; it is not yet accepted or merged. It is separate from the genre-profile data, Arpeggiator policy, component-seed derivation, PRNG, and MIDI IR versions. This checkpoint itself creates no fixture, MIDI/audio artifact, rating, or listening result; the later generated baseline package is separately recorded below.
+The 28-fixture baseline design is accepted and merged through PR #103. The corrected listening setup and categorical Pass 1 direction are accepted and merged through PR #106. A subsequent Evaluation Integrity Audit is complete; this consolidated execution protocol correction is implemented in documentation and review-pending, not yet accepted or merged. Pass 1 is BLOCKED until that review and merge; no fixture has a Pass 1 rating. The protocol identity versions the matrix, pre-output sampling, audition controls, two passes, presentation order, and interpretation rules, separately from genre-profile data, Arpeggiator policy, component-seed derivation, PRNG, and MIDI IR versions.
 
 The four fixed Harmony source contexts and replay versions are owned by [Stage 7 Arpeggiator golden-case source records](STAGE7_ARPEGGIATOR_GOLDEN_CASES.md). The [audition-artifact contract](STAGE7_ARPEGGIATOR_AUDITION_ARTIFACT.md) owns MIDI transport and mapping. This protocol changes neither source context nor deterministic generation behavior.
 
@@ -47,61 +47,125 @@ The presentation-order seed is `0`. It is evaluation-only and is not a musical r
 
 The accepted fixture-package tooling forms the 28-element source list in the case and condition order above, then applies one descending Fisher–Yates shuffle. It starts an **independent presentation-only** `nightdrive.prng.mulberry32.v1` stream at seed `0`. For each index `i` from `27` down to `1`, it consumes one uint32 output, sets `j = output % (i + 1)`, and swaps elements `i` and `j`. It assigns `ND7-001` through `ND7-028` in final presentation order, with three-digit zero padding. This does not alter Stage 7 policy selection. The generated mapping was checked for one appearance of every source key, frozen before listening, and remains hidden through Pass 1. Do not manually reorder after inspecting or hearing outputs.
 
-## Audition controls and remaining setup gate
+## Audition controls and evaluation gate
 
 The existing audition-artifact contract fixes 960 PPQ, 4/4, eight bars ending at tick `30720`, 120 BPM (`500000` microseconds per quarter), Chords and Arp note-on velocities `100`, and exactly conductor/Chords/Arp tracks. Bass, Lead, program changes, and embedded instrument/effect state are absent. This protocol does not redefine those MIDI controls.
 
-For manual FL Studio listening after the corrected setup is reviewed and frozen, use the exact product-owner-recorded states in the [FL Studio listening-setup reproducibility checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md): FL Keys for Chords and the corrected `Nightdrive Stage7 Neutral Arp.fst` preset for Arp, with the same respective states for all 28 fixtures. The earlier PR #104 factory 3xOsc reference remains historical; the corrected setup is implemented manually, documented, and review-pending. The checkpoint records the installed identities, import/routing setup, mixer baseline, corrected external preset/template evidence, and save/reopen evidence. Pass 1 has not begun. The Stage 5 interoperability record proves only its declared import environment, not these Stage 7 instrument states.
+For manual FL Studio listening after this consolidated protocol correction is reviewed and merged, use the exact product-owner-recorded states and fixture-by-fixture Piano-roll import/reset procedure in the [FL Studio listening-setup reproducibility checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md): FL Keys for Chords and the corrected `Nightdrive Stage7 Neutral Arp.fst` preset for Arp. The corrected setup is accepted through PR #106; the earlier PR #104 factory 3xOsc reference and Stage 5 import are historical, not Stage 7 import instructions. The product owner manually validated the corrected Stage 7 import/reset procedure before Pass 1. Pass 1 remains blocked and unstarted.
 
-Use no effects, inserts, sends, or automation. Set the Chords fader, Arp fader, and master to `0 dB`. If clipping requires a master reduction, document one global reduction and apply it unchanged to all fixtures before rating; a change after ratings begin requires a consistent restart. Keep playback volume fixed during a review session.
+Use no effects, inserts, sends, or automation. Keep the Chords, Arp, and Master faders at `0 dB`. A setup deviation, including clipping caused by setup, invalidates the trial rather than becoming a musical judgment. Resolve any apparatus problem consistently before rating; do not silently change the setup mid-baseline. Keep monitoring volume fixed within and across sessions as practicable.
 
 ## Pass 1 — blind individual review
 
-Present each fixture under only its opaque `ND7-###` label. Until every Pass 1 response is locked, conceal profile, golden-case ID, Energy, Complexity, root seed, and the label-to-fixture mapping. Avoid rapid A/B comparison in this pass. Give one uninterrupted first listen where practical and allow one replay before finalizing the response.
+Pass 1 evaluates only Arpeggiator behavior reasonably exposed by a minimal eight-bar Chords + Arp diagnostic fixture. It does not evaluate complete song quality, motif development, full arrangement, Bass/Lead/drums, production/mix quality, genre authenticity, or section authenticity. The [evaluation plan](../EVALUATION_PLAN.md)'s generic six-dimension numeric rubric remains for broader work; this Stage 7 blind baseline has **no numeric Pass 1 scoring**.
 
-### Stage 7-specific blind Pass 1 override
+Present fixtures by opaque ND7-### label sequentially in the exact evaluator-facing order defined by the future blind-only handoff. For each fixture, make one uninterrupted initial listen and at most one full replay before locking its row. Do not deliberately replay earlier completed fixtures, A/B compare during Pass 1, or play external reference music during an evaluation session. Keep monitoring volume fixed within and across sessions as practicable. Sessions may span days; stop when fatigue materially affects judgment and take at least one planned break approximately halfway through a long session. The mapping and all hidden identities remain concealed until all 28 rows are locked.
 
-The generic six-dimension `1–5` rubric in the [evaluation plan](../EVALUATION_PLAN.md) remains available for broader composition and system evaluation. It is not the scoring instrument for this deliberately minimal Chords + Arp diagnostic baseline. For **every** blind fixture, record exactly these fields; do not use `1–5` ratings or convert these responses to numeric values.
+### Exact Pass 1 fields and response anchors
 
-| Field | Responses | Meaning |
+Record all eight fields for every setup-valid fixture, using these exact response categories and text rules:
+
+| Field | Response | Anchor |
 |---|---|---|
-| Arp clarity | `Clear`; `Marginal`; `Obscured` | Can the reviewer perceive the Arp as a separate enough layer to evaluate it? This is primarily an evaluation-validity/audibility check, not a musical-quality score. |
-| Rhythmic fit | `Yes`; `Mostly`; `No` | Does the Arp timing, density, and gating feel coherent against the harmonic pulse? |
-| Pattern coherence | `Yes`; `Mostly`; `No` | Does the Arp traversal/repetition sound intentional rather than arbitrary? |
-| Register fit | `Yes`; `Mostly`; `No` | Does the Arp occupy a usable register relative to the Chords without problematic overlap, masking, or separation? |
-| Repetition usability | `Yes`; `Mostly`; `No` | Across the eight-bar fixture, does the repeated behavior remain usable rather than becoming obviously distracting, pointless, or fatiguing? |
-| Would you keep/develop this Arp? | `Yes`; `Maybe`; `No` | Would the reviewer keep this Arpeggiator contribution as material worth developing in a production? |
-| Severe issue | `None`, or a short description | Record any severe issue observed. |
-| Comment | Short evidence-based free text | Preserve the reviewer’s supporting observation. |
+| A. Arp clarity | Clear | Arp pitches/rhythm can be followed distinctly enough for reliable evaluation. |
+| | Marginal | Arp is audible, but intermittently masked or requires noticeable effort to follow. |
+| | Obscured | Reviewer cannot reliably follow enough of the Arp to judge its musical behavior. |
+| B. Rhythmic fit | Yes | Timing, rests, density, and gate behavior consistently support the harmonic pulse. |
+| | Mostly | Generally coherent, with isolated awkward timing/density/gate moments. |
+| | No | Recurring behavior noticeably conflicts with or feels disconnected from the harmonic pulse. |
+| | Not assessable | Insufficient reliable Arp perception to judge. |
+| C. Pattern coherence | Yes | Traversal/repetition sounds understandable and intentional. |
+| | Mostly | Recognizable intentional pattern with noticeable awkward moments or transitions. |
+| | No | Behavior is difficult to perceive as intentional/coherent. |
+| | Not assessable | Insufficient reliable Arp perception to judge. |
+| D. Register fit | Yes | Arp occupies a usable, distinct relationship to Chords. |
+| | Mostly | Generally usable, but sometimes masked, too low/high, or overly separated. |
+| | No | Persistent overlap, masking, or separation makes the register impractical. |
+| | Not assessable | Insufficient reliable Arp perception to judge. |
+| E. Repetition usability | Yes | Repeated behavior remains usable through the full eight bars. |
+| | Mostly | Generally works but becomes noticeably monotonous, overactive, or less useful. |
+| | No | Repetition becomes clearly distracting or functionally unhelpful. |
+| | Not assessable | Insufficient reliable Arp perception to judge. |
+| F. Would you keep/develop this Arp? | Yes | Reviewer would retain it as normal production starting material. |
+| | Maybe | Useful material exists but requires substantive development. |
+| | No | Reviewer would replace rather than develop it. |
+| | Not assessable | Insufficient reliable Arp perception to judge. |
+| G. Severe issue | None, or short description | A setup-valid fixture shows serious functional unusability warranting investigation before Stage 7 closes, such as persistent unusable masking or clearly broken musical behavior; mere dislike is not severe. |
+| H. Comment | Short evidence-based text | Required for any Marginal, Mostly, No, Maybe, Not assessable, or non-None severe issue; optional when all applicable judgments are positive/clear. |
 
-For this Stage 7 blind baseline only, Harmonic coherence is not separately scored numerically; Motif consistency is not scored because Stage 7 is not the motif engine; and Section/genre alignment is not scored while the profile and section identity are concealed. Generic Register/arrangement is narrowed to Register fit, generic Rhythmic appropriateness is narrowed to Rhythmic fit, and generic Musical usefulness is replaced by the concrete keep/develop judgment. Canonical pitch validity remains deterministically enforced. Obvious harmonic or pitch failures may still be recorded as Register fit problems, Severe issue, or Comment.
+If Arp clarity is Obscured, the other musical judgments should normally be Not assessable rather than guessed. If clarity is Marginal, judge a field only when enough evidence was genuinely heard; otherwise use Not assessable. A setup failure is **not** a severe musical issue. Wrong MIDI track or instrument, unexpected FLEX channel, missing notes, incorrect mixer/effects/template state, clipping caused by setup deviation, or another validity-affecting procedure deviation invalidates the trial. Discard it, reopen/reset the clean template, retry the **same opaque fixture**, and record no musical judgments from the invalid attempt.
 
-During pre-evaluation dry-run/setup validation, before any Pass 1 response was recorded, the product owner found the generic composition-level six-dimension `1–5` rubric difficult or impossible to apply meaningfully to deliberately minimal Chords + Arp diagnostic fixtures. The rubric was therefore corrected before data collection to measure only properties that the Stage 7 fixture can reasonably expose and the Arpeggiator meaningfully contributes to. This is an evaluation-instrument correction, not a musical-policy change.
-
-Pass 1 has not begun. ND7-001 was used only for setup/audibility validation and received no rating. No evaluation data requires migration or invalidation. The previously generated spreadsheet using the old rubric is deprecated and must not be used; a replacement blind Pass 1 sheet may be generated only after this corrected protocol is accepted.
+ND7-001 was heard repeatedly during setup/import validation but never scored. Its prior setup exposure indicator is **YES**, and its future Pass 1 response is not pristine first-exposure evidence. The other 27 indicators are **NO** unless later evidence changes. ND7-001 remains eligible for Pass 1 and later revealed comparison; do not relabel or regenerate the authoritative package.
 
 ## Pass 2 — revealed controlled comparisons
 
-Only after all Pass 1 responses are locked, reveal grouped comparisons within each golden case. Use the seed-`0`, `medium`/`medium` fixture as the common baseline for all three panels.
+Only after Pass 1 is declared locked may the concealed mapping be revealed for grouped comparisons within each golden case. Use the seed-`0`, `medium`/`medium` fixture as the common baseline. Require a short explanation for each response.
 
-| Panel | Ordered conditions within one golden case | Question | Responses |
+| Panel | Ordered comparison | Question | Response and anchor |
 |---|---|---|---|
-| Energy | `very-low`/`medium`/seed `0`; `medium`/`medium`/seed `0`; `very-high`/`medium`/seed `0` | Does increasing Energy produce an intuitive musical progression? | `clearly yes`; `somewhat`; `unclear`; `counterintuitive` |
-| Complexity | `medium`/`very-low`/seed `0`; `medium`/`medium`/seed `0`; `medium`/`very-high`/seed `0` | Does increasing Complexity add useful musical interest rather than arbitrary activity/noise? | `clearly yes`; `somewhat`; `unclear`; `counterintuitive` |
-| Seed | `medium`/`medium` with root seeds `0`, `1`, `2` | Do these feel like variations of the same profile rather than unrelated behaviors? | `clearly same profile`; `mostly same`; `mixed`; `materially inconsistent` |
+| Energy | `very-low` → `medium` → `very-high` Energy, `medium` Complexity, seed `0` | Across very-low → medium → very-high, is there perceptible evidence of increasing overall Arpeggiator activity/intensity? | Clearly yes — convincing overall directional increase in perceived activity/intensity. |
+| | | | Somewhat — some directional tendency is audible, but weak or mixed. |
+| | | | Unclear — no dependable directional relationship is audible, or outputs are too similar. |
+| | | | Counterintuitive — perceptible tendency is materially opposite the intended ordering. |
+| Complexity | `very-low` → `medium` → `very-high` Complexity, `medium` Energy, seed `0` | Across very-low → medium → very-high, is there perceptible evidence of increasing Arpeggiator intricacy/variation while remaining musically coherent? | Clearly yes — convincing increase in perceived intricacy/variation while remaining coherent. |
+| | | | Somewhat — partial or weak increase. |
+| | | | Unclear — no dependable separation is audible or outputs are too similar. |
+| | | | Counterintuitive — higher-labeled settings sound materially simpler, or change primarily degrades coherence instead of adding useful intricacy. |
+| Seed | `medium` Energy/Complexity, roots `0`, `1`, `2` | Do root seeds 0, 1, and 2 sound like different realizations of recognizably related profile behavior? | Clearly same profile — variations differ but retain strong shared behavioral character. |
+| | | | Mostly same — one variation differs noticeably but all remain recognizably related. |
+| | | | Mixed — shared behavioral character is inconsistent. |
+| | | | Materially inconsistent — outputs behave like substantially unrelated hypotheses. |
 
-Require a short explanation for every panel response. These categories are diagnostic baseline evidence, not acceptance thresholds.
+Energy and Complexity influence weighted policy-selection tendencies; neither guarantees strictly monotonic audible outcomes for every sample. **Unclear is not automatically a defect.** After reveal, ask one whole-experience comparison: “Are the four complete Chords + Arp profile experiences meaningfully distinguishable from one another?” Record a short explanation and one of:
 
-After identity reveal, also record **Profile / section plausibility** for each complete Chords + Arp experience: “Does the complete Chords + Arp experience plausibly support the revealed profile/section label?” Responses are `Clearly yes`, `Somewhat`, `Unclear`, or `Mismatch`. Require a short explanation.
+| Response | Anchor |
+|---|---|
+| Clearly distinguishable | Strong, readily perceived differences across the complete experiences. |
+| Somewhat distinguishable | Noticeable differences exist but overlap is substantial. |
+| Weakly distinguishable | Differences are subtle/inconsistent. |
+| Not meaningfully distinguishable | Experiences are not reliably distinguishable in this baseline. |
+
+The four golden cases have intentionally different Harmony contexts, so this judgment applies **only** to the complete Chords + Arp experiences. Do not attribute differences solely to Arpeggiator policy or claim universal genre validity. The previously proposed scored “Profile / section plausibility” question is **removed**, not optional: section is metadata here, eight-bar Chords + Arp does not establish section authenticity, named-profile genre plausibility has no sufficiently independent reference, and Harmony can dominate the judgment.
 
 ## Session procedure and interpretation
 
-Use one consistent playback environment per review session. Keep FL Studio settings, instruments, mixer, effects, and playback volume unchanged during that session. Take a short break approximately halfway through the 28-fixture Pass 1 set. Record reviewer expertise/context and playback environment; collect consent and only necessary metadata. Do not require a particular headphone model, interface, or room. Preserve individual responses and disagreement rather than averaging them away.
+Keep the accepted FL Studio instruments, template, mixer, and effects state fixed. Record reviewer identity/expertise/context, playback environment, and session dates; collect consent and only necessary metadata. Do not require a particular headphone model, interface, or room. Within one case, Harmony is fixed for Energy, Complexity, and seed comparisons. Across cases it differs; preserve that attribution limit.
 
-Within one golden case, Harmony context is fixed, so Energy, Complexity, and seed comparisons can be interpreted as within-profile Stage 7 behavior comparisons. Across the four cases, Harmony contexts intentionally differ. Reviewers may assess the plausibility of the complete Chords + Arp experience and whether complete profile experiences are meaningfully distinguishable, but must not claim that cross-profile differences are caused solely by Arpeggiator policy or turn profile/section plausibility into a universal genre claim.
+If only the product owner reviews this baseline, label it a **single-reviewer exploratory baseline**. Additional reviewers can strengthen evidence but are not required to begin. Preserve every individual's response; rules for disagreement may be deferred until multiple reviewers exist.
 
-The first baseline records the categorical per-fixture Pass 1 responses, comments, and severe issues; within-profile Energy direction, Complexity direction, and seed stability; Profile / section plausibility; and perceived distinguishability across complete profile experiences. There are **no numeric Pass 1 ratings or pass threshold** at this stage. Poor results may prompt investigation of a deterministic defect, profile-policy weighting, Harmony/Arp interaction, isolated seed sensitivity, audition/timbre confounds, or a profile hypothesis requiring a future immutable profile-data version. Do not pre-classify an output or silently revise accepted V1 data. Exact numeric thresholds require baseline evidence and a later decision.
+After Pass 2, record a qualitative disposition, without numeric thresholds: no material Stage 7 concern identified; profile-policy tuning investigation warranted; deterministic/runtime defect investigation warranted; or evaluation evidence insufficient and another controlled experiment required. One Mostly, Maybe, or Marginal does not automatically fail Stage 7. One severe issue triggers investigation, not an automatic architectural conclusion. Not assessable reduces available evidence and may require targeted follow-up. Distinguish deterministic defects from profile-policy hypotheses and listening-apparatus problems. Do not silently revise accepted V1 data or claim final Stage 7 acceptance from this baseline alone.
+
+## Blind custody, response lock, and amendments
+
+The evaluator must not work from the authoritative external package root during Pass 1. A **future** blind-only handoff directory will contain only the 28 opaque ND7-### MIDI files and the final Pass 1 response workbook. It must contain no `canonical/` directory, `manifest.json`, `presentation.json`, profile names, golden-case IDs, Energy, Complexity, root seed, or label mapping. Keep the authoritative baseline package untouched. During Pass 1, the evaluator uses only this handoff and the mapping remains under controlled custody. Neither handoff nor workbook is created by this correction.
+
+The final workbook must contain the opaque label, the eight Pass 1 fields, the prior-setup-exposure indicator, and appropriate reviewer/session metadata, but no hidden fixture identity. Lock each completed row without casual revision. Any clerical correction is an amendment retaining the original response. Once all 28 rows are complete: **stop before reveal**; validate completeness; preserve the exact original completed workbook; produce a normalized machine-readable response export; compute SHA-256 for both exact evidence files; and record baseline package identity, manifest and presentation hashes, corrected FST and FLP identities, reviewer identity/context, session dates, and prior exposure. Declare Pass 1 **LOCKED** before revealing mapping for Pass 2. Later corrections remain append-only amendments; never silently overwrite locked responses. This is evaluation evidence handling, not aggregate musical provenance.
+
+## Package evidence identity
+
+The existing package-evidence SHA-256 is reproducible by recursively enumerating all 58 package files, converting relative path separators to `/`, sorting paths in ordinal/code-unit ascending order, hashing each file's exact bytes to lowercase SHA-256, then constructing exact UTF-8 evidence text with one line per file: `<relative-path>\t<lowercase-sha256>\n`. SHA-256 of that exact text is `e136c37e6297ddde68265955dbbcb50684a2904cbe3511f7f8694eed99e55ab3`. This is evaluation evidence identity, **not** canonical musical provenance.
+
+## Evaluation Integrity Audit disposition
+
+The subsequent Evaluation Integrity Audit is complete. This documentation correction is review-pending; these findings are dispositioned in the protocol, not a claim that Pass 1 has run.
+
+| Finding | Disposition |
+|---|---|
+| EIA-001 lifecycle drift | Corrected: PR #106 merged; present correction review-pending. |
+| EIA-002 import/reset | Corrected in the listening-setup procedure. |
+| EIA-003 order/replay/session | Corrected in Pass 1 controls. |
+| EIA-004 blind custody | Corrected by specified future blind-only handoff and mapping custody. |
+| EIA-005 invalid/obscured/severe | Corrected by invalid-trial and Not assessable rules. |
+| EIA-006 Pass 1 anchors | Corrected by exact eight-field anchors. |
+| EIA-007 response lock/reveal | Corrected by evidence lock and amendment procedure. |
+| EIA-008 Energy/Complexity/Seed interpretation | Corrected by weighted-tendency and same-profile limits. |
+| EIA-009 profile/section attribution | Resolved by removing the scored question. |
+| EIA-010 Pass 2 anchors | Corrected by explicit four-response anchors. |
+| EIA-011 qualitative disposition | Corrected without numeric thresholds. |
+| EIA-012 package hash | Corrected by the reproducible algorithm above. |
+| EIA-013 ND7-001 exposure | Explicitly recorded and controlled. |
+| EIA-014 obsolete v2 sheet | Deprecated alongside the original numeric sheet. |
 
 ## Deferred execution
 
-This protocol freezes the accepted evaluation design; the original product-owner [listening-setup reproducibility checkpoint](STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) is accepted and merged through PR #104, while its corrected setup state is implemented manually, documented, and review-pending. The corrected Stage 7-specific Pass 1 rubric is product-owner approved, documented, and review-pending. Deterministic fixture-package tooling is accepted and merged through PR #105. The external baseline package at `C:\Users\WILLI\Projects\stage7-arpeggiator-baseline-v1` contains the accepted 28-fixture output; its manifest SHA-256 is `751839fa1cae8fd5d92af90f11c0aa53a4cb3baeb02fbbdfb64b8759a4c0c107`, presentation SHA-256 is `41e16790a76557bb69d10fd112cf5272eedab80639fb5a25d168151d116652c7`, and package evidence SHA-256 is `e136c37e6297ddde68265955dbbcb50684a2904cbe3511f7f8694eed99e55ab3`. The mapping remains concealed; no Pass 1 rating or listening result exists. Human listening follows review and freeze of the combined corrected setup and rubric. No aggregate provenance, browser preview, FL Studio automation, or evaluation result is created by this documentation/provisioning work.
+The corrected setup and categorical direction are accepted through PR #106; this consolidated protocol correction remains review-pending. Deterministic fixture tooling is accepted through PR #105. The external baseline package at `C:\Users\WILLI\Projects\stage7-arpeggiator-baseline-v1` contains 28 canonical and 28 blind MIDI files plus two JSON evidence files. Manifest SHA-256: `751839fa1cae8fd5d92af90f11c0aa53a4cb3baeb02fbbdfb64b8759a4c0c107`; presentation SHA-256: `41e16790a76557bb69d10fd112cf5272eedab80639fb5a25d168151d116652c7`. The mapping remains concealed. **Both** previously generated response sheets—the original numeric sheet and the categorical v2 sheet made before anchor/audit completion—are deprecated and must not be used. A final replacement workbook will be created only after this correction is accepted and merged. No final blind-only handoff, Pass 1 response, Pass 2 result, browser preview, FL Studio automation, or aggregate provenance is created here.
