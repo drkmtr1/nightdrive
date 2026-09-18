@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-The external Stage 7 baseline package, completed Pass 1 and Pass 2 evidence, and policy-sensitivity diagnostic are locked in [Stage 7 Arpeggiator evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). No runtime defect was identified. V2 successor compatibility is accepted and merged through PR #109; the exact [R1 calibration candidate](docs/reviews/STAGE7_ARPEGGIATOR_V2_CALIBRATION.md) is documented for review. Stage 7 remains open.
+The Stage 7 baseline evidence and policy-sensitivity diagnostic are recorded in [evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). V2 successor compatibility is accepted through PR #109; the exact [R1 calibration candidate](docs/reviews/STAGE7_ARPEGGIATOR_V2_CALIBRATION.md) remains documented for review. The proposed V2 public contract is now the current documentation review checkpoint. Stage 7 remains open.
 
 ## Current Milestone
 
-Stage 7A, Stage 7B1–B4, and Stage 7C runtime through public `generateArpEventsWithPolicyV1` (PR #98) are accepted and merged. PR #109 accepted the exact V1/V2 compatibility pairs; V1 remains unchanged and replayable. The current documentation checkpoint freezes the numerical R1 candidate for review, without implementing V2 or defining its public request/result/error boundary. Aggregate provenance remains later.
+Stage 7A, Stage 7B1–B4, and Stage 7C runtime through public `generateArpEventsWithPolicyV1` (PR #98) are accepted and merged. PR #109 accepted exact V1/V2 compatibility pairs; V1 remains unchanged and replayable. [ADR-020](docs/DECISIONS.md) accepts the two V2 public-boundary decisions; the complete [V2 request/result/error contract](docs/ARPEGGIATOR_MODEL.md) is proposed for ChatGPT review, not yet accepted or implemented. Aggregate provenance remains later.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. R1 research is reviewed and its exact candidate tables are documentation-only and review-pending; deterministic gains do not establish human musical benefit. V2 runtime, comparative listening, aggregate provenance, and Stage 8 remain gated.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. R1 candidate tables and the complete V2 public contract await their respective reviews; deterministic gains do not establish human musical benefit. V2 runtime, comparative listening, aggregate provenance, and Stage 8 remain gated.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-After this R1 documentation checkpoint is accepted and merged, the next eligible task is a separately authorized exact V2 public request/result/error contract. Runtime implementation and matched V1/R1 human evaluation remain later gates. Stage 8 is not authorized.
+ChatGPT review of the proposed V2 public request/result/error contract is the next gate. Any implementation, matched V1/R1 human evaluation, or later Stage 7 work requires separate authorization. Stage 8 is not authorized.
 
 ## Maintenance
 
