@@ -753,7 +753,7 @@ The accepted successor architecture in [ADR-019](DECISIONS.md) was merged throug
 | `nightdrive.arpeggiator-policy.v2` | `nightdrive.genre-profile.arpeggiator.v1` | Unsupported |
 | `nightdrive.arpeggiator-policy.v2` | `nightdrive.genre-profile.arpeggiator.v2` | Supported by this contract; runtime unimplemented |
 
-The public enclosing operation owns rejection of an incompatible requested pair before component-seed derivation or selection. V1 retains its exact supported-version checks, structured errors, fields, and precedence; a V2-specific public error taxonomy and precedence require a separate contract before implementation. There is no implicit fallback, coercion, `latest` alias, or conversion of persisted V1 requests. The smallest public routing direction is a separate versioned V2 operation, expected to follow `generateArpEventsWithPolicyV2`, rather than broadening the V1 operation. Its request/result musical structure should remain semantically equivalent to V1 unless a later accepted contract says otherwise; exact V2 types and signature are not frozen here. No internal refactor or public helper exposure is required by this documentation checkpoint.
+The public enclosing operation owns rejection of an incompatible requested pair before component-seed derivation or selection. V1 retains its exact supported-version checks, structured errors, fields, and precedence. There is no implicit fallback, coercion, `latest` alias, or conversion of persisted V1 requests. [ADR-020](DECISIONS.md) accepts operation-local V2 version support and the additional-property rule; the distinct V2 public request/result/error proposal is defined below for review. No internal refactor or public helper exposure is authorized by this documentation checkpoint.
 
 Policy V2 denotes the new compatibility lineage, **not** a changed selection algorithm. The first successor retains the five exact slots and order `rate → octave-range → direction → mask → gate`, one Mulberry32 V1 stream, and exactly one uint32 draw per slot, including single-candidate slots. It retains the component-seed derivation V1 contract, `nightdrive.weighted-choice.uint32-modulo.v1` modulo arithmetic and half-open intervals, the existing candidate domains and per-profile candidate subset/order, the nine semantic gate mappings, and the V1 density-mask catalog and semantics. There are no conditional draws, redraws, rejection sampling, cross-slot coupling, or new musical dimensions. For the same canonical root seed and fixed `arpeggiator` component ID, unchanged seed derivation yields the same component seed across the two policy/profile pairs; any selected-plan differences arise from versioned profile data. No separate algorithm identity or runtime abstraction is introduced.
 
@@ -761,7 +761,98 @@ The R1 candidate changes only profile-owned Energy weights and Complexity additi
 
 V2 consumes the same complete five-field resolved plan through the existing projector semantics: Harmony-selected pitches, upward octave expansion, inclusive MIDI/range filtering, stable deduplication, direction cycles and slot reset, four-step density-mask reset and rest traversal consumption, rate starts, gate durations, and unchanged three-field `ArpEvent`. The five rare Midtempo projection collapses in the accepted diagnostic are not projector defects and are not corrected here. No aggregate provenance, MIDI, UI, AI, or persistence ownership moves into this operation; no dependency or infrastructure change is introduced.
 
-Historical V1 requests, plans, ArpEvents, and baseline/evaluation artifacts retain their original explicit identities and exact replay behavior. V2 requires its own deterministic fixtures/vectors and must never reinterpret V1 evidence. The exact four-profile R1 candidate is review-pending in the linked calibration record; a distinct V2 public request/result/error contract remains the next separately gated task after this checkpoint is accepted. Later implementation evidence must prove literal R1 data, V1 regression and version isolation, all 500 profile/slot/intent lists, compatibility rejection, five-draw replay and seed sensitivity, no ambient randomness, and reproduced candidate diagnostics. Matched V1/R1 human comparison remains a separate acceptance gate. No numeric human acceptance threshold is set here. Stage 7 remains open; Stage 8 is not authorized.
+Historical V1 requests, plans, ArpEvents, and baseline/evaluation artifacts retain their original explicit identities and exact replay behavior. V2 requires its own deterministic fixtures/vectors and must never reinterpret V1 evidence. The exact four-profile R1 candidate is review-pending in the linked calibration record; the V2 public contract below is also review-pending and does not accept R1 as implemented or musically validated. Later implementation evidence must prove literal R1 data, V1 regression and version isolation, all 500 profile/slot/intent lists, operation-local version rejection, five-draw replay and seed sensitivity, no ambient randomness, and reproduced candidate diagnostics. Matched V1/R1 human comparison remains a separate acceptance gate. No numeric human acceptance threshold is set here. Stage 7 remains open; Stage 8 is not authorized.
+
+### Proposed Stage 7 V2 public Arpeggiator operation — review-pending
+
+This is the exact proposed domain interface for the first V2 successor. [ADR-019](DECISIONS.md) accepts a separate operation and unchanged musical machinery; [ADR-020](DECISIONS.md) accepts operation-local version support and the limited additional-property policy. The complete interface, taxonomy, and precedence in this section await ChatGPT contract review. Nothing in this section implements V2, changes the accepted V1 operation, or authorizes runtime or musical acceptance.
+
+```ts
+export const ARP_PROFILE_DATA_VERSION_V2 = "nightdrive.genre-profile.arpeggiator.v2";
+export type ArpProfileDataVersionV2 = typeof ARP_PROFILE_DATA_VERSION_V2;
+export const ARP_POLICY_VERSION_V2 = "nightdrive.arpeggiator-policy.v2";
+export type ArpPolicyVersionV2 = typeof ARP_POLICY_VERSION_V2;
+
+export type ArpPolicyGenerationRequestV2 = Readonly<{
+  progression: HarmonyProgressionRealization;
+  range: ArpRange;
+  intent: Readonly<{ energy: EnergyV1; complexity: ComplexityV1 }>;
+  profile: Readonly<{ id: HarmonyProfileId; version: ArpProfileDataVersionV2 }>;
+  policy: Readonly<{ version: ArpPolicyVersionV2 }>;
+  seedDerivation: Readonly<{ version: ComponentSeedDerivationVersionV1 }>;
+  prng: Readonly<{ version: ArpPrngVersionV1 }>;
+  rootSeed: number;
+}>;
+
+export type ArpPolicyGenerationResultV2 = Readonly<{
+  plan: ResolvedArpPlanV1;
+  events: readonly ArpEvent[];
+}>;
+
+export function generateArpEventsWithPolicyV2(
+  request: ArpPolicyGenerationRequestV2,
+): ArpPolicyGenerationResultV2;
+```
+
+These are the only proposed new public operation, types, and identity constants. The V2 boundary reuses the accepted `HarmonyProgressionRealization`, `ArpRange`, `EnergyV1`, `ComplexityV1`, `HarmonyProfileId`, `ComponentSeedDerivationVersionV1`, `ArpPrngVersionV1`, five-field `ResolvedArpPlanV1`, and three-field `ArpEvent` types; unchanged primitives do not acquire artificial V2 names. The public barrel will expose the proposed V2 operation, request/result types, V2 version types/constants, and the already public reused types when a later implementation is authorized. No public generic dispatcher, resolver, projector, plan constructor, arbitrary configuration injection, or new musical primitive is proposed.
+
+Every displayed request property is required; there are no optional fields or defaults at this normalized generation boundary. `intent.energy` and `intent.complexity` are independent exact members of `very-low | low | medium | high | very-high`; the upstream raw creation-input `medium` default does not apply. `profile.id` is exactly one of `dark-synthwave | classic-synthwave | darkwave | midtempo-cyberpunk`, and after Harmony validation it must equal `progression.profile`. `profile.version` and `policy.version` must be their exact V2 identities above. `seedDerivation.version` remains exactly `nightdrive.seed-derivation.component.v1`; `prng.version` remains exactly `nightdrive.prng.mulberry32.v1`. `rootSeed` is a finite safe integer in the inclusive uint32 range `0..0xffffffff`, with no coercion. `range` retains the existing inclusive `ArpRange` contract: canonical integer MIDI pitches `0..127` at `minMidiPitch` and `maxMidiPitch`, with minimum no greater than maximum. `progression` retains the existing independently validated canonical eight-bar Harmony realization, including its own profile, template, key, ordered slots, Chords, inversions, and selected voicings. Missing, explicit `undefined`, malformed wrapper/value, wrong-case, whitespace-varied, and unsupported values fail through the first owning validation field below; no trimming, parsing, substitution, version inference, or repair occurs.
+
+At this V2 operation boundary only, additional properties on the top-level request or its `intent`, `profile`, `policy`, `seedDerivation`, or `prng` wrapper are ignored. They are neither rejection reasons nor generation inputs, are not copied to the result, and cannot change the plan, events, version routing, internal policy choice, or error precedence. This includes attempted extra `weights`, candidate arrays, `componentSeed`, `componentId`, `maskId`, or `plan`. An extra never substitutes for a missing required property. The public request type has no arbitrary-data bag. This rule does not change the validation or unknown-property handling of `progression`, `range`, internal versioned configuration, or any other API; it does not retroactively specify V1 behavior.
+
+For this operation, individual version support is local: only profile-data V2 passes `profile.version`, and only policy V2 passes `policy.version`. The support checks run in that order, after intent and profile-ID validation. A version accepted by V1 is not individually supported by V2. The compatibility check still follows both support checks and precedes seed-version validation; `INCOMPATIBLE_ARP_PROFILE_POLICY` means two individually supported versions form an undeclared pair. With the initial single supported version at each field, the V2/V2 pair is declared compatible and no caller-supplied pair can currently reach that error. Do not widen support to make it reachable.
+
+| Requested profile version | Requested policy version | First V2 version outcome, assuming earlier fields valid |
+|---|---|---|
+| V2 | V2 | Continue through compatibility and remaining preflight |
+| V1 | V2 | `UNSUPPORTED_ARP_PROFILE_VERSION` at `profile.version` |
+| V2 | V1 | `UNSUPPORTED_ARP_POLICY_VERSION` at `policy.version` |
+| V1 | V1 | `UNSUPPORTED_ARP_PROFILE_VERSION` at `profile.version` |
+
+Any missing, malformed, or other unsupported profile version fails at `profile.version` regardless of policy input; only an exact V2 profile version allows the policy check, where any missing, malformed, or other unsupported policy version fails at `policy.version`. No V1/V2 pair becomes a compatibility error, and there is no fallback, alias, automatic dispatch, or migration. `generateArpEventsWithPolicyV1` continues to accept only its V1 pair with its existing codes, fields, order, values, and replay meaning; a V2 request never silently runs through V1. Historical locked V1 evidence is not regenerated or reinterpreted by V2.
+
+All ordinary public V2 failures use the existing `ArpValueError extends RangeError` convention: stable `code` and exact `field`, plus diagnostic message prose that is not a machine discriminator or replay value. No invalid-value capture or new V2 error class is proposed. The complete V2 code/field ownership is:
+
+| Code | Exact `field` | Meaning |
+|---|---|---|
+| `INVALID_ENERGY` | `intent.energy` | Missing or noncanonical normalized Energy |
+| `INVALID_COMPLEXITY` | `intent.complexity` | Missing or noncanonical normalized Complexity |
+| `INVALID_ARP_PROFILE` | `profile.id` | Missing or noncanonical profile ID |
+| `UNSUPPORTED_ARP_PROFILE_VERSION` | `profile.version` | Anything other than exact V2 profile-data identity |
+| `UNSUPPORTED_ARP_POLICY_VERSION` | `policy.version` | Anything other than exact V2 policy identity, after valid profile version |
+| `INCOMPATIBLE_ARP_PROFILE_POLICY` | `policy.version` | Both versions individually supported but undeclared as a pair; unreachable from initial caller-supplied V2 versions |
+| `UNSUPPORTED_SEED_DERIVATION_VERSION` | `seedDerivation.version` | Anything other than the retained exact component-seed V1 identity |
+| `UNSUPPORTED_PRNG_VERSION` | `prng.version` | Anything other than the retained exact Mulberry32 V1 identity |
+| `INVALID_ROOT_SEED` | `rootSeed` | Not a canonical uint32 finite safe integer |
+| `INVALID_ARP_POLICY_CONFIGURATION` | `profile.version` | Malformed versioned profile-owned data or candidate construction in any accepted slot |
+| `INVALID_ARP_POLICY_CONFIGURATION` | `policy.version` | Malformed shared policy schedule, selector constraints, catalog identity, domain, or gate mapping |
+| `INVALID_ARP_RANGE` | `range`, `range.minMidiPitch`, or `range.maxMidiPitch` as determined by the existing ordered `createArpRange` validation | Existing malformed/reversed range behavior unchanged |
+| `INVALID_HARMONIC_CONTEXT` | The exact first existing `progression` field reported by accepted Harmony/Arpeggiator validation | Existing malformed/incompatible Harmony behavior unchanged; never used for a valid profile mismatch |
+| `INCOMPATIBLE_ARP_PROFILE_CONTEXT` | `profile.id` | Valid profile ID differs from independently validated `progression.profile` |
+| `NO_LEGAL_ARP_PITCH` | `progression.slots[i].voicing.midiPitches` for the first unsatisfied slot | Valid resolved plan has no legal expanded pitch there; complete operation fails |
+
+Existing range field selection is exact: a malformed range wrapper or reversed bounds reports `range`; an invalid minimum reports `range.minMidiPitch` before an invalid maximum at `range.maxMidiPitch`. Harmony's existing ordered validation and exact fields remain authoritative: `progression`, `progression.profile`, `progression.templateId`, `progression.templateVersion`, `progression.key`, `progression.key.scale`, `progression.slots`, and, for the first invalid zero-based slot `i`, `progression.slots[i]`, `progression.slots[i].index`, `progression.slots[i].degree`, `progression.slots[i].chord`, `progression.slots[i].inversion`, or `progression.slots[i].voicing` as owned by the existing validator. Step 13 checks Harmony validity independently of resolved Arpeggiator pitch eligibility; only post-resolution projection can report `NO_LEGAL_ARP_PITCH`. This V2 contract adds no alternate Harmony validator, duplicate field mapping, or new caller error for resolved octave, mask, semantic gate, component ID, or timing. Direct `deriveComponentSeedV1` retains its independent `ComponentSeedValueError` contract; a failure after valid root-seed preflight and internally fixed `arpeggiator` component ID is an impossible internal invariant, not an ordinary V2 public failure. Profile-owned and shared configuration failures translate only to the respective `INVALID_ARP_POLICY_CONFIGURATION` owner field; internal helper error kinds/messages are not exposed as public machine semantics. Unrelated programmer failures and impossible selected values remain internal assertions without public `code`/`field` or partial result.
+
+The complete normative V2 preflight order is below. Every step must succeed before deriving a component seed, creating/consuming PRNG state, calling policy resolution, or projecting events:
+
+1. Validate `intent.energy`.
+2. Validate `intent.complexity`.
+3. Validate `profile.id`.
+4. Validate exact V2 `profile.version` support.
+5. Validate exact V2 `policy.version` support.
+6. Check declared profile/policy compatibility; the initial caller-unreachable limitation above applies.
+7. Validate `seedDerivation.version`.
+8. Validate `prng.version`.
+9. Validate `rootSeed`.
+10. Validate all profile-owned configuration and construct candidate lists in `rate → octave-range → direction → mask → gate` order.
+11. Validate shared policy decision schedule, weighted-choice identity/constraints, density-mask identity, octave/gate domains, and all nine semantic gate mappings.
+12. Validate `range` using the existing Arpeggiator range boundary.
+13. Validate `progression` through the existing Harmony context/compatibility boundary, establishing canonical `progression.profile`.
+14. Compare validated `profile.id` and `progression.profile` exactly.
+
+Thus an earlier invalid intent or profile ID wins over either version defect; invalid profile version wins over invalid policy version; invalid root seed wins over malformed configuration; profile configuration wins over shared configuration and range; invalid range wins over Harmony; invalid Harmony wins over a merely apparent profile mismatch; and only after valid Harmony can a real mismatch fail at `profile.id`. Additional properties introduce no phase and cannot change these outcomes. Only after all 14 steps pass does the fixed `arpeggiator` component-seed handoff occur. The accepted resolver uses one Mulberry32 V1 stream and exactly five ordered outputs, one per slot even for a singleton candidate, with the unchanged weighted-choice and gate mappings. Projection retains Harmony-selected pitch ownership, upward octave expansion, inclusive range filtering, stable deduplication/ascending pitch order, exact direction traversal and slot reset, four-step mask reset with rests consuming time and traversal, integer rate starts, and gate-only duration control. Event order is ascending `startTick`, at most one event per rate step, with no partial or out-of-slot event. Equal complete inputs and versions replay to canonical-value-equivalent plan/events without ambient randomness, clock, locale, network, database, AI, or discovery/object-order dependence.
+
+The successful result has exactly `{ plan, events }`. `plan` has exactly `rate`, `direction`, `gateTicks`, `octaveRange`, and `maskId` with the accepted V1 domains; `events` contains unchanged `{ pitch, startTick, durationTicks }` ArpEvents in canonical order. The result object, plan, event array, and every event are frozen; request, progression, range, intent, and versioned configuration are not mutated. A public or internal failure returns no result, plan, partial events, or warning. The plan remains a transient inspectable policy decision, not a caller input or independent public constructor. This boundary neither accepts nor returns candidate arrays, weights, component seed, PRNG values/state, hashes, warnings, profile/version fields on the plan, aggregate provenance, MIDI, UI, persistence, or serialized composition state. Normalized composition-brief schema ownership remains upstream; aggregate generator/schema versions, immutable generation lineage, canonical serialization, persistence, and result hashes remain with a later enclosing composition/generator layer. The R1 research JSON fingerprint is not a serialization format for the V2 operation. No new output serialization or migration rule is introduced here.
 
 ### Component-seed derivation contract
 
