@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-The Stage 7 golden-case, audition-artifact, evaluation-only MIDI IR, and baseline-protocol checkpoints are accepted through PRs #100–#103. Fixture tooling is accepted through PR #105 and the external 28-fixture package is hash-verified. The corrected FL Studio setup and categorical Pass 1 direction are accepted and merged through PR #106. The subsequent Evaluation Integrity Audit is complete; its consolidated protocol correction is implemented in documentation and review-pending. Pass 1 is BLOCKED, unstarted, and has no ratings.
+The Stage 7 golden-case, audition-artifact, evaluation-only MIDI IR, baseline-protocol, fixture-tooling, and corrected FL Studio setup checkpoints are accepted through PRs #100–#106. The external 28-fixture package, completed Pass 1 and Pass 2 evidence, and policy-sensitivity diagnostic are locked and recorded in [Stage 7 Arpeggiator evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). No runtime defect was identified; Stage 7 remains open at a bounded policy-design investigation gate.
 
 ## Current Milestone
 
-Stage 7A, Stage 7B1–B4, Stage 7C contracts and runtime through the public `generateArpEventsWithPolicyV1` operation (PR #98) are accepted and merged; aggregate provenance is not implemented. The evaluation-only fixture package is generated externally and hash-verified. The current milestone is the documentation-only consolidated Evaluation Integrity correction, review-pending after the completed audit. It does not create a final response workbook, blind-only handoff, or human evaluation result.
+Stage 7A, Stage 7B1–B4, and Stage 7C contracts and runtime through the public `generateArpEventsWithPolicyV1` operation (PR #98) are accepted and merged; aggregate provenance is not implemented. The current milestone records the completed locked Stage 7 baseline evaluation and diagnostic: individual usability and seed stability passed for the exploratory single-reviewer baseline, while Energy and Complexity intent sensitivity require bounded design investigation before any candidate policy change.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The corrected noncanonical FL Studio preset/template and Stage 7 categorical evaluation direction are accepted through PR #106. The completed Evaluation Integrity Audit identified protocol-execution gaps now addressed in the [review-pending consolidated protocol](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md). Pass 1 remains BLOCKED until that correction is reviewed and merged; the final workbook and blind-only handoff do not exist, no Pass 1 rating exists, and Pass 2 has not started. Aggregate provenance/integration remains later.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but do not establish final Stage 7 acceptance. The runtime-conformance diagnostic found no defect. Energy and especially Complexity policy sensitivity are REVISE/open; no tuning is authorized by this status. Aggregate provenance/integration remains later.
 
 ## Unresolved Risks
 
@@ -32,11 +32,11 @@ MIA-003 cross-platform line-ending/formatting policy remains deferred, non-block
 
 ## Relevant Deferred Work
 
-Structured human profile-fit evaluation remains unperformed. ND7-001 had repeated non-scored setup exposure and will be annotated as such; no fixture has a Pass 1 rating. Aggregate provenance and later capabilities remain separately gated. See [roadmap](docs/ROADMAP.md).
+The completed evidence is an exploratory single-reviewer baseline, not a population claim. ND7-001 had prior non-scored setup exposure and is recorded as non-pristine first-exposure evidence. MIA-003 cross-platform line-ending/formatting policy remains deferred and non-blocking; aggregate provenance and later capabilities remain separately gated. See [roadmap](docs/ROADMAP.md).
 
 ## Next Eligible Task
 
-Review and freeze the consolidated Stage 7 Evaluation Integrity protocol correction. Only after its acceptance and merge may a final blind-only handoff and response workbook be prepared under separate authorization; Pass 1 remains unstarted.
+After review and acceptance of this status record, conduct one separately authorized bounded Energy/Complexity policy-design investigation. It must determine whether existing selection semantics can support improved intent control with a new immutable profile-data version, or whether accepted policy semantics/decision ownership are too narrow and require a new policy version. Stage 8 is not authorized.
 
 ## Maintenance
 
