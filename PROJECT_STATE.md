@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-The Stage 7 baseline evidence and policy-sensitivity diagnostic are recorded in [evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). V2 successor compatibility is accepted through PR #109; the exact [R1 calibration candidate](docs/reviews/STAGE7_ARPEGGIATOR_V2_CALIBRATION.md) remains documented for review. The complete [V2 public request/result/error contract](docs/ARPEGGIATOR_MODEL.md) is accepted and merged through PR #111 at approved head `f505dc7c14dc83b50c800986d883f7fe5d5da704` with merge commit `b3a42464ea44450bb017a1c65dd316d0d069c191`. Stage 7 remains open.
+The Stage 7 baseline evidence and policy-sensitivity diagnostic are recorded in [evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). V2 successor compatibility is accepted through PR #109; the exact [R1 calibration dataset](docs/reviews/STAGE7_ARPEGGIATOR_V2_CALIBRATION.md) is accepted for dataset-only use at fingerprint `b6f7ee16f33cf649ae2c6f06e4b5eecf859409b1917e2bc641323857fc1956e8`. The complete [V2 public request/result/error contract](docs/ARPEGGIATOR_MODEL.md) is accepted and merged through PR #111 at approved head `f505dc7c14dc83b50c800986d883f7fe5d5da704` with merge commit `b3a42464ea44450bb017a1c65dd316d0d069c191`. Stage 7 remains open.
 
 ## Current Milestone
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract is accepted and merged; R1 candidate tables remain under separate review, and deterministic gains do not establish human musical benefit. Review and acceptance of the exact R1 calibration candidate is the next gate; V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while reported collision totals and search/finalist chronology were not independently reproduced from retained tooling. Reproducible deterministic diagnostics are the next pre-runtime gate; V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-ChatGPT review and acceptance of the exact R1 calibration candidate is the next eligible Stage 7 gate. V2 runtime, matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work require separate authorization. Stage 8 is not authorized.
+Reproducible deterministic diagnostics for the accepted frozen R1 dataset are the next eligible Stage 7 gate. V2 runtime, matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work require separate authorization. Stage 8 is not authorized.
 
 ## Maintenance
 
