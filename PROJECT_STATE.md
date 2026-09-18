@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-The external Stage 7 baseline package, completed Pass 1 and Pass 2 evidence, and policy-sensitivity diagnostic are locked and recorded in [Stage 7 Arpeggiator evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). No runtime defect was identified. The product owner has approved an explicit V2 profile-data and compatibility-identity architecture under the unchanged selection algorithm; its documentation contract is under review. Stage 7 remains open.
+The external Stage 7 baseline package, completed Pass 1 and Pass 2 evidence, and policy-sensitivity diagnostic are locked in [Stage 7 Arpeggiator evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). No runtime defect was identified. V2 successor compatibility is accepted and merged through PR #109; the exact [R1 calibration candidate](docs/reviews/STAGE7_ARPEGGIATOR_V2_CALIBRATION.md) is documented for review. Stage 7 remains open.
 
 ## Current Milestone
 
-Stage 7A, Stage 7B1–B4, and Stage 7C contracts and runtime through public `generateArpEventsWithPolicyV1` (PR #98) are accepted and merged. The current milestone documents the approved successor versioning direction: immutable profile-data V2 pairs only with policy/compatibility V2, while V1 remains unchanged and replayable. Exact V2 calibration tables, public V2 error/interface contract, and runtime are not defined or implemented. Aggregate provenance remains later.
+Stage 7A, Stage 7B1–B4, and Stage 7C runtime through public `generateArpEventsWithPolicyV1` (PR #98) are accepted and merged. PR #109 accepted the exact V1/V2 compatibility pairs; V1 remains unchanged and replayable. The current documentation checkpoint freezes the numerical R1 candidate for review, without implementing V2 or defining its public request/result/error boundary. Aggregate provenance remains later.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. This documentation-only compatibility checkpoint is review-pending; it authorizes no weight calibration, V2 implementation, new selection semantics, or Stage 8 work. Aggregate provenance/integration remains later.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. R1 research is reviewed and its exact candidate tables are documentation-only and review-pending; deterministic gains do not establish human musical benefit. V2 runtime, comparative listening, aggregate provenance, and Stage 8 remain gated.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-After this compatibility contract is reviewed and accepted, the next eligible work is one separately authorized exact V2 profile-data calibration contract/research slice. It must freeze no runtime by implication; implementation and comparative human evaluation remain later gates. Stage 8 is not authorized.
+After this R1 documentation checkpoint is accepted and merged, the next eligible task is a separately authorized exact V2 public request/result/error contract. Runtime implementation and matched V1/R1 human evaluation remain later gates. Stage 8 is not authorized.
 
 ## Maintenance
 
