@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-The Stage 7 golden-case, audition-artifact, evaluation-only MIDI IR, baseline-protocol, fixture-tooling, and corrected FL Studio setup checkpoints are accepted through PRs #100–#106. The external 28-fixture package, completed Pass 1 and Pass 2 evidence, and policy-sensitivity diagnostic are locked and recorded in [Stage 7 Arpeggiator evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). No runtime defect was identified; Stage 7 remains open at a bounded policy-design investigation gate.
+The external Stage 7 baseline package, completed Pass 1 and Pass 2 evidence, and policy-sensitivity diagnostic are locked and recorded in [Stage 7 Arpeggiator evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). No runtime defect was identified. The product owner has approved an explicit V2 profile-data and compatibility-identity architecture under the unchanged selection algorithm; its documentation contract is under review. Stage 7 remains open.
 
 ## Current Milestone
 
-Stage 7A, Stage 7B1–B4, and Stage 7C contracts and runtime through the public `generateArpEventsWithPolicyV1` operation (PR #98) are accepted and merged; aggregate provenance is not implemented. The current milestone records the completed locked Stage 7 baseline evaluation and diagnostic: individual usability and seed stability passed for the exploratory single-reviewer baseline, while Energy and Complexity intent sensitivity require bounded design investigation before any candidate policy change.
+Stage 7A, Stage 7B1–B4, and Stage 7C contracts and runtime through public `generateArpEventsWithPolicyV1` (PR #98) are accepted and merged. The current milestone documents the approved successor versioning direction: immutable profile-data V2 pairs only with policy/compatibility V2, while V1 remains unchanged and replayable. Exact V2 calibration tables, public V2 error/interface contract, and runtime are not defined or implemented. Aggregate provenance remains later.
 
 ## Recent Accepted Work
 
@@ -24,7 +24,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but do not establish final Stage 7 acceptance. The runtime-conformance diagnostic found no defect. Energy and especially Complexity policy sensitivity are REVISE/open; no tuning is authorized by this status. Aggregate provenance/integration remains later.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. This documentation-only compatibility checkpoint is review-pending; it authorizes no weight calibration, V2 implementation, new selection semantics, or Stage 8 work. Aggregate provenance/integration remains later.
 
 ## Unresolved Risks
 
@@ -36,7 +36,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-After review and acceptance of this status record, conduct one separately authorized bounded Energy/Complexity policy-design investigation. It must determine whether existing selection semantics can support improved intent control with a new immutable profile-data version, or whether accepted policy semantics/decision ownership are too narrow and require a new policy version. Stage 8 is not authorized.
+After this compatibility contract is reviewed and accepted, the next eligible work is one separately authorized exact V2 profile-data calibration contract/research slice. It must freeze no runtime by implication; implementation and comparative human evaluation remain later gates. Stage 8 is not authorized.
 
 ## Maintenance
 
