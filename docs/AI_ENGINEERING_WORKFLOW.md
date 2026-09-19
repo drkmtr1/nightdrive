@@ -82,6 +82,10 @@ A correct stop is valid engineering behavior. Report evidence and the decision n
 
 Apply AGENTS.md's one-bounded-task rule. Do not perform opportunistic refactoring, renaming, API redesign, documentation cleanup, dependency changes, abstractions for future work, out-of-scope defect fixes, or preparation for later roadmap stages. Report unrelated discoveries separately; fixing them requires separate authorization.
 
+## Compact handoffs
+
+Templates optimize communication, not evidence. Use the shortest report that completely proves the task: group related facts when that improves clarity, and omit template-only sections only when they are genuinely inapplicable and omission cannot hide a consequential impact. Explicit task requirements and AGENTS.md always win. Higher-risk work naturally requires more evidence than R0 work. A compact result must still preserve applicable repository state, scope, validation, review, publication, authority, and next-gate evidence; ASSESS, SPECIFY, and BLOCKED work should report the evidence appropriate to that type rather than imitate an implementation report.
+
 ## Build-vs-Buy
 
 Every implementation task subject to the [AGENTS.md dependency evaluation gate](../AGENTS.md#build-vs-buy--dependency-evaluation-gate) must satisfy its existing evaluation and reporting requirements. This workflow does not replace or duplicate that gate.
