@@ -6,7 +6,7 @@ The Stage 7 baseline evidence and policy-sensitivity diagnostic are recorded in 
 
 ## Current Milestone
 
-The bounded frozen-R1 test-only diagnostic is implemented and review-pending. It reproduces the documented collision totals and preservation anchors without modifying V1/R1 data or implementing V2 runtime. R1-REV-001 is partially closed pending review: historical search/finalist chronology remains unreproduced.
+The bounded frozen-R1 test-only diagnostic is accepted and merged through PR #114 at approved head `6631da6dd2d601032fe8f6aa27bf654960b1e4ac` with merge commit `9c985cfbea939bded4737676356047c51efe6c01`. It reproduces the documented collision totals and preservation anchors without modifying V1/R1 data or implementing V2 runtime. R1-REV-001 is PARTIALLY CLOSED: frozen-candidate numerical reproduction is satisfied; historical search execution, finalist selection, and no-retuning chronology remain unreproduced.
 
 Stage 7A, Stage 7B1–B4, and Stage 7C runtime through public `generateArpEventsWithPolicyV1` (PR #98) are accepted and merged. PR #109 accepted exact V1/V2 compatibility pairs; V1 remains unchanged and replayable. [ADR-020](docs/DECISIONS.md) and the complete [V2 request/result/error contract](docs/ARPEGGIATOR_MODEL.md) are accepted and merged through PR #111 at approved head `f505dc7c14dc83b50c800986d883f7fe5d5da704` with merge commit `b3a42464ea44450bb017a1c65dd316d0d069c191`. V2 runtime remains unimplemented and separately gated. Aggregate provenance remains later.
 
@@ -26,7 +26,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the review-pending retained diagnostic; historical search/finalist chronology remains unreproduced. Review of the retained deterministic diagnostic is the current pre-runtime gate; V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the accepted retained diagnostic; historical search execution, finalist selection, and no-retuning chronology remain unreproduced. A separately defined first V2 runtime implementation slice is the next eligible gate; V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
 
 ## Unresolved Risks
 
