@@ -2,7 +2,7 @@
 
 ## Before changing anything
 
-Read `AGENTS.md`, decisions, scope, requirements, acceptance criteria, and relevant domain contract. Inspect the full relevant tree, Git state/branch/remotes, existing code/tests/dependencies, Supabase/Vercel configuration, and contradictory documentation. Preserve valid user work.
+Read `AGENTS.md`, decisions, scope, requirements, acceptance criteria, and relevant domain contract. Inspect the full relevant tree, Git state/branch/remotes, existing code/tests/dependencies, and contradictory documentation. Inspect Supabase, Vercel, deployment, persistence, security, secrets/environment configuration, or other external-platform sources when the authorized task involves or may affect those boundaries; tasks unrelated to those systems do not require their inspection solely as ceremony. Preserve valid user work.
 
 ## Scope and authority
 
