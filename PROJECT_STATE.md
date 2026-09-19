@@ -16,7 +16,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the accepted retained diagnostic; historical search execution, finalist selection, and no-retuning chronology remain unreproduced. The V2 internal profile-configuration clarification is accepted and merged through PR #116, and the V2 profile-data foundation Slice 1 is accepted and merged through PR #125 at approved head `0d33abb8e21cc185cecd4de5f3cdf194dde114f6` with merge commit `bc9c13da0790bf5be8d6afbf4f8e675d736f23ee`. V2 runtime beyond this foundation, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the accepted retained diagnostic; historical search execution, finalist selection, and no-retuning chronology remain unreproduced. The V2 internal profile-configuration clarification is accepted and merged through PR #116, the V2 profile-data foundation Slice 1 is accepted and merged through PR #125 at approved head `0d33abb8e21cc185cecd4de5f3cdf194dde114f6` with merge commit `bc9c13da0790bf5be8d6afbf4f8e675d736f23ee`, and the V2 shared policy/compatibility configuration foundation is accepted and merged through PR #127 at approved head `5f8c4c26dcbfe39954a40c4a4073e8149b51a5fb` with merge commit `51d450f08ef31778ec11f2702be0006b40ea67d4`. V1 remains unchanged and replayable. V2 resolver adaptation remains unimplemented and separately gated; the public V2 operation remains a later separately gated boundary. Matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
 
 ## Unresolved Risks
 
@@ -28,7 +28,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-The next eligible gate is a separately authorized bounded V2 runtime slice; the exact post-Slice-1 scope remains to be selected from the accepted V2 contracts and is not authorized here. Matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work remain gated. Stage 8 is not authorized.
+The next eligible gate is a separately authorized bounded V2 resolver-adaptation slice. Resolver adaptation remains unimplemented and unauthorized; the public V2 operation remains later and separately gated. Matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work remain gated. Stage 8 is not authorized.
 
 ## Maintenance
 
