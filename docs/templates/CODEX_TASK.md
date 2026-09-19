@@ -22,6 +22,10 @@ State the explicit authorization and why this task is currently eligible under P
 
 - Expected branch:
 - Expected base SHA/ref, when applicable:
+- For publication-capable tasks, reviewed target-base SHA/ref used for technical review:
+- For publication-capable tasks, reviewed implementation-head SHA:
+- For publication-capable tasks, expected target-base state immediately before publication (normally unchanged):
+- For publication-capable tasks, reviewed file scope and relevant review/validation/check evidence:
 - Working-tree/index assumptions and existing work/stashes to preserve:
 
 ## AUTHORITY
@@ -74,6 +78,8 @@ Choose an explicit instruction:
 - `NOT AUTHORIZED — stop after local validated commit` (only if local committing is authorized).
 - `AUTHORIZED AFTER REVIEWED-HEAD CONFIRMATION` — record approved SHA, reviewed scope, and exact permitted push/PR/merge actions; preserve required CI and Product Owner merge authorization.
 - Another explicit repository-compatible instruction, such as read-only evidence with no commit, or implementation left uncommitted for review.
+
+For publication-capable tasks, also record the reviewed target base, reviewed implementation head, reviewed scope, relevant evidence, and the expected current remote target-base state. Before publication/merge, verify the live target base and state the base-match or bounded-base-movement disposition; do not infer authorization from technical approval alone.
 
 For ASSESS, authorize no edits or commits. Do not infer publication from permission to implement or commit.
 

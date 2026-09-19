@@ -96,6 +96,23 @@ Once ChatGPT explicitly approves a specific implementation commit SHA, it become
 
 Record the approved SHA and reviewed scope in the publication task. This rule supplements existing Git/PR practice; it does not override branch or CI policy, and review approval does not replace Product Owner merge authorization.
 
+## Reviewed-base binding and integration tuple
+
+For work intended for publication, technical approval is bound to an inspectable review tuple, recorded in the task and result evidence:
+
+- reviewed target-base SHA/ref used for the review;
+- reviewed implementation-head SHA;
+- reviewed file scope;
+- relevant review, validation, and CI/check evidence.
+
+This tuple establishes what was technically reviewed. It does not authorize publication or merge; Product Owner authorization remains a separate gate.
+
+Immediately before authorized publication or merge, verify the current remote target branch against the reviewed target base. If it still equals the reviewed target base, continue under the existing exact-head, scope, CI, and authorization gates. If it has advanced, stop normal publication and perform a bounded impact assessment before proceeding. Do not automatically rebase, merge the target branch into the implementation branch, cherry-pick into a replacement commit, assume an unchanged head remains approved, or merge merely because there is no textual conflict.
+
+The bounded assessment determines whether reviewed files or relevant contracts changed, integration semantics or conflicts exist, prior validation remains applicable, refreshed validation/review is required, or a replacement implementation commit is needed. A replacement, amended, or rebased implementation commit is a new unreviewed head under the reviewed-head rule. Refreshed work is proportional to the observed impact; target-base movement does not by itself require full reimplementation or a new architecture review.
+
+The reviewed implementation-head SHA and the resulting merge-commit SHA are distinct objects when the authorized merge method creates a merge commit. Do not require them to be equal. Post-merge evidence instead verifies the reviewed head is in the resulting target-branch ancestry, the authorized target-base/integration state was used, the merged change corresponds to the reviewed scope, and no unauthorized changes entered through publication.
+
 ## Implementation/publication separation
 
 ### Implementation gate
@@ -104,10 +121,10 @@ For nontrivial implementation tasks, Codex performs precheck, implements authori
 
 ### Publication gate
 
-Only after an exact head is approved, and publication is authorized, Codex verifies branch/head, confirms HEAD equals the approved SHA and scope is unchanged, pushes only approved work, creates/updates the PR when authorized, and reports CI/check status. No implementation changes are made unless review is reopened. Required checks and unchanged reviewed scope must be confirmed before an authorized merge; failures/conflicts are reported rather than repaired under publication-only authority.
+Only after an exact head is approved, and publication is authorized, Codex records the reviewed target base, reviewed implementation head, reviewed scope, relevant validation/check evidence, and expected target-base state. It then verifies the current remote target base, branch/head, PR head, and unchanged scope before pushing only approved work and creating/updating the PR when authorized. No implementation changes are made unless review is reopened. Required checks, base-match disposition, and unchanged reviewed scope must be confirmed before an authorized merge; failures, base movement, or conflicts are reported rather than repaired under publication-only authority.
 
 This split is not required for trivial tasks where existing repository practice and explicit authorization allow a simpler flow. It never permits bypassing required review, CI, or merge authorization.
 
 ## Post-merge reconciliation
 
-After consequential merges, verify whether coordination state changed materially. Apply the existing [AGENTS.md](../AGENTS.md) maintenance policy for [PROJECT_STATE.md](../PROJECT_STATE.md): update only a stale current coordination snapshot, never create a permanent history log. Permanent decisions remain in DECISIONS.md; scope, roadmap, architecture, and testing remain with their existing owners. If the publication task excludes edits, report stale wording for separately authorized reconciliation rather than creating another commit.
+After consequential merges, verify whether coordination state changed materially. Apply the existing [AGENTS.md](../AGENTS.md) maintenance policy for [PROJECT_STATE.md](../PROJECT_STATE.md): update only a stale current coordination snapshot, never create a permanent history log. Permanent decisions remain in DECISIONS.md; scope, roadmap, architecture, and testing remain with their existing owners. For publication evidence, distinguish the reviewed base, reviewed implementation head, PR head, resulting merge commit, and final target-branch head; verify the reviewed head's ancestry and authorized integration relationship. If the publication task excludes edits, report stale wording for separately authorized reconciliation rather than creating another commit.
