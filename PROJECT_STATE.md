@@ -10,16 +10,6 @@ The bounded frozen-R1 test-only diagnostic is accepted and merged through PR #11
 
 Stage 7A, Stage 7B1–B4, and Stage 7C runtime through public `generateArpEventsWithPolicyV1` (PR #98) are accepted and merged. PR #109 accepted exact V1/V2 compatibility pairs; V1 remains unchanged and replayable. [ADR-020](docs/DECISIONS.md) and the complete [V2 request/result/error contract](docs/ARPEGGIATOR_MODEL.md) are accepted and merged through PR #111 at approved head `f505dc7c14dc83b50c800986d883f7fe5d5da704` with merge commit `b3a42464ea44450bb017a1c65dd316d0d069c191`. V2 runtime remains unimplemented and separately gated. Aggregate provenance remains later.
 
-## Recent Accepted Work
-
-Stage 6A2 Bass V1 event generation is merged through PR #51 at `14191127ac861562332309cb30ea93961c9cda05`.
-
-The straight-rhythm contract is merged through PR #52 at `fddc268e30bd365a9b6c04f3bc85fd2c4396f02e`.
-
-The project-state maintenance workflow is merged through PR #53 at `45f831c6ea5fdc549a0176a2b3ed43b7f20ab842`.
-
-The bounded Bass straight-rhythm production implementation is merged through PR #56 at `4cb0444d10cdd500bea1947680012e64087ad71b`.
-
 ## Repository State
 
 Git refs are authoritative for the current `HEAD` and local/remote synchronization. This snapshot records coordination state and stable accepted PR/merge references; it does not predict or store the commit SHA that will contain its own current update.
