@@ -20,6 +20,7 @@ Nightdrive helps producers create original, editable musical material. Stage 1, 
 ## Engineering rules
 
 - Work on one bounded roadmap task at a time. Do not continue to the next task automatically.
+- Follow the [AI engineering workflow](docs/AI_ENGINEERING_WORKFLOW.md) and its task/result templates when applicable. It governs execution mechanics only and is subordinate to this operating contract, accepted decisions, scope, roadmap authorization, architecture, testing strategy, formal review procedures, and task-specific authoritative documents. On conflict, follow the existing source-of-truth rule and stop rather than infer.
 - Use the [Engineering Review Playbook](docs/ENGINEERING_REVIEW_PLAYBOOK.md) for read-only review procedures when justified by risk/change or explicitly authorized; reviews inspect and report only, and corrective implementation requires separate authorization. This playbook does not supersede AGENTS.md or accepted repository requirements, decisions, architecture, contracts, testing strategy, or milestone authorization.
 - Before meaningful engineering work, read `PROJECT_STATE.md` when it exists; update it when project coordination state materially changes, replacing stale state rather than accumulating a log. Keep requirements, architecture, contracts, tests, and decisions in their authoritative documents, and use Git for detailed history.
 - Trace behavior to requirement IDs and acceptance criteria. Update authoritative documentation with behavior changes.
@@ -36,3 +37,5 @@ Before implementing any new capability that could reasonably be provided by an e
 ## Delivery report
 
 Every implementation task must report: task completed; files modified; implementation; tests and results; acceptance verification; UX/accessibility verification; architecture/docs changes; Supabase changes; deployment changes; branch; commit; push; assumptions; remaining risks; and the next smallest backlog task. Recommending a task does not authorize it.
+
+Use the [Codex result template](docs/templates/CODEX_RESULT.md) when applicable as a supplement to, not a replacement for, these requirements.
