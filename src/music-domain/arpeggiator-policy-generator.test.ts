@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   ARP_DIRECTION_IDS,
   ARP_ERROR_CODES,
@@ -12,7 +12,9 @@ import {
 } from "./arpeggiator";
 import {
   ARP_POLICY_VERSION_V1,
+  ARP_POLICY_VERSION_V2,
   ARP_PROFILE_DATA_VERSION_V1,
+  ARP_PROFILE_DATA_VERSION_V2,
   SharedArpPolicyConfigurationError,
 } from "./arpeggiator-policy-configuration";
 import {
@@ -22,8 +24,11 @@ import {
 } from "./arpeggiator-profile-configuration";
 import {
   type ArpPolicyGenerationRequestV1,
+  type ArpPolicyGenerationRequestV2,
+  type ArpPolicyGenerationResultV2,
   COMPONENT_SEED_DERIVATION_VERSION_V1,
   generateArpEventsWithPolicyV1,
+  generateArpEventsWithPolicyV2,
 } from "./arpeggiator-policy-generator";
 import * as policyConfiguration from "./arpeggiator-policy-configuration";
 import * as profileConfiguration from "./arpeggiator-profile-configuration";
@@ -170,7 +175,11 @@ function expectArpError(
   return error;
 }
 
-function withField(base: ArpPolicyGenerationRequestV1, field: string, value: unknown): unknown {
+function withField(
+  base: ArpPolicyGenerationRequestV1 | ArpPolicyGenerationRequestV2,
+  field: string,
+  value: unknown,
+): unknown {
   const [owner, property] = field.split(".");
   if (property === undefined) return { ...base, [owner]: value };
   return {
@@ -182,7 +191,10 @@ function withField(base: ArpPolicyGenerationRequestV1, field: string, value: unk
   };
 }
 
-function withoutField(base: ArpPolicyGenerationRequestV1, field: string): unknown {
+function withoutField(
+  base: ArpPolicyGenerationRequestV1 | ArpPolicyGenerationRequestV2,
+  field: string,
+): unknown {
   const [owner, property] = field.split(".");
   if (property === undefined) {
     const copy = { ...base } as Record<string, unknown>;
@@ -720,5 +732,542 @@ describe("Stage 7C enclosing Arpeggiator policy generation", () => {
     ]) {
       expect(source.toLowerCase()).not.toContain(forbidden.toLowerCase());
     }
+  });
+});
+
+function requestV2(
+  profileId: HarmonyProfileId = HARMONY_PROFILE_IDS.classicSynthwave,
+  rootSeed = 0,
+): ArpPolicyGenerationRequestV2 {
+  return Object.freeze({
+    ...request(profileId, rootSeed),
+    profile: Object.freeze({ id: profileId, version: ARP_PROFILE_DATA_VERSION_V2 }),
+    policy: Object.freeze({ version: ARP_POLICY_VERSION_V2 }),
+  });
+}
+
+function expectPreflightFailure(input: unknown, code: ArpValueError["code"], field: string) {
+  let result: unknown;
+  const error = expectArpError(
+    () => {
+      result = generateArpEventsWithPolicyV2(input as never);
+    },
+    code,
+    field,
+  );
+  expect(result).toBeUndefined();
+  for (const downstream of [
+    componentSeed.deriveComponentSeedV1,
+    prng.createMulberry32State,
+    prng.nextMulberry32,
+    resolver.resolveArpPlanV1,
+    resolver.resolveArpPlanV2,
+    projector.projectResolvedArpPlanV1,
+  ]) {
+    expect(downstream).not.toHaveBeenCalled();
+  }
+  return error;
+}
+
+describe("public V2 Arpeggiator policy generation", () => {
+  beforeEach(() => {
+    // Restore the real spy implementations, including the V1 suite's controlled overrides.
+    vi.resetAllMocks();
+  });
+
+  it.each(ALL_PROFILES)(
+    "preserves literal center anchors, ownership and immutable replay for %s",
+    (profileId) => {
+      const input = requestV2(profileId);
+      const before = structuredClone(input);
+      const profileBefore = structuredClone(
+        profileConfiguration.ARP_GENRE_PROFILE_CONFIGURATION_V2,
+      );
+      const sharedBefore = structuredClone(policyConfiguration.SHARED_ARP_POLICY_CONFIGURATION_V2);
+      const result = generateArpEventsWithPolicyV2(input);
+      // R1's accepted medium/medium anchor lists preserve these literal V1 outcomes.
+      const golden = GOLDEN_RESULTS[profileId];
+      expect(result.plan).toEqual(golden.plan);
+      expect(result.events).toHaveLength(golden.count);
+      expect(result.events.slice(0, 4)).toEqual(golden.first);
+      expect(result.events.at(-1)).toEqual(golden.last);
+      expect(Object.keys(result)).toEqual(["plan", "events"]);
+      expect(Object.keys(result.plan)).toEqual([
+        "rate",
+        "direction",
+        "gateTicks",
+        "octaveRange",
+        "maskId",
+      ]);
+      expect([result, result.plan, result.events, ...result.events].every(Object.isFrozen)).toBe(
+        true,
+      );
+      let start = 0;
+      for (const slot of input.progression.slots) {
+        const end = start + slot.bars * 3840;
+        for (const event of result.events.filter(
+          (event) => event.startTick >= start && event.startTick < end,
+        )) {
+          expect(Object.keys(event)).toEqual(["pitch", "startTick", "durationTicks"]);
+          expect(event.startTick + event.durationTicks).toBeLessThanOrEqual(end);
+          expect(
+            slot.voicing.midiPitches.some(
+              (pitch) =>
+                event.pitch >= pitch &&
+                (event.pitch - pitch) % 12 === 0 &&
+                (event.pitch - pitch) / 12 < result.plan.octaveRange,
+            ),
+          ).toBe(true);
+        }
+        start = end;
+      }
+      expect(
+        result.events.every(
+          (event, i) => i === 0 || event.startTick > result.events[i - 1].startTick,
+        ),
+      ).toBe(true);
+      expect(generateArpEventsWithPolicyV2(input)).toEqual(result);
+      expect(input).toEqual(before);
+      expect(profileConfiguration.ARP_GENRE_PROFILE_CONFIGURATION_V2).toEqual(profileBefore);
+      expect(policyConfiguration.SHARED_ARP_POLICY_CONFIGURATION_V2).toEqual(sharedBefore);
+    },
+  );
+
+  it.each([0, 0xffff_ffff, 42, 123456789])(
+    "uses one fixed seed handoff and five V2 draws for root %s",
+    (root) => {
+      const input = requestV2(HARMONY_PROFILE_IDS.darkSynthwave, root);
+      const result = generateArpEventsWithPolicyV2(input);
+      expect(componentSeed.deriveComponentSeedV1).toHaveBeenCalledExactlyOnceWith(
+        root,
+        "arpeggiator",
+      );
+      const seed = vi.mocked(componentSeed.deriveComponentSeedV1).mock.results[0].value;
+      expect(resolver.resolveArpPlanV2).toHaveBeenCalledExactlyOnceWith(
+        { profileId: input.profile.id, energy: "medium", complexity: "medium" },
+        seed,
+      );
+      expect(resolver.resolveArpPlanV1).not.toHaveBeenCalled();
+      expect(prng.createMulberry32State).toHaveBeenCalledExactlyOnceWith(seed);
+      expect(prng.nextMulberry32).toHaveBeenCalledTimes(5);
+      expect(projector.projectResolvedArpPlanV1).toHaveBeenCalledExactlyOnceWith(
+        input.progression,
+        input.range,
+        result.plan,
+      );
+      expect(result.plan).toBe(vi.mocked(resolver.resolveArpPlanV2).mock.results[0].value);
+      expect(result.events).toBe(
+        vi.mocked(projector.projectResolvedArpPlanV1).mock.results[0].value,
+      );
+      expect(
+        vi
+          .mocked(profileConfiguration.buildArpWeightedCandidatesV2)
+          .mock.calls.map((call) => call[2]),
+      ).toEqual([
+        "rate",
+        "octave-range",
+        "direction",
+        "mask",
+        "gate",
+        "rate",
+        "octave-range",
+        "direction",
+        "mask",
+        "gate",
+      ]);
+      expect(
+        policyConfiguration.validateSharedArpPolicyConfigurationV2,
+      ).toHaveBeenCalledExactlyOnceWith(policyConfiguration.SHARED_ARP_POLICY_CONFIGURATION_V2);
+      const order = vi.mocked(policyConfiguration.validateSharedArpPolicyConfigurationV2).mock
+        .invocationCallOrder[0];
+      expect(
+        vi.mocked(profileConfiguration.buildArpWeightedCandidatesV2).mock.invocationCallOrder[4],
+      ).toBeLessThan(order);
+      expect(order).toBeLessThan(
+        vi.mocked(componentSeed.deriveComponentSeedV1).mock.invocationCallOrder[0],
+      );
+    },
+  );
+
+  const fields = [
+    ["intent.energy", "INVALID_ENERGY"],
+    ["intent.complexity", "INVALID_COMPLEXITY"],
+    ["profile.id", "INVALID_ARP_PROFILE"],
+    ["profile.version", "UNSUPPORTED_ARP_PROFILE_VERSION"],
+    ["policy.version", "UNSUPPORTED_ARP_POLICY_VERSION"],
+    ["seedDerivation.version", "UNSUPPORTED_SEED_DERIVATION_VERSION"],
+    ["prng.version", "UNSUPPORTED_PRNG_VERSION"],
+    ["rootSeed", "INVALID_ROOT_SEED"],
+    ["range", "INVALID_ARP_RANGE"],
+    ["progression", "INVALID_HARMONIC_CONTEXT"],
+  ] as const;
+  it.each(fields)("owns missing, undefined and malformed %s", (field, code) => {
+    const input = requestV2();
+    expectPreflightFailure(withoutField(input, field), code, field);
+    for (const invalid of [undefined, null, false, [], {}, "unknown", " MEDIUM "]) {
+      const isRecord = invalid !== null && typeof invalid === "object" && !Array.isArray(invalid);
+      const expectedField =
+        isRecord && field === "range"
+          ? "range.minMidiPitch"
+          : isRecord && field === "progression"
+            ? "progression.profile"
+            : field;
+      expectPreflightFailure(withField(input, field, invalid), code, expectedField);
+    }
+  });
+  it.each([
+    ["intent", "INVALID_ENERGY", "intent.energy"],
+    ["profile", "INVALID_ARP_PROFILE", "profile.id"],
+    ["policy", "UNSUPPORTED_ARP_POLICY_VERSION", "policy.version"],
+    ["seedDerivation", "UNSUPPORTED_SEED_DERIVATION_VERSION", "seedDerivation.version"],
+    ["prng", "UNSUPPORTED_PRNG_VERSION", "prng.version"],
+  ] as const)("rejects malformed wrapper %s without defaults", (wrapper, code, field) => {
+    expectPreflightFailure(withoutField(requestV2(), wrapper), code, field);
+    for (const value of [undefined, null, false, 1, "medium", []])
+      expectPreflightFailure({ ...requestV2(), [wrapper]: value }, code, field);
+  });
+  it.each([null, undefined, [], false, "request"])("rejects malformed top-level %s", (input) => {
+    expectPreflightFailure(input, "INVALID_ENERGY", "intent.energy");
+  });
+  it.each([-1, 0.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1, 0x1_0000_0000, "0", 0n])(
+    "rejects root %s without coercion",
+    (rootSeed) => {
+      expectPreflightFailure({ ...requestV2(), rootSeed }, "INVALID_ROOT_SEED", "rootSeed");
+    },
+  );
+  it.each([
+    [
+      ARP_PROFILE_DATA_VERSION_V1,
+      ARP_POLICY_VERSION_V1,
+      "UNSUPPORTED_ARP_PROFILE_VERSION",
+      "profile.version",
+    ],
+    [
+      ARP_PROFILE_DATA_VERSION_V1,
+      ARP_POLICY_VERSION_V2,
+      "UNSUPPORTED_ARP_PROFILE_VERSION",
+      "profile.version",
+    ],
+    [
+      ARP_PROFILE_DATA_VERSION_V2,
+      ARP_POLICY_VERSION_V1,
+      "UNSUPPORTED_ARP_POLICY_VERSION",
+      "policy.version",
+    ],
+  ] as const)("rejects operation-local pair %s / %s", (profile, policy, code, field) => {
+    expectPreflightFailure(
+      {
+        ...requestV2(),
+        profile: { id: HARMONY_PROFILE_IDS.classicSynthwave, version: profile },
+        policy: { version: policy },
+      },
+      code,
+      field,
+    );
+  });
+  it.each([
+    ["profile.version", ARP_PROFILE_DATA_VERSION_V2, "UNSUPPORTED_ARP_PROFILE_VERSION"],
+    ["policy.version", ARP_POLICY_VERSION_V2, "UNSUPPORTED_ARP_POLICY_VERSION"],
+    [
+      "seedDerivation.version",
+      COMPONENT_SEED_DERIVATION_VERSION_V1,
+      "UNSUPPORTED_SEED_DERIVATION_VERSION",
+    ],
+    ["prng.version", PRNG_ALGORITHM_ID, "UNSUPPORTED_PRNG_VERSION"],
+  ] as const)("rejects aliases and nonexact %s", (field, version, code) => {
+    for (const value of [
+      version.toUpperCase(),
+      ` ${version}`,
+      `${version} `,
+      "latest",
+      "future",
+      2,
+    ])
+      expectPreflightFailure(withField(requestV2(), field, value), code, field);
+  });
+  it("retains the sole compatible V2 pair without widening caller support", () => {
+    expect(policyConfiguration.SHARED_ARP_POLICY_CONFIGURATION_V2.version).toBe(
+      ARP_POLICY_VERSION_V2,
+    );
+    expect(
+      policyConfiguration.SHARED_ARP_POLICY_CONFIGURATION_V2.compatibleProfileDataVersion,
+    ).toBe(ARP_PROFILE_DATA_VERSION_V2);
+    expect(ARP_ERROR_CODES.incompatibleArpProfilePolicy).toBe("INCOMPATIBLE_ARP_PROFILE_POLICY");
+  });
+  it.each([
+    ["intent.energy", "intent.complexity", "INVALID_ENERGY"],
+    ["intent.complexity", "profile.id", "INVALID_COMPLEXITY"],
+    ["profile.id", "profile.version", "INVALID_ARP_PROFILE"],
+    ["profile.version", "policy.version", "UNSUPPORTED_ARP_PROFILE_VERSION"],
+    ["policy.version", "seedDerivation.version", "UNSUPPORTED_ARP_POLICY_VERSION"],
+    ["seedDerivation.version", "prng.version", "UNSUPPORTED_SEED_DERIVATION_VERSION"],
+    ["prng.version", "rootSeed", "UNSUPPORTED_PRNG_VERSION"],
+  ] as const)("orders %s before %s", (first, second, code) => {
+    const invalid = withField(
+      withField(requestV2(), first, "bad") as ArpPolicyGenerationRequestV2,
+      second,
+      "bad",
+    );
+    expectPreflightFailure(invalid, code, first);
+  });
+
+  it("orders root, profile config, shared config, range, Harmony and equality", () => {
+    vi.mocked(profileConfiguration.validateArpGenreProfileConfigurationV2).mockImplementationOnce(
+      () => {
+        throw new ArpGenreProfileConfigurationError("INVALID_WEIGHT", "private profile detail");
+      },
+    );
+    vi.mocked(policyConfiguration.validateSharedArpPolicyConfigurationV2).mockImplementationOnce(
+      () => {
+        throw new SharedArpPolicyConfigurationError(
+          "INVALID_GATE_MAPPINGS",
+          "private policy detail",
+        );
+      },
+    );
+    const invalid = {
+      ...requestV2(),
+      range: { minMidiPitch: -1, maxMidiPitch: 127 },
+      progression: { ...progression(), slots: [] },
+    };
+    expectPreflightFailure({ ...invalid, rootSeed: -1 }, "INVALID_ROOT_SEED", "rootSeed");
+    expect(profileConfiguration.validateArpGenreProfileConfigurationV2).not.toHaveBeenCalled();
+    for (const owner of ["profile.version", "policy.version"]) {
+      const error = expectPreflightFailure(invalid, "INVALID_ARP_POLICY_CONFIGURATION", owner);
+      expect(error).not.toHaveProperty("owner");
+      expect(error).not.toHaveProperty("kind");
+      expect(error.message).not.toContain("private");
+    }
+    expectPreflightFailure(invalid, "INVALID_ARP_RANGE", "range.minMidiPitch");
+    expectPreflightFailure(
+      {
+        ...invalid,
+        range: requestV2().range,
+        profile: { id: HARMONY_PROFILE_IDS.darkwave, version: ARP_PROFILE_DATA_VERSION_V2 },
+      },
+      "INVALID_HARMONIC_CONTEXT",
+      "progression.slots",
+    );
+    expectPreflightFailure(
+      {
+        ...requestV2(),
+        profile: { id: HARMONY_PROFILE_IDS.darkwave, version: ARP_PROFILE_DATA_VERSION_V2 },
+      },
+      "INCOMPATIBLE_ARP_PROFILE_CONTEXT",
+      "profile.id",
+    );
+  });
+
+  it.each(["rate", "octave-range", "direction", "mask", "gate"] as const)(
+    "translates candidate failure at %s before shared/range work",
+    async (failedSlot) => {
+      const actual = await vi.importActual<typeof profileConfiguration>(
+        "./arpeggiator-profile-configuration",
+      );
+      vi.mocked(profileConfiguration.buildArpWeightedCandidatesV2).mockImplementation((...args) => {
+        if (args[2] === failedSlot)
+          throw new ArpGenreProfileConfigurationError(
+            "INVALID_FINAL_WEIGHTS",
+            "private candidate detail",
+          );
+        return actual.buildArpWeightedCandidatesV2(...args);
+      });
+      const error = expectPreflightFailure(
+        { ...requestV2(), range: null },
+        "INVALID_ARP_POLICY_CONFIGURATION",
+        "profile.version",
+      );
+      expect(error.message).not.toContain("private");
+      expect(error).not.toHaveProperty("kind");
+      expect(error).not.toHaveProperty("owner");
+      expect(policyConfiguration.validateSharedArpPolicyConfigurationV2).not.toHaveBeenCalled();
+      const order = ["rate", "octave-range", "direction", "mask", "gate"];
+      expect(
+        vi
+          .mocked(profileConfiguration.buildArpWeightedCandidatesV2)
+          .mock.calls.map((call) => call[2]),
+      ).toEqual(order.slice(0, order.indexOf(failedSlot) + 1));
+    },
+  );
+
+  it.each([
+    [{ minMidiPitch: 80, maxMidiPitch: 40 }, "range"],
+    [{ minMidiPitch: 0, maxMidiPitch: 128 }, "range.maxMidiPitch"],
+    [{ minMidiPitch: -1, maxMidiPitch: -1 }, "range.minMidiPitch"],
+  ])("retains ordered range fields for %s", (range, field) => {
+    expectPreflightFailure(
+      { ...requestV2(), range, progression: null },
+      "INVALID_ARP_RANGE",
+      field as string,
+    );
+  });
+
+  it.each(["request", "intent", "profile", "policy", "seedDerivation", "prng"] as const)(
+    "ignores attempted overrides only at %s",
+    (wrapper) => {
+      const input = requestV2();
+      const extras = {
+        weights: [999],
+        candidates: ["bad"],
+        componentId: "bass",
+        componentSeed: -1,
+        maskId: "bad",
+        plan: { rate: "bad" },
+      };
+      const extended =
+        wrapper === "request"
+          ? { ...input, ...extras }
+          : { ...input, [wrapper]: { ...input[wrapper], ...extras } };
+      expect(generateArpEventsWithPolicyV2(extended)).toEqual(generateArpEventsWithPolicyV2(input));
+      vi.clearAllMocks();
+      expectPreflightFailure({ ...extended, rootSeed: undefined }, "INVALID_ROOT_SEED", "rootSeed");
+      const field =
+        wrapper === "request"
+          ? "intent.energy"
+          : wrapper === "intent"
+            ? "intent.energy"
+            : wrapper === "profile"
+              ? "profile.id"
+              : `${wrapper}.version`;
+      const code = fields.find((entry) => entry[0] === field)?.[1];
+      expect(code).toBeDefined();
+      expectPreflightFailure(withoutField(extended, field), code as ArpValueError["code"], field);
+    },
+  );
+
+  it("preserves seed isolation, sensitivity, object order independence and interior ranges", () => {
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("ambient randomness");
+    });
+    try {
+      const input = {
+        ...requestV2(HARMONY_PROFILE_IDS.darkwave),
+        range: createArpRange({ minMidiPitch: 30, maxMidiPitch: 90 }),
+      };
+      const first = generateArpEventsWithPolicyV2(input);
+      deriveComponentSeedV1(0, "bass");
+      prng.nextMulberry32(prng.createMulberry32State(0));
+      expect(
+        generateArpEventsWithPolicyV2(
+          Object.fromEntries(Object.entries(input).reverse()) as ArpPolicyGenerationRequestV2,
+        ),
+      ).toEqual(first);
+      expect(generateArpEventsWithPolicyV2({ ...input, rootSeed: 0xffff_ffff }).plan).not.toEqual(
+        first.plan,
+      );
+      expect(first.events.every((event) => event.pitch >= 30 && event.pitch <= 90)).toBe(true);
+      expect(random).not.toHaveBeenCalled();
+    } finally {
+      random.mockRestore();
+    }
+  });
+
+  it("returns no partial result when the first resolved slot has no legal pitch", () => {
+    let result: unknown;
+    expectArpError(
+      () => {
+        result = generateArpEventsWithPolicyV2({
+          ...requestV2(),
+          range: createArpRange({ minMidiPitch: 127, maxMidiPitch: 127 }),
+        });
+      },
+      "NO_LEGAL_ARP_PITCH",
+      "progression.slots[0].voicing.midiPitches",
+    );
+    expect(result).toBeUndefined();
+    expect(resolver.resolveArpPlanV2).toHaveBeenCalledTimes(1);
+    expect(projector.projectResolvedArpPlanV1).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["profile", "shared", "seed", "resolver", "projector"])(
+    "does not translate unrelated %s failures",
+    (phase) => {
+      const internal = new Error("private invariant");
+      const throwInternal = () => {
+        throw internal;
+      };
+      if (phase === "profile")
+        vi.mocked(
+          profileConfiguration.validateArpGenreProfileConfigurationV2,
+        ).mockImplementationOnce(throwInternal);
+      if (phase === "shared")
+        vi.mocked(
+          policyConfiguration.validateSharedArpPolicyConfigurationV2,
+        ).mockImplementationOnce(throwInternal);
+      if (phase === "seed")
+        vi.mocked(componentSeed.deriveComponentSeedV1).mockImplementationOnce(throwInternal);
+      if (phase === "resolver")
+        vi.mocked(resolver.resolveArpPlanV2).mockImplementationOnce(throwInternal);
+      if (phase === "projector")
+        vi.mocked(projector.projectResolvedArpPlanV1).mockImplementationOnce(throwInternal);
+      expect(() => generateArpEventsWithPolicyV2(requestV2())).toThrow(internal);
+    },
+  );
+  it("keeps impossible primitive and selected-value failures internal", () => {
+    vi.mocked(componentSeed.deriveComponentSeedV1).mockImplementationOnce(() => {
+      throw new ComponentSeedValueError("INVALID_COMPONENT_ID", "componentId", "impossible");
+    });
+    try {
+      generateArpEventsWithPolicyV2(requestV2());
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect(error).not.toBeInstanceOf(ArpValueError);
+      expect(error).not.toBeInstanceOf(ComponentSeedValueError);
+      expect(error).not.toHaveProperty("code");
+    }
+    vi.mocked(resolver.resolveArpPlanV2).mockReturnValueOnce({
+      ...GOLDEN_RESULTS[HARMONY_PROFILE_IDS.classicSynthwave].plan,
+      octaveRange: 99,
+    } as never);
+    expect(() => generateArpEventsWithPolicyV2(requestV2())).toThrow(
+      "integration invariant failed",
+    );
+    expect(projector.projectResolvedArpPlanV1).not.toHaveBeenCalled();
+  });
+
+  it("preserves V1-only acceptance and exposes only seven accepted V2 exports", () => {
+    expectArpError(
+      () => generateArpEventsWithPolicyV1(requestV2() as never),
+      "UNSUPPORTED_ARP_PROFILE_VERSION",
+      "profile.version",
+    );
+    expectArpError(
+      () =>
+        generateArpEventsWithPolicyV1({
+          ...request(),
+          policy: { version: ARP_POLICY_VERSION_V2 },
+        } as never),
+      "UNSUPPORTED_ARP_POLICY_VERSION",
+      "policy.version",
+    );
+    expect(publicDomain.generateArpEventsWithPolicyV2).toBe(generateArpEventsWithPolicyV2);
+    expect(publicDomain.ARP_PROFILE_DATA_VERSION_V2).toBe(ARP_PROFILE_DATA_VERSION_V2);
+    expect(publicDomain.ARP_POLICY_VERSION_V2).toBe(ARP_POLICY_VERSION_V2);
+    expectTypeOf<publicDomain.ArpPolicyGenerationRequestV2>().toEqualTypeOf<ArpPolicyGenerationRequestV2>();
+    expectTypeOf<publicDomain.ArpPolicyGenerationResultV2>().toEqualTypeOf<ArpPolicyGenerationResultV2>();
+    expectTypeOf<publicDomain.ArpPolicyVersionV2>().toEqualTypeOf<typeof ARP_POLICY_VERSION_V2>();
+    expectTypeOf<publicDomain.ArpProfileDataVersionV2>().toEqualTypeOf<
+      typeof ARP_PROFILE_DATA_VERSION_V2
+    >();
+    expectTypeOf(generateArpEventsWithPolicyV2)
+      .parameter(0)
+      .toEqualTypeOf<ArpPolicyGenerationRequestV2>();
+    expectTypeOf(
+      generateArpEventsWithPolicyV2,
+    ).returns.toEqualTypeOf<ArpPolicyGenerationResultV2>();
+    for (const internal of [
+      "resolveArpPlanV2",
+      "buildArpWeightedCandidatesV2",
+      "validateArpGenreProfileConfigurationV2",
+      "validateSharedArpPolicyConfigurationV2",
+      "ARP_GENRE_PROFILE_CONFIGURATION_V2",
+      "SHARED_ARP_POLICY_CONFIGURATION_V2",
+      "ArpGenreProfileConfigurationError",
+      "SharedArpPolicyConfigurationError",
+      "projectResolvedArpPlanV1",
+      "selectWeightedCandidateV1",
+    ])
+      expect(publicDomain).not.toHaveProperty(internal);
   });
 });
