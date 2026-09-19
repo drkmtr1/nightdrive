@@ -2,16 +2,23 @@
 
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ArpRateId } from "./arpeggiator";
 import { deriveComponentSeedV1 } from "./component-seed";
 import { HARMONY_PROFILE_IDS, type HarmonyProfileId } from "./harmony";
 import { createDurationTicks } from "./musical-time";
 import * as prng from "./prng";
+import {
+  SHARED_ARP_POLICY_CONFIGURATION_V2,
+  type ArpGateIdV1,
+} from "./arpeggiator-policy-configuration";
 import * as profileConfiguration from "./arpeggiator-profile-configuration";
 import * as weightedChoice from "./weighted-choice";
 import {
   resolveArpPlanV1,
+  resolveArpPlanV2,
   type ResolvedArpPlanV1,
   type ValidatedArpPolicyContextV1,
+  type ValidatedArpPolicyContextV2,
 } from "./arpeggiator-policy-resolver";
 
 vi.mock("./prng", { spy: true });
@@ -23,6 +30,14 @@ function context(
   energy: ValidatedArpPolicyContextV1["energy"] = "medium",
   complexity: ValidatedArpPolicyContextV1["complexity"] = "medium",
 ): ValidatedArpPolicyContextV1 {
+  return Object.freeze({ profileId, energy, complexity });
+}
+
+function contextV2(
+  profileId: HarmonyProfileId,
+  energy: ValidatedArpPolicyContextV2["energy"] = "medium",
+  complexity: ValidatedArpPolicyContextV2["complexity"] = "medium",
+): ValidatedArpPolicyContextV2 {
   return Object.freeze({ profileId, energy, complexity });
 }
 
@@ -139,6 +154,80 @@ const GOLDEN_CASES = [
   expected: ResolvedArpPlanV1;
 }>[];
 
+const V2_GOLDEN_CASES = [
+  {
+    profileId: HARMONY_PROFILE_IDS.darkSynthwave,
+    energy: "medium",
+    complexity: "medium",
+    componentSeed: 0,
+    expected: {
+      rate: "eighth",
+      direction: "down-up",
+      gateTicks: createDurationTicks(360),
+      octaveRange: 1,
+      maskId: "full",
+    },
+  },
+  {
+    profileId: HARMONY_PROFILE_IDS.classicSynthwave,
+    energy: "high",
+    complexity: "low",
+    componentSeed: 0xffff_ffff,
+    expected: {
+      rate: "sixteenth",
+      direction: "up-down",
+      gateTicks: createDurationTicks(180),
+      octaveRange: 2,
+      maskId: "full",
+    },
+  },
+  {
+    profileId: HARMONY_PROFILE_IDS.darkwave,
+    energy: "low",
+    complexity: "very-high",
+    componentSeed: 561_390_553,
+    expected: {
+      rate: "eighth",
+      direction: "down",
+      gateTicks: createDurationTicks(360),
+      octaveRange: 1,
+      maskId: "alternating-on-rest",
+    },
+  },
+  {
+    profileId: HARMONY_PROFILE_IDS.midtempoCyberpunk,
+    energy: "very-high",
+    complexity: "high",
+    componentSeed: 3_753_044_731,
+    expected: {
+      rate: "sixteenth",
+      direction: "up-down",
+      gateTicks: createDurationTicks(120),
+      octaveRange: 1,
+      maskId: "three-of-four",
+    },
+  },
+  {
+    profileId: HARMONY_PROFILE_IDS.darkSynthwave,
+    energy: "medium",
+    complexity: "medium",
+    componentSeed: 2_011_937_067,
+    expected: {
+      rate: "eighth",
+      direction: "down",
+      gateTicks: createDurationTicks(360),
+      octaveRange: 2,
+      maskId: "three-of-four",
+    },
+  },
+] as const satisfies readonly Readonly<{
+  profileId: HarmonyProfileId;
+  energy: ValidatedArpPolicyContextV2["energy"];
+  complexity: ValidatedArpPolicyContextV2["complexity"];
+  componentSeed: number;
+  expected: ResolvedArpPlanV1;
+}>[];
+
 describe("Stage 7C7a7 policy resolution", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -170,6 +259,7 @@ describe("Stage 7C7a7 policy resolution", () => {
     expect(prng.createMulberry32State).toHaveBeenCalledWith(2_011_937_067);
     expect(prng.nextMulberry32).toHaveBeenCalledTimes(5);
     expect(profileConfiguration.buildArpWeightedCandidatesV1).toHaveBeenCalledTimes(5);
+    expect(profileConfiguration.buildArpWeightedCandidatesV2).not.toHaveBeenCalled();
     expect(weightedChoice.selectWeightedCandidateV1).toHaveBeenCalledTimes(5);
 
     const expectedSlots = ["rate", "octave-range", "direction", "mask", "gate"] as const;
@@ -239,7 +329,9 @@ describe("Stage 7C7a7 policy resolution", () => {
   it("stays internal and contains no enclosing, projection, or ambient integration", async () => {
     const publicDomain = await import("./index");
     expect(publicDomain).not.toHaveProperty("resolveArpPlanV1");
+    expect(publicDomain).not.toHaveProperty("resolveArpPlanV2");
     expect(publicDomain).not.toHaveProperty("ResolvedArpPlanV1");
+    expect(publicDomain).not.toHaveProperty("ValidatedArpPolicyContextV2");
 
     const publicIndexSource = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
     expect(publicIndexSource).not.toContain("arpeggiator-policy-resolver");
@@ -259,5 +351,168 @@ describe("Stage 7C7a7 policy resolution", () => {
     expect(source).not.toContain("HarmonyProgressionRealization");
     expect(source).not.toContain("generateArpEvents");
     expect(source).not.toContain("ARP_DENSITY_MASK_CATALOG_V1");
+  });
+});
+
+describe("Stage 7 V2 policy resolver adaptation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each(V2_GOLDEN_CASES)(
+    "matches the literal V2 $profileId/$energy/$complexity seed $componentSeed plan",
+    ({ profileId, energy, complexity, componentSeed, expected }) => {
+      const input = contextV2(profileId, energy, complexity);
+      expect(resolveArpPlanV2(input, componentSeed)).toEqual(expected);
+      expect(resolveArpPlanV2(input, componentSeed)).toEqual(expected);
+    },
+  );
+
+  it("uses one stream and exactly five ordered draws, including a singleton gate", () => {
+    const input = contextV2(HARMONY_PROFILE_IDS.midtempoCyberpunk, "medium", "medium");
+    const plan = resolveArpPlanV2(input, 2_011_937_067);
+
+    expect(prng.createMulberry32State).toHaveBeenCalledTimes(1);
+    expect(prng.createMulberry32State).toHaveBeenCalledWith(2_011_937_067);
+    expect(prng.nextMulberry32).toHaveBeenCalledTimes(5);
+    expect(profileConfiguration.buildArpWeightedCandidatesV1).not.toHaveBeenCalled();
+    expect(profileConfiguration.buildArpWeightedCandidatesV2).toHaveBeenCalledTimes(5);
+    expect(weightedChoice.selectWeightedCandidateV1).toHaveBeenCalledTimes(5);
+
+    const expectedSlots = ["rate", "octave-range", "direction", "mask", "gate"] as const;
+    for (let index = 0; index < expectedSlots.length; index += 1) {
+      const builderCall = vi.mocked(profileConfiguration.buildArpWeightedCandidatesV2).mock.calls[
+        index
+      ];
+      const selectorCall = vi.mocked(weightedChoice.selectWeightedCandidateV1).mock.calls[index];
+      const prngResult = vi.mocked(prng.nextMulberry32).mock.results[index]?.value;
+      expect(builderCall).toEqual([
+        profileConfiguration.ARP_GENRE_PROFILE_CONFIGURATION_V2,
+        input.profileId,
+        expectedSlots[index],
+        input.energy,
+        input.complexity,
+      ]);
+      expect(selectorCall?.[0]).toBe(
+        vi.mocked(profileConfiguration.buildArpWeightedCandidatesV2).mock.results[index]?.value,
+      );
+      expect(selectorCall?.[1]).toBe(prngResult?.value);
+      if (index > 0) {
+        expect(vi.mocked(prng.nextMulberry32).mock.calls[index]?.[0]).toBe(
+          vi.mocked(prng.nextMulberry32).mock.results[index - 1]?.value.state,
+        );
+      }
+    }
+
+    const rate = vi.mocked(weightedChoice.selectWeightedCandidateV1).mock.results[0]
+      ?.value as ArpRateId;
+    const gate = vi.mocked(weightedChoice.selectWeightedCandidateV1).mock.results[4]
+      ?.value as ArpGateIdV1;
+    expect(
+      vi.mocked(profileConfiguration.buildArpWeightedCandidatesV2).mock.results[4]?.value,
+    ).toEqual([{ value: "short", weight: 1 }]);
+    expect(plan.gateTicks).toBe(SHARED_ARP_POLICY_CONFIGURATION_V2.gateTicksByRate[rate][gate]);
+  });
+
+  it("maps each golden selection through the accepted V2 semantic gate table", () => {
+    for (const { profileId, energy, complexity, componentSeed } of V2_GOLDEN_CASES) {
+      vi.clearAllMocks();
+      const plan = resolveArpPlanV2(contextV2(profileId, energy, complexity), componentSeed);
+      const rate = vi.mocked(weightedChoice.selectWeightedCandidateV1).mock.results[0]
+        ?.value as ArpRateId;
+      const gate = vi.mocked(weightedChoice.selectWeightedCandidateV1).mock.results[4]
+        ?.value as ArpGateIdV1;
+
+      expect(plan.gateTicks).toBe(SHARED_ARP_POLICY_CONFIGURATION_V2.gateTicksByRate[rate][gate]);
+    }
+  });
+
+  it("keeps V1 and V2 aligned to the same five raw PRNG outputs", () => {
+    const seed = 0xffff_ffff;
+    const v1Input = context(HARMONY_PROFILE_IDS.classicSynthwave, "high", "low");
+    const v2Input = contextV2(HARMONY_PROFILE_IDS.classicSynthwave, "high", "low");
+
+    resolveArpPlanV1(v1Input, seed);
+    const v1Outputs = vi
+      .mocked(prng.nextMulberry32)
+      .mock.results.map((result) => result.value.value);
+    const v1States = vi
+      .mocked(prng.nextMulberry32)
+      .mock.results.map((result) => result.value.state);
+
+    vi.clearAllMocks();
+    resolveArpPlanV2(v2Input, seed);
+    const v2Outputs = vi
+      .mocked(prng.nextMulberry32)
+      .mock.results.map((result) => result.value.value);
+    const v2States = vi
+      .mocked(prng.nextMulberry32)
+      .mock.results.map((result) => result.value.state);
+
+    expect(v2Outputs).toEqual(v1Outputs);
+    expect(v2States).toEqual(v1States);
+    expect(v2Outputs).toHaveLength(5);
+  });
+
+  it("returns the exact frozen plan without mutating caller or canonical configuration", () => {
+    const input = contextV2(HARMONY_PROFILE_IDS.darkSynthwave, "high", "very-high");
+    const inputBefore = structuredClone(input);
+    const profileBefore = structuredClone(profileConfiguration.ARP_GENRE_PROFILE_CONFIGURATION_V2);
+    const policyBefore = structuredClone(SHARED_ARP_POLICY_CONFIGURATION_V2);
+
+    const plan = resolveArpPlanV2(input, 561_390_553);
+
+    expect(Reflect.ownKeys(plan)).toEqual([
+      "rate",
+      "direction",
+      "gateTicks",
+      "octaveRange",
+      "maskId",
+    ]);
+    expect(Object.isFrozen(plan)).toBe(true);
+    expect(input).toEqual(inputBefore);
+    expect(profileConfiguration.ARP_GENRE_PROFILE_CONFIGURATION_V2).toEqual(profileBefore);
+    expect(SHARED_ARP_POLICY_CONFIGURATION_V2).toEqual(policyBefore);
+    expect(Object.isFrozen(profileConfiguration.ARP_GENRE_PROFILE_CONFIGURATION_V2)).toBe(true);
+    expect(Object.isFrozen(SHARED_ARP_POLICY_CONFIGURATION_V2)).toBe(true);
+  });
+
+  it("remains deterministic and isolated from ambient randomness and later boundaries", async () => {
+    const input = contextV2(HARMONY_PROFILE_IDS.darkwave, "high", "high");
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("ambient randomness is prohibited");
+    });
+
+    try {
+      const expected = resolveArpPlanV2(input, 0xffff_ffff);
+      expect(resolveArpPlanV2(input, 0xffff_ffff)).toEqual(expected);
+      expect(random).not.toHaveBeenCalled();
+    } finally {
+      random.mockRestore();
+    }
+
+    const publicDomain = await import("./index");
+    expect(publicDomain).not.toHaveProperty("resolveArpPlanV2");
+    expect(publicDomain).not.toHaveProperty("ValidatedArpPolicyContextV2");
+
+    const publicIndexSource = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
+    expect(publicIndexSource).not.toContain("arpeggiator-policy-resolver");
+    expect(publicIndexSource).not.toContain("resolveArpPlanV2");
+
+    const source = readFileSync(
+      new URL("./arpeggiator-policy-resolver.ts", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toContain("Math.random");
+    expect(source).not.toContain("Date.now");
+    expect(source).not.toContain("new Date");
+    expect(source).not.toContain("Intl.");
+    expect(source).not.toContain("fetch(");
+    expect(source).not.toContain("WebSocket");
+    expect(source).not.toContain("process.env");
+    expect(source).not.toContain("deriveComponentSeedV1");
+    expect(source).not.toContain("generateArpEventsWithPolicyV2");
+    expect(source).not.toContain("projectResolvedArpPlanV1");
+    expect(source).not.toContain("ArpValueError");
   });
 });
