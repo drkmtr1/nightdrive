@@ -1,97 +1,57 @@
 # Codex task packet
 
-Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md). Complete the fields for one bounded task; this packet is subordinate to [AGENTS.md](../../AGENTS.md) and the governing repository documents, not an alternative source of authority.
+Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md). This reusable packet is subordinate to [AGENTS.md](../../AGENTS.md) and the governing repository documents; it organizes a bounded task but grants no authority.
 
-## TASK
+## TASK / CLASSIFICATION
 
-One bounded objective.
+- Objective: one bounded task.
+- Type: `ASSESS | SPECIFY | IMPLEMENT` — select one; ASSESS remains read-only and SPECIFY does not imply runtime authorization.
+- Risk: `R0 | R1 | R2 | R3` with a brief rationale.
 
-## TASK TYPE
+## AUTHORIZATION / REPOSITORY STATE
 
-`ASSESS | SPECIFY | IMPLEMENT` — select one and explain if necessary.
-
-## RISK CLASS
-
-`R0 | R1 | R2 | R3` — select one with a brief rationale.
-
-## CURRENT AUTHORIZATION
-
-State the explicit authorization and why this task is currently eligible under PROJECT_STATE.md, docs/ROADMAP.md, or another governing contract. Eligibility alone is not authorization.
-
-## BASE / REPOSITORY STATE
-
+- Current authorization and why the task is eligible under `PROJECT_STATE.md`, `docs/ROADMAP.md`, or another governing contract. Eligibility alone is not authorization.
 - Expected branch:
 - Expected base SHA/ref, when applicable:
-- For publication-capable tasks, reviewed target-base SHA/ref used for technical review:
-- For publication-capable tasks, reviewed implementation-head SHA:
-- For publication-capable tasks, expected target-base state immediately before publication (normally unchanged):
-- For publication-capable tasks, reviewed file scope and relevant review/validation/check evidence:
 - Working-tree/index assumptions and existing work/stashes to preserve:
+- For publication-capable work: reviewed target-base SHA/ref, reviewed implementation-head SHA, expected remote target-base state, reviewed scope, and relevant review/validation/check evidence.
 
-## AUTHORITY
+## AUTHORITY / SCOPE
 
-List exact governing documents and relevant requirement/acceptance IDs or contract sections. Read in the order required by AGENTS.md. The task prompt does not outrank them.
-
-## ALLOWED SCOPE
-
-Expected/allowed paths or an explicitly bounded area. Identify any permitted existing changes; do not infer permission for adjacent files.
-
-## REQUIRED BEHAVIOR
-
-Exact requirements, contract maturity, inputs/outputs, invariants, and failure behavior applicable to this task.
+- Governing documents and relevant requirement, acceptance, or contract sections, read in the order required by AGENTS.md. The task prompt does not outrank them.
+- Allowed paths or explicitly bounded area, including any permitted existing changes. Do not infer permission for adjacent files.
+- Required behavior: exact requirements, contract maturity, inputs/outputs, invariants, and failure behavior.
 
 ## NON-GOALS / DO NOT
 
-- No unrelated refactors or fixes.
-- No speculative abstractions or unauthorized dependencies.
-- No future-stage implementation or silent contract changes.
-- Add task-specific exclusions, including publication and environment boundaries.
+- No unrelated refactors or fixes, speculative abstractions, unauthorized dependencies, future-stage implementation, or silent contract changes.
+- Add task-specific exclusions, including publication, environment, and external-system boundaries.
 
-## PRECHECK
+## PRECHECK / EVIDENCE
 
-Verify branch/base, working-tree/index state, governing documents, file scope, contract maturity, and compatibility with repository truth before edits. Explicitly report precheck success for meaningful implementation. ASSESS remains read-only.
-
-## REVIEW EVIDENCE HANDOFF
-
-For implementation tasks that will undergo review, state how the exact candidate will be made inspectable when applicable:
-
-- Local-only committed candidate: provide the complete base-to-head diff, including new files, or an equivalent complete artifact tied to the exact base/head.
-- Uncommitted candidate: provide complete working-tree/index candidate evidence without inferring a commit requirement.
-- Remotely fetchable candidate: identify the authoritative source and exact base/head evidence actually fetched; do not duplicate a complete diff solely because this template exists.
-- Disclose unavailable, partial, binary, or otherwise non-inline-reviewable evidence and any resulting review limitation. Do not require pushing unreviewed work merely for inspection.
+- Verify branch/base, working-tree/index state, governing documents, scope, contract maturity, and compatibility with repository truth before edits; report meaningful precheck success.
+- Review handoff for implementation: explain how the exact candidate will be inspectable. A local committed candidate requires a complete base-to-head diff or equivalent artifact (including new files); an uncommitted candidate requires complete working-tree/index evidence; a remotely fetchable candidate must identify the authoritative source and exact base/head evidence. Disclose unavailable, partial, binary, or non-inline-reviewable evidence; do not push unreviewed work merely for inspection.
 
 ## BUILD-VS-BUY
 
-Select one:
+Choose one and explain: `Not applicable`; `Existing accepted approach applies` with the governing decision; or `Required` — perform the AGENTS.md gate before implementation.
 
-- `Not applicable` — explain briefly.
-- `Existing accepted approach applies` — cite the governing repository decision.
-- `Required` — perform the AGENTS.md Build-vs-Buy gate before implementation.
+## ACCEPTANCE / VALIDATION / STOP
 
-## ACCEPTANCE CRITERIA
-
-List observable conditions and the evidence required to verify each.
-
-## VALIDATION
-
-List exact task-specific commands and repository-required checks, plus applicable manual evidence. State any accepted limitation without weakening required checks.
-
-## STOP CONDITIONS
-
-Apply the workflow's default `BLOCKED` conditions and list task-specific triggers. Do not repair unexpected state or broaden scope without authorization.
+- Acceptance criteria: observable conditions and evidence for each.
+- Validation: exact task-specific commands, repository-required checks, manual evidence, and accepted limitations.
+- Stop conditions: workflow-default `BLOCKED` triggers plus task-specific triggers. Do not repair unexpected state or broaden scope without authorization.
 
 ## PUBLICATION AUTHORIZATION
 
-Choose an explicit instruction:
+Choose one explicit instruction:
 
-- `NOT AUTHORIZED — stop after local validated commit` (only if local committing is authorized).
-- `AUTHORIZED AFTER REVIEWED-HEAD CONFIRMATION` — record approved SHA, reviewed scope, and exact permitted push/PR/merge actions; preserve required CI and Product Owner merge authorization.
-- Another explicit repository-compatible instruction, such as read-only evidence with no commit, or implementation left uncommitted for review.
+- `NOT AUTHORIZED — stop after local validated commit` (only when local commit is authorized).
+- `AUTHORIZED AFTER REVIEWED-HEAD CONFIRMATION` — record approved SHA, reviewed scope, exact push/PR/merge actions, required CI, and Product Owner merge authorization.
+- Another repository-compatible instruction, such as read-only evidence or leaving implementation uncommitted.
 
-For publication-capable tasks, also record the reviewed target base, reviewed implementation head, reviewed scope, relevant evidence, and the expected current remote target-base state. Before publication/merge, verify the live target base and state the base-match or bounded-base-movement disposition; do not infer authorization from technical approval alone.
-
-For ASSESS, authorize no edits or commits. Do not infer publication from permission to implement or commit.
+For publication-capable work, record reviewed base/head/scope/evidence and expected remote target-base state; before publication or merge verify the live target base and state the base-match or bounded-base-movement disposition. After exact-head approval, any branch mutation creates a new unreviewed head under the workflow's reviewed-head rule. For ASSESS, authorize no edits or commits. Technical review never replaces Product Owner publication/merge authority.
 
 ## RETURN
 
-Return evidence using the [Codex result template](CODEX_RESULT.md), including the applicable review-evidence handoff and its exact base/head or working-tree coverage. Retain all AGENTS.md delivery requirements. Report exact state, commands/results, scope, unavailable evidence, and blockers. Stop at this task's gate; a recommendation does not authorize continuation.
+Use [CODEX_RESULT.md](CODEX_RESULT.md), retaining all AGENTS.md delivery facts and applicable review/publication evidence. Report exact state, commands/results, scope, unavailable evidence, blockers, and the next gate; a recommendation does not authorize continuation.
