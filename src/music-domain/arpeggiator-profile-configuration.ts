@@ -10,10 +10,12 @@ import {
   ARP_OCTAVE_RANGE_V1_VALUES,
   ARP_POLICY_DECISION_SLOT_V1_VALUES,
   ARP_PROFILE_DATA_VERSION_V1,
+  ARP_PROFILE_DATA_VERSION_V2,
   type ArpGateIdV1,
   type ArpOctaveRangeV1,
   type ArpPolicyDecisionSlotV1,
   type ArpProfileDataVersionV1,
+  type ArpProfileDataVersionV2,
 } from "./arpeggiator-policy-configuration";
 import {
   COMPLEXITY_V1_VALUES,
@@ -26,8 +28,8 @@ import type { WeightedCandidate } from "./weighted-choice";
 
 const MAX_WEIGHT = 65_535;
 
-export const ARP_PROFILE_DATA_VERSION_V2 = "nightdrive.genre-profile.arpeggiator.v2" as const;
-export type ArpProfileDataVersionV2 = typeof ARP_PROFILE_DATA_VERSION_V2;
+export { ARP_PROFILE_DATA_VERSION_V2 };
+export type { ArpProfileDataVersionV2 };
 
 export type ArpPolicyCandidateByDecisionSlotV1 = Readonly<{
   rate: ArpRateId;
