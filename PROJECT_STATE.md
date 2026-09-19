@@ -26,7 +26,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the accepted retained diagnostic; historical search execution, finalist selection, and no-retuning chronology remain unreproduced. The first V2 profile-data implementation slice is paused for ChatGPT review of its internal configuration contract clarification; V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the accepted retained diagnostic; historical search execution, finalist selection, and no-retuning chronology remain unreproduced. The V2 internal profile-configuration clarification is accepted and merged through PR #116; the first V2 profile-data implementation slice is the next eligible gate and has not started. V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
 
 ## Unresolved Risks
 
@@ -38,7 +38,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-ChatGPT review of the V2 internal profile-configuration clarification is next. The first V2 profile-data implementation slice remains paused pending that review and separate explicit resumption. Matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work remain gated. Stage 8 is not authorized.
+Implement the bounded V2 profile-data foundation Slice 1 after separate authorization. It remains unstarted. Matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work remain gated. Stage 8 is not authorized.
 
 ## Maintenance
 
