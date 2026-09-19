@@ -74,6 +74,19 @@ What changed. For ASSESS/SPECIFY, use `N/A` for runtime implementation where app
 
 Map each acceptance criterion to concrete evidence; identify unmet or unverified conditions.
 
+## REVIEW EVIDENCE
+
+For implementation review, report:
+
+- Evidence supplied directly:
+- Evidence fetched or available from an authoritative source:
+- Exact base/head or working-tree/index state covered:
+- Changed-file scope covered:
+- Completeness: `COMPLETE | PARTIAL | N/A`:
+- Unavailable or partial evidence and resulting review limitations:
+
+For a local-only committed candidate that the reviewer cannot fetch, include the complete base-to-head diff or an equivalent complete artifact, including new files. For an uncommitted candidate, include complete working-tree/index evidence. State when complete remote evidence was actually fetched instead of duplicating it. Partial evidence cannot support full exact-head implementation approval.
+
 ## TESTS / VALIDATION
 
 Exact commands and results, including failures and checks not run with reasons. Do not present inherited evidence as a fresh execution.
