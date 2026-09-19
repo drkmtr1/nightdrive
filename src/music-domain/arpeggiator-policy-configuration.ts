@@ -4,8 +4,14 @@ import { createDurationTicks, type DurationTicks, SUBDIVISION_TICKS } from "./mu
 export const ARP_PROFILE_DATA_VERSION_V1 = "nightdrive.genre-profile.arpeggiator.v1" as const;
 export type ArpProfileDataVersionV1 = typeof ARP_PROFILE_DATA_VERSION_V1;
 
+export const ARP_PROFILE_DATA_VERSION_V2 = "nightdrive.genre-profile.arpeggiator.v2" as const;
+export type ArpProfileDataVersionV2 = typeof ARP_PROFILE_DATA_VERSION_V2;
+
 export const ARP_POLICY_VERSION_V1 = "nightdrive.arpeggiator-policy.v1" as const;
 export type ArpPolicyVersionV1 = typeof ARP_POLICY_VERSION_V1;
+
+export const ARP_POLICY_VERSION_V2 = "nightdrive.arpeggiator-policy.v2" as const;
+export type ArpPolicyVersionV2 = typeof ARP_POLICY_VERSION_V2;
 
 export const ARP_OCTAVE_RANGE_V1_VALUES = Object.freeze([1, 2, 3] as const);
 export type ArpOctaveRangeV1 = (typeof ARP_OCTAVE_RANGE_V1_VALUES)[number];
@@ -26,9 +32,12 @@ export const ARP_WEIGHTED_CHOICE_VERSION_V1 =
   "nightdrive.weighted-choice.uint32-modulo.v1" as const;
 export const ARP_DENSITY_MASK_CATALOG_VERSION_V1 = "nightdrive.arp-density-mask.v1" as const;
 
-export type SharedArpPolicyConfigurationV1 = Readonly<{
-  version: ArpPolicyVersionV1;
-  compatibleProfileDataVersion: ArpProfileDataVersionV1;
+type SharedArpPolicyConfiguration<
+  TPolicyVersion extends ArpPolicyVersionV1 | ArpPolicyVersionV2,
+  TProfileDataVersion extends ArpProfileDataVersionV1 | ArpProfileDataVersionV2,
+> = Readonly<{
+  version: TPolicyVersion;
+  compatibleProfileDataVersion: TProfileDataVersion;
   decisionSlots: readonly ["rate", "octave-range", "direction", "mask", "gate"];
   weightedChoiceVersion: typeof ARP_WEIGHTED_CHOICE_VERSION_V1;
   densityMaskCatalogVersion: typeof ARP_DENSITY_MASK_CATALOG_VERSION_V1;
@@ -53,6 +62,16 @@ export type SharedArpPolicyConfigurationV1 = Readonly<{
   }>;
 }>;
 
+export type SharedArpPolicyConfigurationV1 = SharedArpPolicyConfiguration<
+  ArpPolicyVersionV1,
+  ArpProfileDataVersionV1
+>;
+
+export type SharedArpPolicyConfigurationV2 = SharedArpPolicyConfiguration<
+  ArpPolicyVersionV2,
+  ArpProfileDataVersionV2
+>;
+
 const GATE_TICKS_BY_RATE_V1 = Object.freeze({
   quarter: Object.freeze({
     short: createDurationTicks(480),
@@ -74,6 +93,17 @@ const GATE_TICKS_BY_RATE_V1 = Object.freeze({
 export const SHARED_ARP_POLICY_CONFIGURATION_V1: SharedArpPolicyConfigurationV1 = Object.freeze({
   version: ARP_POLICY_VERSION_V1,
   compatibleProfileDataVersion: ARP_PROFILE_DATA_VERSION_V1,
+  decisionSlots: ARP_POLICY_DECISION_SLOT_V1_VALUES,
+  weightedChoiceVersion: ARP_WEIGHTED_CHOICE_VERSION_V1,
+  densityMaskCatalogVersion: ARP_DENSITY_MASK_CATALOG_VERSION_V1,
+  octaveRanges: ARP_OCTAVE_RANGE_V1_VALUES,
+  gateIds: ARP_GATE_ID_V1_VALUES,
+  gateTicksByRate: GATE_TICKS_BY_RATE_V1,
+});
+
+export const SHARED_ARP_POLICY_CONFIGURATION_V2: SharedArpPolicyConfigurationV2 = Object.freeze({
+  version: ARP_POLICY_VERSION_V2,
+  compatibleProfileDataVersion: ARP_PROFILE_DATA_VERSION_V2,
   decisionSlots: ARP_POLICY_DECISION_SLOT_V1_VALUES,
   weightedChoiceVersion: ARP_WEIGHTED_CHOICE_VERSION_V1,
   densityMaskCatalogVersion: ARP_DENSITY_MASK_CATALOG_VERSION_V1,
@@ -200,19 +230,19 @@ function validateGateMappings(value: unknown): void {
   }
 }
 
-export function validateSharedArpPolicyConfigurationV1(
-  value: unknown,
-): SharedArpPolicyConfigurationV1 {
+function validateSharedArpPolicyConfiguration<
+  TConfiguration extends SharedArpPolicyConfigurationV1 | SharedArpPolicyConfigurationV2,
+>(value: unknown, expectedConfiguration: TConfiguration): TConfiguration {
   if (!isPlainRecord(value) || !hasExactProperties(value, TOP_LEVEL_PROPERTIES)) {
     fail(
       "INVALID_CONFIGURATION_SHAPE",
       "shared Arpeggiator policy configuration must contain exactly the canonical properties.",
     );
   }
-  if (value.version !== ARP_POLICY_VERSION_V1) {
+  if (value.version !== expectedConfiguration.version) {
     fail("INVALID_POLICY_VERSION", "version must be the canonical Arpeggiator policy identity.");
   }
-  if (value.compatibleProfileDataVersion !== ARP_PROFILE_DATA_VERSION_V1) {
+  if (value.compatibleProfileDataVersion !== expectedConfiguration.compatibleProfileDataVersion) {
     fail(
       "INCOMPATIBLE_PROFILE_DATA_VERSION",
       "compatibleProfileDataVersion must be the supported profile-data identity.",
@@ -245,5 +275,17 @@ export function validateSharedArpPolicyConfigurationV1(
   validateExactTuple(value.gateIds, ARP_GATE_ID_V1_VALUES, "INVALID_GATE_IDS", "gateIds");
   validateGateMappings(value.gateTicksByRate);
 
-  return SHARED_ARP_POLICY_CONFIGURATION_V1;
+  return expectedConfiguration;
+}
+
+export function validateSharedArpPolicyConfigurationV1(
+  value: unknown,
+): SharedArpPolicyConfigurationV1 {
+  return validateSharedArpPolicyConfiguration(value, SHARED_ARP_POLICY_CONFIGURATION_V1);
+}
+
+export function validateSharedArpPolicyConfigurationV2(
+  value: unknown,
+): SharedArpPolicyConfigurationV2 {
+  return validateSharedArpPolicyConfiguration(value, SHARED_ARP_POLICY_CONFIGURATION_V2);
 }
