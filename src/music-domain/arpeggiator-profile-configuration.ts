@@ -26,6 +26,9 @@ import type { WeightedCandidate } from "./weighted-choice";
 
 const MAX_WEIGHT = 65_535;
 
+export const ARP_PROFILE_DATA_VERSION_V2 = "nightdrive.genre-profile.arpeggiator.v2" as const;
+export type ArpProfileDataVersionV2 = typeof ARP_PROFILE_DATA_VERSION_V2;
+
 export type ArpPolicyCandidateByDecisionSlotV1 = Readonly<{
   rate: ArpRateId;
   "octave-range": ArpOctaveRangeV1;
@@ -75,6 +78,11 @@ export type ArpGenreProfileConfigurationDataV1 = Readonly<{
     ArpGenreProfileConfigurationV1<typeof HARMONY_PROFILE_IDS.darkwave>,
     ArpGenreProfileConfigurationV1<typeof HARMONY_PROFILE_IDS.midtempoCyberpunk>,
   ];
+}>;
+
+export type ArpGenreProfileConfigurationDataV2 = Readonly<{
+  version: ArpProfileDataVersionV2;
+  profiles: ArpGenreProfileConfigurationDataV1["profiles"];
 }>;
 
 function weightRows(
@@ -256,6 +264,169 @@ const PROFILE_CONFIGURATION_SOURCE = {
   ],
 } as const satisfies ArpGenreProfileConfigurationDataV1;
 
+const PROFILE_CONFIGURATION_SOURCE_V2 = {
+  version: ARP_PROFILE_DATA_VERSION_V2,
+  profiles: [
+    {
+      profileId: HARMONY_PROFILE_IDS.darkSynthwave,
+      decisionSlots: [
+        {
+          slot: "rate",
+          candidates: [ARP_RATE_IDS.eighth, ARP_RATE_IDS.sixteenth],
+          energyWeights: weightRows([5, 1], [4, 2], [3, 5], [2, 6], [1, 7]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+        {
+          slot: "octave-range",
+          candidates: [1, 2],
+          energyWeights: weightRows([2, 5], [2, 5], [2, 5], [2, 5], [2, 5]),
+          complexityAdditions: weightRows([6, 0], [3, 0], [0, 0], [0, 2], [0, 4]),
+        },
+        {
+          slot: "direction",
+          candidates: [ARP_DIRECTION_IDS.downUp, ARP_DIRECTION_IDS.down, ARP_DIRECTION_IDS.upDown],
+          energyWeights: weightRows([6, 4, 1], [6, 4, 1], [6, 4, 1], [6, 4, 1], [6, 4, 1]),
+          complexityAdditions: weightRows([0, 2, 1], [0, 1, 1], [0, 0, 0], [1, 0, 4], [2, 0, 8]),
+        },
+        {
+          slot: "mask",
+          candidates: ["three-of-four", "full"],
+          energyWeights: weightRows([9, 2], [7, 4], [4, 5], [3, 4], [1, 3]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+        {
+          slot: "gate",
+          candidates: ["short", "medium"],
+          energyWeights: weightRows([4, 7], [4, 6], [4, 4], [5, 3], [6, 1]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+      ],
+    },
+    {
+      profileId: HARMONY_PROFILE_IDS.classicSynthwave,
+      decisionSlots: [
+        {
+          slot: "rate",
+          candidates: [ARP_RATE_IDS.eighth, ARP_RATE_IDS.sixteenth],
+          energyWeights: weightRows([5, 1], [4, 1], [3, 5], [2, 5], [1, 7]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+        {
+          slot: "octave-range",
+          candidates: [1, 2],
+          energyWeights: weightRows([5, 2], [4, 3], [3, 5], [2, 6], [2, 7]),
+          complexityAdditions: weightRows([6, 0], [0, 0], [0, 0], [0, 0], [1, 4]),
+        },
+        {
+          slot: "direction",
+          candidates: [ARP_DIRECTION_IDS.up, ARP_DIRECTION_IDS.upDown, ARP_DIRECTION_IDS.downUp],
+          energyWeights: weightRows([6, 3, 1], [6, 3, 1], [6, 3, 1], [6, 3, 1], [6, 3, 1]),
+          complexityAdditions: weightRows([2, 1, 0], [1, 1, 0], [0, 1, 0], [0, 5, 5], [2, 6, 9]),
+        },
+        {
+          slot: "mask",
+          candidates: ["three-of-four", "full"],
+          energyWeights: weightRows([6, 2], [5, 2], [3, 6], [2, 7], [1, 8]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+        {
+          slot: "gate",
+          candidates: ["short", "medium"],
+          energyWeights: weightRows([5, 9], [5, 7], [4, 5], [5, 6], [6, 3]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+      ],
+    },
+    {
+      profileId: HARMONY_PROFILE_IDS.darkwave,
+      decisionSlots: [
+        {
+          slot: "rate",
+          candidates: [ARP_RATE_IDS.quarter, ARP_RATE_IDS.eighth],
+          energyWeights: weightRows([6, 2], [5, 3], [3, 6], [2, 7], [1, 8]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+        {
+          slot: "octave-range",
+          candidates: [1, 2],
+          energyWeights: weightRows([7, 1], [7, 1], [7, 1], [7, 1], [7, 1]),
+          complexityAdditions: weightRows([1, 0], [1, 1], [0, 1], [0, 2], [0, 3]),
+        },
+        {
+          slot: "direction",
+          candidates: [ARP_DIRECTION_IDS.up, ARP_DIRECTION_IDS.down, ARP_DIRECTION_IDS.upDown],
+          energyWeights: weightRows([7, 5, 1], [7, 5, 1], [7, 5, 1], [7, 5, 1], [7, 5, 1]),
+          complexityAdditions: weightRows([7, 0, 1], [4, 0, 1], [0, 0, 1], [0, 0, 2], [0, 0, 3]),
+        },
+        {
+          slot: "mask",
+          candidates: ["one-of-four", "alternating-on-rest", "alternating-rest-on"],
+          energyWeights: weightRows([7, 2, 1], [6, 3, 2], [4, 6, 3], [3, 7, 4], [2, 8, 5]),
+          complexityAdditions: weightRows([2, 1, 0], [1, 1, 0], [0, 1, 1], [0, 1, 2], [0, 1, 3]),
+        },
+        {
+          slot: "gate",
+          candidates: ["medium", "long"],
+          energyWeights: weightRows([2, 7], [3, 6], [4, 5], [6, 3], [7, 2]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+      ],
+    },
+    {
+      profileId: HARMONY_PROFILE_IDS.midtempoCyberpunk,
+      decisionSlots: [
+        {
+          slot: "rate",
+          candidates: [ARP_RATE_IDS.eighth, ARP_RATE_IDS.sixteenth],
+          energyWeights: weightRows([8, 2], [7, 6], [4, 4], [4, 7], [2, 5]),
+          complexityAdditions: weightRows([0, 0], [0, 0], [0, 0], [0, 0], [0, 0]),
+        },
+        {
+          slot: "octave-range",
+          candidates: [1, 2],
+          energyWeights: weightRows([4, 4], [4, 4], [4, 4], [4, 4], [4, 4]),
+          complexityAdditions: weightRows([2, 0], [1, 0], [0, 0], [0, 1], [0, 5]),
+        },
+        {
+          slot: "direction",
+          candidates: [
+            ARP_DIRECTION_IDS.downUp,
+            ARP_DIRECTION_IDS.upDown,
+            ARP_DIRECTION_IDS.down,
+            ARP_DIRECTION_IDS.up,
+          ],
+          energyWeights: weightRows(
+            [5, 5, 2, 2],
+            [5, 5, 2, 2],
+            [5, 5, 2, 2],
+            [5, 5, 2, 2],
+            [5, 5, 2, 2],
+          ),
+          complexityAdditions: weightRows(
+            [0, 0, 3, 6],
+            [1, 0, 1, 3],
+            [1, 1, 0, 0],
+            [4, 4, 0, 1],
+            [3, 3, 0, 0],
+          ),
+        },
+        {
+          slot: "mask",
+          candidates: ["three-of-four", "alternating-on-rest", "alternating-rest-on"],
+          energyWeights: weightRows([3, 5, 4], [4, 5, 5], [5, 5, 5], [9, 6, 6], [8, 5, 5]),
+          complexityAdditions: weightRows([2, 1, 0], [0, 0, 0], [0, 1, 1], [0, 1, 2], [0, 1, 3]),
+        },
+        {
+          slot: "gate",
+          candidates: ["short"],
+          energyWeights: weightRows([1], [1], [1], [1], [1]),
+          complexityAdditions: weightRows([0], [0], [0], [0], [0]),
+        },
+      ],
+    },
+  ],
+} as const satisfies ArpGenreProfileConfigurationDataV2;
+
 function deepFreeze<T>(value: T): T {
   if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
   for (const key of Reflect.ownKeys(value)) deepFreeze(Reflect.get(value, key));
@@ -265,6 +436,14 @@ function deepFreeze<T>(value: T): T {
 export const ARP_GENRE_PROFILE_CONFIGURATION_V1: ArpGenreProfileConfigurationDataV1 = deepFreeze(
   PROFILE_CONFIGURATION_SOURCE,
 );
+
+export const ARP_GENRE_PROFILE_CONFIGURATION_V2: ArpGenreProfileConfigurationDataV2 = deepFreeze(
+  PROFILE_CONFIGURATION_SOURCE_V2,
+);
+
+type ArpGenreProfileConfigurationData =
+  | ArpGenreProfileConfigurationDataV1
+  | ArpGenreProfileConfigurationDataV2;
 
 export type ArpGenreProfileConfigurationFailureKindV1 =
   | "INVALID_CONFIGURATION_SHAPE"
@@ -333,16 +512,19 @@ function isCandidateForSlot(slot: ArpPolicyDecisionSlotV1, candidate: unknown): 
   return ARP_GATE_ID_V1_VALUES.includes(candidate as ArpGateIdV1);
 }
 
-function validateProfileSet(value: unknown): asserts value is unknown[] {
+function validateProfileSet(
+  value: unknown,
+  expectedConfiguration: ArpGenreProfileConfigurationData,
+): asserts value is unknown[] {
   validateArrayLength(
     value,
-    ARP_GENRE_PROFILE_CONFIGURATION_V1.profiles.length,
+    expectedConfiguration.profiles.length,
     "INVALID_PROFILE_SET",
     "profiles",
   );
-  for (let index = 0; index < ARP_GENRE_PROFILE_CONFIGURATION_V1.profiles.length; index += 1) {
+  for (let index = 0; index < expectedConfiguration.profiles.length; index += 1) {
     const profile = value[index];
-    const expected = ARP_GENRE_PROFILE_CONFIGURATION_V1.profiles[index];
+    const expected = expectedConfiguration.profiles[index];
     if (
       !isPlainRecord(profile) ||
       !Object.hasOwn(profile, "profileId") ||
@@ -508,26 +690,26 @@ function validateFinalWeights(
   }
 }
 
-export function validateArpGenreProfileConfigurationV1(
-  value: unknown,
-): ArpGenreProfileConfigurationDataV1 {
+function validateArpGenreProfileConfiguration<
+  TConfiguration extends ArpGenreProfileConfigurationData,
+>(value: unknown, expectedConfiguration: TConfiguration): TConfiguration {
   if (!isPlainRecord(value) || !hasExactProperties(value, ["version", "profiles"])) {
     fail(
       "INVALID_CONFIGURATION_SHAPE",
       "genre-profile Arpeggiator configuration must contain exactly version and profiles.",
     );
   }
-  if (value.version !== ARP_PROFILE_DATA_VERSION_V1) {
+  if (value.version !== expectedConfiguration.version) {
     fail(
       "INVALID_PROFILE_DATA_VERSION",
       "version must be the canonical Arpeggiator profile-data identity.",
     );
   }
-  validateProfileSet(value.profiles);
+  validateProfileSet(value.profiles, expectedConfiguration);
 
   for (let profileIndex = 0; profileIndex < value.profiles.length; profileIndex += 1) {
     const profile = value.profiles[profileIndex];
-    const expectedProfile = ARP_GENRE_PROFILE_CONFIGURATION_V1.profiles[profileIndex];
+    const expectedProfile = expectedConfiguration.profiles[profileIndex];
     if (!isPlainRecord(profile) || expectedProfile === undefined) {
       fail("INVALID_PROFILE_SET", `profiles[${profileIndex}] must be canonical.`);
     }
@@ -585,7 +767,19 @@ export function validateArpGenreProfileConfigurationV1(
     }
   }
 
-  return ARP_GENRE_PROFILE_CONFIGURATION_V1;
+  return expectedConfiguration;
+}
+
+export function validateArpGenreProfileConfigurationV1(
+  value: unknown,
+): ArpGenreProfileConfigurationDataV1 {
+  return validateArpGenreProfileConfiguration(value, ARP_GENRE_PROFILE_CONFIGURATION_V1);
+}
+
+export function validateArpGenreProfileConfigurationV2(
+  value: unknown,
+): ArpGenreProfileConfigurationDataV2 {
+  return validateArpGenreProfileConfiguration(value, ARP_GENRE_PROFILE_CONFIGURATION_V2);
 }
 
 function lookupInvariant(message: string): never {
@@ -600,6 +794,34 @@ export function buildArpWeightedCandidatesV1<TSlot extends ArpPolicyDecisionSlot
   complexity: ComplexityV1,
 ): readonly WeightedCandidate<ArpPolicyCandidateByDecisionSlotV1[TSlot]>[] {
   const validated = validateArpGenreProfileConfigurationV1(configuration);
+  const profile = validated.profiles.find((candidate) => candidate.profileId === profileId);
+  if (profile === undefined) lookupInvariant("unknown profile ID");
+  const slot = profile.decisionSlots.find((candidate) => candidate.slot === decisionSlot);
+  if (slot === undefined) lookupInvariant("unknown decision slot");
+  const energyRow = slot.energyWeights.find((row) => row.level === energy);
+  if (energyRow === undefined) lookupInvariant("unknown Energy value");
+  const complexityRow = slot.complexityAdditions.find((row) => row.level === complexity);
+  if (complexityRow === undefined) lookupInvariant("unknown Complexity value");
+
+  const weightedCandidates = slot.candidates.map((value, index) =>
+    Object.freeze({
+      value,
+      weight: (energyRow.values[index] as number) + (complexityRow.values[index] as number),
+    }),
+  );
+  return Object.freeze(weightedCandidates) as readonly WeightedCandidate<
+    ArpPolicyCandidateByDecisionSlotV1[TSlot]
+  >[];
+}
+
+export function buildArpWeightedCandidatesV2<TSlot extends ArpPolicyDecisionSlotV1>(
+  configuration: ArpGenreProfileConfigurationDataV2,
+  profileId: HarmonyProfileId,
+  decisionSlot: TSlot,
+  energy: EnergyV1,
+  complexity: ComplexityV1,
+): readonly WeightedCandidate<ArpPolicyCandidateByDecisionSlotV1[TSlot]>[] {
+  const validated = validateArpGenreProfileConfigurationV2(configuration);
   const profile = validated.profiles.find((candidate) => candidate.profileId === profileId);
   if (profile === undefined) lookupInvariant("unknown profile ID");
   const slot = profile.decisionSlots.find((candidate) => candidate.slot === decisionSlot);

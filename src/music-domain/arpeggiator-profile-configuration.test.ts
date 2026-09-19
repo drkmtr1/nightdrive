@@ -5,10 +5,15 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   ARP_GENRE_PROFILE_CONFIGURATION_V1,
+  ARP_GENRE_PROFILE_CONFIGURATION_V2,
+  ARP_PROFILE_DATA_VERSION_V2,
   ArpGenreProfileConfigurationError,
   buildArpWeightedCandidatesV1,
+  buildArpWeightedCandidatesV2,
   validateArpGenreProfileConfigurationV1,
+  validateArpGenreProfileConfigurationV2,
   type ArpGenreProfileConfigurationDataV1,
+  type ArpGenreProfileConfigurationDataV2,
   type ArpGenreProfileConfigurationFailureKindV1,
 } from "./arpeggiator-profile-configuration";
 import { ArpValueError } from "./arpeggiator";
@@ -407,10 +412,62 @@ const EXPECTED_PROFILES = [
   },
 ] as const satisfies readonly FixtureProfile[];
 
+// Independent literal transcription of the accepted ordered R1 research data.
+// It is intentionally not derived from the production V2 configuration.
+const EXPECTED_R1_RESEARCH_JSON = `[
+  {"profileId":"dark-synthwave","slots":[
+    {"slot":"rate","candidates":["eighth","sixteenth"],"energy":[[5,1],[4,2],[3,5],[2,6],[1,7]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]},
+    {"slot":"octave-range","candidates":[1,2],"energy":[[2,5],[2,5],[2,5],[2,5],[2,5]],"complexity":[[6,0],[3,0],[0,0],[0,2],[0,4]]},
+    {"slot":"direction","candidates":["down-up","down","up-down"],"energy":[[6,4,1],[6,4,1],[6,4,1],[6,4,1],[6,4,1]],"complexity":[[0,2,1],[0,1,1],[0,0,0],[1,0,4],[2,0,8]]},
+    {"slot":"mask","candidates":["three-of-four","full"],"energy":[[9,2],[7,4],[4,5],[3,4],[1,3]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]},
+    {"slot":"gate","candidates":["short","medium"],"energy":[[4,7],[4,6],[4,4],[5,3],[6,1]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]}
+  ]},
+  {"profileId":"classic-synthwave","slots":[
+    {"slot":"rate","candidates":["eighth","sixteenth"],"energy":[[5,1],[4,1],[3,5],[2,5],[1,7]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]},
+    {"slot":"octave-range","candidates":[1,2],"energy":[[5,2],[4,3],[3,5],[2,6],[2,7]],"complexity":[[6,0],[0,0],[0,0],[0,0],[1,4]]},
+    {"slot":"direction","candidates":["up","up-down","down-up"],"energy":[[6,3,1],[6,3,1],[6,3,1],[6,3,1],[6,3,1]],"complexity":[[2,1,0],[1,1,0],[0,1,0],[0,5,5],[2,6,9]]},
+    {"slot":"mask","candidates":["three-of-four","full"],"energy":[[6,2],[5,2],[3,6],[2,7],[1,8]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]},
+    {"slot":"gate","candidates":["short","medium"],"energy":[[5,9],[5,7],[4,5],[5,6],[6,3]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]}
+  ]},
+  {"profileId":"darkwave","slots":[
+    {"slot":"rate","candidates":["quarter","eighth"],"energy":[[6,2],[5,3],[3,6],[2,7],[1,8]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]},
+    {"slot":"octave-range","candidates":[1,2],"energy":[[7,1],[7,1],[7,1],[7,1],[7,1]],"complexity":[[1,0],[1,1],[0,1],[0,2],[0,3]]},
+    {"slot":"direction","candidates":["up","down","up-down"],"energy":[[7,5,1],[7,5,1],[7,5,1],[7,5,1],[7,5,1]],"complexity":[[7,0,1],[4,0,1],[0,0,1],[0,0,2],[0,0,3]]},
+    {"slot":"mask","candidates":["one-of-four","alternating-on-rest","alternating-rest-on"],"energy":[[7,2,1],[6,3,2],[4,6,3],[3,7,4],[2,8,5]],"complexity":[[2,1,0],[1,1,0],[0,1,1],[0,1,2],[0,1,3]]},
+    {"slot":"gate","candidates":["medium","long"],"energy":[[2,7],[3,6],[4,5],[6,3],[7,2]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]}
+  ]},
+  {"profileId":"midtempo-cyberpunk","slots":[
+    {"slot":"rate","candidates":["eighth","sixteenth"],"energy":[[8,2],[7,6],[4,4],[4,7],[2,5]],"complexity":[[0,0],[0,0],[0,0],[0,0],[0,0]]},
+    {"slot":"octave-range","candidates":[1,2],"energy":[[4,4],[4,4],[4,4],[4,4],[4,4]],"complexity":[[2,0],[1,0],[0,0],[0,1],[0,5]]},
+    {"slot":"direction","candidates":["down-up","up-down","down","up"],"energy":[[5,5,2,2],[5,5,2,2],[5,5,2,2],[5,5,2,2],[5,5,2,2]],"complexity":[[0,0,3,6],[1,0,1,3],[1,1,0,0],[4,4,0,1],[3,3,0,0]]},
+    {"slot":"mask","candidates":["three-of-four","alternating-on-rest","alternating-rest-on"],"energy":[[3,5,4],[4,5,5],[5,5,5],[9,6,6],[8,5,5]],"complexity":[[2,1,0],[0,0,0],[0,1,1],[0,1,2],[0,1,3]]},
+    {"slot":"gate","candidates":["short"],"energy":[[1],[1],[1],[1],[1]],"complexity":[[0],[0],[0],[0],[0]]}
+  ]}
+]`;
+
+const EXPECTED_R1_PROFILES = JSON.parse(EXPECTED_R1_RESEARCH_JSON) as readonly FixtureProfile[];
+const EXPECTED_R1_FINGERPRINT = "b6f7ee16f33cf649ae2c6f06e4b5eecf859409b1917e2bc641323857fc1956e8";
+
 const EXPECTED_500_LIST_DIGEST = "8caa12ac5b9ef6a3ae520d8dbcb83e6576d43ea43496db6594426298481a0c7e";
 
 function mutableCanonical(): ArpGenreProfileConfigurationDataV1 {
   return structuredClone(ARP_GENRE_PROFILE_CONFIGURATION_V1);
+}
+
+function mutableCanonicalV2(): ArpGenreProfileConfigurationDataV2 {
+  return structuredClone(ARP_GENRE_PROFILE_CONFIGURATION_V2);
+}
+
+function toResearchRepresentation(configuration: ArpGenreProfileConfigurationDataV2): unknown {
+  return configuration.profiles.map((profile) => ({
+    profileId: profile.profileId,
+    slots: profile.decisionSlots.map((slot) => ({
+      slot: slot.slot,
+      candidates: [...slot.candidates],
+      energy: slot.energyWeights.map((row) => [...row.values]),
+      complexity: slot.complexityAdditions.map((row) => [...row.values]),
+    })),
+  }));
 }
 
 function expectConfigurationError(
@@ -745,6 +802,365 @@ describe("Stage 7C7a6 direct validation boundary", () => {
   });
 });
 
+describe("Stage 7 V2 profile-data foundation Slice 1 canonical data", () => {
+  it("locks the exact V2 identity, ordered R1 literals, and accepted fingerprint", () => {
+    expect(ARP_PROFILE_DATA_VERSION_V2).toBe("nightdrive.genre-profile.arpeggiator.v2");
+    expect(ARP_GENRE_PROFILE_CONFIGURATION_V2.version).toBe(ARP_PROFILE_DATA_VERSION_V2);
+
+    const researchRepresentation = toResearchRepresentation(ARP_GENRE_PROFILE_CONFIGURATION_V2);
+    expect(researchRepresentation).toEqual(EXPECTED_R1_PROFILES);
+    expect(createHash("sha256").update(JSON.stringify(researchRepresentation)).digest("hex")).toBe(
+      EXPECTED_R1_FINGERPRINT,
+    );
+
+    expect(ARP_GENRE_PROFILE_CONFIGURATION_V2.profiles.map(({ profileId }) => profileId)).toEqual(
+      EXPECTED_R1_PROFILES.map(({ profileId }) => profileId),
+    );
+    expect(
+      EXPECTED_R1_PROFILES.map((profile) =>
+        profile.slots.map((slot) => [slot.slot, slot.candidates]),
+      ),
+    ).toEqual(
+      EXPECTED_PROFILES.map((profile) => profile.slots.map((slot) => [slot.slot, slot.candidates])),
+    );
+    for (const profile of ARP_GENRE_PROFILE_CONFIGURATION_V2.profiles) {
+      expect(profile.decisionSlots.map(({ slot }) => slot)).toEqual(SLOT_ORDER);
+      for (const slot of profile.decisionSlots) {
+        expect(slot.energyWeights.map(({ level }) => level)).toEqual(LEVELS);
+        expect(slot.complexityAdditions.map(({ level }) => level)).toEqual(LEVELS);
+      }
+    }
+  });
+
+  it("recursively freezes the V2 configuration and preserves deterministic reads", () => {
+    assertRecursivelyFrozen(ARP_GENRE_PROFILE_CONFIGURATION_V2);
+    const before = toResearchRepresentation(ARP_GENRE_PROFILE_CONFIGURATION_V2);
+    expect(() => {
+      (ARP_GENRE_PROFILE_CONFIGURATION_V2.profiles[0].decisionSlots[0].candidates as string[])[0] =
+        "quarter";
+    }).toThrow(TypeError);
+    expect(toResearchRepresentation(ARP_GENRE_PROFILE_CONFIGURATION_V2)).toEqual(before);
+  });
+});
+
+describe("Stage 7 V2 profile-data foundation Slice 1 candidate construction", () => {
+  it("constructs all 500 exact ordered R1 lists and locks the observed bounds", () => {
+    let combinationCount = 0;
+    let minimumWeight = Number.POSITIVE_INFINITY;
+    let maximumWeight = Number.NEGATIVE_INFINITY;
+    let minimumTotal = Number.POSITIVE_INFINITY;
+    let maximumTotal = Number.NEGATIVE_INFINITY;
+
+    for (const expectedProfile of EXPECTED_R1_PROFILES) {
+      for (const expectedSlot of expectedProfile.slots) {
+        for (const [energyIndex, energy] of LEVELS.entries()) {
+          for (const [complexityIndex, complexity] of LEVELS.entries()) {
+            const expected = expectedSlot.candidates.map((value, candidateIndex) => ({
+              value,
+              weight:
+                (expectedSlot.energy[energyIndex]?.[candidateIndex] as number) +
+                (expectedSlot.complexity[complexityIndex]?.[candidateIndex] as number),
+            }));
+            const actual = buildArpWeightedCandidatesV2(
+              ARP_GENRE_PROFILE_CONFIGURATION_V2,
+              expectedProfile.profileId as never,
+              expectedSlot.slot,
+              energy,
+              complexity,
+            );
+            combinationCount += 1;
+            expect(actual).toEqual(expected);
+            expect(actual.map(({ value }) => value)).toEqual(expectedSlot.candidates);
+            expect(actual).toHaveLength(expectedSlot.candidates.length);
+            assertRecursivelyFrozen(actual);
+
+            const weights = actual.map(({ weight }) => weight);
+            const total = weights.reduce((sum, weight) => sum + weight, 0);
+            minimumWeight = Math.min(minimumWeight, ...weights);
+            maximumWeight = Math.max(maximumWeight, ...weights);
+            minimumTotal = Math.min(minimumTotal, total);
+            maximumTotal = Math.max(maximumTotal, total);
+          }
+        }
+      }
+    }
+
+    expect(combinationCount).toBe(500);
+    expect([minimumWeight, maximumWeight]).toEqual([1, 14]);
+    expect([minimumTotal, maximumTotal]).toEqual([1, 27]);
+  });
+
+  it("preserves every medium/medium list and every Darkwave medium-Complexity Energy list", () => {
+    for (const profile of EXPECTED_R1_PROFILES) {
+      for (const slot of profile.slots) {
+        expect(
+          buildArpWeightedCandidatesV2(
+            ARP_GENRE_PROFILE_CONFIGURATION_V2,
+            profile.profileId as never,
+            slot.slot,
+            "medium",
+            "medium",
+          ),
+        ).toEqual(
+          buildArpWeightedCandidatesV1(
+            ARP_GENRE_PROFILE_CONFIGURATION_V1,
+            profile.profileId as never,
+            slot.slot,
+            "medium",
+            "medium",
+          ),
+        );
+      }
+    }
+
+    const darkwave = EXPECTED_R1_PROFILES.find(({ profileId }) => profileId === "darkwave");
+    if (darkwave === undefined) throw new Error("Missing Darkwave R1 fixture.");
+    for (const slot of darkwave.slots) {
+      for (const energy of LEVELS) {
+        expect(
+          buildArpWeightedCandidatesV2(
+            ARP_GENRE_PROFILE_CONFIGURATION_V2,
+            "darkwave",
+            slot.slot,
+            energy,
+            "medium",
+          ),
+        ).toEqual(
+          buildArpWeightedCandidatesV1(
+            ARP_GENRE_PROFILE_CONFIGURATION_V1,
+            "darkwave",
+            slot.slot,
+            energy,
+            "medium",
+          ),
+        );
+      }
+    }
+  });
+
+  it("is deterministic, non-mutating, and consumes no random or selection input", () => {
+    const input = mutableCanonicalV2();
+    const before = structuredClone(input);
+    const random = vi.spyOn(Math, "random").mockImplementation(() => {
+      throw new Error("ambient randomness is prohibited");
+    });
+    const next = vi.spyOn(prng, "nextMulberry32");
+    const derive = vi.spyOn(componentSeed, "deriveComponentSeedV1");
+    const select = vi.spyOn(weightedChoice, "selectWeightedCandidateV1");
+    try {
+      const first = buildArpWeightedCandidatesV2(
+        input,
+        "classic-synthwave",
+        "direction",
+        "very-high",
+        "very-high",
+      );
+      const second = buildArpWeightedCandidatesV2(
+        input,
+        "classic-synthwave",
+        "direction",
+        "very-high",
+        "very-high",
+      );
+      expect(first).toEqual([
+        { value: "up", weight: 8 },
+        { value: "up-down", weight: 9 },
+        { value: "down-up", weight: 10 },
+      ]);
+      expect(second).toEqual(first);
+      expect(second).not.toBe(first);
+      expect(input).toEqual(before);
+      expect(Object.isFrozen(input)).toBe(false);
+      expect(random).not.toHaveBeenCalled();
+      expect(next).not.toHaveBeenCalled();
+      expect(derive).not.toHaveBeenCalled();
+      expect(select).not.toHaveBeenCalled();
+    } finally {
+      select.mockRestore();
+      derive.mockRestore();
+      next.mockRestore();
+      random.mockRestore();
+    }
+  });
+});
+
+describe("Stage 7 V2 profile-data foundation Slice 1 validation", () => {
+  it("validates canonical V2 data without mutating caller input", () => {
+    const input = mutableCanonicalV2();
+    const before = structuredClone(input);
+    expect(validateArpGenreProfileConfigurationV2(input)).toBe(ARP_GENRE_PROFILE_CONFIGURATION_V2);
+    expect(input).toEqual(before);
+    expect(Object.isFrozen(input)).toBe(false);
+  });
+
+  it("uses canonical nested traversal rather than object property discovery order", () => {
+    const canonical = mutableCanonicalV2();
+    const reordered = {
+      profiles: canonical.profiles.map((profile) => ({
+        decisionSlots: profile.decisionSlots.map((slot) => ({
+          complexityAdditions: slot.complexityAdditions,
+          energyWeights: slot.energyWeights,
+          candidates: slot.candidates,
+          slot: slot.slot,
+        })),
+        profileId: profile.profileId,
+      })),
+      version: canonical.version,
+    };
+    expect(validateArpGenreProfileConfigurationV2(reordered)).toBe(
+      ARP_GENRE_PROFILE_CONFIGURATION_V2,
+    );
+  });
+
+  it("reuses the exact accepted error class, owner, and failure vocabulary", () => {
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(null),
+      "INVALID_CONFIGURATION_SHAPE",
+    );
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(ARP_GENRE_PROFILE_CONFIGURATION_V1),
+      "INVALID_PROFILE_DATA_VERSION",
+    );
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV1(ARP_GENRE_PROFILE_CONFIGURATION_V2),
+      "INVALID_PROFILE_DATA_VERSION",
+    );
+
+    const wrongLiteral = mutableCanonicalV2() as unknown as {
+      profiles: Array<{
+        decisionSlots: Array<{ energyWeights: Array<{ values: number[] }> }>;
+      }>;
+    };
+    const values = wrongLiteral.profiles[0]?.decisionSlots[0]?.energyWeights[0]?.values;
+    if (values === undefined) throw new Error("Missing R1 literal fixture path.");
+    values[0] = 6;
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(wrongLiteral),
+      "INVALID_WEIGHT",
+    );
+  });
+
+  it("rejects V2 shape, slot, candidate, and Complexity-table defects at their owning phase", () => {
+    expectConfigurationError(
+      () =>
+        validateArpGenreProfileConfigurationV2({
+          ...mutableCanonicalV2(),
+          extra: true,
+        }),
+      "INVALID_CONFIGURATION_SHAPE",
+    );
+
+    const slots = mutableCanonicalV2() as unknown as {
+      profiles: Array<{ decisionSlots: unknown[] }>;
+    };
+    slots.profiles[0]?.decisionSlots.pop();
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(slots),
+      "INVALID_SLOT_STRUCTURE",
+    );
+
+    const candidates = mutableCanonicalV2() as unknown as {
+      profiles: Array<{ decisionSlots: Array<{ candidates: unknown[] }> }>;
+    };
+    candidates.profiles[0]?.decisionSlots[0]?.candidates.reverse();
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(candidates),
+      "INVALID_CANDIDATES",
+    );
+
+    const complexity = mutableCanonicalV2() as unknown as {
+      profiles: Array<{ decisionSlots: Array<{ complexityAdditions: unknown[] }> }>;
+    };
+    complexity.profiles[0]?.decisionSlots[0]?.complexityAdditions.reverse();
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(complexity),
+      "INVALID_COMPLEXITY_TABLE",
+    );
+  });
+
+  it("keeps deterministic nested mixed-invalid precedence", () => {
+    const versionBeforeProfiles = { version: "bad", profiles: [] };
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(versionBeforeProfiles),
+      "INVALID_PROFILE_DATA_VERSION",
+    );
+
+    const profileBeforeSlot = mutableCanonicalV2() as unknown as {
+      profiles: Array<{ profileId: string; decisionSlots: unknown[] }>;
+    };
+    const firstProfile = profileBeforeSlot.profiles[0];
+    if (firstProfile === undefined) throw new Error("Missing V2 precedence fixture.");
+    firstProfile.profileId = "darkwave";
+    firstProfile.decisionSlots = [];
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(profileBeforeSlot),
+      "INVALID_PROFILE_SET",
+    );
+
+    const candidateBeforeRows = mutableCanonicalV2() as unknown as {
+      profiles: Array<{
+        decisionSlots: Array<{
+          candidates: unknown[];
+          energyWeights: unknown[];
+          complexityAdditions: unknown[];
+        }>;
+      }>;
+    };
+    const firstSlot = candidateBeforeRows.profiles[0]?.decisionSlots[0];
+    if (firstSlot === undefined) throw new Error("Missing V2 precedence slot fixture.");
+    firstSlot.candidates = [];
+    firstSlot.energyWeights = [];
+    firstSlot.complexityAdditions = [];
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(candidateBeforeRows),
+      "INVALID_CANDIDATES",
+    );
+
+    const energyBeforeComplexity = mutableCanonicalV2() as unknown as {
+      profiles: Array<{
+        decisionSlots: Array<{
+          energyWeights: unknown[];
+          complexityAdditions: unknown[];
+        }>;
+      }>;
+    };
+    const mixedRows = energyBeforeComplexity.profiles[0]?.decisionSlots[0];
+    if (mixedRows === undefined) throw new Error("Missing V2 row precedence fixture.");
+    mixedRows.energyWeights = [];
+    mixedRows.complexityAdditions = [];
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(energyBeforeComplexity),
+      "INVALID_ENERGY_TABLE",
+    );
+  });
+
+  it("checks vector alignment before exact numeric source equality", () => {
+    const alignment = mutableCanonicalV2() as unknown as {
+      profiles: Array<{
+        decisionSlots: Array<{ energyWeights: Array<{ values: unknown[] }> }>;
+      }>;
+    };
+    alignment.profiles[0]?.decisionSlots[0]?.energyWeights[0]?.values.pop();
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(alignment),
+      "INVALID_VECTOR_ALIGNMENT",
+    );
+
+    const sourceNumber = mutableCanonicalV2() as unknown as {
+      profiles: Array<{
+        decisionSlots: Array<{ complexityAdditions: Array<{ values: unknown[] }> }>;
+      }>;
+    };
+    const sourceValues = sourceNumber.profiles[0]?.decisionSlots[0]?.complexityAdditions[0]?.values;
+    if (sourceValues === undefined) throw new Error("Missing V2 source-number fixture path.");
+    sourceValues[0] = Number.NaN;
+    expectConfigurationError(
+      () => validateArpGenreProfileConfigurationV2(sourceNumber),
+      "INVALID_WEIGHT",
+    );
+  });
+});
+
 describe("Stage 7C7a6 isolation and API boundary", () => {
   it("does not consult randomness, PRNG, component seeds, or weighted selection", () => {
     const random = vi.spyOn(Math, "random").mockImplementation(() => {
@@ -802,6 +1218,10 @@ describe("Stage 7C7a6 isolation and API boundary", () => {
     expect(publicDomain).not.toHaveProperty("validateArpGenreProfileConfigurationV1");
     expect(publicDomain).not.toHaveProperty("buildArpWeightedCandidatesV1");
     expect(publicDomain).not.toHaveProperty("ArpGenreProfileConfigurationError");
+    expect(publicDomain).not.toHaveProperty("ARP_PROFILE_DATA_VERSION_V2");
+    expect(publicDomain).not.toHaveProperty("ARP_GENRE_PROFILE_CONFIGURATION_V2");
+    expect(publicDomain).not.toHaveProperty("validateArpGenreProfileConfigurationV2");
+    expect(publicDomain).not.toHaveProperty("buildArpWeightedCandidatesV2");
 
     const publicIndexSource = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
     expect(publicIndexSource).not.toContain("arpeggiator-profile-configuration");
