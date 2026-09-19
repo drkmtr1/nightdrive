@@ -51,6 +51,15 @@ Exact requirements, contract maturity, inputs/outputs, invariants, and failure b
 
 Verify branch/base, working-tree/index state, governing documents, file scope, contract maturity, and compatibility with repository truth before edits. Explicitly report precheck success for meaningful implementation. ASSESS remains read-only.
 
+## REVIEW EVIDENCE HANDOFF
+
+For implementation tasks that will undergo review, state how the exact candidate will be made inspectable when applicable:
+
+- Local-only committed candidate: provide the complete base-to-head diff, including new files, or an equivalent complete artifact tied to the exact base/head.
+- Uncommitted candidate: provide complete working-tree/index candidate evidence without inferring a commit requirement.
+- Remotely fetchable candidate: identify the authoritative source and exact base/head evidence actually fetched; do not duplicate a complete diff solely because this template exists.
+- Disclose unavailable, partial, binary, or otherwise non-inline-reviewable evidence and any resulting review limitation. Do not require pushing unreviewed work merely for inspection.
+
 ## BUILD-VS-BUY
 
 Select one:
@@ -85,4 +94,4 @@ For ASSESS, authorize no edits or commits. Do not infer publication from permiss
 
 ## RETURN
 
-Return evidence using the [Codex result template](CODEX_RESULT.md), retaining all AGENTS.md delivery requirements. Report exact state, commands/results, scope, and blockers. Stop at this task's gate; a recommendation does not authorize continuation.
+Return evidence using the [Codex result template](CODEX_RESULT.md), including the applicable review-evidence handoff and its exact base/head or working-tree coverage. Retain all AGENTS.md delivery requirements. Report exact state, commands/results, scope, unavailable evidence, and blockers. Stop at this task's gate; a recommendation does not authorize continuation.

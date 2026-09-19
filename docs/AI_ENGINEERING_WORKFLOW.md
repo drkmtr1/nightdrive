@@ -90,6 +90,16 @@ Every implementation task subject to the [AGENTS.md dependency evaluation gate](
 
 Formal review procedures remain owned by the [Engineering Review Playbook](ENGINEERING_REVIEW_PLAYBOOK.md). Select review type based on risk/change. Reviews remain read-only unless corrective work is separately authorized; findings do not themselves authorize implementation. Corrective work requires a subsequent bounded task, not an expanded review.
 
+## Implementation review evidence
+
+Full implementation approval requires inspectable candidate content, not only a commit SHA, changed-file names, an implementation summary, reported validation, or a Codex PASS. The review evidence must identify the exact reviewed-base/head tuple and scope already required by this workflow.
+
+For a local-only committed candidate that the reviewer cannot fetch, Codex returns the complete base-to-head diff, including new files, or an equivalent complete artifact tied unambiguously to the exact base/head. An uncommitted candidate must return complete working-tree/index candidate evidence; this does not require committing or pushing unreviewed work. If the candidate is already remotely fetchable and the reviewer actually obtains the complete relevant contents from an authoritative source, Codex identifies that source and need not redundantly paste the same diff.
+
+Large evidence must be split into complete labeled parts or replaced by another complete inspectable artifact; partial or silently truncated evidence cannot support full exact-head implementation approval. New text files require full content in the diff/artifact. Binary or otherwise non-inline-reviewable artifacts require exact metadata/hash and an available artifact or source, with limitations disclosed. Candidate-content evidence remains separate from tests, validation, scope, architecture/contract, and CI evidence.
+
+If the reviewer has not inspected the actual candidate contents, the result must say that review is summary-only, candidate inspection is incomplete, or review is blocked pending evidence. It must not represent technical approval as full exact-head implementation approval. Technical approval and evidence transfer do not authorize publication or merge.
+
 ## Reviewed-head rule
 
 Once ChatGPT explicitly approves a specific implementation commit SHA, it becomes the reviewed head for the current publication gate. Any subsequent change to the implementation branch, including an additional commit, amend, rebase, force-push replacement, formatting, documentation, or code change, creates a new unreviewed head/state. Uncommitted changes also prevent exact-head publication. The new head must be reviewed before publication/merge authorization.
