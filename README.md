@@ -6,9 +6,9 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 ## Current status
 
-**Stage 3B2b2h — ChordVoicing contract definition.** The repository contains the merged musical-domain foundations through Chord, ChordInversion, and the deterministic PRNG primitive, plus a documentation-only contract for immutable ordered MIDI voicings. Voicing implementation and Stage 4 harmony remain separately gated.
+Nightdrive's deterministic Version 1 music foundations and Stage 7 baseline evaluation evidence are recorded in the authoritative project documents. The V2 compatibility and public contract are accepted, while V2 runtime and musical acceptance remain separately gated. See [Project State](PROJECT_STATE.md) for the active milestone and gate, and [Roadmap](docs/ROADMAP.md) for stage authorization.
 
-Note spelling, octave labels, key display naming, enharmonic policy, key signatures, interval names/quality, chord extensions, bounded random helpers, PRNG streams/forks, seed derivation, canonical composition hashing, MIDI export, transposition workflows, generation, audio, persistence, authentication, Supabase, AI, Vercel, and deployment remain intentionally deferred.
+Later capabilities remain separately authorized by the roadmap, including broader theory, production workflows, persistence, AI, deployment, and future generation behavior.
 
 Start with:
 
