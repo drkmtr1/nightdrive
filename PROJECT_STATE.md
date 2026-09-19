@@ -26,7 +26,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the accepted retained diagnostic; historical search execution, finalist selection, and no-retuning chronology remain unreproduced. A separately defined first V2 runtime implementation slice is the next eligible gate; V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
+The completed [Stage 7 evaluation results](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md) close the baseline execution gate but not Stage 7 acceptance. Energy and especially Complexity sensitivity remain REVISE/open. The complete V2 public contract and exact R1 dataset are accepted; deterministic gains do not establish human musical benefit. Arithmetic, hash, structure, and permitted-delta evidence were independently verified, while collision totals are now reproduced by the accepted retained diagnostic; historical search execution, finalist selection, and no-retuning chronology remain unreproduced. The first V2 profile-data implementation slice is paused for ChatGPT review of its internal configuration contract clarification; V2 runtime, matched V1/R1 comparative listening, aggregate provenance, and Stage 8 remain gated.
 
 ## Unresolved Risks
 
@@ -38,7 +38,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-Review the retained frozen-R1 deterministic diagnostic checkpoint. Its collision evidence is reproduced; historical search/finalist chronology remains unreproduced. After acceptance, any V2 runtime milestone requires separate definition/authorization. Matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work remain gated. Stage 8 is not authorized.
+ChatGPT review of the V2 internal profile-configuration clarification is next. The first V2 profile-data implementation slice remains paused pending that review and separate explicit resumption. Matched V1/R1 human evaluation, aggregate provenance, and later Stage 7 work remain gated. Stage 8 is not authorized.
 
 ## Maintenance
 
