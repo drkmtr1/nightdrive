@@ -1213,12 +1213,12 @@ describe("Stage 7C7a6 isolation and API boundary", () => {
     expect(source).not.toContain("selectWeightedCandidateV1");
   });
 
-  it("does not expand the public music-domain barrel", () => {
+  it("exposes the public V2 identity without exposing profile-configuration internals", () => {
     expect(publicDomain).not.toHaveProperty("ARP_GENRE_PROFILE_CONFIGURATION_V1");
     expect(publicDomain).not.toHaveProperty("validateArpGenreProfileConfigurationV1");
     expect(publicDomain).not.toHaveProperty("buildArpWeightedCandidatesV1");
     expect(publicDomain).not.toHaveProperty("ArpGenreProfileConfigurationError");
-    expect(publicDomain).not.toHaveProperty("ARP_PROFILE_DATA_VERSION_V2");
+    expect(publicDomain.ARP_PROFILE_DATA_VERSION_V2).toBe(ARP_PROFILE_DATA_VERSION_V2);
     expect(publicDomain).not.toHaveProperty("ARP_GENRE_PROFILE_CONFIGURATION_V2");
     expect(publicDomain).not.toHaveProperty("validateArpGenreProfileConfigurationV2");
     expect(publicDomain).not.toHaveProperty("buildArpWeightedCandidatesV2");

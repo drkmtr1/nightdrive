@@ -295,8 +295,8 @@ describe("Stage 7C7a5 shared Arpeggiator policy configuration", () => {
 
   it("keeps the shared configuration boundary out of the public music-domain barrel", () => {
     expect(musicDomain.ARP_POLICY_VERSION_V1).toBe(ARP_POLICY_VERSION_V1);
-    expect(musicDomain).not.toHaveProperty("ARP_POLICY_VERSION_V2");
-    expect(musicDomain).not.toHaveProperty("ARP_PROFILE_DATA_VERSION_V2");
+    expect(musicDomain.ARP_POLICY_VERSION_V2).toBe(ARP_POLICY_VERSION_V2);
+    expect(musicDomain.ARP_PROFILE_DATA_VERSION_V2).toBe(ARP_PROFILE_DATA_VERSION_V2);
     expect(musicDomain).not.toHaveProperty("SHARED_ARP_POLICY_CONFIGURATION_V1");
     expect(musicDomain).not.toHaveProperty("SHARED_ARP_POLICY_CONFIGURATION_V2");
     expect(musicDomain).not.toHaveProperty("validateSharedArpPolicyConfigurationV1");
@@ -305,10 +305,10 @@ describe("Stage 7C7a5 shared Arpeggiator policy configuration", () => {
 
     const publicIndexSource = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
     expect(publicIndexSource).not.toContain("arpeggiator-policy-configuration");
-    expect(publicIndexSource).not.toContain("ARP_POLICY_VERSION_V2");
-    expect(publicIndexSource).not.toContain("ArpPolicyVersionV2");
-    expect(publicIndexSource).not.toContain("ARP_PROFILE_DATA_VERSION_V2");
-    expect(publicIndexSource).not.toContain("ArpProfileDataVersionV2");
+    expect(publicIndexSource).toContain("ARP_POLICY_VERSION_V2");
+    expect(publicIndexSource).toContain("ArpPolicyVersionV2");
+    expect(publicIndexSource).toContain("ARP_PROFILE_DATA_VERSION_V2");
+    expect(publicIndexSource).toContain("ArpProfileDataVersionV2");
     expect(publicIndexSource).not.toContain("SHARED_ARP_POLICY_CONFIGURATION_V2");
     expect(publicIndexSource).not.toContain("SharedArpPolicyConfigurationV2");
     expect(publicIndexSource).not.toContain("validateSharedArpPolicyConfigurationV2");

@@ -8,23 +8,36 @@ import {
 } from "./arpeggiator";
 import {
   ARP_POLICY_VERSION_V1,
+  ARP_POLICY_VERSION_V2,
   ARP_PROFILE_DATA_VERSION_V1,
+  ARP_PROFILE_DATA_VERSION_V2,
   SHARED_ARP_POLICY_CONFIGURATION_V1,
+  SHARED_ARP_POLICY_CONFIGURATION_V2,
   SharedArpPolicyConfigurationError,
   type ArpOctaveRangeV1,
   type ArpPolicyDecisionSlotV1,
   type ArpPolicyVersionV1,
+  type ArpPolicyVersionV2,
   type ArpProfileDataVersionV1,
+  type ArpProfileDataVersionV2,
   validateSharedArpPolicyConfigurationV1,
+  validateSharedArpPolicyConfigurationV2,
 } from "./arpeggiator-policy-configuration";
 import type { ArpDensityMaskIdV1 } from "./arpeggiator-density-mask";
 import {
   ARP_GENRE_PROFILE_CONFIGURATION_V1,
+  ARP_GENRE_PROFILE_CONFIGURATION_V2,
   ArpGenreProfileConfigurationError,
   buildArpWeightedCandidatesV1,
+  buildArpWeightedCandidatesV2,
   validateArpGenreProfileConfigurationV1,
+  validateArpGenreProfileConfigurationV2,
 } from "./arpeggiator-profile-configuration";
-import { type ResolvedArpPlanV1, resolveArpPlanV1 } from "./arpeggiator-policy-resolver";
+import {
+  type ResolvedArpPlanV1,
+  resolveArpPlanV1,
+  resolveArpPlanV2,
+} from "./arpeggiator-policy-resolver";
 import {
   ArpProjectionNoLegalPitchError,
   projectResolvedArpPlanV1,
@@ -49,6 +62,8 @@ import {
 import { PRNG_ALGORITHM_ID } from "./prng";
 
 export { ARP_POLICY_VERSION_V1, ARP_PROFILE_DATA_VERSION_V1 };
+export { ARP_POLICY_VERSION_V2, ARP_PROFILE_DATA_VERSION_V2 };
+export type { ArpPolicyVersionV2, ArpProfileDataVersionV2 };
 export type {
   ArpDensityMaskIdV1,
   ArpOctaveRangeV1,
@@ -90,6 +105,22 @@ export type ArpPolicyGenerationResultV1 = Readonly<{
 }>;
 
 type UnknownRecord = Record<PropertyKey, unknown>;
+
+export type ArpPolicyGenerationRequestV2 = Readonly<{
+  progression: HarmonyProgressionRealization;
+  range: ArpRange;
+  intent: Readonly<{ energy: EnergyV1; complexity: ComplexityV1 }>;
+  profile: Readonly<{ id: HarmonyProfileId; version: ArpProfileDataVersionV2 }>;
+  policy: Readonly<{ version: ArpPolicyVersionV2 }>;
+  seedDerivation: Readonly<{ version: ComponentSeedDerivationVersionV1 }>;
+  prng: Readonly<{ version: ArpPrngVersionV1 }>;
+  rootSeed: number;
+}>;
+
+export type ArpPolicyGenerationResultV2 = Readonly<{
+  plan: ResolvedArpPlanV1;
+  events: readonly ArpEvent[];
+}>;
 
 const UINT32_MAX = 0xffff_ffff;
 const FULL_MIDI_ARP_RANGE = createArpRange({ minMidiPitch: 0, maxMidiPitch: 127 });
@@ -238,6 +269,7 @@ function invariant(condition: boolean, message: string): asserts condition {
 function assertResolvedPlanMatchesCandidates(
   plan: ResolvedArpPlanV1,
   candidateLists: ReturnType<typeof constructCandidateLists>,
+  gateMappings = SHARED_ARP_POLICY_CONFIGURATION_V1.gateTicksByRate,
 ): void {
   const contains = (slot: ArpPolicyDecisionSlotV1, value: unknown) =>
     candidateLists.get(slot)?.some((candidate) => candidate.value === value) === true;
@@ -255,9 +287,7 @@ function assertResolvedPlanMatchesCandidates(
     .get("gate")
     ?.some(
       (candidate) =>
-        SHARED_ARP_POLICY_CONFIGURATION_V1.gateTicksByRate[plan.rate][
-          candidate.value as "short" | "medium" | "long"
-        ] === plan.gateTicks,
+        gateMappings[plan.rate][candidate.value as "short" | "medium" | "long"] === plan.gateTicks,
     );
   invariant(validGateTicks === true, "resolved gate is outside validated candidates");
 }
@@ -367,5 +397,138 @@ export function generateArpEventsWithPolicyV1(
     throw error;
   }
 
+  return Object.freeze({ plan, events });
+}
+
+export function generateArpEventsWithPolicyV2(
+  request: ArpPolicyGenerationRequestV2,
+): ArpPolicyGenerationResultV2 {
+  const rawRequest = request as unknown;
+  // Steps 1–3: normalized intent, then the canonical profile ID.
+  const intent = validateIntent(rawRequest);
+  const profileId = validateProfileId(rawRequest);
+  // Steps 4–5: operation-local support, never V1 dispatch or migration.
+  const profileVersion = validateVersion(
+    readRecordProperty(readRecordProperty(rawRequest, "profile"), "version"),
+    ARP_PROFILE_DATA_VERSION_V2,
+    ARP_ERROR_CODES.unsupportedArpProfileVersion,
+    "profile.version",
+  );
+  const policyVersion = validateVersion(
+    readRecordProperty(readRecordProperty(rawRequest, "policy"), "version"),
+    ARP_POLICY_VERSION_V2,
+    ARP_ERROR_CODES.unsupportedArpPolicyVersion,
+    "policy.version",
+  );
+  // Step 6: the sole individually supported pair is declared compatible.
+  if (
+    profileVersion !== SHARED_ARP_POLICY_CONFIGURATION_V2.compatibleProfileDataVersion ||
+    policyVersion !== SHARED_ARP_POLICY_CONFIGURATION_V2.version
+  ) {
+    return fail(
+      ARP_ERROR_CODES.incompatibleArpProfilePolicy,
+      "policy.version",
+      "profile.version and policy.version must be a supported compatible pair.",
+    );
+  }
+  // Steps 7–9 retain the accepted seed and PRNG identities and uint32 domain.
+  validateVersion(
+    readRecordProperty(readRecordProperty(rawRequest, "seedDerivation"), "version"),
+    COMPONENT_SEED_DERIVATION_VERSION_V1,
+    ARP_ERROR_CODES.unsupportedSeedDerivationVersion,
+    "seedDerivation.version",
+  );
+  validateVersion(
+    readRecordProperty(readRecordProperty(rawRequest, "prng"), "version"),
+    PRNG_ALGORITHM_ID,
+    ARP_ERROR_CODES.unsupportedPrngVersion,
+    "prng.version",
+  );
+  const rootSeed = validateRootSeed(readRecordProperty(rawRequest, "rootSeed"));
+  // Step 10: all profile-owned validation and five ordered candidate lists.
+  const candidateLists: ReturnType<typeof constructCandidateLists> = new Map();
+  try {
+    validateArpGenreProfileConfigurationV2(ARP_GENRE_PROFILE_CONFIGURATION_V2);
+    for (const slot of ["rate", "octave-range", "direction", "mask", "gate"] as const) {
+      candidateLists.set(
+        slot,
+        buildArpWeightedCandidatesV2(
+          ARP_GENRE_PROFILE_CONFIGURATION_V2,
+          profileId,
+          slot,
+          intent.energy,
+          intent.complexity,
+        ),
+      );
+    }
+  } catch (error) {
+    if (error instanceof ArpGenreProfileConfigurationError) {
+      return fail(
+        ARP_ERROR_CODES.invalidArpPolicyConfiguration,
+        "profile.version",
+        "The selected Arpeggiator profile configuration is invalid.",
+      );
+    }
+    throw error;
+  }
+  // Step 11: the shared validator owns every schedule/domain/gate constraint.
+  try {
+    validateSharedArpPolicyConfigurationV2(SHARED_ARP_POLICY_CONFIGURATION_V2);
+  } catch (error) {
+    if (error instanceof SharedArpPolicyConfigurationError) {
+      return fail(
+        ARP_ERROR_CODES.invalidArpPolicyConfiguration,
+        "policy.version",
+        "The selected shared Arpeggiator policy configuration is invalid.",
+      );
+    }
+    throw error;
+  }
+  // Steps 12–14: range, independent Harmony validation, then profile equality.
+  const range = createArpRange(readRecordProperty(rawRequest, "range"));
+  const progression = readRecordProperty(
+    rawRequest,
+    "progression",
+  ) as HarmonyProgressionRealization;
+  deriveArpSlotCandidates(progression, FULL_MIDI_ARP_RANGE);
+  if (progression.profile !== profileId) {
+    return fail(
+      ARP_ERROR_CODES.incompatibleArpProfileContext,
+      "profile.id",
+      "profile.id must equal the validated Harmony progression profile.",
+    );
+  }
+
+  let componentSeed: number;
+  try {
+    componentSeed = deriveComponentSeedV1(rootSeed, "arpeggiator");
+  } catch (error) {
+    if (error instanceof ComponentSeedValueError) {
+      throw new Error("Stage 7C component-seed derivation invariant failed.", { cause: error });
+    }
+    throw error;
+  }
+  const plan = resolveArpPlanV2(
+    Object.freeze({ profileId, energy: intent.energy, complexity: intent.complexity }),
+    componentSeed,
+  );
+  assertResolvedPlanMatchesCandidates(
+    plan,
+    candidateLists,
+    SHARED_ARP_POLICY_CONFIGURATION_V2.gateTicksByRate,
+  );
+  let events: readonly ArpEvent[];
+  try {
+    events = projectResolvedArpPlanV1(progression, range, plan);
+  } catch (error) {
+    if (error instanceof ArpProjectionNoLegalPitchError) {
+      return fail(
+        ARP_ERROR_CODES.noLegalArpPitch,
+        `progression.slots[${error.slotIndex}].voicing.midiPitches`,
+        "progression slot has no selected-voicing pitch inside the resolved Arpeggiator range.",
+      );
+    }
+    throw error;
+  }
   return Object.freeze({ plan, events });
 }
