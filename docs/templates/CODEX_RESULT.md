@@ -22,6 +22,26 @@ Concise description; if blocked, distinguish completed work from remaining work.
 
 Exact starting SHA/ref and precheck result.
 
+## REVIEWED TARGET BASE
+
+For publication-capable work, the exact target-branch SHA/ref used for technical review; otherwise `N/A`.
+
+## REVIEWED IMPLEMENTATION HEAD
+
+For publication-capable work, the exact implementation commit approved for publication review; otherwise `N/A`.
+
+## CURRENT TARGET BASE AT PUBLICATION
+
+For publication-capable work, the live remote target-branch SHA/ref immediately before publication/merge; otherwise `N/A`.
+
+## REMOTE PR HEAD
+
+For publication-capable work, the exact remote pull-request head SHA and branch; otherwise `N/A`.
+
+## BASE-MATCH / BASE-MOVEMENT DISPOSITION
+
+State whether the current target base matched the reviewed target base. If it moved, record the bounded impact assessment, refreshed evidence/review, or `BLOCKED` decision; do not imply automatic rebase or unchanged approval.
+
 ## BRANCH
 
 Exact branch.
@@ -29,6 +49,18 @@ Exact branch.
 ## COMMIT
 
 Exact resulting SHA if created; otherwise `NONE`. Include final working-tree/index state.
+
+## MERGE COMMIT
+
+For an authorized merge, resulting merge-commit SHA; otherwise `N/A`. Do not require equality with the reviewed implementation head.
+
+## FINAL TARGET-BRANCH SHA
+
+For an authorized publication/merge, final remote target-branch SHA after reconciliation; otherwise `N/A`.
+
+## ANCESTRY / INTEGRATION VERIFICATION
+
+For an authorized merge, state whether the reviewed implementation head is in the final target-branch ancestry, the authorized target-base/integration relationship was used, the merged scope matches review, and no unauthorized changes entered; otherwise `N/A`.
 
 ## FILES MODIFIED
 
