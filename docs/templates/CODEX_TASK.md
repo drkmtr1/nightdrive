@@ -8,6 +8,17 @@ Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md). This reus
 - Type: `ASSESS | SPECIFY | IMPLEMENT` — select one; ASSESS remains read-only and SPECIFY does not imply runtime authorization.
 - Risk: `R0 | R1 | R2 | R3` with a brief rationale.
 
+## CODEX EXECUTION SETTINGS
+
+For every substantive task, resolve this block before issuing the packet:
+
+- Codex model: exact currently selectable label.
+- Reasoning effort: exact currently selectable label.
+- Why: brief task-specific capability/risk rationale.
+- Escalate if: specific condition requiring stronger settings or a stop.
+
+ChatGPT presents these same settings immediately before the paste-ready task for Product Owner visibility. Select the lowest-capability model and lowest effort reasonably likely to succeed; prefer increasing effort before model when the same model remains capable. Verify current availability when uncertain. Do not guess labels, use unresolved placeholders, or establish defaults. A substantive packet without this resolved block, rationale, or escalation condition is incomplete and must not be issued for Product Owner use.
+
 ## AUTHORIZATION / REPOSITORY STATE
 
 - Current authorization and why the task is eligible under `PROJECT_STATE.md`, `docs/ROADMAP.md`, or another governing contract. Eligibility alone is not authorization.
@@ -30,7 +41,7 @@ Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md). This reus
 ## PRECHECK / EVIDENCE
 
 - Verify branch/base, working-tree/index state, governing documents, scope, contract maturity, and compatibility with repository truth before edits; report meaningful precheck success.
-- Review handoff for implementation: explain how the exact candidate will be inspectable. A local committed candidate requires a complete base-to-head diff or equivalent artifact (including new files); an uncommitted candidate requires complete working-tree/index evidence; a remotely fetchable candidate must identify the authoritative source and exact base/head evidence. Disclose unavailable, partial, binary, or non-inline-reviewable evidence; do not push unreviewed work merely for inspection.
+- Review handoff for implementation: explain how the exact candidate will be inspectable. For a substantial/nontrivial local committed candidate, default to a standalone `.patch` outside the repository, equivalent to complete `git diff --full-index <base>..<head>` evidence including new files; do not commit, push, add it to the PR, or paste it inline by default. Report its base/head, path/name, byte size, SHA-256, changed-file count, and completeness. A genuinely small diff may be inline when more efficient or explicitly requested. An uncommitted candidate requires complete working-tree/index evidence; a remotely fetchable candidate must identify the authoritative source and exact base/head evidence. Disclose unavailable, partial, binary, or non-inline-reviewable evidence; do not push unreviewed work merely for inspection.
 
 ## BUILD-VS-BUY
 

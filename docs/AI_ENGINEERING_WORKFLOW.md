@@ -43,19 +43,28 @@ For nontrivial work, use this sequence within the task's authorization:
 2. SELECT
 3. CLASSIFY
 4. CONFIRM CONTRACT
-5. ISSUE TASK PACKET
-6. PRECHECK
-7. IMPLEMENT
-8. VALIDATE
-9. RETURN EVIDENCE
-10. REVIEW
-11. APPROVE EXACT HEAD
-12. PUBLISH
-13. CI
-14. MERGE
-15. RECONCILE PROJECT STATE WHEN MATERIAL
+5. SELECT CODEX EXECUTION SETTINGS
+6. ISSUE TASK PACKET
+7. PRECHECK
+8. IMPLEMENT
+9. VALIDATE
+10. RETURN EVIDENCE
+11. REVIEW
+12. APPROVE EXACT HEAD
+13. PUBLISH
+14. CI
+15. MERGE
+16. RECONCILE PROJECT STATE WHEN MATERIAL
 
 Not every R0 task needs every ceremony step. Apply only actions permitted by the task type: ASSESS remains read-only; SPECIFY does not acquire runtime scope. Selection/recommendation does not authorize the next task. Publication and merge require their explicit authorization and repository checks; the sequence is not blanket permission to continue.
+
+## Codex execution settings
+
+Before issuing every substantive Codex task, ChatGPT selects and records task-specific execution settings. The selection must use the lowest-capability currently selectable Codex model and lowest reasoning effort reasonably likely to succeed, considering task ambiguity, specification maturity, deterministic/replay/serialization sensitivity, debugging difficulty, cross-file reasoning, implementation complexity, and required judgment. Prefer increasing reasoning effort before escalating the model when the same model remains capable.
+
+The task packet must contain an `## CODEX EXECUTION SETTINGS` block with the exact currently selectable model label, exact currently selectable reasoning-effort label, a brief task-specific rationale, and a specific escalation-or-stop condition. If current availability is not known with sufficient confidence, ChatGPT verifies it before issuing the packet. Do not guess or invent model names or use generic family placeholders unless that is literally a selectable label. Do not establish a permanent default model or effort.
+
+For Product Owner visibility, ChatGPT presents the same settings immediately before the paste-ready task and inside the task packet. Missing settings, unresolved placeholders, missing rationale, or missing escalation conditions make a substantive packet incomplete and not ready for Product Owner use. Selecting settings recommends an execution configuration; it does not authorize the task or change Product Owner authority.
 
 ## Codex precheck
 
@@ -98,9 +107,9 @@ Formal review procedures remain owned by the [Engineering Review Playbook](ENGIN
 
 Full implementation approval requires inspectable candidate content, not only a commit SHA, changed-file names, an implementation summary, reported validation, or a Codex PASS. The review evidence must identify the exact reviewed-base/head tuple and scope already required by this workflow.
 
-For a local-only committed candidate that the reviewer cannot fetch, Codex returns the complete base-to-head diff, including new files, or an equivalent complete artifact tied unambiguously to the exact base/head. An uncommitted candidate must return complete working-tree/index candidate evidence; this does not require committing or pushing unreviewed work. If the candidate is already remotely fetchable and the reviewer actually obtains the complete relevant contents from an authoritative source, Codex identifies that source and need not redundantly paste the same diff.
+For a nontrivial local-only committed candidate that the reviewer cannot fetch, Codex normally generates the complete equivalent of `git diff --full-index <base>..<head>`, including new files, as a standalone `.patch` artifact outside the repository working tree. It does not commit, push, place in the PR, or print the patch contents inline by default. The result reports base/head, patch path or filename, byte size, SHA-256, changed-file count, completeness, and confirmation of complete full-index base-to-head coverage. The Product Owner transfers or attaches the patch for ChatGPT review. An uncommitted candidate must return complete working-tree/index candidate evidence; this does not require committing or pushing unreviewed work. If the candidate is already remotely fetchable and the reviewer actually obtains the complete relevant contents from an authoritative source, Codex identifies that source and need not redundantly create the patch.
 
-Large evidence must be split into complete labeled parts or replaced by another complete inspectable artifact; partial or silently truncated evidence cannot support full exact-head implementation approval. New text files require full content in the diff/artifact. Binary or otherwise non-inline-reviewable artifacts require exact metadata/hash and an available artifact or source, with limitations disclosed. Candidate-content evidence remains separate from tests, validation, scope, architecture/contract, and CI evidence.
+A genuinely small, easily inspectable diff may be supplied inline when that is more efficient, including when the task or reviewer explicitly requests inline evidence. Otherwise, substantial/nontrivial complete evidence defaults to the standalone patch. Partial or silently truncated evidence cannot support full exact-head implementation approval. New text files require full content in the diff/artifact. Binary or otherwise non-inline-reviewable artifacts require exact metadata/hash and an available artifact or source, with limitations disclosed. Candidate-content evidence remains separate from tests, validation, scope, architecture/contract, and CI evidence.
 
 If the reviewer has not inspected the actual candidate contents, the result must say that review is summary-only, candidate inspection is incomplete, or review is blocked pending evidence. It must not represent technical approval as full exact-head implementation approval. Technical approval and evidence transfer do not authorize publication or merge.
 

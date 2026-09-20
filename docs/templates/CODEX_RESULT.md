@@ -38,7 +38,7 @@ For implementation review, report:
 - Completeness: `COMPLETE | PARTIAL | N/A`:
 - Unavailable/partial evidence and resulting review limitations:
 
-Local committed candidates require a complete base-to-head diff or equivalent artifact, including new files; uncommitted candidates require complete working-tree/index evidence; remotely fetchable candidates must identify the authoritative source and exact base/head evidence. Partial evidence cannot support exact-head implementation approval.
+For substantial/nontrivial local committed candidates, default to a standalone `.patch` outside the repository, equivalent to complete `git diff --full-index <base>..<head>` evidence including new files. Report its filename/path, byte size, SHA-256, changed-file count, and complete base-to-head coverage confirmation. Do not emit the complete patch inline unless the task or reviewer explicitly requests it. A genuinely small diff may be supplied inline when more efficient. Local committed candidates still require complete base-to-head evidence; uncommitted candidates require complete working-tree/index evidence; remotely fetchable candidates must identify the authoritative source and exact base/head evidence. Patch metadata, validation, scope summaries, or commit messages do not replace inspection of actual candidate content. Partial evidence cannot support exact-head implementation approval.
 
 ## BUILD-VS-BUY / DEPENDENCIES
 
