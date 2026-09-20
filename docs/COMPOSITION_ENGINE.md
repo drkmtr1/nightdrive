@@ -146,7 +146,7 @@ Generators emit machine-readable decision codes and references (for example, sel
 
 ## Stage 7 aggregate generation contract
 
-**Status:** Specification candidate for technical review; no aggregate runtime is implemented or authorized by this document. [ADR-022](DECISIONS.md#adr-022--stage-7-supplied-harmony-aggregate-and-node-acceptance-boundary) records the Product Owner's accepted ownership/environment decisions. This section owns the exact proposed wire/replay contract; it is not a complete composition brief, project revision, transport API, or persistence schema.
+**Status:** Specification accepted and merged through PR #143; no aggregate runtime is implemented or authorized by this document. The canonical foundation is accepted and merged through PR #144. [ADR-022](DECISIONS.md#adr-022--stage-7-supplied-harmony-aggregate-and-node-acceptance-boundary) records the Product Owner's accepted ownership/environment decisions. This section owns the exact wire/replay contract; it is not a complete composition brief, project revision, transport API, or persistence schema.
 
 ### Boundary and identities
 
