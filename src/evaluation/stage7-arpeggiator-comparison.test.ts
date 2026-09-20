@@ -4,11 +4,16 @@ import { readFileSync } from "node:fs";
 import { parseMidi } from "midi-file";
 import { beforeAll, expect, it, vi } from "vitest";
 import * as generator from "../music-domain/arpeggiator-policy-generator";
+import * as assembler from "./stage7-arpeggiator-midi-ir";
+import * as serializer from "../midi/adapter";
+import { STAGE7_GOLDEN_CASES } from "./stage7-arpeggiator-fixtures";
 import {
+  buildStage7ComparisonDesign,
   buildStage7ComparisonPackage,
   comparisonInventory,
   type ComparisonInputs,
   type ComparisonPackage,
+  validateComparisonPackage,
 } from "./stage7-arpeggiator-comparison";
 
 const commit = "41d59f698e1bb37e76ddbeccb77c661768ed97aa";
@@ -34,8 +39,8 @@ beforeAll(() => {
     throw Error("ambient randomness");
   });
   try {
-    packageA = buildStage7ComparisonPackage(input);
-    packageB = buildStage7ComparisonPackage(input);
+    packageA = buildStage7ComparisonPackage(input, buildStage7ComparisonDesign(input));
+    packageB = buildStage7ComparisonPackage(input, buildStage7ComparisonDesign(input));
   } finally {
     random.mockRestore();
   }
@@ -46,6 +51,202 @@ function doc(path: string) {
 function hash(value: Uint8Array | string) {
   return createHash("sha256").update(value).digest("hex");
 }
+
+function forbiddenGeneration() {
+  return [
+    vi.spyOn(generator, "generateArpEventsWithPolicyV1").mockImplementation(() => {
+      throw Error("unexpected V1 generation");
+    }),
+    vi.spyOn(generator, "generateArpEventsWithPolicyV2").mockImplementation(() => {
+      throw Error("unexpected V2 generation");
+    }),
+    vi.spyOn(assembler, "assembleStage7ArpeggiatorMidiIr").mockImplementation(() => {
+      throw Error("unexpected MIDI assembly");
+    }),
+    vi.spyOn(serializer, "serializeStandardMidiV1").mockImplementation(() => {
+      throw Error("unexpected serialization");
+    }),
+  ];
+}
+
+it("constructs canonical design bytes/hash independently with no musical generation or MIDI", () => {
+  const spies = forbiddenGeneration();
+  try {
+    const design = buildStage7ComparisonDesign(input);
+    const replay = buildStage7ComparisonDesign(input);
+    expect(design).toEqual(replay);
+    expect(design.sha256).toBe(hash(design.bytes));
+    const text = new TextDecoder().decode(design.bytes);
+    expect(text).toBe(packageA.documents["custodian/design-inputs.json"]);
+    expect(doc("custodian/manifest.json").designInputsSha256).toBe(design.sha256);
+    expect(Object.keys(design)).toEqual(["bytes", "sha256"]);
+    const parsed = JSON.parse(text);
+    expect(parsed.units).toHaveLength(140);
+    expect(parsed.panels).toHaveLength(49);
+    expect(parsed.status).toBe("UNLOCKED");
+    expect(parsed.generatingCommit).toBe(input.generatingCommit);
+    expect(parsed.toolchain).toEqual(input.toolchain);
+    expect(parsed.presentation).toEqual({
+      fixtureSeed: 0,
+      panelSeed: 1,
+      roleSeed: 2,
+      algorithm: "descending-fisher-yates-uint32-modulo",
+    });
+    expect(text).not.toMatch(/midiSha256|midiByteLength|"events"|"plan"/);
+    for (const spy of spies) expect(spy).not.toHaveBeenCalled();
+  } finally {
+    for (const spy of spies) spy.mockRestore();
+  }
+});
+
+it.each(["bytes", "hash", "rehashed altered design", "commit", "toolchain", "source"])(
+  "rejects mismatched frozen design (%s) before all musical/MIDI calls",
+  (kind) => {
+    const design = buildStage7ComparisonDesign(input);
+    let changedInput = input;
+    let supplied = design;
+    if (kind === "bytes") {
+      const bytes = Uint8Array.from(design.bytes);
+      bytes[0] ^= 1;
+      supplied = { ...design, bytes };
+    }
+    if (kind === "hash") supplied = { ...design, sha256: "0".repeat(64) };
+    if (kind === "rehashed altered design") {
+      const value = JSON.parse(new TextDecoder().decode(design.bytes));
+      value.units[0].rootSeed = 3;
+      const bytes = new TextEncoder().encode(`${JSON.stringify(value, null, 2)}\n`);
+      supplied = { bytes, sha256: hash(bytes) };
+    }
+    if (kind === "commit") changedInput = { ...input, generatingCommit: "a".repeat(40) };
+    if (kind === "toolchain")
+      changedInput = { ...input, toolchain: { ...input.toolchain, npm: "11.19.1" } };
+    if (kind === "source")
+      changedInput = {
+        ...input,
+        sources: input.sources.map((s, i) => (i === 0 ? { ...s, text: `${s.text}\n` } : s)),
+      };
+    const spies = forbiddenGeneration();
+    try {
+      expect(() => buildStage7ComparisonPackage(changedInput, supplied)).toThrow(
+        "frozen design identity mismatch",
+      );
+      for (const spy of spies) expect(spy).not.toHaveBeenCalled();
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
+  },
+);
+
+it("independently binds all four reused golden records to accepted literal and source-table evidence", () => {
+  const expected = [
+    {
+      id: "dark-synthwave-chorus-001",
+      profileId: "dark-synthwave",
+      templateId: "degree-0654-natural-minor-v1",
+      scale: "natural-minor",
+    },
+    {
+      id: "classic-synthwave-chorus-001",
+      profileId: "classic-synthwave",
+      templateId: "degree-0344-major-v1",
+      scale: "major",
+    },
+    {
+      id: "darkwave-verse-001",
+      profileId: "darkwave",
+      templateId: "degree-0654-natural-minor-v1",
+      scale: "natural-minor",
+    },
+    {
+      id: "cyberpunk-build-001",
+      profileId: "midtempo-cyberpunk",
+      templateId: "degree-0654-phrygian-v1",
+      scale: "phrygian",
+    },
+  ];
+  const source = input.sources.find((s) => s.path.endsWith("GOLDEN_CASES.md"))?.text ?? "";
+  const table = source
+    .split("## Fixed source context")[1]
+    .split("## Deterministic reconstruction")[0];
+  const documented = table
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith("| `"))
+    .map((line) => {
+      const columns = line.split("|").map((c) => c.trim());
+      const literal = (column: string) => column.match(/`([^`]+)`/)?.[1];
+      return {
+        id: literal(columns[1]),
+        profileId: literal(columns[2]),
+        templateId: literal(columns[4]),
+        scale: columns[6].toLowerCase().replaceAll(" ", "-"),
+      };
+    });
+  expect(documented).toEqual(expected);
+  expect(STAGE7_GOLDEN_CASES).toEqual(expected);
+  expect(
+    JSON.parse(new TextDecoder().decode(buildStage7ComparisonDesign(input).bytes)).goldenCases,
+  ).toEqual(expected);
+});
+
+it("records exactly 28 known V1 baseline-listening exposures without inferring R1 or NO exposure", () => {
+  const records = doc("custodian/manifest.json").fixtures;
+  const cases = [
+    "dark-synthwave-chorus-001",
+    "classic-synthwave-chorus-001",
+    "darkwave-verse-001",
+    "cyberpunk-build-001",
+  ];
+  const conditions = [
+    [0, "medium", "medium"],
+    [0, "very-low", "medium"],
+    [0, "very-high", "medium"],
+    [0, "medium", "very-low"],
+    [0, "medium", "very-high"],
+    [1, "medium", "medium"],
+    [2, "medium", "medium"],
+  ];
+  const expected = cases
+    .flatMap((id) =>
+      conditions.map(([root, energy, complexity]) =>
+        JSON.stringify([id, root, energy, complexity, "V1"]),
+      ),
+    )
+    .sort();
+  const yes = records.filter(
+    (r: { priorExposure: { status: string } }) => r.priorExposure.status === "YES",
+  );
+  expect(yes).toHaveLength(28);
+  expect(
+    yes
+      .map(
+        (r: {
+          goldenCase: { id: string };
+          rootSeed: number;
+          energy: string;
+          complexity: string;
+          lineage: string;
+        }) => JSON.stringify([r.goldenCase.id, r.rootSeed, r.energy, r.complexity, r.lineage]),
+      )
+      .sort(),
+  ).toEqual(expected);
+  for (const r of records) {
+    if (r.priorExposure.status === "YES")
+      expect(r.priorExposure.explanation).toContain("STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md");
+    else expect(r.priorExposure.status).toBe("UNKNOWN");
+    if (r.lineage === "R1") expect(r.priorExposure.status).toBe("UNKNOWN");
+  }
+  const altered = JSON.parse(packageA.documents["custodian/manifest.json"]);
+  altered.fixtures[0].priorExposure.status = "UNKNOWN";
+  expect(() =>
+    validateComparisonPackage({
+      ...packageA,
+      documents: {
+        ...packageA.documents,
+        "custodian/manifest.json": `${JSON.stringify(altered, null, 2)}\n`,
+      },
+    }),
+  ).toThrow("document content/order");
+});
 
 // Independent literal uint32 recurrence; does not import production PRNG/shuffle/matrix.
 function oracle(seed: number) {
@@ -115,7 +316,7 @@ it("covers the exact canonical source matrix independently, retaining byte-ident
 it("routes exactly 140 fixtures per build through each public version, without fallback", () => {
   const v1 = vi.spyOn(generator, "generateArpEventsWithPolicyV1");
   const v2 = vi.spyOn(generator, "generateArpEventsWithPolicyV2");
-  buildStage7ComparisonPackage(input);
+  buildStage7ComparisonPackage(input, buildStage7ComparisonDesign(input));
   expect(v1).toHaveBeenCalledTimes(140);
   expect(v2).toHaveBeenCalledTimes(140);
   for (const [spy, version] of [
@@ -390,10 +591,13 @@ it("recomputes R1, binds sources and labels retained evidence without fabricated
   expect(evidence.retained[0].midtempoAdjacentEvents.regressions).toHaveLength(9);
   expect(evidence.retained[0].context.rootsInclusive).toEqual([1024, 2047]);
   expect(() =>
-    buildStage7ComparisonPackage({
-      ...input,
-      sources: input.sources.map((s, i) => (i === 4 ? { ...s, text: "```json\n[]\n```" } : s)),
-    }),
+    buildStage7ComparisonPackage(
+      {
+        ...input,
+        sources: input.sources.map((s, i) => (i === 4 ? { ...s, text: "```json\n[]\n```" } : s)),
+      },
+      buildStage7ComparisonDesign(input),
+    ),
   ).toThrow("fingerprint");
 });
 

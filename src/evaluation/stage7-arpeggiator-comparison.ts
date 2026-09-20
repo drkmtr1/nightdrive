@@ -15,7 +15,7 @@ import {
   buildArpWeightedCandidatesV1,
   buildArpWeightedCandidatesV2,
 } from "../music-domain/arpeggiator-profile-configuration";
-import type { EnergyV1 } from "../music-domain/composition-intent";
+import type { ComplexityV1, EnergyV1 } from "../music-domain/composition-intent";
 import { getHarmonyTemplate, realizeHarmonyProgression } from "../music-domain/harmony";
 import { createKey } from "../music-domain/key";
 import { createPitchClass } from "../music-domain/pitch";
@@ -29,7 +29,7 @@ const R1_HASH = "b6f7ee16f33cf649ae2c6f06e4b5eecf859409b1917e2bc641323857fc1956e
 const levels = ["very-low", "low", "medium", "high", "very-high"] as const;
 const roots = [0, 2048, 2049] as const;
 type Lineage = "V1" | "R1";
-type Tuple = readonly [EnergyV1, EnergyV1];
+type Tuple = readonly [EnergyV1, ComplexityV1];
 const main: readonly Tuple[] = [
   ["very-low", "medium"],
   ["low", "medium"],
@@ -206,7 +206,7 @@ function design() {
     caseIndex: number;
     rootSeed: number;
     energy: EnergyV1;
-    complexity: EnergyV1;
+    complexity: ComplexityV1;
   };
   const units: Unit[] = [];
   const add = (
@@ -222,7 +222,7 @@ function design() {
   for (const root of roots) add("extra", 3, root, extra);
   for (let p = 0; p < 4; p++)
     for (const root of [1, 2]) add("seed", p, root, [["medium", "medium"]]);
-  const find = (p: number, root: number, energy: EnergyV1, complexity: EnergyV1) => {
+  const find = (p: number, root: number, energy: EnergyV1, complexity: ComplexityV1) => {
     const index = units.findIndex(
       (u) =>
         u.caseIndex === p &&
@@ -333,38 +333,17 @@ function design() {
 
 export type ComparisonPackage = Readonly<{
   inputs: ComparisonInputs;
+  design: ComparisonDesign;
   documents: Readonly<Record<string, string>>;
   fixtures: readonly Readonly<{ path: string; bytes: Uint8Array }>[];
 }>;
 
-/** Tooling only: no file IO, accepted lock, response record, or musical judgment. */
-export function buildStage7ComparisonPackage(rawInput: ComparisonInputs): ComparisonPackage {
+export type ComparisonDesign = Readonly<{ bytes: Uint8Array; sha256: string }>;
+
+/** Canonical UTF-8 input bytes only; no musical generation, MIDI, fixture bytes, or IO. Not a lock. */
+export function buildStage7ComparisonDesign(rawInput: ComparisonInputs): ComparisonDesign {
   const inputs = checkInputs(rawInput);
-  const candidates = candidateEvidence();
   const { units, panels } = design();
-  const fixtureOrder = shuffler(0)(Array.from({ length: 280 }, (_, i) => i));
-  const labels = new Map(
-    fixtureOrder.map((index, i) => [index, `ND7C-${String(i + 1).padStart(3, "0")}`]),
-  );
-  const roleShuffle = shuffler(2);
-  const aRoles = [
-    [12, 12],
-    [11, 10],
-    [2, 2],
-  ].flatMap(([v1, r1]) =>
-    roleShuffle<Lineage>([...Array<Lineage>(v1).fill("V1"), ...Array<Lineage>(r1).fill("R1")]),
-  );
-  const presentedPanels = shuffler(1)(
-    panels.map((panel, i) => ({
-      ...panel,
-      canonicalIndex: i,
-      A: aRoles[i],
-      B: aRoles[i] === "V1" ? ("R1" as const) : ("V1" as const),
-    })),
-  ).map((panel, i) => ({
-    panelId: `ND7C-P${String(i + 1).padStart(3, "0")}`,
-    ...panel,
-  }));
   const sourceRefs = inputs.sources.map(({ path, commit, text }) => ({
     path,
     commit,
@@ -400,6 +379,62 @@ export function buildStage7ComparisonPackage(rawInput: ComparisonInputs): Compar
     responseProtocol: sourceRefs[0],
     listeningAuthorized: false,
   });
+  return Object.freeze({
+    bytes: new TextEncoder().encode(designJson),
+    sha256: comparisonSha256(designJson),
+  });
+}
+
+/** Tooling only. The supplied design must match reconstruction before any musical generation. */
+export function buildStage7ComparisonPackage(
+  rawInput: ComparisonInputs,
+  frozenDesign: ComparisonDesign,
+): ComparisonPackage {
+  const inputs = checkInputs(rawInput);
+  const reconstructed = buildStage7ComparisonDesign(inputs);
+  requireValue(
+    frozenDesign?.bytes instanceof Uint8Array &&
+      frozenDesign.sha256 === reconstructed.sha256 &&
+      comparisonSha256(frozenDesign.bytes) === frozenDesign.sha256 &&
+      frozenDesign.bytes.length === reconstructed.bytes.length &&
+      frozenDesign.bytes.every((byte, index) => byte === reconstructed.bytes[index]),
+    "frozen design identity mismatch",
+  );
+  const boundDesign = Object.freeze({
+    bytes: Uint8Array.from(reconstructed.bytes),
+    sha256: reconstructed.sha256,
+  });
+  const designJson = new TextDecoder().decode(boundDesign.bytes);
+  const candidates = candidateEvidence();
+  const { units, panels } = design();
+  const fixtureOrder = shuffler(0)(Array.from({ length: 280 }, (_, i) => i));
+  const labels = new Map(
+    fixtureOrder.map((index, i) => [index, `ND7C-${String(i + 1).padStart(3, "0")}`]),
+  );
+  const roleShuffle = shuffler(2);
+  const aRoles = [
+    [12, 12],
+    [11, 10],
+    [2, 2],
+  ].flatMap(([v1, r1]) =>
+    roleShuffle<Lineage>([...Array<Lineage>(v1).fill("V1"), ...Array<Lineage>(r1).fill("R1")]),
+  );
+  const presentedPanels = shuffler(1)(
+    panels.map((panel, i) => ({
+      ...panel,
+      canonicalIndex: i,
+      A: aRoles[i],
+      B: aRoles[i] === "V1" ? ("R1" as const) : ("V1" as const),
+    })),
+  ).map((panel, i) => ({
+    panelId: `ND7C-P${String(i + 1).padStart(3, "0")}`,
+    ...panel,
+  }));
+  const sourceRefs = inputs.sources.map(({ path, commit, text }) => ({
+    path,
+    commit,
+    sha256: comparisonSha256(text),
+  }));
   const range = createArpRange({ minMidiPitch: 0, maxMidiPitch: 127 });
   const contexts = STAGE7_GOLDEN_CASES.map((source) => {
     const template = getHarmonyTemplate(source.templateId);
@@ -446,6 +481,15 @@ export function buildStage7ComparisonPackage(rawInput: ComparisonInputs): Compar
       requireValue(label, "fixture label");
       const path = `pass1/${label}.mid`;
       fixtures.push({ path, bytes });
+      const baselineListened =
+        lineage === "V1" &&
+        ((unit.rootSeed === 0 &&
+          ((unit.complexity === "medium" &&
+            ["very-low", "medium", "very-high"].includes(unit.energy)) ||
+            (unit.energy === "medium" && ["very-low", "very-high"].includes(unit.complexity)))) ||
+          ([1, 2].includes(unit.rootSeed) &&
+            unit.energy === "medium" &&
+            unit.complexity === "medium"));
       return {
         sourceKey: [
           COMPARISON_PROTOCOL,
@@ -472,9 +516,10 @@ export function buildStage7ComparisonPackage(rawInput: ComparisonInputs): Compar
         midiByteLength: bytes.length,
         midiSha256: comparisonSha256(bytes),
         priorExposure: {
-          status: "UNKNOWN",
-          explanation:
-            "Custodian must reconcile known research/listening exposure before package lock; no pristine-exposure claim.",
+          status: baselineListened ? "YES" : "UNKNOWN",
+          explanation: baselineListened
+            ? "Known V1 baseline-listening exposure: one of the seven conditions per profile in the accepted Stage 7 baseline evaluation; see docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md and the comparison protocol's Frozen roots and intent matrix."
+            : "Evaluator exposure is not established for this lineage/condition by the accepted baseline evidence; research inspection is not listening exposure. No NO/pristine-exposure claim.",
         },
       };
     }),
@@ -605,7 +650,7 @@ export function buildStage7ComparisonPackage(rawInput: ComparisonInputs): Compar
       musicalAcceptance: false,
     }),
   };
-  return { inputs, documents, fixtures };
+  return { inputs, design: boundDesign, documents, fixtures };
 }
 
 /** Exact-byte inventory for a future lock; the lock itself MUST NOT be an entry. */
@@ -633,7 +678,7 @@ export function comparisonInventory(
 
 /** Rebuild from bound inputs to reject forged mappings, metadata, bytes, and custody leakage. */
 export function validateComparisonPackage(candidate: ComparisonPackage) {
-  const expected = buildStage7ComparisonPackage(candidate.inputs);
+  const expected = buildStage7ComparisonPackage(candidate.inputs, candidate.design);
   requireValue(json(candidate.documents) === json(expected.documents), "document content/order");
   requireValue(candidate.fixtures.length === expected.fixtures.length, "fixture inventory");
   const snapshots = candidate.fixtures.map((fixture, index) => {

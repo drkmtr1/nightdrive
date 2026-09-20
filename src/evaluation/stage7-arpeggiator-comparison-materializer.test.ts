@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeAll, expect, it, vi } from "vitest";
 import {
+  buildStage7ComparisonDesign,
   buildStage7ComparisonPackage,
   type ComparisonPackage,
 } from "./stage7-arpeggiator-comparison";
@@ -13,7 +14,7 @@ import { materializeStage7ComparisonPackage } from "./stage7-arpeggiator-compari
 let fixturePackage: ComparisonPackage;
 beforeAll(() => {
   const commit = "41d59f698e1bb37e76ddbeccb77c661768ed97aa";
-  fixturePackage = buildStage7ComparisonPackage({
+  const input = {
     generatingCommit: commit,
     toolchain: { node: process.version, npm: "11.19.0" },
     sources: [
@@ -26,7 +27,8 @@ beforeAll(() => {
       const path = `docs/reviews/STAGE7_ARPEGGIATOR_${name}.md`;
       return { path, commit, text: readFileSync(path, "utf8") };
     }),
-  });
+  };
+  fixturePackage = buildStage7ComparisonPackage(input, buildStage7ComparisonDesign(input));
 });
 
 function alterDocument(
