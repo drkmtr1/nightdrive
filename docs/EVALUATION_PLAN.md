@@ -50,6 +50,12 @@ Stage 7C profile acceptance requires deterministic evidence plus structured list
 
 The initial Stage 7 [audition-artifact contract](reviews/STAGE7_ARPEGGIATOR_AUDITION_ARTIFACT.md) and [baseline protocol](reviews/STAGE7_ARPEGGIATOR_EVALUATION_PROTOCOL.md) govern the accepted 28-fixture matrix and evaluation-only MIDI route. The corrected [FL Studio listening setup](reviews/STAGE7_ARPEGGIATOR_LISTENING_SETUP.md) and categorical Pass 1 direction are accepted through PR #106. The completed, locked Pass 1 and Pass 2 evidence and the bounded policy-sensitivity diagnostic are recorded in [Stage 7 Arpeggiator evaluation results](reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md). The exploratory baseline found no runtime defect, but it leaves Energy and Complexity intent sensitivity at a separately gated REVISE investigation; it does not authorize policy tuning or establish a population claim.
 
+### Current R1 product-acceptance exception
+
+The [Product Owner decision](reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) accepts current R1/V2 behavior for continued Nightdrive development using accepted deterministic/prior evidence and the owner's personal assessment of the first 35 presented comparison fixtures. It waives the remaining 245 judgments, full Pass 1 completion/lock, and Pass 2 as prerequisites for that acceptance only. Pass 1 was not completed or locked, Pass 2 did not occur, and the full 280-fixture protocol did not pass. No all-profile, all-root, or comparative coverage is inferred from those 35. The original protocol, frozen artifacts, baseline findings, and known deterministic limitations remain evidence, not rewritten outcomes.
+
+This explicit product-specific exception does not relax deterministic correctness or broader release/evaluation requirements. It closes the current R1 product-acceptance gate, not all Stage 7 obligations; aggregate generator/provenance integration and full exit-evidence reconciliation remain separately gated. Stage 8 remains unauthorized.
+
 ## AI evaluation
 
 Measure schema validity, allowed-parameter adherence, observation grounding, deterministic-fact accuracy, recommendation labeling, prompt-injection resistance, unsafe direct-mutation attempts, latency, tokens, and estimated cost. Human review covers clarity and actionability. Provider/model/prompt changes require regression comparison.
