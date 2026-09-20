@@ -6,7 +6,7 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 ## Current status
 
-Nightdrive's deterministic Version 1 music foundations and Stage 7 baseline evaluation evidence are recorded in the authoritative project documents. The V2 compatibility and public contract are accepted, while V2 runtime and musical acceptance remain separately gated. See [Project State](PROJECT_STATE.md) for the active milestone and gate, and [Roadmap](docs/ROADMAP.md) for stage authorization.
+Nightdrive's deterministic Version 1 music foundations and Stage 7 baseline evaluation evidence are recorded in the authoritative project documents. The public V2 runtime is accepted through PR #131; the [Product Owner acceptance record](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) records bounded R1/V2 acceptance after partial listening, not completion of the full comparison or Stage 7. See [Project State](PROJECT_STATE.md) for the active milestone and gate, and [Roadmap](docs/ROADMAP.md) for stage authorization.
 
 Later capabilities remain separately authorized by the roadmap, including broader theory, production workflows, persistence, AI, deployment, and future generation behavior.
 
