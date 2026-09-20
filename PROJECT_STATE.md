@@ -30,7 +30,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-The next eligible gate is separately authorized deterministic comparison-package preparation/artifact generation, including any bounded evaluation-tooling prerequisite, followed by package review/lock, separate listening authorization, and results review/Product Owner disposition. The existing baseline-only fixture tooling must not be repurposed contrary to its contract; no package preparation or listening is authorized by this reconciliation. New weights, a new dataset/version, policy-semantic changes, aggregate provenance, and Stage 8 remain unauthorized. The baseline remains exploratory, R1-REV-001 remains partially closed, and MIA-003 remains deferred/non-blocking.
+The bounded comparison-specific in-memory builder and explicit-directory materializer are implemented and locally tested, review-pending. The next gate is exact-head review of this tooling, not real package generation. Only temporary test packages have been materialized; the real 280-fixture package, response instruments, package review/lock and listening remain unstarted and separately unauthorized. After tooling acceptance, deterministic package preparation requires separate authorization, followed by package review/lock, separate listening authorization, and results review/Product Owner disposition. The historical baseline tooling remains unchanged. New weights, a new dataset/version, policy-semantic changes, aggregate provenance, and Stage 8 remain unauthorized. R1 remains musically unaccepted, the baseline remains exploratory, R1-REV-001 remains partially closed, and MIA-003 remains deferred/non-blocking.
 
 ## Maintenance
 
