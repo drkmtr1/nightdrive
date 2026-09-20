@@ -16,7 +16,9 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Technical review of the [Product Owner R1/V2 acceptance and comparison override](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override). The Product Owner accepts current R1/V2 behavior for continued development after personally listening to/analyzing the first 35 presented fixtures, together with existing deterministic and prior evidence. The remaining 245 Pass 1 judgments, full Pass 1 completion/lock, and Pass 2 are waived as prerequisites for that product acceptance. Pass 1 is incomplete/unlocked; Pass 2 was not executed; the 280-fixture protocol did not complete or pass. No profile/root/panel coverage is inferred from the 35-fixture count.
+Technical review of the documentation-only aggregate/provenance candidate under ADR-022; runtime implementation and publication remain unauthorized.
+
+The [Product Owner R1/V2 acceptance and comparison override](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) is accepted and merged through PR #142. The Product Owner accepts current R1/V2 behavior for continued development after personally listening to/analyzing the first 35 presented fixtures, together with existing deterministic and prior evidence. The remaining 245 Pass 1 judgments, full Pass 1 completion/lock, and Pass 2 are waived as prerequisites for that product acceptance. Pass 1 is incomplete/unlocked; Pass 2 was not executed; the 280-fixture protocol did not complete or pass. No profile/root/panel coverage is inferred from the 35-fixture count.
 
 The accepted comparison protocol (PR #135), tooling (PR #137), generated package, accepted design/package locks, and accepted blank response instruments remain preserved; their remaining execution path is superseded, not completed. Baseline findings and deterministic limitations remain documented. V1 replay and ADR-019/020/021 semantics are unchanged. No further listening or mapping reveal is authorized. Stage 7 remains open for aggregate generator/provenance integration and complete exit-evidence reconciliation; Stage 8 remains unauthorized.
 
@@ -30,7 +32,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-Return this documentation candidate for technical review; publication and merge require separate authorization. After it is accepted, published, and merged, the next eligible gate is a separately authorized **assessment of remaining Stage 7 aggregate generator/provenance integration and full AC-004/AC-011/AC-013 exit evidence**. R1 product acceptance does not certify Stage 7 completion. No integration implementation, further listening, or Stage 8 work is authorized; R1-REV-001 remains partially closed and MIA-003 deferred/non-blocking.
+Technical review of the [Stage 7 aggregate/provenance specification](docs/COMPOSITION_ENGINE.md#stage-7-aggregate-generation-contract), following the completed exit-gap assessment and Product Owner decisions in ADR-022. It consumes supplied selected Harmony and generates Arp only; initial AC-004 evidence is pinned-Node-only, with future browser canonical generation separately qualified. After specification acceptance and separately authorized publication, the next bounded gate is aggregate implementation under that contract, not Harmony generation or Stage 8. AC-011/AC-013 remain satisfied; aggregate AC-004 implementation/evidence and final exit reconciliation remain open. No implementation or further listening is authorized by this candidate; R1-REV-001 remains partially closed and MIA-003 deferred/non-blocking.
 
 ## Maintenance
 

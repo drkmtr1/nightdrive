@@ -97,7 +97,7 @@ The canonical constants, canonical types, normalized result type, shared error t
 
 The boundary is pure and deterministic. It consumes no PRNG or seed and cannot depend on `Math.random()`, time, locale, network, AI, persistence, database state, environment, object/discovery order, or another ambient input. Equal valid inputs produce canonical-value-equivalent frozen outputs. No dependency is justified for these tiny replay-relevant Nightdrive-owned domains and rules.
 
-Stage 7C7a4 implements only this shared canonical boundary. Stage 7C7a5 is accepted and merged through PR #90 at approved head `d2b18ca3156d358693e1d00456cde1558afcca51` with merge commit `e87e270745b6fe219df8b0cd76f47f47ded03400`; it implements only the shared Arpeggiator policy-configuration foundation. Stage 7C7a6 is accepted and merged through PR #92 at approved head `a7193128e9d8febcee6cca306a0f07fc1c6cc41a` with merge commit `e4ae8e8675a83e69752362565f94b73907ded10a`; it provides the separately gated direct-module runtime containing the exact four-profile data, structural validation, and deterministic Energy/Complexity vector addition. Stage 7C7a7 implements only module-private weighted selection, supplied component-seed PRNG consumption, gate resolution, and frozen resolved-plan construction and is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`. Stage 7C7a8 implements the module-private projector with upward octave expansion, canonical candidate construction, mask-aware slot-local traversal, and exact rate/gate event timing and is accepted and merged through PR #96 at approved head `43d251c4c95d39f60320ad90bd80522c514d721c` with merge commit `a14b6e100d00464e314309b45813943e6f81b83a`. The accepted enclosing operation/public preflight and its exact MIA-004 structured-error evidence are implemented and validation-complete through PR #98 at approved head `d4373c60cb3242058df4bc1c898ccb2d465f0741c` with merge commit `6f5e1d26e9f48a678f5c995538fdb218d29fd39d`; aggregate provenance, persistence, human evaluation, UI, MIDI, and browser/audio behavior remain unstarted.
+Stage 7C7a4 implements only this shared canonical boundary. Stage 7C7a5 is accepted and merged through PR #90 at approved head `d2b18ca3156d358693e1d00456cde1558afcca51` with merge commit `e87e270745b6fe219df8b0cd76f47f47ded03400`; it implements only the shared Arpeggiator policy-configuration foundation. Stage 7C7a6 is accepted and merged through PR #92 at approved head `a7193128e9d8febcee6cca306a0f07fc1c6cc41a` with merge commit `e4ae8e8675a83e69752362565f94b73907ded10a`; it provides the separately gated direct-module runtime containing the exact four-profile data, structural validation, and deterministic Energy/Complexity vector addition. Stage 7C7a7 implements only module-private weighted selection, supplied component-seed PRNG consumption, gate resolution, and frozen resolved-plan construction and is accepted and merged through PR #94 at approved head `133c7f6fecc2a78ea4278fb7b44921a2484a0c13` with merge commit `afbe3493841ef38a62eb961368a2f1147f008725`. Stage 7C7a8 implements the module-private projector with upward octave expansion, canonical candidate construction, mask-aware slot-local traversal, and exact rate/gate event timing and is accepted and merged through PR #96 at approved head `43d251c4c95d39f60320ad90bd80522c514d721c` with merge commit `a14b6e100d00464e314309b45813943e6f81b83a`. The accepted enclosing operation/public preflight and its exact MIA-004 structured-error evidence are implemented and validation-complete through PR #98 at approved head `d4373c60cb3242058df4bc1c898ccb2d465f0741c` with merge commit `6f5e1d26e9f48a678f5c995538fdb218d29fd39d`; aggregate provenance, persistence, UI, MIDI generation integration, and browser/audio behavior remain outside that runtime slice. Current R1 human product acceptance is satisfied by the PR #142 exception.
 
 ## Pipeline
 
@@ -143,3 +143,143 @@ Specify and version PRNG state advancement, root-to-component seed derivation, g
 ## Explanation records
 
 Generators emit machine-readable decision codes and references (for example, selected template, voice-leading cost, archetype, target-tone position). AI or deterministic text may explain those records but cannot rewrite them.
+
+## Stage 7 aggregate generation contract
+
+**Status:** Specification candidate for technical review; no aggregate runtime is implemented or authorized by this document. [ADR-022](DECISIONS.md#adr-022--stage-7-supplied-harmony-aggregate-and-node-acceptance-boundary) records the Product Owner's accepted ownership/environment decisions. This section owns the exact proposed wire/replay contract; it is not a complete composition brief, project revision, transport API, or persistence schema.
+
+### Boundary and identities
+
+`generateStage7ArpeggiatorAggregateV1(request): Promise<Stage7ArpeggiatorAggregateV1>` belongs to `src/generators/stage7-arpeggiator-aggregate.ts`. It consumes supplied selected Harmony and generates only Arpeggiator events. It must never call Harmony generation, select a template/voicing, or infer an upstream seed. The existing `composition` module owns the aggregate value, invariant validation and canonical serializer in `src/composition/stage7-arpeggiator-aggregate.ts`; the generator composes these with the existing public V1/V2 Arpeggiator operations. These are direct-module APIs, not music-domain barrel exports. No HTTP endpoint is defined.
+
+The exact aggregate identities are `nightdrive.stage7-arpeggiator-aggregate.v1` (schema), `nightdrive.engine.stage7-aggregate.v1` (enclosing validation/normalization engine), and `nightdrive.generator.stage7-arpeggiator.v1` (orchestration). They are independent of Arpeggiator policy/profile V1 versus V2. Engine version does not claim to identify or regenerate the supplied Harmony's upstream engine. A replay-relevant change requires a new identity at its owning boundary, not silent mutation of these meanings. The schema fixes `sha256` as its hash algorithm and fixes the primitive serialization versions below.
+
+### Request and canonical Harmony view
+
+All properties below are required. Missing and explicit `undefined` fail at their owning field; `null` is valid only for `parent`. No defaulting, trimming, parsing, case folding, version inference or coercion occurs. Objects are ordinary data records; arrays are dense ordered arrays. Additional properties are ignored and never copied or hashed; this includes non-canonical Harmony metadata. Accessors/proxies and executable object behavior are not supported input mechanisms. Validation never calls caller `toJSON` or conversion methods.
+
+```ts
+type Stage7HarmonyContextV1 = Readonly<{
+  profile: HarmonyProfileId;
+  templateId: string;
+  templateVersion: "v1";
+  key: Key;
+  slots: readonly Readonly<Pick<HarmonyProgressionSlot,
+    "index" | "degree" | "bars" | "chord" | "inversion" | "voicing"
+  >>[];
+}>;
+type Stage7ArpeggiatorAggregateRequestV1 = Readonly<{
+  schema: "nightdrive.stage7-arpeggiator-aggregate.v1";
+  engineVersion: "nightdrive.engine.stage7-aggregate.v1";
+  generatorVersion: "nightdrive.generator.stage7-arpeggiator.v1";
+  parent: null;
+  tempo: Tempo;
+  progression: Stage7HarmonyContextV1;
+  range: ArpRange;
+  intent: Readonly<{ energy: EnergyV1; complexity: ComplexityV1 }>;
+  profile: Readonly<{ id: HarmonyProfileId; version: ArpProfileDataVersionV1 | ArpProfileDataVersionV2 }>;
+  policy: Readonly<{ version: ArpPolicyVersionV1 | ArpPolicyVersionV2 }>;
+  seedDerivation: Readonly<{ version: ComponentSeedDerivationVersionV1 }>;
+  prng: Readonly<{ version: ArpPrngVersionV1 }>;
+  rootSeed: number;
+}>;
+```
+
+`Stage7HarmonyContextV1` is a structural projection of existing Harmony values, not a second theory model or generation API. A full `HarmonyProgressionRealization` supplies it without conversion by callers. Its profile/template/Key, slot count/order, indices, degree/bar spans, Chord, inversion, selected voicing and compatibility must pass the existing Arpeggiator Harmony-context validation unchanged. Template identity is checked against the existing catalog; it is not a request to realize that template. `adjacentCost`, `rationale`, preference ranks, tie-break text, candidate sets and any other explanatory fields are ignored, not validated as musical input, not regenerated, and not retained. An internal type-only view may bridge the structural subset to the existing public Arpeggiator consumer; it must neither fabricate explanatory facts nor change that consumer's behavior or public contract.
+
+`progression.profile` and `profile.id` are both required and intentionally duplicated. `progression.profile` is the canonical profile identity of the supplied selected Harmony context. `profile.id` is Arpeggiator replay/policy provenance and records the exact profile context submitted to the selected V1/V2 public Arpeggiator operation. Neither value is optional or inferred from the other. Every valid request satisfies `profile.id === progression.profile`; the aggregate never permits replay provenance to name a profile other than the supplied canonical Harmony profile.
+
+`tempo` is the existing positive safe-integer `microsecondsPerQuarter` value validated by `createTempoFromMicrosecondsPerQuarter`, not BPM or an evaluation-only 120-BPM default. It does not affect tick generation. Meter, length and PPQ are fixed to 4/4, eight bars and 960; callers cannot override them. `range`, both intent values, profile ID, seed identities and root seed retain their exact public Arpeggiator domains (including uint32 roots `0..0xffffffff`). Normalized intent ownership remains upstream composition-brief ownership; the aggregate schema references those domains without implementing a broader brief schema.
+
+The supplied Harmony is the only current component. It is immutable input, not a regeneration target. No lock flags, submitted component hashes, current Arp, Bass/Lead components, project/revision IDs, author, timestamp, path or environment fields are accepted as controlling inputs. Additional properties cannot authorize those features. This is a root-generation specialization of the shared generator contract, not Stage 11 targeted regeneration.
+
+### Result, provenance and field order
+
+The recursively readonly result has exactly these keys, in this canonical serialization order:
+
+```text
+schema, engineVersion, generatorVersion, section, components, provenance,
+componentHashes, warnings, resultHash
+```
+
+Nested schemas and key orders are exact:
+
+- `section`: `ppq` = 960, `barCount` = 8, `timeSignature` = existing 4/4 value, `tempo` = copied validated Tempo.
+- `components`: `harmony`, `arpeggiator`.
+- `components.harmony`: `profile`, `templateId`, `templateVersion`, `key`, `slots`; each slot: `index`, `degree`, `bars`, `chord`, `inversion`, `voicing`. Values are exactly the minimal supplied context above, copied without explanatory metadata. `components.harmony.profile` retains the canonical supplied Harmony identity. Arrays retain original validated slot/pitch order.
+- `components.arpeggiator`: the generated ordered `readonly ArpEvent[]`; each event: `pitch`, `startTick`, `durationTicks`, with unchanged canonical numeric values. There is no plan field or rest placeholder.
+- `provenance`: `profile`, `policy`, `seedDerivation`, `prng`, `rootSeed`, `normalizedInputs`, `parent`. The first four wrappers retain their request fields in order (`id`, `version` for profile; `version` otherwise). `provenance.profile.id` retains the exact Arpeggiator replay/policy context submitted to the selected public operation. `normalizedInputs`: `intent`, `range`; intent: `energy`, `complexity`; range: `minMidiPitch`, `maxMidiPitch`. `parent` is explicit `null`.
+- `componentHashes`: `harmony`, `arpeggiator`, each a lowercase 64-hex-character SHA-256 digest.
+- `warnings`: exactly the frozen empty array `[]`. No current accepted operation emits a warning; failure is not converted into one. A future warning vocabulary needs a contract/version decision.
+- `resultHash`: lowercase 64-hex-character SHA-256 digest defined below.
+
+The complete normalized replay input is reconstructed from the three top-level version identities, `section.tempo`, `components.harmony` and `provenance`; Harmony and versions are not duplicated into `normalizedInputs`. Fixed section facts are schema-owned. Replaying means submitting these same canonical values/versions/root seed with `parent: null`, not rerunning Harmony generation. This is not a claim about the upstream provenance of Harmony's selection. The runtime result uses existing typed primitive values; the serialized embeddings below are their already versioned wire forms, not additional runtime properties or JSON strings. A future decoder is not part of this operation.
+
+Every valid result satisfies the canonical invariant `components.harmony.profile === provenance.profile.id`. This duplicate representation is intentional: the component field records canonical supplied Harmony identity, while the provenance field records replay/policy context. Equality prevents contradictory lineage; neither field may be omitted or reconstructed from the other.
+
+| Datum | Ownership in this aggregate |
+|---|---|
+| Minimal selected Harmony, section timing/tempo, ordered Arp events | CANONICAL STORED/RETURNED DATA |
+| Root seed; profile ID/data version; policy, derivation, PRNG, generator, engine and schema identities; normalized intent/range; parent | REPLAY PROVENANCE, included in canonical record/hash |
+| Component hashes and result hash | CANONICAL STORED/RETURNED DATA, derived by the specified encoder/hash boundary |
+| Component seed; raw PRNG state/output; candidate/weight lists; cumulative arithmetic; resolved plan; Harmony costs/rationale/tie-break metadata | DERIVED/TRANSIENT — MUST NOT BE STORED in this aggregate or its serialization |
+| Full composition brief, Bass/Lead, Harmony-generation lineage, locks/variation graph, persistence IDs/author/time, evaluation data, MIDI, UI/audio/AI | OUT OF SCOPE |
+
+The existing V1/V2 `{ plan, events }` result remains unchanged and transient. The aggregate discards the plan after successful generation; it does not expose helper internals or add fields to `ArpEvent`.
+
+### Routing and failure precedence
+
+`Stage7AggregateValueError extends RangeError` has only stable `code` and `field` discriminators plus diagnostic `name`/message; it captures no invalid payload. Its name is `Stage7AggregateValueError`. Message wording is not contractual. It is separate from `ArpValueError`; the latter propagates unchanged for delegated Arpeggiator failures, with original unprefixed fields because the request uses the same field paths.
+
+Validate in this exact order, stopping on the first failure:
+
+1. Non-null non-array request record: `INVALID_AGGREGATE_REQUEST` / `request`.
+2. Exact schema, engine, generator identities, in that order: `UNSUPPORTED_AGGREGATE_SCHEMA` / `schema`, `UNSUPPORTED_AGGREGATE_ENGINE_VERSION` / `engineVersion`, `UNSUPPORTED_AGGREGATE_GENERATOR_VERSION` / `generatorVersion`.
+3. `parent` is present and exactly null: `INVALID_AGGREGATE_PARENT` / `parent`.
+4. Tempo record and owning numeric value, using existing Tempo domain: `INVALID_AGGREGATE_TEMPO` / `tempo.microsecondsPerQuarter` for every malformed/missing tempo case.
+5. Profile version is exactly one of the two supported identities below: `UNSUPPORTED_AGGREGATE_PROFILE_VERSION` / `profile.version`.
+6. Policy version is exactly one of the two supported identities below: `UNSUPPORTED_AGGREGATE_POLICY_VERSION` / `policy.version`.
+7. Pair is declared below: `INCOMPATIBLE_AGGREGATE_ARP_VERSIONS` / `policy.version`.
+8. Before delegation, run the selected public operation's existing non-generative fourteen-step preflight in its exact accepted order, reusing the same validation ownership rather than implementing a shorter raw comparison. Its step 14 establishes valid Harmony first and then requires `profile.id === progression.profile`. A mismatch throws the existing `ArpValueError` with `INCOMPATIBLE_ARP_PROFILE_CONTEXT` / `profile.id`; it is not wrapped in or replaced by an aggregate-specific code. Earlier public-operation failures retain their accepted precedence. No component seed is derived, PRNG is constructed or consumed, or generator/resolver/projector is invoked during this aggregate preflight.
+9. Only after step 8 succeeds, invoke exactly one selected public Arpeggiator operation with those exact validated request values. Its public contract and defensive preflight remain unchanged; the aggregate does not bypass it, add a second selection path, or run both operations. Configuration translation, seed derivation, resolution, projection and post-resolution failures retain the selected operation's exact `ArpValueError` code/field/order.
+10. Validate/copy the successful canonical output; serialize/hash and recursively freeze the complete result. A violation of accepted output invariants is an internal `Error`, never a new caller-invalid `ArpValueError` or aggregate validation code.
+
+| Profile data | Policy | Route |
+|---|---|---|
+| `nightdrive.genre-profile.arpeggiator.v1` | `nightdrive.arpeggiator-policy.v1` | `generateArpEventsWithPolicyV1` |
+| `nightdrive.genre-profile.arpeggiator.v2` | `nightdrive.arpeggiator-policy.v2` | `generateArpEventsWithPolicyV2` |
+| Either supported profile identity | Other supported policy identity | Step 7 failure; no call |
+
+Malformed wrappers behave as missing owning values. No unknown identity, `latest`, fallback, implicit migration or caller-supplied dispatcher/function is permitted. V1 historical requests still use unchanged V1 data and behavior. Aggregate version checks do not broaden either public operation's individual version support. Steps 1–8 consume no seed/PRNG and invoke no Arpeggiator generator, resolver or projector. In particular, a profile/context mismatch produces no plan, events, component hash, aggregate hash or partial aggregate. Step 9 preserves the selected operation's no-consumption guarantee until its own complete preflight succeeds. No result, plan, partial events, hash or warning envelope is returned on any failure; Promise rejection is the only failed outcome. Unrelated programmer, platform/hash and impossible configuration/lookup failures remain internal, not falsely translated to caller-invalid failures.
+
+### Canonical JSON and hashing
+
+`serializeStage7ArpeggiatorAggregateV1(result): string` belongs to `composition`; its contract is a serializer of a validated aggregate value, not a general JSON canonicalizer or JSON parser. It rebuilds owned objects in the field orders above, never enumerates caller insertion order, invokes `toJSON`, or sorts musical arrays. Section time signature/tempo, Harmony Key, Chord, inversion and voicing embed the exact existing primitive serialized objects (not JSON-encoded strings): respectively `nightdrive.time-signature.v1`, `nightdrive.tempo.v1`, `nightdrive.key.v1`, `nightdrive.chord.v1`, `nightdrive.chord-inversion.v1`, `nightdrive.chord-voicing.v1`, with their existing exact key orders/values. Other fields use the orders above. This references/reuses primitive semantics under ADR-013 rather than redefining them. Hash fields are strings; events retain the ArpEvent three-number shape, not MIDI IR.
+
+Encode that normalized JSON as UTF-8 without BOM. Emit no indentation, insignificant whitespace, line breaks or terminal newline. JSON literals are lowercase `null`; there are no boolean fields. All numbers are validated safe integers in their owning domains, emitted as minimal base-10 digits with no leading plus/zeroes, decimal point or exponent; numeric negative zero normalizes to `0` wherever the owning numeric domain accepts it. No NaN, infinity, bigint, sparse arrays, undefined, function, symbol, cyclic value or implicit omission is serializable in an owned field. Strings are exact case-sensitive identifiers/digests, not user text; no trimming or Unicode normalization. JSON quoting follows ECMAScript JSON string escaping (`"` and backslash escaped, control characters escaped, slash not escaped); the closed accepted string domains are ASCII. Invalid owned data is rejected before encoding, never repaired or silently dropped. Ignored request extras never become owned data. Reordering input object construction cannot change normalized bytes.
+
+Define `J(x)` as the above schema-directed JSON, and `H(x)` as lowercase hexadecimal SHA-256 of UTF-8 `J(x)`, with no salt, prefix bytes, BOM or newline. Component hash inputs are exactly `{ "schema": "nightdrive.stage7-harmony-component.v1", "section": section, "harmony": components.harmony }` and `{ "schema": "nightdrive.stage7-arpeggiator-component.v1", "section": section, "events": components.arpeggiator }`, in displayed key order, using the same nested encoding rules. Section metadata participates in both hashes. Neither component digest includes root seed, intent, other component data or aggregate versions; these are bound by the aggregate hash. Equal events may therefore have equal component hashes despite different seeds/policies.
+
+The aggregate hash input is exactly the normalized result object through `warnings`, excluding the `resultHash` key entirely (not null or an empty string). It includes both component digests and all provenance. The complete serialized result then appends `resultHash` last. The result hash is not the SHA-256 of that complete self-containing serialization. No timestamp, runtime/build/Git version, byte length or filesystem information is injected. Digest strings carry no `sha256:` prefix; algorithm/version ownership is the enclosing schema.
+
+`verifyStage7ArpeggiatorAggregateV1(value): Promise<Stage7ArpeggiatorAggregateV1>` is the `generators`-owned integrity boundary for an in-memory result, not a parser, persistence reader or replay oracle. It validates exact result-owned shape (unlike request extras, extra result keys are rejected), identities and value domains in the displayed depth-first field/array order, then recomputes Harmony component hash, Arp component hash and aggregate hash in that order. Malformed owned shape/value uses `INVALID_AGGREGATE_RESULT` with the first dotted/indexed result path (`result` for malformed top level); malformed digest strings use that code at their owning path. Well-formed but unequal digests use `AGGREGATE_HASH_MISMATCH` at `componentHashes.harmony`, `componentHashes.arpeggiator`, then `resultHash`. All result-structure/domain and relational checks precede digest comparisons. Events must be ordered, monophonic, valid-pitch, positive-duration integer spans inside `[0,30720]`; the Harmony view must pass unchanged context/compatibility rules and `components.harmony.profile` must equal `provenance.profile.id`. Verification never consumes a seed/PRNG or regenerates music. It rejects profile-identity disagreement before any digest comparison even when all component and aggregate hashes were recomputed to be self-consistent. Passing integrity does not prove that an untrusted caller actually used the generator: recomputed malicious content can otherwise be self-consistent. Trusted-origin acceptance requires replay and exact canonical result equality, not a hash alone.
+
+For exact result-validation precedence, each record first checks required keys in displayed order, then unexpected keys in ordinal UTF-16 order, then visits required values depth-first in displayed order; arrays check density/length before visiting indices ascending. Primitive runtime records use their existing value keys/domains, not their wire-schema keys. After all local shape/domain checks, relational checks run in order: Harmony template/Key/slot compatibility (existing Harmony-context order), `components.harmony.profile === provenance.profile.id`, exact supported profile/policy pair, event start ordering/non-overlap. A relational failure reports `INVALID_AGGREGATE_RESULT` at the corresponding result field (Harmony failures replace the existing `progression` prefix with `components.harmony`; profile mismatch uses `provenance.profile.id`; pair mismatch uses `provenance.policy.version`; event order/overlap uses the first failing `components.arpeggiator[i].startTick`). Digest comparisons occur only afterward. Missing keys report their own path; extra keys report their exact path; malformed arrays report their array path. Numeric domains are inherited from their request/primitive/event owners; the top-level three identities and all section constants must match exactly, parent must be null, and warnings must be empty.
+
+Serialization must require the same structural/value validation and reject malformed result fields, but synchronous serialization does not itself attest cryptographic integrity. Only generation or the asynchronous verifier supplies that evidence. No supplied request hash exists, so there is no request hash-mismatch path.
+
+### Lineage, immutability and platform boundary
+
+Stage 7 supports root records only: `parent: null` is required, serialized and hashed. There is no non-null parent ID/hash/version shape in this schema and no child creation API. This is the minimum lineage required for a root run, not missing provenance or permission to implement Stage 11. A future separately authorized lineage schema must explicitly bind parent identity, schema and result hash; it cannot reinterpret null, silently upgrade history or manufacture a parent. Replay preserves null and identical bytes/hash; it does not create a variation. The deterministic content hash is not a unique execution/row ID.
+
+Inputs are never mutated or frozen in place. Capture a detached snapshot of consumed input values before any asynchronous work; ignored fields are not copied. Snapshotting must not validate later musical fields before their owning preflight phase; malformed values still reach the specified first failure. Normalize accepted negative zero to positive zero in copied numeric data as well as encoded bytes. Return fresh recursively frozen ordinary objects/arrays, including section, minimal Harmony/primitives, events, provenance, empty warnings and digest containers. No returned mutable reference may alias caller state; sharing independently frozen module constants is allowed, sharing caller objects is not. Mutating the request after invocation cannot affect bytes/hash. Supplied Harmony canonical content and its component hash remain equal across Arp seed/policy/intent changes when Harmony/section are unchanged. This is component-isolation evidence, not implementation of lock/variation workflows. The verifier likewise snapshots before awaiting and returns a detached recursively frozen validated value.
+
+Canonical values/serializers are framework- and runtime-neutral, with no Node, browser, filesystem, process, locale, clock, network, database, AI or provider types/state. A deterministic UTF-8/SHA-256 adapter at `src/generators/adapters/stage7-digest.ts` may use pinned-runtime facilities; Node APIs must not enter `src/music-domain` or `composition`, and the adapter does not choose canonical semantics. Its byte/digest results must match this contract. Platform failure rejects internally without partial output. Browser audition does not authorize browser canonical generation.
+
+**Build-vs-Buy:** Mixed: Nightdrive owns canonical schema, ordering, validation, lineage and routing; UTF-8 and SHA-256 are commodity platform mechanisms. Prefer existing runtime facilities behind the adapter over a hashing/serialization dependency or custom SHA-256. A general canonicalization library would not own the required domain projection/order and adds no justified value here. No dependency is added. Future adoption must satisfy AGENTS.md; adapter replacement must preserve exact vectors. This completes existing composition/generator ownership, without persistence, a second MIDI model or a broad serialization framework.
+
+### Acceptance boundary
+
+The [testing strategy](TESTING_STRATEGY.md#stage-7-aggregate-ac-004-evidence-contract) owns implementation evidence. Initial AC-004 acceptance is bounded to the supported pinned Node runtime, not browser execution. Before any future browser environment may originate trusted canonical generation results, it must independently prove byte-equivalent serialization and result hashing against accepted Node golden vectors. No browser runtime, browser delivery or browser qualification is authorized here.
+
+AC-004/NFR-001 remains open until the aggregate implementation and Node evidence pass. Existing AC-011/MUS-003 and AC-013/MUS-006 evidence remains satisfied and must regress unchanged. PR #142 satisfies the current R1 human product-acceptance gate by explicit exception, not completion of the 280-fixture protocol; no further listening is required for current Stage 7 acceptance. Final Stage 7 exit still needs aggregate acceptance and exit-evidence reconciliation. R1-REV-001 remains partially closed, MIA-003 deferred/non-blocking, and Stage 8 unauthorized.
