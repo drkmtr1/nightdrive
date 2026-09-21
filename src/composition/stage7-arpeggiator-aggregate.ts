@@ -124,7 +124,17 @@ export type Stage7ArpeggiatorAggregateV1 = Readonly<{
   resultHash: string;
 }>;
 
-export type Stage7AggregateErrorCode = "INVALID_AGGREGATE_RESULT";
+export type Stage7AggregateErrorCode =
+  | "INVALID_AGGREGATE_REQUEST"
+  | "UNSUPPORTED_AGGREGATE_SCHEMA"
+  | "UNSUPPORTED_AGGREGATE_ENGINE_VERSION"
+  | "UNSUPPORTED_AGGREGATE_GENERATOR_VERSION"
+  | "INVALID_AGGREGATE_PARENT"
+  | "INVALID_AGGREGATE_TEMPO"
+  | "UNSUPPORTED_AGGREGATE_PROFILE_VERSION"
+  | "UNSUPPORTED_AGGREGATE_POLICY_VERSION"
+  | "INCOMPATIBLE_AGGREGATE_ARP_VERSIONS"
+  | "INVALID_AGGREGATE_RESULT";
 
 export class Stage7AggregateValueError extends RangeError {
   readonly code: Stage7AggregateErrorCode;
