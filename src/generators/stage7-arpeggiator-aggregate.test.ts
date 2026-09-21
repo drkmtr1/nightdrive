@@ -1,6 +1,8 @@
 // @vitest-environment node
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import * as aggregateContract from "../composition/stage7-arpeggiator-aggregate";
+import { Stage7AggregateValueError } from "../composition/stage7-arpeggiator-aggregate";
 import { createArpRange } from "../music-domain/arpeggiator";
 import {
   ARP_POLICY_VERSION_V1,
@@ -8,6 +10,7 @@ import {
   ARP_PROFILE_DATA_VERSION_V1,
   ARP_PROFILE_DATA_VERSION_V2,
 } from "../music-domain/arpeggiator-policy-configuration";
+import { generateArpEventsWithPolicyV1 } from "../music-domain/arpeggiator-policy-generator";
 import { COMPONENT_SEED_DERIVATION_VERSION_V1 } from "../music-domain/component-seed";
 import {
   getHarmonyTemplatesForProfile,
@@ -18,10 +21,9 @@ import { createKey } from "../music-domain/key";
 import { createTempoFromMicrosecondsPerQuarter } from "../music-domain/musical-time";
 import { createPitchClass } from "../music-domain/pitch";
 import { PRNG_ALGORITHM_ID } from "../music-domain/prng";
-import { generateArpEventsWithPolicyV1 } from "../music-domain/arpeggiator-policy-generator";
-import { generateStage7ArpeggiatorAggregateV1 } from "./stage7-arpeggiator-aggregate";
 import { digestStage7ArpeggiatorAggregateV1 } from "./stage7-aggregate-hash";
 import { verifyStage7ArpeggiatorAggregateV1 } from "./stage7-aggregate-verifier";
+import { generateStage7ArpeggiatorAggregateV1 } from "./stage7-arpeggiator-aggregate";
 
 function recursivelyFrozen(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return true;
@@ -132,5 +134,29 @@ describe("Stage 7 aggregate preflight/orchestration", () => {
     const second = await generateStage7ArpeggiatorAggregateV1(request());
     expect(second).toEqual(first);
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+  });
+
+  it("translates an internal constructed-result validation failure and preserves its cause", async () => {
+    const internalFailure = new Stage7AggregateValueError(
+      "INVALID_AGGREGATE_RESULT",
+      "resultHash",
+      "constructed result is invalid",
+    );
+    const validator = vi
+      .spyOn(aggregateContract, "validateStage7ArpeggiatorAggregateV1")
+      .mockImplementationOnce(() => {
+        throw internalFailure;
+      });
+
+    try {
+      await expect(generateStage7ArpeggiatorAggregateV1(request())).rejects.toSatisfy((error) => {
+        expect(error).toBeInstanceOf(Error);
+        expect(error).not.toBeInstanceOf(Stage7AggregateValueError);
+        expect((error as Error & { cause?: unknown }).cause).toBe(internalFailure);
+        return true;
+      });
+    } finally {
+      validator.mockRestore();
+    }
   });
 });

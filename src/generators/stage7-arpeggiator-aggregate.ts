@@ -1,51 +1,51 @@
 import {
-  ARP_POLICY_VERSION_V1,
-  ARP_POLICY_VERSION_V2,
-  ARP_PROFILE_DATA_VERSION_V1,
-  ARP_PROFILE_DATA_VERSION_V2,
-  type ArpPolicyGenerationRequestV1,
-  type ArpPolicyGenerationRequestV2,
-  COMPONENT_SEED_DERIVATION_VERSION_V1,
-  generateArpEventsWithPolicyV1,
-  generateArpEventsWithPolicyV2,
-  type ArpPrngVersionV1,
-} from "../music-domain/arpeggiator-policy-generator";
-import { PRNG_ALGORITHM_ID } from "../music-domain/prng";
-import {
-  createTempoFromMicrosecondsPerQuarter,
-  PPQ,
-  V1_BAR_COUNT,
-  V1_TIME_SIGNATURE,
-  type Tempo,
-} from "../music-domain/musical-time";
-import {
+  projectStage7HarmonyContextV1,
   STAGE7_AGGREGATE_ENGINE_VERSION_V1,
   STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1,
   STAGE7_ARPEGGIATOR_GENERATOR_VERSION_V1,
-  projectStage7HarmonyContextV1,
   Stage7AggregateValueError,
-  validateStage7ArpeggiatorAggregateV1,
   type Stage7ArpeggiatorAggregateV1,
+  validateStage7ArpeggiatorAggregateV1,
 } from "../composition/stage7-arpeggiator-aggregate";
-import {
-  digestStage7ArpeggiatorComponentV1,
-  digestStage7HarmonyComponentV1,
-} from "./stage7-component-hashes";
-import { digestStage7ArpeggiatorAggregateV1 } from "./stage7-aggregate-hash";
 import type { ArpRange } from "../music-domain/arpeggiator";
-import type { ComplexityV1, EnergyV1 } from "../music-domain/composition-intent";
-import type { HarmonyProfileId, HarmonyProgressionRealization } from "../music-domain/harmony";
 import type {
   ArpPolicyVersionV1,
   ArpPolicyVersionV2,
   ArpProfileDataVersionV1,
   ArpProfileDataVersionV2,
 } from "../music-domain/arpeggiator-policy-configuration";
-import type { ComponentSeedDerivationVersionV1 } from "../music-domain/component-seed";
+import {
+  ARP_POLICY_VERSION_V1,
+  ARP_POLICY_VERSION_V2,
+  ARP_PROFILE_DATA_VERSION_V1,
+  ARP_PROFILE_DATA_VERSION_V2,
+  type ArpPolicyGenerationRequestV1,
+  type ArpPolicyGenerationRequestV2,
+  type ArpPrngVersionV1,
+  COMPONENT_SEED_DERIVATION_VERSION_V1,
+  generateArpEventsWithPolicyV1,
+  generateArpEventsWithPolicyV2,
+} from "../music-domain/arpeggiator-policy-generator";
 import {
   preflightArpPolicyGenerationV1,
   preflightArpPolicyGenerationV2,
 } from "../music-domain/arpeggiator-policy-preflight";
+import type { ComponentSeedDerivationVersionV1 } from "../music-domain/component-seed";
+import type { ComplexityV1, EnergyV1 } from "../music-domain/composition-intent";
+import type { HarmonyProfileId, HarmonyProgressionRealization } from "../music-domain/harmony";
+import {
+  createTempoFromMicrosecondsPerQuarter,
+  PPQ,
+  type Tempo,
+  V1_BAR_COUNT,
+  V1_TIME_SIGNATURE,
+} from "../music-domain/musical-time";
+import { PRNG_ALGORITHM_ID } from "../music-domain/prng";
+import { digestStage7ArpeggiatorAggregateV1 } from "./stage7-aggregate-hash";
+import {
+  digestStage7ArpeggiatorComponentV1,
+  digestStage7HarmonyComponentV1,
+} from "./stage7-component-hashes";
 
 export type Stage7ArpeggiatorAggregateRequestV1 = Readonly<{
   schema: typeof STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1;
@@ -182,6 +182,17 @@ function buildPolicyRequest(
   }) as ArpPolicyGenerationRequestV1 | ArpPolicyGenerationRequestV2;
 }
 
+function validateConstructedAggregate(value: unknown): Stage7ArpeggiatorAggregateV1 {
+  try {
+    return validateStage7ArpeggiatorAggregateV1(value);
+  } catch (error) {
+    if (error instanceof Stage7AggregateValueError) {
+      throw new Error("Stage 7 aggregate construction invariant failed.", { cause: error });
+    }
+    throw error;
+  }
+}
+
 /** Generates the supplied-Harmony Stage 7 aggregate after the complete contract preflight. */
 export async function generateStage7ArpeggiatorAggregateV1(
   request: Stage7ArpeggiatorAggregateRequestV1,
@@ -291,5 +302,5 @@ export async function generateStage7ArpeggiatorAggregateV1(
     resultHash: "0".repeat(64),
   });
   const resultHash = digestStage7ArpeggiatorAggregateV1(partial);
-  return validateStage7ArpeggiatorAggregateV1(Object.freeze({ ...partial, resultHash }));
+  return validateConstructedAggregate(Object.freeze({ ...partial, resultHash }));
 }
