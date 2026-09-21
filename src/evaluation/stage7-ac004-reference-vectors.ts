@@ -44,12 +44,19 @@ type Slot = Readonly<{
 }>;
 
 const LEVELS = ["very-low", "low", "medium", "high", "very-high"] as const;
-const RATE_TICKS: Record<string, number> = { quarter: 1920, eighth: 960, sixteenth: 480 };
-const GATE_TICKS: Record<string, Record<string, number>> = {
+export const STAGE7_AC004_REFERENCE_RATE_TICKS = Object.freeze({
+  quarter: 960,
+  eighth: 480,
+  sixteenth: 240,
+});
+const RATE_TICKS: Readonly<Record<string, number>> = STAGE7_AC004_REFERENCE_RATE_TICKS;
+export const STAGE7_AC004_REFERENCE_GATE_TICKS = Object.freeze({
   quarter: { short: 480, medium: 720, long: 960 },
   eighth: { short: 240, medium: 360, long: 480 },
   sixteenth: { short: 120, medium: 180, long: 240 },
-};
+});
+const GATE_TICKS: Readonly<Record<string, Readonly<Record<string, number>>>> =
+  STAGE7_AC004_REFERENCE_GATE_TICKS;
 const MASKS: Record<string, readonly ("on" | "rest")[]> = {
   full: ["on", "on", "on", "on"],
   "three-of-four": ["on", "on", "rest", "on"],

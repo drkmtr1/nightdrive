@@ -6,6 +6,8 @@ import {
   deriveStage7Ac004ReferenceVector,
   qualifyStage7Ac004Sha256,
   selectStage7Ac004Weighted,
+  STAGE7_AC004_REFERENCE_GATE_TICKS,
+  STAGE7_AC004_REFERENCE_RATE_TICKS,
 } from "./stage7-ac004-reference-vectors";
 
 const IDS = [
@@ -52,6 +54,54 @@ describe("Stage 7 AC-004 independent reference vectors", () => {
     expect(
       [0, 1, 2, 3].map((value) => selectStage7Ac004Weighted(value, ["a", "b"], [1, 2])),
     ).toEqual(["a", "b", "b", "a"]);
+  });
+  it("pins accepted rate, gate and event-timing literals", () => {
+    expect(STAGE7_AC004_REFERENCE_RATE_TICKS).toEqual({
+      quarter: 960,
+      eighth: 480,
+      sixteenth: 240,
+    });
+    expect(STAGE7_AC004_REFERENCE_GATE_TICKS).toEqual({
+      quarter: { short: 480, medium: 720, long: 960 },
+      eighth: { short: 240, medium: 360, long: 480 },
+      sixteenth: { short: 120, medium: 180, long: 240 },
+    });
+    const quarter = deriveStage7Ac004ReferenceVector({
+      sourceRecordId: IDS[2],
+      version: "v1",
+      energy: "very-low",
+      complexity: "medium",
+      rootSeed: 0,
+    });
+    const eighth = deriveStage7Ac004ReferenceVector({
+      sourceRecordId: IDS[2],
+      version: "v1",
+      energy: "medium",
+      complexity: "medium",
+      rootSeed: 0,
+    });
+    const sixteenth = deriveStage7Ac004ReferenceVector({
+      sourceRecordId: IDS[1],
+      version: "v1",
+      energy: "low",
+      complexity: "medium",
+      rootSeed: 0,
+    });
+    expect(quarter.plan).toMatchObject({ rate: "quarter", gateTicks: 960 });
+    expect(quarter.events.slice(0, 4).map((event) => event.startTick)).toEqual([
+      0, 3840, 7680, 11520,
+    ]);
+    expect(quarter.events).toHaveLength(8);
+    expect(eighth.plan).toMatchObject({ rate: "eighth", gateTicks: 480 });
+    expect(eighth.events.slice(0, 4).map((event) => event.startTick)).toEqual([
+      480, 1440, 2400, 3360,
+    ]);
+    expect(eighth.events).toHaveLength(32);
+    expect(sixteenth.plan).toMatchObject({ rate: "sixteenth", gateTicks: 180 });
+    expect(sixteenth.events.slice(0, 4).map((event) => event.startTick)).toEqual([
+      0, 240, 480, 720,
+    ]);
+    expect(sixteenth.events).toHaveLength(128);
   });
   it("supports both accepted version pairs and root boundaries", () => {
     for (const sourceRecordId of IDS) {
@@ -150,10 +200,10 @@ describe("Stage 7 AC-004 independent reference vectors", () => {
   });
   it("projects masks, octave bounds, traversal and gate timing independently", () => {
     const vector = deriveStage7Ac004ReferenceVector({
-      sourceRecordId: IDS[0],
+      sourceRecordId: IDS[2],
       version: "v1",
-      energy: "very-high",
-      complexity: "very-high",
+      energy: "very-low",
+      complexity: "medium",
       rootSeed: 0,
     });
     expect(vector.events.length).toBeGreaterThan(0);
@@ -181,9 +231,19 @@ describe("Stage 7 AC-004 independent reference vectors", () => {
     const source = readFileSync("src/evaluation/stage7-ac004-reference-vectors.ts", "utf8");
     for (const prohibited of [
       "../composition/",
+      "generateStage7ArpeggiatorAggregateV1",
+      "serializeStage7ArpeggiatorAggregateV1",
+      "serializeStage7ArpeggiatorAggregateHashInputV1",
+      "digestStage7HarmonyComponentV1",
+      "digestStage7ArpeggiatorComponentV1",
+      "digestStage7ArpeggiatorAggregateV1",
+      "verifyStage7ArpeggiatorAggregateV1",
       "../music-domain/arpeggiator-policy-generator",
       "../music-domain/arpeggiator-policy-resolver",
       "../music-domain/arpeggiator-resolved-plan-projector",
+      "stage7-digest",
+      "realizeHarmonyTemplate",
+      "generateHarmony",
       "serializeStage7",
       "generateArpEvents",
       "snapshot-update",
