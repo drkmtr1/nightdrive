@@ -16,7 +16,7 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-The Stage 7 aggregate canonical foundation is accepted and merged through PR #144. The next eligible gate is a separately authorized R2 implementation of the deterministic UTF-8/SHA-256 adapter at `src/generators/adapters/stage7-digest.ts`; component/result hashing, digest verification, aggregate preflight/orchestration, and full pinned-Node AC-004 evidence remain separately gated.
+The Stage 7 aggregate canonical foundation is accepted and merged through PR #144. The deterministic UTF-8/SHA-256 adapter is accepted and merged through PR #147 at approved head `7603a76c413ade8eb1b406509ebd34245cc5bcf1` with merge commit `a3caa041d35ecbaea370a123dbca5eb2afb4eb2d`. The next eligible gate is a separately authorized R2 implementation of component canonical projections and component-hash construction; result hashing, digest verification, aggregate preflight/orchestration, and full pinned-Node AC-004 evidence remain separately gated.
 
 The [Product Owner R1/V2 acceptance and comparison override](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) is accepted and merged through PR #142. The Product Owner accepts current R1/V2 behavior for continued development after personally listening to/analyzing the first 35 presented fixtures, together with existing deterministic and prior evidence. The remaining 245 Pass 1 judgments, full Pass 1 completion/lock, and Pass 2 are waived as prerequisites for that product acceptance. Pass 1 is incomplete/unlocked; Pass 2 was not executed; the 280-fixture protocol did not complete or pass. No profile/root/panel coverage is inferred from the 35-fixture count.
 
@@ -32,7 +32,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-Implement the separately authorized R2 deterministic UTF-8/SHA-256 adapter at `src/generators/adapters/stage7-digest.ts` under the accepted [Stage 7 aggregate/provenance specification](docs/COMPOSITION_ENGINE.md#stage-7-aggregate-generation-contract). The canonical foundation is accepted and merged; this next slice must not add aggregate orchestration, component/result hashing, digest verification, or browser execution. Stage 7 remains open and Stage 8 unauthorized. AC-011/AC-013 remain satisfied, R1-REV-001 remains partially closed, and MIA-003 remains deferred/non-blocking.
+Implement the separately authorized R2 component canonical projections and component-hash construction under the accepted [Stage 7 aggregate/provenance specification](docs/COMPOSITION_ENGINE.md#stage-7-aggregate-generation-contract), using the accepted digest adapter. Result hashing, digest verification, aggregate preflight/orchestration, and full pinned-Node AC-004 evidence remain later gates. Stage 7 remains open and Stage 8 unauthorized. AC-011/AC-013 remain satisfied, R1-REV-001 remains partially closed, and MIA-003 remains deferred/non-blocking.
 
 ## Maintenance
 
