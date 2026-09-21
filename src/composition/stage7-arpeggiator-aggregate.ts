@@ -836,11 +836,26 @@ function aggregateWireValue(result: Stage7ArpeggiatorAggregateV1): unknown {
       arpeggiator: result.componentHashes.arpeggiator,
     },
     warnings: [],
+  };
+}
+
+function completeAggregateWireValue(result: Stage7ArpeggiatorAggregateV1): unknown {
+  return {
+    ...(aggregateWireValue(result) as Record<string, unknown>),
     resultHash: result.resultHash,
   };
 }
 
-export function serializeStage7ArpeggiatorAggregateV1(value: unknown): string {
+/**
+ * Serializes the validated Stage 7 aggregate hash input through warnings,
+ * excluding the resultHash key entirely as required by the V1 contract.
+ */
+export function serializeStage7ArpeggiatorAggregateHashInputV1(value: unknown): string {
   const result = validateStage7ArpeggiatorAggregateV1(value);
   return JSON.stringify(aggregateWireValue(result));
+}
+
+export function serializeStage7ArpeggiatorAggregateV1(value: unknown): string {
+  const result = validateStage7ArpeggiatorAggregateV1(value);
+  return JSON.stringify(completeAggregateWireValue(result));
 }

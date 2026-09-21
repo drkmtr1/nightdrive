@@ -3,11 +3,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  serializeStage7ArpeggiatorAggregateHashInputV1,
+  serializeStage7ArpeggiatorAggregateV1,
   serializeStage7ArpeggiatorComponentV1,
   serializeStage7HarmonyComponentV1,
   Stage7AggregateValueError,
 } from "../composition/stage7-arpeggiator-aggregate";
 
+import { digestStage7ArpeggiatorAggregateV1 } from "./stage7-aggregate-hash";
 import {
   digestStage7ArpeggiatorComponentV1,
   digestStage7HarmonyComponentV1,
@@ -73,6 +76,73 @@ const EXPECTED_ARPEGGIATOR_JSON =
 const EXPECTED_HARMONY_DIGEST = "35ec12d8ee6b061afb58e10f4c5700d98a698e3794ff3b1f16db01f35b51b24b";
 const EXPECTED_ARPEGGIATOR_DIGEST =
   "ecc58e45c8693c7c0e1c1880c2ae25904cdd93cbc10f236cbf6438c44cb1079b";
+const EXPECTED_AGGREGATE_DIGEST =
+  "522d82a61b42b6769c2ea1ffca5d765b4c14866920ec762a051a71744c624b33";
+
+function aggregate(version: "v1" | "v2" = "v1", resultHash = "c".repeat(64)): unknown {
+  return {
+    schema: "nightdrive.stage7-arpeggiator-aggregate.v1",
+    engineVersion: "nightdrive.engine.stage7-aggregate.v1",
+    generatorVersion: "nightdrive.generator.stage7-arpeggiator.v1",
+    section: SECTION,
+    components: {
+      harmony: HARMONY,
+      arpeggiator: EVENTS,
+    },
+    provenance: {
+      profile: {
+        id: "classic-synthwave",
+        version: `nightdrive.genre-profile.arpeggiator.${version}`,
+      },
+      policy: { version: `nightdrive.arpeggiator-policy.${version}` },
+      seedDerivation: { version: "nightdrive.seed-derivation.component.v1" },
+      prng: { version: "nightdrive.prng.mulberry32.v1" },
+      rootSeed: 0,
+      normalizedInputs: {
+        intent: { energy: "medium", complexity: "medium" },
+        range: { minMidiPitch: 0, maxMidiPitch: 127 },
+      },
+      parent: null,
+    },
+    componentHashes: {
+      harmony: EXPECTED_HARMONY_DIGEST,
+      arpeggiator: EXPECTED_ARPEGGIATOR_DIGEST,
+    },
+    warnings: [],
+    resultHash,
+  };
+}
+
+const EXPECTED_AGGREGATE_HASH_INPUT_JSON = JSON.stringify({
+  schema: "nightdrive.stage7-arpeggiator-aggregate.v1",
+  engineVersion: "nightdrive.engine.stage7-aggregate.v1",
+  generatorVersion: "nightdrive.generator.stage7-arpeggiator.v1",
+  section: (JSON.parse(EXPECTED_HARMONY_JSON) as { section: unknown }).section,
+  components: {
+    harmony: (JSON.parse(EXPECTED_HARMONY_JSON) as { harmony: unknown }).harmony,
+    arpeggiator: (JSON.parse(EXPECTED_ARPEGGIATOR_JSON) as { events: unknown }).events,
+  },
+  provenance: {
+    profile: {
+      id: "classic-synthwave",
+      version: "nightdrive.genre-profile.arpeggiator.v1",
+    },
+    policy: { version: "nightdrive.arpeggiator-policy.v1" },
+    seedDerivation: { version: "nightdrive.seed-derivation.component.v1" },
+    prng: { version: "nightdrive.prng.mulberry32.v1" },
+    rootSeed: 0,
+    normalizedInputs: {
+      intent: { energy: "medium", complexity: "medium" },
+      range: { minMidiPitch: 0, maxMidiPitch: 127 },
+    },
+    parent: null,
+  },
+  componentHashes: {
+    harmony: EXPECTED_HARMONY_DIGEST,
+    arpeggiator: EXPECTED_ARPEGGIATOR_DIGEST,
+  },
+  warnings: [],
+});
 
 function reverseRecordOrder(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(reverseRecordOrder);
@@ -161,5 +231,92 @@ describe("Stage 7 component canonical projections and hashes", () => {
 
     expect(source).toContain('from "./adapters/stage7-digest"');
     expect(source).not.toMatch(/node:|createHash|TextEncoder/u);
+  });
+});
+
+describe("Stage 7 aggregate resultHash construction", () => {
+  it("emits the canonical aggregate hash input and literal resultHash", () => {
+    const value = aggregate();
+
+    expect(serializeStage7ArpeggiatorAggregateHashInputV1(value)).toBe(
+      EXPECTED_AGGREGATE_HASH_INPUT_JSON,
+    );
+    expect(digestStage7ArpeggiatorAggregateV1(value)).toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7ArpeggiatorAggregateV1(value)).toMatch(/^[0-9a-f]{64}$/u);
+  });
+
+  it("excludes resultHash entirely while the complete serializer appends it last", () => {
+    const first = aggregate("v1", "1".repeat(64));
+    const second = aggregate("v1", "2".repeat(64));
+
+    expect(serializeStage7ArpeggiatorAggregateHashInputV1(first)).toBe(
+      serializeStage7ArpeggiatorAggregateHashInputV1(second),
+    );
+    expect(serializeStage7ArpeggiatorAggregateHashInputV1(first)).not.toContain("resultHash");
+    expect(digestStage7ArpeggiatorAggregateV1(first)).toBe(
+      digestStage7ArpeggiatorAggregateV1(second),
+    );
+    expect(serializeStage7ArpeggiatorAggregateV1(first)).not.toBe(
+      serializeStage7ArpeggiatorAggregateV1(second),
+    );
+    expect(serializeStage7ArpeggiatorAggregateV1(first)).toMatch(/,"resultHash":"1{64}"\}$/u);
+  });
+
+  it("is deterministic and independent of caller record construction order", () => {
+    const value = aggregate();
+    const reversed = reverseRecordOrder(value);
+    const before = structuredClone(value);
+
+    expect(digestStage7ArpeggiatorAggregateV1(value)).toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7ArpeggiatorAggregateV1(reversed)).toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7ArpeggiatorAggregateV1(value)).toBe(
+      digestStage7ArpeggiatorAggregateV1(value),
+    );
+    expect(value).toEqual(before);
+  });
+
+  it("binds canonical section, component and provenance changes", () => {
+    const value = aggregate() as Record<string, unknown>;
+    const changedTempo = structuredClone(value) as Record<string, unknown>;
+    const changedEvent = structuredClone(value) as Record<string, unknown>;
+    const changedSeed = structuredClone(value) as Record<string, unknown>;
+    (
+      (changedTempo.section as Record<string, unknown>).tempo as Record<string, unknown>
+    ).microsecondsPerQuarter = 500_001;
+    (
+      ((changedEvent.components as Record<string, unknown>).arpeggiator as unknown[])[0] as Record<
+        string,
+        unknown
+      >
+    ).durationTicks = 120;
+    (changedSeed.provenance as Record<string, unknown>).rootSeed = 1;
+
+    expect(digestStage7ArpeggiatorAggregateV1(changedTempo)).not.toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7ArpeggiatorAggregateV1(changedEvent)).not.toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7ArpeggiatorAggregateV1(changedSeed)).not.toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7HarmonyComponentV1(SECTION, HARMONY)).toBe(EXPECTED_HARMONY_DIGEST);
+    expect(digestStage7ArpeggiatorComponentV1(SECTION, EVENTS)).toBe(EXPECTED_ARPEGGIATOR_DIGEST);
+  });
+
+  it("keeps V1 and V2 provenance distinct without changing component domains", () => {
+    const v1 = aggregate("v1");
+    const v2 = aggregate("v2");
+
+    expect(digestStage7ArpeggiatorAggregateV1(v1)).toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7ArpeggiatorAggregateV1(v2)).not.toBe(EXPECTED_AGGREGATE_DIGEST);
+    expect(digestStage7HarmonyComponentV1(SECTION, HARMONY)).toBe(EXPECTED_HARMONY_DIGEST);
+    expect(digestStage7ArpeggiatorComponentV1(SECTION, EVENTS)).toBe(EXPECTED_ARPEGGIATOR_DIGEST);
+  });
+
+  it("uses the accepted digest adapter without adding Node coupling to composition", () => {
+    const generatorSource = readFileSync("src/generators/stage7-aggregate-hash.ts", "utf8");
+    const compositionSource = readFileSync(
+      "src/composition/stage7-arpeggiator-aggregate.ts",
+      "utf8",
+    );
+
+    expect(generatorSource).toContain('from "./adapters/stage7-digest"');
+    expect(generatorSource).not.toMatch(/node:|createHash|TextEncoder/u);
+    expect(compositionSource).not.toMatch(/node:|createHash|subtle\.digest/u);
   });
 });
