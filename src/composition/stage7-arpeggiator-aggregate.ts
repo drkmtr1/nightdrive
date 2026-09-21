@@ -319,6 +319,22 @@ function copyTempo(value: unknown, path: string): Tempo {
   }
 }
 
+function copySection(value: unknown): Stage7ArpeggiatorAggregateV1["section"] {
+  const sectionRecord = requireExactRecord(value, "section", SECTION_FIELDS);
+  if (sectionRecord.ppq !== PPQ) {
+    return invalid("section.ppq", `section.ppq must equal ${PPQ}.`);
+  }
+  if (sectionRecord.barCount !== V1_BAR_COUNT) {
+    return invalid("section.barCount", `section.barCount must equal ${V1_BAR_COUNT}.`);
+  }
+  return Object.freeze({
+    ppq: PPQ,
+    barCount: V1_BAR_COUNT,
+    timeSignature: copyTimeSignature(sectionRecord.timeSignature, "section.timeSignature"),
+    tempo: copyTempo(sectionRecord.tempo, "section.tempo"),
+  });
+}
+
 function copyKey(value: unknown, path: string): Key {
   const record = requireExactRecord(value, path, KEY_FIELDS);
   let tonic: ReturnType<typeof createPitchClass>;
@@ -686,17 +702,7 @@ export function validateStage7ArpeggiatorAggregateV1(value: unknown): Stage7Arpe
     );
   }
 
-  const sectionRecord = requireExactRecord(result.section, "section", SECTION_FIELDS);
-  if (sectionRecord.ppq !== PPQ) return invalid("section.ppq", `section.ppq must equal ${PPQ}.`);
-  if (sectionRecord.barCount !== V1_BAR_COUNT) {
-    return invalid("section.barCount", `section.barCount must equal ${V1_BAR_COUNT}.`);
-  }
-  const section = Object.freeze({
-    ppq: PPQ,
-    barCount: V1_BAR_COUNT,
-    timeSignature: copyTimeSignature(sectionRecord.timeSignature, "section.timeSignature"),
-    tempo: copyTempo(sectionRecord.tempo, "section.tempo"),
-  });
+  const section = copySection(result.section);
 
   const componentsRecord = requireExactRecord(result.components, "components", COMPONENT_FIELDS);
   const components = Object.freeze({
@@ -753,26 +759,56 @@ function harmonyWireValue(harmony: Stage7HarmonyContextV1): unknown {
   };
 }
 
+function sectionWireValue(section: Stage7ArpeggiatorAggregateV1["section"]): unknown {
+  return {
+    ppq: section.ppq,
+    barCount: section.barCount,
+    timeSignature: parsePrimitiveSerialization(serializeTimeSignature(section.timeSignature)),
+    tempo: parsePrimitiveSerialization(serializeTempo(section.tempo)),
+  };
+}
+
+function arpeggiatorWireValue(events: readonly ArpEvent[]): unknown {
+  return events.map((event) => ({
+    pitch: event.pitch,
+    startTick: event.startTick,
+    durationTicks: event.durationTicks,
+  }));
+}
+
+/** Serializes the validated Harmony component hash input in its owned schema order. */
+export function serializeStage7HarmonyComponentV1(section: unknown, harmony: unknown): string {
+  const canonicalSection = copySection(section);
+  const canonicalHarmony = copyHarmony(harmony, "components.harmony");
+  validateHarmonyCompatibility(canonicalHarmony);
+  return JSON.stringify({
+    schema: STAGE7_HARMONY_COMPONENT_SCHEMA_V1,
+    section: sectionWireValue(canonicalSection),
+    harmony: harmonyWireValue(canonicalHarmony),
+  });
+}
+
+/** Serializes the validated Arpeggiator component hash input in its owned schema order. */
+export function serializeStage7ArpeggiatorComponentV1(section: unknown, events: unknown): string {
+  const canonicalSection = copySection(section);
+  const canonicalEvents = copyArpeggiator(events);
+  validateEventOrdering(canonicalEvents);
+  return JSON.stringify({
+    schema: STAGE7_ARPEGGIATOR_COMPONENT_SCHEMA_V1,
+    section: sectionWireValue(canonicalSection),
+    events: arpeggiatorWireValue(canonicalEvents),
+  });
+}
+
 function aggregateWireValue(result: Stage7ArpeggiatorAggregateV1): unknown {
   return {
     schema: result.schema,
     engineVersion: result.engineVersion,
     generatorVersion: result.generatorVersion,
-    section: {
-      ppq: result.section.ppq,
-      barCount: result.section.barCount,
-      timeSignature: parsePrimitiveSerialization(
-        serializeTimeSignature(result.section.timeSignature),
-      ),
-      tempo: parsePrimitiveSerialization(serializeTempo(result.section.tempo)),
-    },
+    section: sectionWireValue(result.section),
     components: {
       harmony: harmonyWireValue(result.components.harmony),
-      arpeggiator: result.components.arpeggiator.map((event) => ({
-        pitch: event.pitch,
-        startTick: event.startTick,
-        durationTicks: event.durationTicks,
-      })),
+      arpeggiator: arpeggiatorWireValue(result.components.arpeggiator),
     },
     provenance: {
       profile: {
