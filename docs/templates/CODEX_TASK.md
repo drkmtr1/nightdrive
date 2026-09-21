@@ -63,6 +63,13 @@ Choose one explicit instruction:
 
 For publication-capable work, record reviewed base/head/scope/evidence and expected remote target-base state; before publication or merge verify the live target base and state the base-match or bounded-base-movement disposition. After exact-head approval, any branch mutation creates a new unreviewed head under the workflow's reviewed-head rule. For ASSESS, authorize no edits or commits. Technical review never replaces Product Owner publication/merge authority.
 
+Publication authorization must explicitly choose one mode:
+
+- `PUBLICATION ONLY` — stop after publication/merge reconciliation required by existing repository mechanics.
+- `PUBLICATION + MECHANICAL POST-MERGE RECONCILIATION` — Product Owner bundled authorization is explicit and must list the allowed coordination/status paths (normally `PROJECT_STATE.md` and/or `docs/ROADMAP.md`), exact stop conditions, whether a separate reconciliation commit/PR/merge is authorized, and the prohibition on beginning the next engineering task.
+
+Bundled reconciliation is never automatic/default. It may not modify the reviewed implementation, and it must stop `BLOCKED` if any new engineering judgment or authoritative-document conflict is required.
+
 ## RETURN
 
 Use [CODEX_RESULT.md](CODEX_RESULT.md), retaining all AGENTS.md delivery facts and applicable review/publication evidence. Report exact state, commands/results, scope, unavailable evidence, blockers, and the next gate; a recommendation does not authorize continuation.
