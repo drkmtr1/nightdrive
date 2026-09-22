@@ -59,7 +59,7 @@ const profileBySource: Record<string, string> = {
 describe("Stage 7 AC-004 candidate golden vectors", () => {
   it("contains the complete unaccepted matrix and literal evidence", () => {
     expect(artifact.schema).toBe("nightdrive.stage7-ac004-candidate-golden-vectors.v1");
-    expect(artifact.status).toBe("UNACCEPTED AC-004 CANDIDATE EVIDENCE");
+    expect(artifact.status).toBe("ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE");
     expect(artifact.generatedBy).toBe("src/evaluation/stage7-ac004-reference-vectors.ts");
     expect(artifact.matrix).toEqual({
       mediumMediumCount: 16,
@@ -101,7 +101,7 @@ describe("Stage 7 AC-004 candidate golden vectors", () => {
     expect(nonMedium[0]?.sourceRecordId).toBe("cyberpunk-build-001");
     expect(nonMedium[0]?.profileVersion).toBe("nightdrive.genre-profile.arpeggiator.v1");
     for (const vector of artifact.vectors) {
-      expect(vector.status).toBe("UNACCEPTED AC-004 CANDIDATE EVIDENCE");
+      expect(vector.status).toBe("ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE");
       expect(vector.profileId).toBe(profileBySource[vector.sourceRecordId]);
       expect(vector.harmonyJson).toEqual(expect.any(String));
       expect(vector.arpeggiatorJson).toEqual(expect.any(String));
