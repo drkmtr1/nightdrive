@@ -32,7 +32,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-The First Playable independent canonical evidence method is accepted and merged through PR #177. The next separately gated task is capture, review, and freeze of its twelve upstream H+B+A source records; source snapshots are not yet accepted or frozen. Oracle generation/freeze and pinned-runtime execution/cross-runtime acceptance remain incomplete and require their subsequent gates. Browser canonical generation, preview/audio, UI, Stage 8, and Stage 9 remain separately unauthorized. Stage 7 is complete with AC-011, AC-004, and AC-013 satisfied; R1-REV-001 remains partially closed and MIA-003 remains deferred/non-blocking.
+The First Playable independent canonical evidence method is accepted and merged through PR #177. The twelve-source-record candidate and its path-specific LF checkout-custody remediation are merged; raw-byte custody is resolved. The source records remain a candidate and are not frozen or accepted. Review and freeze of these records is the next separately gated task. Oracle/reference derivation, oracle freeze, and pinned-runtime execution/cross-runtime acceptance remain incomplete and require their subsequent gates. Browser canonical generation, preview/audio, UI, Stage 8, and Stage 9 remain separately unauthorized. Stage 7 is complete with AC-011, AC-004, and AC-013 satisfied; R1-REV-001 remains partially closed and MIA-003 remains deferred/non-blocking.
 
 ## Maintenance
 
