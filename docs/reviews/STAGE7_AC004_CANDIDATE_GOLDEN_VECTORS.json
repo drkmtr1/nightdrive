@@ -1,6 +1,6 @@
 {
   "schema": "nightdrive.stage7-ac004-candidate-golden-vectors.v1",
-  "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+  "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
   "generatedBy": "src/evaluation/stage7-ac004-reference-vectors.ts",
   "matrix": {
     "mediumMediumCount": 16,
@@ -17,7 +17,7 @@
   "vectors": [
     {
       "vectorId": "dark-synthwave-chorus-001-v1-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "dark-synthwave-chorus-001",
       "profileId": "dark-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -308,7 +308,7 @@
     },
     {
       "vectorId": "dark-synthwave-chorus-001-v1-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "dark-synthwave-chorus-001",
       "profileId": "dark-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -839,7 +839,7 @@
     },
     {
       "vectorId": "classic-synthwave-chorus-001-v1-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "classic-synthwave-chorus-001",
       "profileId": "classic-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -1130,7 +1130,7 @@
     },
     {
       "vectorId": "classic-synthwave-chorus-001-v1-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "classic-synthwave-chorus-001",
       "profileId": "classic-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -1821,7 +1821,7 @@
     },
     {
       "vectorId": "darkwave-verse-001-v1-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "darkwave-verse-001",
       "profileId": "darkwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -2032,7 +2032,7 @@
     },
     {
       "vectorId": "darkwave-verse-001-v1-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "darkwave-verse-001",
       "profileId": "darkwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -2163,7 +2163,7 @@
     },
     {
       "vectorId": "cyberpunk-build-001-v1-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "cyberpunk-build-001",
       "profileId": "midtempo-cyberpunk",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -2374,7 +2374,7 @@
     },
     {
       "vectorId": "cyberpunk-build-001-v1-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "cyberpunk-build-001",
       "profileId": "midtempo-cyberpunk",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
@@ -2905,7 +2905,7 @@
     },
     {
       "vectorId": "dark-synthwave-chorus-001-v2-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "dark-synthwave-chorus-001",
       "profileId": "dark-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -3196,7 +3196,7 @@
     },
     {
       "vectorId": "dark-synthwave-chorus-001-v2-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "dark-synthwave-chorus-001",
       "profileId": "dark-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -3727,7 +3727,7 @@
     },
     {
       "vectorId": "classic-synthwave-chorus-001-v2-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "classic-synthwave-chorus-001",
       "profileId": "classic-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -4018,7 +4018,7 @@
     },
     {
       "vectorId": "classic-synthwave-chorus-001-v2-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "classic-synthwave-chorus-001",
       "profileId": "classic-synthwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -4709,7 +4709,7 @@
     },
     {
       "vectorId": "darkwave-verse-001-v2-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "darkwave-verse-001",
       "profileId": "darkwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -4920,7 +4920,7 @@
     },
     {
       "vectorId": "darkwave-verse-001-v2-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "darkwave-verse-001",
       "profileId": "darkwave",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -5051,7 +5051,7 @@
     },
     {
       "vectorId": "cyberpunk-build-001-v2-medium-medium-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "cyberpunk-build-001",
       "profileId": "midtempo-cyberpunk",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -5262,7 +5262,7 @@
     },
     {
       "vectorId": "cyberpunk-build-001-v2-medium-medium-ffffffff",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "cyberpunk-build-001",
       "profileId": "midtempo-cyberpunk",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v2",
@@ -5793,7 +5793,7 @@
     },
     {
       "vectorId": "cyberpunk-build-001-v1-very-high-very-low-00000000",
-      "status": "UNACCEPTED AC-004 CANDIDATE EVIDENCE",
+      "status": "ACCEPTED/FROZEN AC-004 ORACLE EVIDENCE",
       "sourceRecordId": "cyberpunk-build-001",
       "profileId": "midtempo-cyberpunk",
       "profileVersion": "nightdrive.genre-profile.arpeggiator.v1",
