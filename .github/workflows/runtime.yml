@@ -19,7 +19,21 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Install the locked npm toolchain
+        run: npm install --global npm@11.19.0
       - name: Install the locked dependency graph
         run: npm ci
       - name: Validate the runtime foundation
         run: npm run validate
+      - name: Execute Linux AC-004 frozen-vector evidence
+        env:
+          AC004_LINUX_EVIDENCE: "1"
+          AC004_OUTPUT_DIR: ${{ runner.temp }}/nightdrive-stage7-ac004-linux
+        run: npm exec -- vitest run src/evaluation/stage7-ac004-linux-evidence.test.ts --reporter=verbose
+      - name: Upload Linux AC-004 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightdrive-stage7-ac004-linux-${{ github.sha }}
+          path: ${{ runner.temp }}/nightdrive-stage7-ac004-linux/stage7-ac004-linux-evidence.json
+          if-no-files-found: error
