@@ -225,9 +225,9 @@ Prioritize behavioral/invariant and branch-risk coverage over a single percentag
 
 Fast deterministic checks run on every change. Database/browser suites run in CI with isolated data. Preview smoke tests run after deployment. Production gets non-destructive smoke checks. FL Studio verification remains a controlled human gate until automatable evidence is credible.
 
-## First Playable canonical composition — future evidence
+## First Playable canonical composition — accepted implementation and future evidence
 
-The separately authorized First Playable implementation must prove the `nightdrive.first-playable-composition-result.v1` contract without changing Stage 7 evidence. Focused tests must cover exact request schema/identity validation; missing, explicit-undefined, malformed, unsupported-version, and unknown-field cases; explicit template/Key ownership; Energy-before-Complexity validation; and accepted Bass default normalization to `{ minMidiPitch: 36, maxMidiPitch: 60 }` plus `sustained`.
+The accepted First Playable implementation, merged through PR #175, must prove the `nightdrive.first-playable-composition-result.v1` contract without changing Stage 7 evidence. Focused tests cover exact request schema/identity validation; missing, explicit-undefined, malformed, unsupported-version, and unknown-field cases; explicit template/Key ownership; Energy-before-Complexity validation; and accepted Bass default normalization to `{ minMidiPitch: 36, maxMidiPitch: 60 }` plus `sustained`.
 
 Spies or controlled module seams must prove one Harmony realization only, and that the exact immutable realization is passed to both Bass and public `generateArpEventsWithPolicyV2`. Evidence must cover every supported profile/template/Key fixture necessary to prove profile/template compatibility, exact Bass range/rhythm projection and timing, V2-only profile/policy routing, root-seed validation, fixed `arpeggiator` component-seed handoff, no seed/PRNG/resolver/projector work before V2 preflight, and preserved component-owned structured errors. Mixed-invalid fixtures must lock the coordinator order and prove no partial result, hashes, or warning envelope escapes on any failure.
 
