@@ -133,7 +133,7 @@ Candidate derivation, range filtering, rate projection, direction traversal, and
 
 ## PRNG and provenance boundary
 
-The versioned `nightdrive.prng.mulberry32.v1` primitive, canonical uint32 seed/state validation, deterministic stepping, and reusable Stage 7C7a1 component-seed derivation are implemented. Stage 7C7a2 implements only the generic internal weighted-choice primitive; it receives a supplied uint32 and does not call the PRNG. Stage 7C7a7 adds the first seed-consuming production Arpeggiator helper as a module-private policy resolver initialized from an already-derived component seed. Stage 7B still has no seed input, and the shared generator/provenance envelope remains unimplemented.
+The versioned `nightdrive.prng.mulberry32.v1` primitive, canonical uint32 seed/state validation, deterministic stepping, and reusable Stage 7C7a1 component-seed derivation are implemented. Stage 7C7a2 implements only the generic internal weighted-choice primitive; it receives a supplied uint32 and does not call the PRNG. Stage 7C7a7 adds the first seed-consuming production Arpeggiator helper as a module-private policy resolver initialized from an already-derived component seed. Stage 7B still has no seed input, and the aggregate generator/provenance envelope is accepted separately from this transient domain boundary.
 
 Foundation parameters therefore contain no seed. Foundation behavior is structurally deterministic and must not invent seed plumbing. The existence of the PRNG primitive alone does not establish full AC-004 replay evidence or seeded AC-011 completion.
 
@@ -972,7 +972,7 @@ No dependency is justified. This is small, replay-critical Nightdrive infrastruc
 
 ### Provenance and version boundaries
 
-The review-pending [Stage 7 aggregate contract](COMPOSITION_ENGINE.md#stage-7-aggregate-generation-contract) owns the enclosing supplied-Harmony/Arp record, normalization, root lineage, canonical JSON and hashes under ADR-022. It neither generates Harmony nor changes these V1/V2 domain operations. Aggregate runtime and AC-004 Node evidence remain separately gated; browser audition does not authorize browser canonical generation.
+The accepted [Stage 7 aggregate contract](COMPOSITION_ENGINE.md#stage-7-aggregate-generation-contract) owns the enclosing supplied-Harmony/Arp record, normalization, root lineage, canonical JSON and hashes under ADR-022. It neither generates Harmony nor changes these V1/V2 domain operations. Aggregate runtime and pinned-Node AC-004 evidence are accepted through PRs #155 and #169; browser audition does not authorize browser canonical generation.
 
 Canonical generation lineage retains the root seed, seed-derivation version, PRNG version, Arpeggiator policy version, genre-profile ID/version, generator/engine/schema versions, normalized inputs, parent lineage, and canonical hashes already required by ADR-010 and ADR-014. Component child seeds, PRNG internal state, raw outputs, cumulative-weight calculations, temporary candidate arrays, and resolved intermediates are derived/transient values and need not be persisted as canonical composition state.
 
@@ -984,9 +984,9 @@ Stage 7C5 freezes the taxonomy, field ownership, and two-phase precedence above,
 
 ## Deferred Stage 7 behavior
 
-The following remain separately gated and are not removed from eventual Stage 7 scope: aggregate generator/provenance integration; further human profile-fit evaluation beyond the [bounded current R1 acceptance](reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override); and later capability work. `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
+The following remain separately gated: further human profile-fit evaluation beyond the [bounded current R1 acceptance](reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) and later capability work. Aggregate generator/provenance integration is accepted through PR #155, while `alternate` and `seededRandom` direction semantics, scale-tone transforms or other non-selected-voicing pitch sources, triplets, dotted and thirty-second rates, free-running Arp, VST automation, velocity/accent, MIDI, browser/audio, UI, persistence, and AI behavior remain outside this checkpoint.
 
-Stage 7C4 freezes exact ordered candidates and raw integer weights for Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk in the genre-profile model. They are versioned Nightdrive hypotheses, not universal genre claims or runtime authorization. Stage 7C5 freezes error behavior only. Stage 7 cannot be declared profile-appropriate or complete until separately authorized runtime implementation, deterministic evidence, and structured human listening review are accepted. The linked Product Owner override satisfies the current R1 product-acceptance gate by exception, not by completion of the full comparison. Aggregate generator/provenance integration and full exit-evidence reconciliation remain outstanding; this decision does not close Stage 7.
+Stage 7C4 freezes exact ordered candidates and raw integer weights for Dark Synthwave, Classic Synthwave, Darkwave, and Midtempo Cyberpunk in the genre-profile model. They are versioned Nightdrive hypotheses, not universal genre claims or runtime authorization. Stage 7C5 freezes error behavior only. The accepted runtime and deterministic evidence now satisfy the technical Stage 7 obligations; the linked Product Owner override satisfies the current R1 product-acceptance gate by exception, not by completion of the full comparison. Aggregate generator/provenance integration and AC-004 evidence are accepted through PRs #155 and #169. Full Stage 7 exit-evidence reconciliation remains outstanding; this decision does not close Stage 7.
 
 ## Bounded delivery sequence
 
@@ -1003,7 +1003,7 @@ This sequence describes review boundaries; it authorizes none of the implementat
 
 The foundation traces to MUS-003/AC-011, MUS-006/AC-013, and NFR-001/AC-004 only for behavior it actually implements later. Candidate and event evidence must cover active-Harmony derivation, compatibility, exact selected-voicing pitch source, inclusive range boundaries, one/two/three candidate sets, exact timings and cycles, slot/section containment, gate bounds, structured rejection, immutability, input non-mutation, repeatability, and ambient-randomness isolation.
 
-Full Stage 7 remains pending until the Stage 7C contract and separately authorized runtime evidence satisfy the complete AC-011 and AC-004 scope. Human musical review of profile fit remains separate from deterministic correctness.
+The accepted Stage 7C contract and runtime evidence satisfy the complete AC-011 and AC-004 technical scope; AC-013 timing evidence remains satisfied by the accepted projection/enclosing-operation tests. Human musical review of profile fit remains separately governed by the accepted Product Owner R1/V2 exception. Full Stage 7 remains open only for exit-evidence reconciliation and closure.
 
 Stage 7B1 implementation evidence covers canonical Harmony progression identity and ordered-slot validation, Chord/inversion/voicing compatibility, inclusive `MidiPitch` range validation, exact one/two/three-pitch filtering, whole-operation `NO_LEGAL_ARP_PITCH` failure, stable frozen per-slot output, input non-mutation, repeatability, and ambient-randomness isolation. It does not provide event, timing, rate, direction, gate, octave, density, seed, or profile-policy evidence.
 
