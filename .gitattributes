@@ -1,0 +1,8 @@
+/docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json text eol=lf
+/docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json text eol=lf
+/src/evaluation/first-playable-source-capture-runner.test.ts text eol=lf
+/src/evaluation/first-playable-source-capture.ts text eol=lf
+/src/music-domain/arpeggiator-policy-preflight.ts text eol=lf
+/src/music-domain/dependency-boundary.test.ts text eol=lf
+/src/music-domain/scale.test.ts text eol=lf
+/src/music-domain/scale.ts text eol=lf
