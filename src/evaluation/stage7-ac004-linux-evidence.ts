@@ -22,6 +22,7 @@ import { getStage7Ac004HarmonySnapshot } from "./stage7-ac004-harmony-snapshots"
 export const STAGE7_AC004_LINUX_EVIDENCE_SCHEMA =
   "nightdrive.stage7-ac004-linux-evidence.v1" as const;
 export const STAGE7_AC004_LINUX_NODE_VERSION = "v24.21.0" as const;
+export const STAGE7_AC004_LINUX_NPM_VERSION = "11.19.0" as const;
 export const STAGE7_AC004_LINUX_ARCHITECTURE = "x64" as const;
 
 type CandidateVector = {
@@ -54,6 +55,7 @@ export type Stage7Ac004LinuxEvidenceRow = Readonly<{
   energy: string;
   complexity: string;
   aggregateByteLength: number;
+  aggregateCanonicalSha256: string;
   harmonySha256: string;
   arpeggiatorSha256: string;
   resultHash: string;
@@ -159,6 +161,7 @@ export async function runStage7Ac004Vector(index: number): Promise<Stage7Ac004Li
     energy: vector.intent.energy,
     complexity: vector.intent.complexity,
     aggregateByteLength: vector.byteLengths.aggregate,
+    aggregateCanonicalSha256: sha256Utf8(aggregateJson),
     harmonySha256: vector.harmonySha256,
     arpeggiatorSha256: vector.arpeggiatorSha256,
     resultHash: vector.resultHash,
@@ -166,8 +169,11 @@ export async function runStage7Ac004Vector(index: number): Promise<Stage7Ac004Li
 }
 
 export function assertLinuxAc004Environment(
-  environment: Pick<Stage7Ac004LinuxEnvironment, "architecture" | "node">,
+  environment: Pick<Stage7Ac004LinuxEnvironment, "os" | "architecture" | "node" | "npm">,
 ): void {
+  if (environment.os !== "linux") {
+    throw new Error(`AC-004 requires Linux; received ${environment.os}.`);
+  }
   if (environment.architecture !== STAGE7_AC004_LINUX_ARCHITECTURE) {
     throw new Error(
       `AC-004 requires Linux architecture x64; received ${environment.architecture}.`,
@@ -176,6 +182,11 @@ export function assertLinuxAc004Environment(
   if (environment.node !== STAGE7_AC004_LINUX_NODE_VERSION) {
     throw new Error(
       `AC-004 requires Node ${STAGE7_AC004_LINUX_NODE_VERSION}; received ${environment.node}.`,
+    );
+  }
+  if (environment.npm !== STAGE7_AC004_LINUX_NPM_VERSION) {
+    throw new Error(
+      `AC-004 requires npm ${STAGE7_AC004_LINUX_NPM_VERSION}; received ${environment.npm}.`,
     );
   }
 }
@@ -204,7 +215,7 @@ export function canonicalEvidenceJson(rows: readonly Stage7Ac004LinuxEvidenceRow
   return JSON.stringify({ vectorCount: ordered.length, vectors: ordered });
 }
 
-function sha256(value: string): string {
+export function sha256Utf8(value: string): string {
   return createHash("sha256").update(new TextEncoder().encode(value)).digest("hex");
 }
 
@@ -214,7 +225,7 @@ function readNpmVersion(): string {
 
 export function readLinuxAc004Environment(): Stage7Ac004LinuxEnvironment {
   const environment = {
-    os: `${process.platform} ${process.release.name}`,
+    os: process.platform,
     osVersion: release(),
     runnerOs: process.env.RUNNER_OS ?? "unknown",
     runnerArchitecture: process.env.RUNNER_ARCH ?? "unknown",
@@ -224,7 +235,6 @@ export function readLinuxAc004Environment(): Stage7Ac004LinuxEnvironment {
     commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
   } satisfies Stage7Ac004LinuxEnvironment;
   assertLinuxAc004Environment(environment);
-  if (process.platform !== "linux") throw new Error("AC-004 Linux evidence requires Linux.");
   return environment;
 }
 
@@ -270,7 +280,7 @@ export function runLinuxAc004Evidence(outputDirectory: string): Stage7Ac004Linux
     { name: "Honolulu-C.UTF-8", env: { TZ: "Pacific/Honolulu", LANG: "C.UTF-8" } },
   ].map((variant) => {
     const variantJson = runMatrix(variant.env);
-    const variantHash = sha256(variantJson);
+    const variantHash = sha256Utf8(variantJson);
     return {
       name: variant.name,
       canonicalSha256: variantHash,
@@ -286,7 +296,7 @@ export function runLinuxAc004Evidence(outputDirectory: string): Stage7Ac004Linux
   };
   const artifact: Stage7Ac004LinuxEvidenceArtifact = {
     schema: STAGE7_AC004_LINUX_EVIDENCE_SCHEMA,
-    canonical: { ...canonical, sha256: sha256(baseJson) },
+    canonical: { ...canonical, sha256: sha256Utf8(baseJson) },
     environment,
     ambientVariants,
   };

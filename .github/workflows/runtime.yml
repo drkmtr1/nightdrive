@@ -19,6 +19,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Install the locked npm toolchain
+        run: npm install --global npm@11.19.0
       - name: Install the locked dependency graph
         run: npm ci
       - name: Validate the runtime foundation
