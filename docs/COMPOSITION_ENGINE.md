@@ -144,6 +144,91 @@ Specify and version PRNG state advancement, root-to-component seed derivation, g
 
 Generators emit machine-readable decision codes and references (for example, selected template, voice-leading cost, archetype, target-tone position). AI or deterministic text may explain those records but cannot rewrite them.
 
+## First Playable canonical composition contract
+
+**Status:** Product Owner architecture decision accepted in [ADR-023](DECISIONS.md#adr-023--first-playable-canonical-harmonybassarpeggiator-composition-boundary). This is specification only; the coordinator, result value, serializer, verifier, and evidence remain separately authorized implementation work. It freezes one local, in-memory, root-record eight-bar section containing Harmony, Bass, and the accepted V2 Arpeggiator. It is not a raw composition-brief/UI contract, browser preview/audio contract, transport, persistence record, MIDI model, lock/variation graph, multi-section arrangement, or Stage 8/9 boundary.
+
+### Ownership and operation
+
+`generateFirstPlayableCompositionV1(request): Promise<FirstPlayableCompositionResultV1>` belongs in `src/generators/first-playable-composition.ts`. It owns request preflight and orchestration only. `src/composition/first-playable-composition.ts` owns the result value, canonical component projections, result validation, schema-directed serializer, component hashes, and result hash. Both are direct modules; no broad music-domain barrel export or HTTP/application service is introduced by this contract.
+
+The coordinator executes exactly once in this order after owned request validation: (1) call `realizeHarmonyProgression(profile.id, getHarmonyTemplate(harmony.templateId), harmony.key)` once; (2) call `generateBassEvents` with that exact realization and normalized Bass values; (3) call `generateArpEventsWithPolicyV2` with that exact realization and the normalized V2 request; (4) validate/project/copy the three components, hash, and recursively freeze the result. It does not regenerate, copy-and-change, or select Harmony independently for either component. Harmony owns template/profile/Key compatibility, voicing selection, and its own failures; Bass owns root/rhythm projection; V2 owns policy preflight, component-seed derivation, resolution, projection, and its structured errors.
+
+### Normalized request
+
+All request records are ordinary own-data records; arrays are dense ordered own-data arrays. Required fields reject missing and explicit `undefined`; no trimming, parsing, case-folding, coercion, version inference, `latest`, caller callback, arbitrary configuration, or raw UI/mood input exists. The request rejects unknown own fields rather than allowing future fields to affect canonical identity. `null` is not accepted. The coordinator snapshots accepted values without mutating or freezing caller input.
+
+```ts
+type FirstPlayableCompositionRequestV1 = Readonly<{
+  schema: "nightdrive.first-playable-composition-request.v1";
+  engineVersion: "nightdrive.engine.first-playable-composition.v1";
+  generatorVersion: "nightdrive.generator.first-playable-composition.v1";
+  profile: Readonly<{ id: HarmonyProfileId }>;
+  harmony: Readonly<{
+    templateId: string;
+    templateVersion: "v1";
+    key: Key;
+  }>;
+  section: Readonly<{ tempo: Tempo }>;
+  intent: NormalizedCompositionIntentV1;
+  rootSeed: number;
+  bass?: Readonly<{
+    range?: BassRange;
+    rhythm?: BassRhythmId;
+  }>;
+  arpeggiator: Readonly<{
+    range: ArpRange;
+    profile: Readonly<{ version: "nightdrive.genre-profile.arpeggiator.v2" }>;
+    policy: Readonly<{ version: "nightdrive.arpeggiator-policy.v2" }>;
+    seedDerivation: Readonly<{ version: "nightdrive.seed-derivation.component.v1" }>;
+    prng: Readonly<{ version: "nightdrive.prng.mulberry32.v1" }>;
+  }>;
+}>;
+```
+
+`schema`, `engineVersion`, `generatorVersion`, `profile.id`, Harmony template ID/version, Key, Tempo, normalized explicit Energy/Complexity, root seed, Arpeggiator range, and all V2 wrappers are **CALLER REQUIRED**. The template is explicit because no accepted automatic profile-template selection policy exists. The Key embeds the accepted scale context; no separate scale field or auto-key behavior is admitted. Section meter, length, and PPQ are **DERIVED FROM THIS V1 SCHEMA** as 4/4, eight bars, and 960 PPQ. `bass` is **OPTIONAL ONLY AS AN ACCEPTED NORMALIZATION CONVENIENCE**: absent `bass`, absent `bass.range`, and absent `bass.rhythm` normalize respectively to `BASS_V1_RANGE` (`36..60`) and `sustained`, exactly as the accepted Bass V1 boundary already does. The canonical result always records the resulting explicit Bass range/rhythm. No Bass seed, Bass profile version, custom Bass policy, Arpeggiator plan, caller-supplied Harmony realization, component hash, parent, lock, author, timestamp, browser/device, MIDI, audio, UI, persistence, AI, Melody, or Motif field is permitted.
+
+The V2 request is constructed only from the normalized request: the same realized Harmony; `arpeggiator.range`; `intent.energy` and `intent.complexity`; `profile.id`; and its exact V2 profile/policy/derivation/PRNG identities plus `rootSeed`. The coordinator neither accepts nor routes V1, a mixed pair, or an arbitrary version dispatcher. `profile.id` must equal the profile in the realized Harmony, and V2's accepted `INCOMPATIBLE_ARP_PROFILE_CONTEXT` / `profile.id` behavior remains the canonical cross-component profile failure.
+
+### Root seed and lineage
+
+The request root seed is the sole root random lineage value. Current Harmony realization is deterministic and unseeded; its profile/template/Key selection inputs and selected voicings are recorded as canonical state, but no imaginary Harmony seed, component seed, PRNG state, or random output is recorded. Bass V1 is deterministic and seed-independent; its range/rhythm are provenance and its events are canonical. Only the delegated V2 Arpeggiator derives the fixed `arpeggiator` component seed after its accepted complete preflight, using `nightdrive.seed-derivation.component.v1`, then consumes its one accepted Mulberry32 policy stream under `nightdrive.prng.mulberry32.v1`. Component seed, raw PRNG state/output, candidate lists, weights, cumulative arithmetic, and resolved plan are derived/transient and never enter the result. This intentionally asymmetric lineage is truthful and preserves component isolation.
+
+### Canonical result, bytes, and hashes
+
+`FirstPlayableCompositionResultV1` has exactly this canonical field order:
+
+```text
+schema, engineVersion, generatorVersion, section, components, provenance,
+componentHashes, warnings, resultHash
+```
+
+- `schema` is `nightdrive.first-playable-composition-result.v1`; engine and generator identities are the corresponding request identities.
+- `section` is `ppq`, `barCount`, `timeSignature`, `tempo` in that order, with fixed `960`, `8`, existing 4/4 primitive, and validated request Tempo.
+- `components` is `harmony`, `bass`, `arpeggiator`. Harmony is the minimal canonical projection `profile`, `templateId`, `templateVersion`, `key`, `slots`, where slots retain only `index`, `degree`, `bars`, `chord`, `inversion`, `voicing`. Bass and Arpeggiator are their existing ordered three-number event arrays (`pitch`, `startTick`, `durationTicks`). Harmony `adjacentCost`, rationale, preferences/tie-break explanation, candidate data, and other realization metadata are excluded. The public V2 resolved plan is transient and excluded because its events and replay inputs suffice to reproduce it.
+- `provenance` is `profile`, `harmonyTemplate`, `bass`, `arpeggiator`, `intent`, `rootSeed`, `parent` in that order. It contains only request identities/normalized values needed to replay: profile ID; template ID/version; normalized Bass range/rhythm; Arpeggiator range/profile/policy/derivation/PRNG versions; Energy/Complexity; root seed; and root-only `parent: null`.
+- `componentHashes` is `harmony`, `bass`, `arpeggiator`, each lowercase 64-hex SHA-256. `warnings` is exactly frozen `[]`; `resultHash` is a lowercase 64-hex SHA-256.
+
+The `composition` serializer rebuilds these owned objects in displayed order, uses existing primitive serializers for TimeSignature, Tempo, Key, Chord, inversion, and voicing, preserves component/event array order, and never enumerates input construction order or invoke caller `toJSON`. It reuses the accepted Stage 7 schema-directed JSON rules and deterministic UTF-8/SHA-256 adapter: UTF-8 without BOM; no whitespace/newline; exact case-sensitive strings; safe-integer minimal base-10 numbers; no `NaN`, infinity, bigint, undefined, sparse arrays, accessors, functions, symbols, cycles, or implicit omission. It is a new representation/version, not a general JSON canonicalizer and not the Stage 7 serializer.
+
+`H(x)` is lowercase SHA-256 hex of that UTF-8 JSON. Each component hash serializes `{ schema, section, component }` in that key order with exact new identities `nightdrive.first-playable-harmony-component.v1`, `nightdrive.first-playable-bass-component.v1`, and `nightdrive.first-playable-arpeggiator-component.v1`. The result hash input is the complete normalized result through `warnings`, excluding `resultHash` entirely; the final serialization appends `resultHash` last. It is not the hash of the self-containing final JSON. Existing Stage 7 component/aggregate bytes and hashes remain unchanged; shared projection/adapter code may be reused only where this contract's inputs and ordering are identical.
+
+### Failure precedence and immutability
+
+The coordinator introduces only `FirstPlayableCompositionValueError extends RangeError` for its own envelope failures, with stable `code` and `field` and noncontractual message. Its minimal codes are `INVALID_FIRST_PLAYABLE_REQUEST` / `request`, `UNSUPPORTED_FIRST_PLAYABLE_SCHEMA` / `schema`, `UNSUPPORTED_FIRST_PLAYABLE_ENGINE_VERSION` / `engineVersion`, `UNSUPPORTED_FIRST_PLAYABLE_GENERATOR_VERSION` / `generatorVersion`, and `INVALID_FIRST_PLAYABLE_TEMPO` / `section.tempo.microsecondsPerQuarter`. It does not wrap component failures.
+
+Preflight stops at the first failure: request record; schema/engine/generator identities; profile record/ID; Harmony template wrapper/ID/version; Key; Tempo; normalized intent in its accepted Energy-before-Complexity order; Bass range then rhythm normalization; Arpeggiator wrappers in accepted public V2 order through root seed. Only then realize Harmony exactly once. Harmony errors propagate unchanged; then Bass errors propagate unchanged; then V2 performs its complete existing public preflight and errors propagate unchanged. A valid profile/context mismatch is the existing V2 `INCOMPATIBLE_ARP_PROFILE_CONTEXT` at `profile.id`, before V2 seed/PRNG/resolver/projector work. No component seed or PRNG work occurs before V2's own successful preflight. Invalid aggregate construction, serialization, hash-adapter, or impossible post-component invariant failures are internal errors, not fabricated caller-invalid component errors. Every failure rejects without events, plan, component hashes, result hash, warning envelope, or partial canonical result.
+
+The operation returns fresh recursively frozen ordinary result objects, arrays, primitives, provenance, hashes, and warnings. It aliases no caller-owned mutable reference, has stable declared ordering, and has no hidden mutable/global state. Equal complete normalized requests under supported identities yield canonical-value-equivalent results, identical canonical bytes, component hashes, and result hash in a qualified runtime. Ambient randomness, wall time, locale, network, database, persistence, browser/device state, AI, and discovery/object order cannot affect generation. Unsupported future component/version identities fail at their owning preflight; historical Stage 7 and V1/V2 component behavior is never migrated or reinterpreted.
+
+The initial byte/hash evidence boundary for this new canonical result is the supported pinned Node runtime, following the accepted Stage 7 AC-004 pattern but requiring separate evidence for this schema. Browser preview may consume the result later but cannot originate trusted canonical generation until separately qualified against accepted Node golden vectors.
+
+### Stage 7 isolation and implementation evidence
+
+This boundary is separate from `generateStage7ArpeggiatorAggregateV1`: it does not call, expand, reinterpret, or replace that supplied-Harmony-only operation; does not add Bass to it; and does not alter ADR-022, its hashes/bytes, or its replay. The future coordinator calls lower-level accepted component boundaries directly. Historical Stage 7 results remain replayable under their original identities.
+
+Future implementation evidence must prove exact request validation/default normalization and unknown-field policy; every supported profile/template/Key context; Harmony called once and the same realization supplied to Bass/V2; exact Bass default and explicit rhythm/range projections; V2-only routing, profile/policy compatibility, root-to-component seed handoff, and no premature PRNG consumption; canonical projections/field order/bytes/component hashes/result-hash self-exclusion; replay and ambient isolation; no partial output and exact mixed-invalid precedence; input nonmutation/result freezing; Stage 7 aggregate and V1/V2 regressions; no forbidden framework/platform imports; and pinned-Node golden vectors. Browser equivalence, playback/audio, UI, MIDI, persistence, and implementation itself remain separate work.
+
 ## Stage 7 aggregate generation contract
 
 **Status:** Specification accepted and merged through PR #143; aggregate runtime and preflight/orchestration are accepted and merged through PR #155. The canonical foundation is accepted and merged through PR #144. [ADR-022](DECISIONS.md#adr-022--stage-7-supplied-harmony-aggregate-and-node-acceptance-boundary) records the Product Owner's accepted ownership/environment decisions. This section owns the exact wire/replay contract; it is not a complete composition brief, project revision, transport API, or persistence schema.
@@ -282,4 +367,4 @@ Canonical values/serializers are framework- and runtime-neutral, with no Node, b
 
 The [testing strategy](TESTING_STRATEGY.md#stage-7-aggregate-ac-004-evidence-contract) owns implementation evidence. Initial AC-004 acceptance is bounded to the supported pinned Node runtime, not browser execution. Before any future browser environment may originate trusted canonical generation results, it must independently prove byte-equivalent serialization and result hashing against accepted Node golden vectors. No browser runtime, browser delivery or browser qualification is authorized here.
 
-AC-004/NFR-001 is satisfied by the accepted aggregate implementation and pinned-Node evidence through PR #169, including exact Windows ARM64/Linux x64 canonical-byte and digest equivalence. Existing AC-011/MUS-003 and AC-013/MUS-006 evidence remains satisfied and must regress unchanged. PR #142 satisfies the current R1 human product-acceptance gate by explicit exception, not completion of the 280-fixture protocol; no further listening is required for current Stage 7 acceptance. Stage 7 exit criteria are satisfied and Stage 7 is complete; no additional AC-004 implementation or evidence is required. R1-REV-001 remains partially closed, MIA-003 deferred/non-blocking, and Stage 8 unauthorized. The next gate is Product Integration / First Playable assessment.
+AC-004/NFR-001 is satisfied by the accepted aggregate implementation and pinned-Node evidence through PR #169, including exact Windows ARM64/Linux x64 canonical-byte and digest equivalence. Existing AC-011/MUS-003 and AC-013/MUS-006 evidence remains satisfied and must regress unchanged. PR #142 satisfies the current R1 human product-acceptance gate by explicit exception, not completion of the 280-fixture protocol; no further listening is required for current Stage 7 acceptance. Stage 7 exit criteria are satisfied and Stage 7 is complete; no additional Stage 7 AC-004 implementation or evidence is required. R1-REV-001 remains partially closed, MIA-003 deferred/non-blocking, and Stage 8 unauthorized. The separately versioned First Playable composition specification is pending review; its new canonical result requires separate implementation and pinned-Node evidence.
