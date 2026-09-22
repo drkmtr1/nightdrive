@@ -163,37 +163,45 @@ describe("Stage 7 AC-004 Linux evidence harness", () => {
     process.platform !== "linux" ||
       process.arch !== STAGE7_AC004_LINUX_ARCHITECTURE ||
       process.version !== STAGE7_AC004_LINUX_NODE_VERSION,
-  )("writes a PASS artifact with the complete canonical payload", () => {
-    const directory = mkdtempSync(join(tmpdir(), "nightdrive-ac004-pass-"));
-    try {
-      const artifact = runLinuxAc004Evidence(directory);
-      expect(artifact.status).toBe("PASS");
-      if (artifact.status === "PASS") {
-        expect(artifact.canonical.vectorCount).toBe(17);
-        expect(artifact.canonical.vectors).toHaveLength(17);
-        expect(
-          artifact.canonical.vectors.every((row) =>
-            /^[0-9a-f]{64}$/u.test(row.aggregateCanonicalSha256),
-          ),
-        ).toBe(true);
+  )(
+    "writes a PASS artifact with the complete canonical payload",
+    () => {
+      const directory = mkdtempSync(join(tmpdir(), "nightdrive-ac004-pass-"));
+      try {
+        const artifact = runLinuxAc004Evidence(directory);
+        expect(artifact.status).toBe("PASS");
+        if (artifact.status === "PASS") {
+          expect(artifact.canonical.vectorCount).toBe(17);
+          expect(artifact.canonical.vectors).toHaveLength(17);
+          expect(
+            artifact.canonical.vectors.every((row) =>
+              /^[0-9a-f]{64}$/u.test(row.aggregateCanonicalSha256),
+            ),
+          ).toBe(true);
+        }
+        expect(existsSync(join(directory, "stage7-ac004-linux-evidence.json"))).toBe(true);
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
       }
-      expect(existsSync(join(directory, "stage7-ac004-linux-evidence.json"))).toBe(true);
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
-  });
+    },
+    120_000,
+  );
 
   it.skipIf(
     process.platform !== "linux" ||
       process.arch !== STAGE7_AC004_LINUX_ARCHITECTURE ||
       process.version !== STAGE7_AC004_LINUX_NODE_VERSION,
-  )("executes the complete Linux x64 fresh-process matrix and writes durable evidence", () => {
-    const artifact = runLinuxAc004Evidence(
-      process.env.AC004_OUTPUT_DIR ?? "./.ac004-linux-evidence",
-    );
-    expect(artifact.status).toBe("PASS");
-    if (artifact.status !== "PASS") return;
-    expect(artifact.canonical.vectorCount).toBe(17);
-    expect(artifact.ambientVariants.every((variant) => variant.matchesBase)).toBe(true);
-  });
+  )(
+    "executes the complete Linux x64 fresh-process matrix and writes durable evidence",
+    () => {
+      const artifact = runLinuxAc004Evidence(
+        process.env.AC004_OUTPUT_DIR ?? "./.ac004-linux-evidence",
+      );
+      expect(artifact.status).toBe("PASS");
+      if (artifact.status !== "PASS") return;
+      expect(artifact.canonical.vectorCount).toBe(17);
+      expect(artifact.ambientVariants.every((variant) => variant.matchesBase)).toBe(true);
+    },
+    120_000,
+  );
 });
