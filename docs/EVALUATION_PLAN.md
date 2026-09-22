@@ -54,7 +54,7 @@ The initial Stage 7 [audition-artifact contract](reviews/STAGE7_ARPEGGIATOR_AUDI
 
 The [Product Owner decision](reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) accepts current R1/V2 behavior for continued Nightdrive development using accepted deterministic/prior evidence and the owner's personal assessment of the first 35 presented comparison fixtures. It waives the remaining 245 judgments, full Pass 1 completion/lock, and Pass 2 as prerequisites for that acceptance only. Pass 1 was not completed or locked, Pass 2 did not occur, and the full 280-fixture protocol did not pass. No all-profile, all-root, or comparative coverage is inferred from those 35. The original protocol, frozen artifacts, baseline findings, and known deterministic limitations remain evidence, not rewritten outcomes.
 
-This explicit product-specific exception does not relax deterministic correctness or broader release/evaluation requirements. It closes the current R1 product-acceptance gate, not all Stage 7 obligations; aggregate generator/provenance integration and full exit-evidence reconciliation remain separately gated. Stage 8 remains unauthorized.
+This explicit product-specific exception does not relax deterministic correctness or broader release/evaluation requirements. It closes the current R1 product-acceptance gate; the accepted aggregate generator/provenance implementation and pinned-runtime AC-004 evidence satisfy the remaining Stage 7 technical obligations. The waived comparison remainder is not a Stage 7 exit blocker. Stage 7 is complete; the next gate is Product Integration / First Playable assessment. Stage 8 remains unauthorized.
 
 ## AI evaluation
 
