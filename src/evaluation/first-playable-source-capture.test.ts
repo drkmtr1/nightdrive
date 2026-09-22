@@ -112,6 +112,16 @@ describe("First Playable upstream source capture", () => {
     ]);
   });
 
+  it("matches the twelve detached source records captured for this candidate", () => {
+    const artifact = JSON.parse(
+      readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json", "utf8"),
+    ) as { schema: string; status: string; vectors: unknown[] };
+    expect(artifact.schema).toBe("nightdrive.first-playable-source-records.v1");
+    expect(artifact.status).toBe("CANDIDATE - NOT FROZEN OR ACCEPTED");
+    expect(artifact.vectors).toHaveLength(12);
+    expect(artifact.vectors).toEqual(captureFirstPlayableSourceMatrix());
+  });
+
   it("uses exactly one Harmony realization shared by the accepted Bass and V2 APIs", () => {
     const harmonySpy = vi.spyOn(harmonyDomain, "realizeHarmonyProgression");
     const bassSpy = vi.spyOn(bassDomain, "generateBassEvents");
