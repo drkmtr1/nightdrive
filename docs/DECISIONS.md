@@ -326,3 +326,21 @@ Human comparison must answer whether R1 improves perceived Energy activity/inten
 **Rationale:** Preserve upstream Harmony authority and the bounded Stage 7 gap without pulling in a broader composition generator or browser implementation. Explicit environment qualification avoids both a premature browser blocker and an unsupported cross-runtime claim.
 **Consequences:** The exact accepted request/result, canonical encoding, hashes, root lineage and error contract lives only in [Composition engine](COMPOSITION_ENGINE.md#stage-7-aggregate-generation-contract), with evidence in [Testing strategy](TESTING_STRATEGY.md#stage-7-aggregate-ac-004-evidence-contract). V1/V2 musical behavior and public domain results remain unchanged. No runtime, persistence, Stage 11 variation, additional listening or Stage 8 is authorized. PR #142's bounded R1 acceptance exception remains effective; AC-004 is not satisfied by this specification alone.
 **Revisit:** Separately authorized non-root lineage, broader component generation, schema evolution, or browser canonical generation requires review of the affected representation/version and evidence boundaries without reinterpreting historical records.
+
+## ADR-023 — First Playable canonical Harmony+Bass+Arpeggiator composition boundary
+
+**Date:** 2026-09-21
+
+**Status:** Product Owner architecture decision accepted; runtime implementation remains separately authorized.
+
+**Context:** The accepted Stage 7 aggregate is intentionally limited to supplied selected Harmony plus generated Arpeggiator. It neither realizes Harmony nor contains Bass. The Product Owner's First Playable assessment established that the smallest next deterministic musical integration is one local eight-bar Harmony, Bass, and Arpeggiator section, but the assessment did not make the broader result canonicality decision.
+
+**Decision:** The First Playable boundary is a new, separately versioned canonical Harmony+Bass+Arpeggiator composition result. `composition` owns its value, projections, validation, canonical serialization, and hashes; `generators` owns one coordinator that validates its request, realizes Harmony exactly once, derives Bass and the accepted public V2 Arpeggiator result from that same realization, and constructs the value. The coordinator is a direct module consumed later by an application adapter, not a music-domain barrel API or an application/UI service. Existing Harmony, Bass, and Arpeggiator algorithms remain their own owners. Browser preview and audio are derived, noncanonical consumers.
+
+**Alternatives:** Extend or reinterpret `generateStage7ArpeggiatorAggregateV1`; use a noncanonical H+B+A envelope; make audio/browser state canonical; create a new integration layer. These are not selected.
+
+**Rationale:** A versioned whole-section record is necessary for deterministic replay, future derived preview/MIDI consumers, and durable component identity without turning the bounded Stage 7 aggregate into a general composition generator. Reusing the established composition/generator split preserves dependency direction and avoids duplicated musical semantics.
+
+**Consequences:** The exact First Playable request/result, serialization, hash, replay, failure, and test contract lives in [Composition engine](COMPOSITION_ENGINE.md#first-playable-canonical-composition-contract). It reuses the Stage 7 UTF-8/SHA-256 adapter and projection conventions where their inputs are identical, but has distinct schema identities and does not change Stage 7 bytes, hashes, result validation, replay, or AC-004 acceptance. A separate pinned-Node evidence gate qualifies the new canonical result before it can claim byte/hash evidence; browser canonical generation remains unauthorized. No runtime, UI, audio, persistence, Stage 8, Stage 9, or dependency adoption is authorized by this ADR.
+
+**Revisit:** New components, non-root lineage, editing/locking, persistence, raw brief/UI normalization, browser-originating canonical results, or a schema/version evolution require separately authorized contract review.
