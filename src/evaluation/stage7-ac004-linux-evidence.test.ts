@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   assertLinuxAc004Environment,
   canonicalEvidenceJson,
@@ -115,6 +118,71 @@ describe("Stage 7 AC-004 Linux evidence harness", () => {
     expect(source).not.toContain("node");
   });
 
+  it("writes an explicit FAIL artifact and rethrows environment failures", () => {
+    const directory = mkdtempSync(join(tmpdir(), "nightdrive-ac004-fail-env-"));
+    try {
+      expect(() => runLinuxAc004Evidence(directory, { forceFailure: "environment" })).toThrow(
+        "Forced AC-004 environment failure",
+      );
+      const artifact = JSON.parse(
+        readFileSync(join(directory, "stage7-ac004-linux-evidence.json"), "utf8"),
+      ) as { status: string; canonical: unknown; diagnostics: { phase: string } };
+      expect(artifact.status).toBe("FAIL");
+      expect(artifact.canonical).toBeNull();
+      expect(artifact.diagnostics.phase).toBe("environment-qualification");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("writes an explicit FAIL artifact and rethrows vector failures", () => {
+    const directory = mkdtempSync(join(tmpdir(), "nightdrive-ac004-fail-vector-"));
+    try {
+      expect(() => runLinuxAc004Evidence(directory, { forceFailure: "vector" })).toThrow(
+        "Forced AC-004 vector failure",
+      );
+      expect(existsSync(join(directory, "stage7-ac004-linux-evidence.json"))).toBe(true);
+      const artifact = JSON.parse(
+        readFileSync(join(directory, "stage7-ac004-linux-evidence.json"), "utf8"),
+      ) as {
+        status: string;
+        canonical: unknown;
+        diagnostics: { phase: string; vectorId?: string };
+      };
+      expect(artifact.status).toBe("FAIL");
+      expect(artifact.canonical).toBeNull();
+      expect(artifact.diagnostics.phase).toBe("vector-execution");
+      expect(artifact.diagnostics.vectorId).toBe(STAGE7_AC004_LINUX_VECTOR_IDS[0]);
+      expect(JSON.stringify(artifact.canonical)).not.toContain("diagnostics");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(
+    process.platform !== "linux" ||
+      process.arch !== STAGE7_AC004_LINUX_ARCHITECTURE ||
+      process.version !== STAGE7_AC004_LINUX_NODE_VERSION,
+  )("writes a PASS artifact with the complete canonical payload", () => {
+    const directory = mkdtempSync(join(tmpdir(), "nightdrive-ac004-pass-"));
+    try {
+      const artifact = runLinuxAc004Evidence(directory);
+      expect(artifact.status).toBe("PASS");
+      if (artifact.status === "PASS") {
+        expect(artifact.canonical.vectorCount).toBe(17);
+        expect(artifact.canonical.vectors).toHaveLength(17);
+        expect(
+          artifact.canonical.vectors.every((row) =>
+            /^[0-9a-f]{64}$/u.test(row.aggregateCanonicalSha256),
+          ),
+        ).toBe(true);
+      }
+      expect(existsSync(join(directory, "stage7-ac004-linux-evidence.json"))).toBe(true);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it.skipIf(
     process.platform !== "linux" ||
       process.arch !== STAGE7_AC004_LINUX_ARCHITECTURE ||
@@ -123,6 +191,8 @@ describe("Stage 7 AC-004 Linux evidence harness", () => {
     const artifact = runLinuxAc004Evidence(
       process.env.AC004_OUTPUT_DIR ?? "./.ac004-linux-evidence",
     );
+    expect(artifact.status).toBe("PASS");
+    if (artifact.status !== "PASS") return;
     expect(artifact.canonical.vectorCount).toBe(17);
     expect(artifact.ambientVariants.every((variant) => variant.matchesBase)).toBe(true);
   });

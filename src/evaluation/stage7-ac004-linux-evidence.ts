@@ -72,8 +72,10 @@ export type Stage7Ac004LinuxEnvironment = Readonly<{
   commit: string;
 }>;
 
-export type Stage7Ac004LinuxEvidenceArtifact = Readonly<{
+type Stage7Ac004LinuxPassArtifact = Readonly<{
   schema: typeof STAGE7_AC004_LINUX_EVIDENCE_SCHEMA;
+  status: "PASS";
+  testedCommit: string;
   canonical: Readonly<{
     vectorCount: number;
     vectors: readonly Stage7Ac004LinuxEvidenceRow[];
@@ -86,6 +88,35 @@ export type Stage7Ac004LinuxEvidenceArtifact = Readonly<{
     matchesBase: boolean;
   }>[];
 }>;
+
+type Stage7Ac004LinuxFailArtifact = Readonly<{
+  schema: typeof STAGE7_AC004_LINUX_EVIDENCE_SCHEMA;
+  status: "FAIL";
+  testedCommit: string;
+  canonical: null;
+  environment: Stage7Ac004LinuxEnvironment;
+  diagnostics: Readonly<{
+    phase: string;
+    vectorId?: string;
+    message: string;
+  }>;
+}>;
+
+export type Stage7Ac004LinuxEvidenceArtifact =
+  | Stage7Ac004LinuxPassArtifact
+  | Stage7Ac004LinuxFailArtifact;
+
+class Stage7Ac004EvidenceFailure extends Error {
+  readonly phase: string;
+  readonly vectorId: string | undefined;
+
+  constructor(phase: string, message: string, vectorId?: string) {
+    super(message);
+    this.name = "Stage7Ac004EvidenceFailure";
+    this.phase = phase;
+    this.vectorId = vectorId;
+  }
+}
 
 function loadArtifact(): CandidateArtifact {
   return JSON.parse(
@@ -256,11 +287,22 @@ function freshVector(
       encoding: "utf8",
     },
   );
-  if (result.status !== 0)
-    throw new Error(`AC-004 fresh process ${index} failed:\n${result.stdout}\n${result.stderr}`);
+  if (result.status !== 0) {
+    const vectorId = ARTIFACT.vectors[index]?.vectorId;
+    throw new Stage7Ac004EvidenceFailure(
+      "vector-execution",
+      `AC-004 fresh process ${index} failed:\n${result.stdout}\n${result.stderr}`,
+      vectorId,
+    );
+  }
   const match = `${result.stdout}\n${result.stderr}`.match(/AC004_VECTOR_JSON:(\{[^\r\n]+\})/u);
-  if (match?.[1] === undefined)
-    throw new Error(`AC-004 fresh process ${index} emitted no evidence row.`);
+  if (match?.[1] === undefined) {
+    throw new Stage7Ac004EvidenceFailure(
+      "vector-execution",
+      `AC-004 fresh process ${index} emitted no evidence row.`,
+      ARTIFACT.vectors[index]?.vectorId,
+    );
+  }
   return JSON.parse(match[1]) as Stage7Ac004LinuxEvidenceRow;
 }
 
@@ -269,44 +311,134 @@ function runMatrix(overrides: Readonly<Record<string, string>>): string {
   return canonicalEvidenceJson(rows);
 }
 
-export function runLinuxAc004Evidence(outputDirectory: string): Stage7Ac004LinuxEvidenceArtifact {
-  const environment = readLinuxAc004Environment();
-  const baseJson = runMatrix({ TZ: "UTC", LANG: "C.UTF-8" });
-  const repeatJson = runMatrix({ TZ: "UTC", LANG: "C.UTF-8" });
-  if (repeatJson !== baseJson)
-    throw new Error("Repeated Linux AC-004 evidence is not byte-identical.");
-  const ambientVariants = [
-    { name: "UTC-C", env: { TZ: "UTC", LANG: "C" } },
-    { name: "Honolulu-C.UTF-8", env: { TZ: "Pacific/Honolulu", LANG: "C.UTF-8" } },
-  ].map((variant) => {
-    const variantJson = runMatrix(variant.env);
-    const variantHash = sha256Utf8(variantJson);
-    return {
-      name: variant.name,
-      canonicalSha256: variantHash,
-      matchesBase: variantJson === baseJson,
-    };
-  });
-  if (ambientVariants.some((variant) => !variant.matchesBase)) {
-    throw new Error("Linux AC-004 evidence changed across timezone/locale variants.");
-  }
-  const canonical = JSON.parse(baseJson) as {
-    vectorCount: number;
-    vectors: readonly Stage7Ac004LinuxEvidenceRow[];
+function readObservedEnvironment(): Stage7Ac004LinuxEnvironment {
+  const command = (name: string, args: readonly string[], fallback: string): string => {
+    try {
+      return execFileSync(name, [...args], { encoding: "utf8" }).trim();
+    } catch {
+      return fallback;
+    }
   };
-  const artifact: Stage7Ac004LinuxEvidenceArtifact = {
-    schema: STAGE7_AC004_LINUX_EVIDENCE_SCHEMA,
-    canonical: { ...canonical, sha256: sha256Utf8(baseJson) },
-    environment,
-    ambientVariants,
+  return {
+    os: process.platform,
+    osVersion: release(),
+    runnerOs: process.env.RUNNER_OS ?? "unknown",
+    runnerArchitecture: process.env.RUNNER_ARCH ?? "unknown",
+    architecture: process.arch,
+    node: process.version,
+    npm: command("npm", ["--version"], "unavailable"),
+    commit: command("git", ["rev-parse", "HEAD"], "unavailable"),
   };
+}
+
+function diagnosticMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.split(/\r?\n/u, 1)[0]?.slice(0, 500) ?? "Unknown AC-004 evidence failure.";
+}
+
+function writeEvidenceArtifact(
+  outputDirectory: string,
+  artifact: Stage7Ac004LinuxEvidenceArtifact,
+): void {
   mkdirSync(outputDirectory, { recursive: true });
   writeFileSync(
     join(outputDirectory, "stage7-ac004-linux-evidence.json"),
     `${JSON.stringify(artifact)}\n`,
     "utf8",
   );
-  return artifact;
+}
+
+export type Stage7Ac004LinuxEvidenceOptions = Readonly<{
+  forceFailure?: "environment" | "vector";
+}>;
+
+export function runLinuxAc004Evidence(
+  outputDirectory: string,
+  options: Stage7Ac004LinuxEvidenceOptions = {},
+): Stage7Ac004LinuxEvidenceArtifact {
+  let environment = readObservedEnvironment();
+  let phase = "environment-qualification";
+  let vectorId: string | undefined;
+  try {
+    if (options.forceFailure === "environment") {
+      throw new Stage7Ac004EvidenceFailure(
+        "environment-qualification",
+        "Forced AC-004 environment failure.",
+      );
+    }
+    if (options.forceFailure === "vector") {
+      vectorId = ARTIFACT.vectors[0]?.vectorId;
+      throw new Stage7Ac004EvidenceFailure(
+        "vector-execution",
+        "Forced AC-004 vector failure.",
+        vectorId,
+      );
+    }
+    environment = readLinuxAc004Environment();
+    phase = "vector-execution";
+    const baseJson = runMatrix({ TZ: "UTC", LANG: "C.UTF-8" });
+    phase = "repeat-comparison";
+    const repeatJson = runMatrix({ TZ: "UTC", LANG: "C.UTF-8" });
+    if (repeatJson !== baseJson) {
+      throw new Stage7Ac004EvidenceFailure(
+        "repeat-comparison",
+        "Repeated Linux AC-004 evidence is not byte-identical.",
+      );
+    }
+    phase = "ambient-comparison";
+    const ambientVariants = [
+      { name: "UTC-C", env: { TZ: "UTC", LANG: "C" } },
+      { name: "Honolulu-C.UTF-8", env: { TZ: "Pacific/Honolulu", LANG: "C.UTF-8" } },
+    ].map((variant) => {
+      const variantJson = runMatrix(variant.env);
+      const variantHash = sha256Utf8(variantJson);
+      return {
+        name: variant.name,
+        canonicalSha256: variantHash,
+        matchesBase: variantJson === baseJson,
+      };
+    });
+    if (ambientVariants.some((variant) => !variant.matchesBase)) {
+      throw new Stage7Ac004EvidenceFailure(
+        "ambient-comparison",
+        "Linux AC-004 evidence changed across timezone/locale variants.",
+      );
+    }
+    const canonical = JSON.parse(baseJson) as {
+      vectorCount: number;
+      vectors: readonly Stage7Ac004LinuxEvidenceRow[];
+    };
+    const artifact: Stage7Ac004LinuxPassArtifact = {
+      schema: STAGE7_AC004_LINUX_EVIDENCE_SCHEMA,
+      status: "PASS",
+      testedCommit: environment.commit,
+      canonical: { ...canonical, sha256: sha256Utf8(baseJson) },
+      environment,
+      ambientVariants,
+    };
+    writeEvidenceArtifact(outputDirectory, artifact);
+    return artifact;
+  } catch (error) {
+    const failure = error instanceof Stage7Ac004EvidenceFailure ? error : undefined;
+    const artifact: Stage7Ac004LinuxFailArtifact = {
+      schema: STAGE7_AC004_LINUX_EVIDENCE_SCHEMA,
+      status: "FAIL",
+      testedCommit: environment.commit,
+      canonical: null,
+      environment,
+      diagnostics: {
+        phase: failure?.phase ?? phase,
+        ...((failure?.vectorId ?? vectorId) ? { vectorId: failure?.vectorId ?? vectorId } : {}),
+        message: diagnosticMessage(error),
+      },
+    };
+    try {
+      writeEvidenceArtifact(outputDirectory, artifact);
+    } catch {
+      // Preserve the original evidence failure if artifact writing itself fails.
+    }
+    throw error;
+  }
 }
 
 export function defaultEvidenceOutputDirectory(): string {
