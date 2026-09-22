@@ -32,7 +32,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-The next eligible gate is separately authorized pinned-Node/cross-runtime canonical evidence for the accepted First Playable runtime. Browser preview/audio, UI, Stage 8, and Stage 9 remain separately unauthorized. Stage 7 is complete with AC-011, AC-004, and AC-013 satisfied; R1-REV-001 remains partially closed and MIA-003 remains deferred/non-blocking.
+The Product Owner-authorized SPECIFY / R2 First Playable independent reference-vector method is a local candidate awaiting exact-head review in [Testing strategy](docs/TESTING_STRATEGY.md#first-playable-independent-reference-vector-method-candidate). It specifies twelve upstream H+B+A source records, independent representation/hash derivation, and the pinned Windows ARM64/Linux x64 matrix. No source snapshot, final oracle, or First Playable cross-runtime acceptance is established by this specification. The immediate gate is review/acceptance of the method; source capture/freeze and all subsequent evidence execution require separate authorization. Browser canonical generation, preview/audio, UI, Stage 8, and Stage 9 remain separately unauthorized. Stage 7 is complete with AC-011, AC-004, and AC-013 satisfied; R1-REV-001 remains partially closed and MIA-003 remains deferred/non-blocking.
 
 ## Maintenance
 
