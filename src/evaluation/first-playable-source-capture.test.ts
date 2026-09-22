@@ -117,7 +117,7 @@ describe("First Playable upstream source capture", () => {
       readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json", "utf8"),
     ) as { schema: string; status: string; vectors: unknown[] };
     expect(artifact.schema).toBe("nightdrive.first-playable-source-records.v1");
-    expect(artifact.status).toBe("CANDIDATE - NOT FROZEN OR ACCEPTED");
+    expect(artifact.status).toBe("ACCEPTED/FROZEN");
     expect(artifact.vectors).toHaveLength(12);
     expect(artifact.vectors).toEqual(captureFirstPlayableSourceMatrix());
   });
