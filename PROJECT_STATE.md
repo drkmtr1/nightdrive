@@ -32,7 +32,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-The Product Owner-authorized SPECIFY / R2 First Playable independent reference-vector method is a local candidate awaiting exact-head review in [Testing strategy](docs/TESTING_STRATEGY.md#first-playable-independent-reference-vector-method-candidate). It specifies twelve upstream H+B+A source records, independent representation/hash derivation, and the pinned Windows ARM64/Linux x64 matrix. No source snapshot, final oracle, or First Playable cross-runtime acceptance is established by this specification. The immediate gate is review/acceptance of the method; source capture/freeze and all subsequent evidence execution require separate authorization. Browser canonical generation, preview/audio, UI, Stage 8, and Stage 9 remain separately unauthorized. Stage 7 is complete with AC-011, AC-004, and AC-013 satisfied; R1-REV-001 remains partially closed and MIA-003 remains deferred/non-blocking.
+The First Playable independent canonical evidence method is accepted and merged through PR #177. The next separately gated task is capture, review, and freeze of its twelve upstream H+B+A source records; source snapshots are not yet accepted or frozen. Oracle generation/freeze and pinned-runtime execution/cross-runtime acceptance remain incomplete and require their subsequent gates. Browser canonical generation, preview/audio, UI, Stage 8, and Stage 9 remain separately unauthorized. Stage 7 is complete with AC-011, AC-004, and AC-013 satisfied; R1-REV-001 remains partially closed and MIA-003 remains deferred/non-blocking.
 
 ## Maintenance
 
