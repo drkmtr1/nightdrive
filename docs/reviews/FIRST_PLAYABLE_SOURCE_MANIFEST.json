@@ -1,6 +1,6 @@
 {
   "schema": "nightdrive.first-playable-source-manifest.v1",
-  "status": "CANDIDATE - NOT FROZEN OR ACCEPTED",
+  "status": "ACCEPTED/FROZEN",
   "acceptedMethodCommit": "eca89a990dc132a99f45fa88f05b96ebb8286ec8",
   "sourceRuntimeInputCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
   "captureToolCommit": "a72d75c6f3fcfaa0aacdaa1b8b65aaa7a7342fd3",
@@ -17,8 +17,8 @@
   },
   "sourceRecords": {
     "path": "docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json",
-    "byteLength": 124294,
-    "sha256": "d4a222d9e5a97189cd1c800ed20b428ed2c0c89845b51652e64923b7a8ce8526",
+    "byteLength": 124275,
+    "sha256": "3a067218a0dd9d992e236ccff5fab839fa8c14b832c3436718453f305fda1946",
     "vectorCount": 12
   },
   "fileInventory": [
@@ -39,8 +39,8 @@
     },
     {
       "path": "docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json",
-      "byteLength": 124294,
-      "sha256": "d4a222d9e5a97189cd1c800ed20b428ed2c0c89845b51652e64923b7a8ce8526"
+      "byteLength": 124275,
+      "sha256": "3a067218a0dd9d992e236ccff5fab839fa8c14b832c3436718453f305fda1946"
     },
     {
       "path": "package-lock.json",

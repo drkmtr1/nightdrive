@@ -1,6 +1,6 @@
 {
   "schema": "nightdrive.first-playable-source-records.v1",
-  "status": "CANDIDATE - NOT FROZEN OR ACCEPTED",
+  "status": "ACCEPTED/FROZEN",
   "vectors": [
     {
       "vectorId": "FP-01",
