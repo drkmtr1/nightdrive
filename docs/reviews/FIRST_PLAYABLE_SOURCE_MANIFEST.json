@@ -1,6 +1,6 @@
 {
   "schema": "nightdrive.first-playable-source-manifest.v1",
-  "status": "CANDIDATE",
+  "status": "ACCEPTED/FROZEN",
   "acceptedMethodCommit": "eca89a990dc132a99f45fa88f05b96ebb8286ec8",
   "sourceRuntimeInputCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
   "captureToolCommit": "a72d75c6f3fcfaa0aacdaa1b8b65aaa7a7342fd3",
