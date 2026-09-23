@@ -21,7 +21,7 @@
     "sha256": "3a067218a0dd9d992e236ccff5fab839fa8c14b832c3436718453f305fda1946",
     "vectorCount": 12
   },
-  "fileInventory": [
+  "historicalCaptureInventory": [
     {
       "path": ".nvmrc",
       "byteLength": 9,
@@ -332,5 +332,379 @@
       "byteLength": 174,
       "sha256": "c1e79eb224e7fcf3e3bd5530c54368b07b71620eb5736b976b1ce47c9c074b5f"
     }
-  ]
+  ],
+  "trackedSourceBlobInventory": [
+    {
+      "path": ".nvmrc",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 8,
+      "sha256": "73fb1b615e2043a933be1c0895cde4358036acc28d785692509b822aa53c761f"
+    },
+    {
+      "path": "docs/COMPOSITION_ENGINE.md",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 58189,
+      "sha256": "2d597a9cd8cc2d4769a73e05c6b22b4624e4390685b01b08683d0b50dec1f378"
+    },
+    {
+      "path": "docs/TESTING_STRATEGY.md",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 108560,
+      "sha256": "3585b0f57ebe726249193bf9be83ab985659ab4f04997fb3777fb82584b0d258"
+    },
+    {
+      "path": "package-lock.json",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 115931,
+      "sha256": "fa7944ad22e15150fb057bfa216857791e99ebbc9a57540f1f0fb5d9077dadbd"
+    },
+    {
+      "path": "package.json",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 1266,
+      "sha256": "0135f5290f55aef8466338575eaa5c22cf81d10044f3629351877c7332777ff1"
+    },
+    {
+      "path": "src/evaluation/first-playable-source-capture-runner.test.ts",
+      "commit": "a72d75c6f3fcfaa0aacdaa1b8b65aaa7a7342fd3",
+      "byteLength": 929,
+      "sha256": "7f1b84785a97c3aa7fa7816a94eee7f8f0c6e76d5d52d963a4fee8e2ab1e3e26"
+    },
+    {
+      "path": "src/evaluation/first-playable-source-capture.ts",
+      "commit": "a72d75c6f3fcfaa0aacdaa1b8b65aaa7a7342fd3",
+      "byteLength": 12407,
+      "sha256": "f0deefc944f1e4105b4a17d4e7125717107f861d15aa70c7248f30ea308af790"
+    },
+    {
+      "path": "src/generators/first-playable-composition.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 23769,
+      "sha256": "e94626a05176c696c5e73b56ef41a7eeb6283510482aa05592dc9335404a57b8"
+    },
+    {
+      "path": "src/generators/first-playable-composition.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 15107,
+      "sha256": "b301ad8e57e998ee7283ab38b4940c430926b5fed3ef7caf67a67ab3ed0075e2"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-density-mask.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 3789,
+      "sha256": "d803dafac8d488ed6a2aa723ee48b14db7b55581a22ce098f400a7674eb7a226"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-density-mask.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 1011,
+      "sha256": "a8da97ba634149d6eee34a25e0fc3e13a9187d79c43c897b34a199ce3a5de2af"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-configuration.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 24452,
+      "sha256": "6e7497d10ab5a5844b7e2cdaa46943e9d7628b96012f6b5b377abf946b406f62"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-configuration.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 10282,
+      "sha256": "6a6042e3a76fbe560965bb763a898b9f035e4fec8eca8403fbbbd54dbfdb0e42"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-generator-compatibility.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2702,
+      "sha256": "8e7671c0aa83829ec94be2f0d7ddf9e11fca40083dec2fdbbb5c0012be99c266"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-generator.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 47824,
+      "sha256": "46c67490fcb5e097e6b77ee731b5e151765bb8f240de2431f988ad080a7f26b5"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-generator.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 7049,
+      "sha256": "e0a4d5333972ccb8db53f48e51111ee2514f2ab9dab3403730e167a8abb2243e"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-preflight.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 10092,
+      "sha256": "ea282bcf5ae9a90d35df0b2762d19d9a178bf95a986372f85245fddf4e5af1fe"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-resolver.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 18323,
+      "sha256": "44c9c415ea5457ccdc36919adb37f95e18bd6dd9e17159e69cdcb60dd7980b23"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-policy-resolver.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4609,
+      "sha256": "badd006a164014e7de272b1a1c338ec6424a2d884fd6f43c9c8929afcc83054e"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-profile-configuration.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 41438,
+      "sha256": "100c46c281074b63506f51ed959a2befc8ac33f26045f991893bac61aecdd84e"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-profile-configuration.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 30964,
+      "sha256": "810e7ace87e96616cca058c0e7cbe3f9b6cc44d6058a267b6a01f8f0a99c9295"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-projection-primitives.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 979,
+      "sha256": "03e6d55572867b672052948aef78bf08009d26ff87469788989378ade30f524d"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-resolved-plan-projector.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 15374,
+      "sha256": "68eacf0bbfcb3ea6297d50f79fa088518155cba2018b3eefc5bdfce0508a171d"
+    },
+    {
+      "path": "src/music-domain/arpeggiator-resolved-plan-projector.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4161,
+      "sha256": "73a5eb902f48c1b24225790c491523291401a4a09ac7d67da6ee0858f43c7184"
+    },
+    {
+      "path": "src/music-domain/arpeggiator.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 33990,
+      "sha256": "05869eb106eec09dc73a6cef1a877ff2b3da49fd43a77888a0bee67955db5391"
+    },
+    {
+      "path": "src/music-domain/arpeggiator.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 14601,
+      "sha256": "a6dcc72129ab3ff1b78577bf38ec9bc25e8b655813b3710379058d88160b1c0b"
+    },
+    {
+      "path": "src/music-domain/bass.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 17806,
+      "sha256": "231f216790b12311c29108f72eaba9d1beee505f28d7997e3cb903249850eeb5"
+    },
+    {
+      "path": "src/music-domain/bass.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 14355,
+      "sha256": "f740c2e277d3ce9b6b8fa986b392f2d332e2aabab7c60ca9bedd2626b2252cd3"
+    },
+    {
+      "path": "src/music-domain/chord-inversion.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2364,
+      "sha256": "79868cc0b344e53495ce0c4b1a30be3044105032b23cf43a0dff7bd284629a9b"
+    },
+    {
+      "path": "src/music-domain/chord-inversion.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2108,
+      "sha256": "389a81f4436fb08e1d34d3dc8f425ed0bf7d0ccb52df490ae64a5c1ea3803213"
+    },
+    {
+      "path": "src/music-domain/chord-quality.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 3426,
+      "sha256": "6060014f15255ae772c1612eb4504d9c91d269bcd7f076371c7911135f7bc953"
+    },
+    {
+      "path": "src/music-domain/chord-quality.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2141,
+      "sha256": "029ed0eda259eb504015fd66df9b5be900556df3ef37ed12631c46e23ba25b5d"
+    },
+    {
+      "path": "src/music-domain/chord-voicing.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 7278,
+      "sha256": "d95534372fa73bf112f7f434f90b96db2173c6bee0c3c74431b5db39552e4b21"
+    },
+    {
+      "path": "src/music-domain/chord-voicing.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4078,
+      "sha256": "8a5745d0e631034d09f998ccc0884e9d7ed5e4a38f246119a53500e0f074b49c"
+    },
+    {
+      "path": "src/music-domain/chord.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4126,
+      "sha256": "0104dd9b71da14bdcadacf00395e78be091d04c79fef42d3f882e8a105a956ad"
+    },
+    {
+      "path": "src/music-domain/chord.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 1333,
+      "sha256": "ec6ca918c0bd8044f420461dac0ddab0d75e547e7ce4fcf7611056bd1e347677"
+    },
+    {
+      "path": "src/music-domain/component-seed.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4167,
+      "sha256": "e6eb6dd5dae5ac788e92da36554db837cc8f1586087639e7a9a6027805f72381"
+    },
+    {
+      "path": "src/music-domain/component-seed.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4460,
+      "sha256": "e92d654b160fab62835ebad380ac5c4e8e8c99e3e76685f3601cd79aa7b0377f"
+    },
+    {
+      "path": "src/music-domain/composition-intent.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 9338,
+      "sha256": "7554881337d553f23fb100eaa6c4f0b43eb98389b20c9429543bdf0ce127555a"
+    },
+    {
+      "path": "src/music-domain/composition-intent.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2776,
+      "sha256": "bbe771b5276f791d49309108f41f1ed9d0df461c6a218e6d0854e8c6db537931"
+    },
+    {
+      "path": "src/music-domain/dependency-boundary.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 1440,
+      "sha256": "da0bb79b7b9de419f1258f635c9811606e830678837b79b101c5187d952296cc"
+    },
+    {
+      "path": "src/music-domain/harmony-progression-internal.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4313,
+      "sha256": "df25fcbc8e47bf98dafc057d756da3ac14d1316107fb9e04cf313f586ab4fee2"
+    },
+    {
+      "path": "src/music-domain/harmony.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 31355,
+      "sha256": "650d1a4baf8a24a199c700a99bb8e283325bad4aa23f8f30706820e369f61cd5"
+    },
+    {
+      "path": "src/music-domain/harmony.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 21596,
+      "sha256": "1aca0fb5343810b686c5bf21a963b65dddb9ffd0160dd64082ddf43bc51d51b5"
+    },
+    {
+      "path": "src/music-domain/index.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 1388,
+      "sha256": "1199b374e22b78c38d8fc18538324389a8864c6aa026dfcb28707925a2730ef9"
+    },
+    {
+      "path": "src/music-domain/interval.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4841,
+      "sha256": "88a90d3ba80e313b5cfd4de08c8abba6711859384b62fe605f9834d117e229ee"
+    },
+    {
+      "path": "src/music-domain/interval.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 3113,
+      "sha256": "a27bc16d79855b7357270c1f8c4075e4713b34ab61284f68c496bc3c7afad47b"
+    },
+    {
+      "path": "src/music-domain/key.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 3790,
+      "sha256": "93c9afdf5c15b1e36d402e77fe80ecfdf1e44906a1feec386c39768e8b60d38f"
+    },
+    {
+      "path": "src/music-domain/key.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 1689,
+      "sha256": "3b663ab464c0e2fa47e8006eaaafea51bcbbfdf60332bf03d9dc741e3135e21a"
+    },
+    {
+      "path": "src/music-domain/musical-time.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 9233,
+      "sha256": "30bd5bf3dbc3e489880b60c48f768706d7891c4959fb0c0ccf62858498e29661"
+    },
+    {
+      "path": "src/music-domain/musical-time.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 12276,
+      "sha256": "7b0dc5e47f7250a18d380fc4eecad49ee0035464eed27da2258553d2b9fb2747"
+    },
+    {
+      "path": "src/music-domain/pitch.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4395,
+      "sha256": "294eb265012631dd847298fb125cce5cf8632dc343f15f4b0bbd418d637a733d"
+    },
+    {
+      "path": "src/music-domain/pitch.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 3205,
+      "sha256": "9c39c9caa204eac2c2ea92291e3f18961dbdd74402791eb228540afaf46d5711"
+    },
+    {
+      "path": "src/music-domain/prng.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 3068,
+      "sha256": "38a7133f62124881a82992ab92cc59a3fb06b4f7e82e24127482826bc10ab635"
+    },
+    {
+      "path": "src/music-domain/prng.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2262,
+      "sha256": "c3f9e17e4ddf909c3b1771ef50562065b013a624da858ae4af377635c4d58108"
+    },
+    {
+      "path": "src/music-domain/scale.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2472,
+      "sha256": "6f48ef3c3eb98a6d222f366ad385758842ea695a77d121a90d3079a606d0e941"
+    },
+    {
+      "path": "src/music-domain/scale.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 4220,
+      "sha256": "5d2f46f1584965b20037f4e74127ec6a92f2d453196b42965b8cd8286c4b5f1c"
+    },
+    {
+      "path": "src/music-domain/weighted-choice.test.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 8931,
+      "sha256": "8804d950c292d2086c938f6f2fb75c40a2b3a71bf63466440fa0fce98a6c6054"
+    },
+    {
+      "path": "src/music-domain/weighted-choice.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 2706,
+      "sha256": "41315622c0d5fb217f31e8ae1937792ccf0ccaf343888c72c865ef8a3965e19e"
+    },
+    {
+      "path": "vitest.config.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 295,
+      "sha256": "87801421377f06d5d826247d4c87bb74ef7ddfe393a76d43c9a8f6dc0741a864"
+    },
+    {
+      "path": "vitest.setup.ts",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 166,
+      "sha256": "25440be8dd96559803d4eb6a9755661aae74f6ae5db421afb84f87f39fa234a0"
+    }
+  ],
+  "inventoryIdentity": {
+    "historicalCaptureInventory": "Original Windows capture inventory: 61 tracked-file checkout byte identities and one generated source-record artifact identity; historical values are preserved verbatim.",
+    "trackedSourceBlobInventory": "Portable tracked-source identities: raw Git blob bytes at each explicit immutable commit/path; excludes the generated source-record artifact.",
+    "sourceRecords": "Exact generated-artifact raw-byte identity, separate from tracked-source Git blob identity.",
+    "historicalAcceptance": "The original accepted/frozen manifest remains recoverable at commit 8a8dd3f102367f9c58ac995bc0e16fe9c4e0279b; this corrected manifest is a candidate pending exact-head review and Product Owner re-acceptance/re-freeze."
+  }
 }
