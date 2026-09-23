@@ -1,0 +1,219 @@
+{
+  "schema": "nightdrive.first-playable-oracle-second-implementation.v1",
+  "status": "CANDIDATE EVIDENCE",
+  "candidateOraclePath": "docs/reviews/FIRST_PLAYABLE_CANONICAL_ORACLE.json",
+  "implementation": {
+    "api": "System.Security.Cryptography.SHA256.HashData",
+    "encoding": "System.Text.UTF8Encoding(false)",
+    "powershellCore": "7.6.3",
+    "dotNet": "10.0.9",
+    "scriptPath": "src/evaluation/first-playable-oracle-second-implementation.ps1"
+  },
+  "command": "pwsh -NoProfile -File src/evaluation/first-playable-oracle-second-implementation.ps1 -InputPath docs/reviews/FIRST_PLAYABLE_CANONICAL_ORACLE.json -OutputPath docs/reviews/FIRST_PLAYABLE_ORACLE_RECOMPUTATION.json -CandidateOraclePath docs/reviews/FIRST_PLAYABLE_CANONICAL_ORACLE.json",
+  "vectors": [
+    {
+      "vectorId": "FP-01",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 2701,
+        "resultHashInput": 5174,
+        "canonical": 5254
+      },
+      "componentHashes": {
+        "harmony": "c9b2c0ac4114b7337b4ad81922cada525866f9d2925d8571618437803e8eddb8",
+        "bass": "9b22b2c9cf750441803ca46e654861dbae0528fadc1e31e6315838f1eaaa2454",
+        "arpeggiator": "e9c688f98e22277b1eb9c13e1513a1a2b6b3b5b61a089fb44f6135c852c2b98d"
+      },
+      "resultHash": "38cb2342d7317ec9372f3fe72473b142ac708c45394ebfa1f9c71835c1e54011",
+      "canonicalUtf8Sha256": "98b1886f170cfd291748d1a206a86bf5b0915dad75138a092e379abb17eb3b58"
+    },
+    {
+      "vectorId": "FP-02",
+      "utf8ByteLengths": {
+        "harmony": 1508,
+        "bass": 469,
+        "arpeggiator": 2701,
+        "resultHashInput": 5155,
+        "canonical": 5235
+      },
+      "componentHashes": {
+        "harmony": "4fed2e16df2b04719e90db5b12c2182f1aafc3b9da9cadcdbee9be37f82a8f0a",
+        "bass": "70aa34cc8572cdd896f845a19491c06dd17fac60dc020318904ec0afa1490071",
+        "arpeggiator": "f0ac3cbf1f047dc17826562b9c6e7524f19a7e2e53250398d80eb56a9cb13839"
+      },
+      "resultHash": "263e014864a3bf2df0cd6bdf71389a211a7162f68914a296b3374d13f18ce6fc",
+      "canonicalUtf8Sha256": "8b946aeeb7a2b68e4748c3acf181129a90733f7857a173f257370023139c1f03"
+    },
+    {
+      "vectorId": "FP-03",
+      "utf8ByteLengths": {
+        "harmony": 1506,
+        "bass": 469,
+        "arpeggiator": 1894,
+        "resultHashInput": 4340,
+        "canonical": 4420
+      },
+      "componentHashes": {
+        "harmony": "0e6827692e901396b9648555e5cc8035251d8fe0d966e50e719cea490badb92b",
+        "bass": "e7a51562958e73e7767daaaa494af08caa792cb1a3f3c73246d8e41d47fd0d13",
+        "arpeggiator": "e6b9b31560c079aa3f1bd792cce4b124e7f48eeda521fbcdb6bf9b6fc5bab6bf"
+      },
+      "resultHash": "281cec267deaf0afb965c01d85495fd1428b5935a5c148f951ed236ab4858cd7",
+      "canonicalUtf8Sha256": "4f5f248ece5509c32d663165770411de5f35b2be1dfad3c7c4588e42910feca4"
+    },
+    {
+      "vectorId": "FP-04",
+      "utf8ByteLengths": {
+        "harmony": 1515,
+        "bass": 469,
+        "arpeggiator": 1890,
+        "resultHashInput": 4355,
+        "canonical": 4435
+      },
+      "componentHashes": {
+        "harmony": "6f5fb28a5e3d37ce5b851e478b3df2700fa621d7d1bfb03b66414a2fe7dd0993",
+        "bass": "958602f82559051b250423c919f5a904824ff62d74799fd5ab83f6dd642a20d9",
+        "arpeggiator": "a4b3dbe81e4471be78ddfaec0cfbbcc43650f569b7b62904d8a0e9567290dead"
+      },
+      "resultHash": "7281120946cc7a34be0b33c9c2a454a594c794d3a04e2d5bbcaf073d28c8eadc",
+      "canonicalUtf8Sha256": "8df6d33a4bd8f5a1dac326ada04ff5e6db67afc1f1d852be6b6631c6dbced0b6"
+    },
+    {
+      "vectorId": "FP-05",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 2701,
+        "resultHashInput": 5174,
+        "canonical": 5254
+      },
+      "componentHashes": {
+        "harmony": "ba2713d2751ba0afac0b7d5c867f6ea7fdc5f63cdb6881d435be6808405d46ef",
+        "bass": "3d606b8c948a93825ef12bbfd6ffc3f0f1fe5cd2d2a2005b79368414c07c3b25",
+        "arpeggiator": "7ba89b5c984cc72ac16b843b83562c1c65066f504e374292d3e986dc6af37ed7"
+      },
+      "resultHash": "4c64e66b596e53144d0e1741f7e333654bbaaa94732de6085d3461b772506107",
+      "canonicalUtf8Sha256": "4c1013581f2a639d9f3c60a0982424e6cb4a44e2449fab737424854fe858f620"
+    },
+    {
+      "vectorId": "FP-06",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 5131,
+        "resultHashInput": 7613,
+        "canonical": 7693
+      },
+      "componentHashes": {
+        "harmony": "c9b2c0ac4114b7337b4ad81922cada525866f9d2925d8571618437803e8eddb8",
+        "bass": "9b22b2c9cf750441803ca46e654861dbae0528fadc1e31e6315838f1eaaa2454",
+        "arpeggiator": "8ad7fc900ba70c417e0547683a99334e1112a80e9b2fbbaa3cad45d88389f311"
+      },
+      "resultHash": "ea985823b2ade607a95a6867769b575b1379a969979ba5576be5293253285364",
+      "canonicalUtf8Sha256": "b9fa8599704a33ac45d71dec1a73ef52cd04190b93e36988ce7fdef2c66c3e6b"
+    },
+    {
+      "vectorId": "FP-07",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 6752,
+        "resultHashInput": 9228,
+        "canonical": 9308
+      },
+      "componentHashes": {
+        "harmony": "c9b2c0ac4114b7337b4ad81922cada525866f9d2925d8571618437803e8eddb8",
+        "bass": "9b22b2c9cf750441803ca46e654861dbae0528fadc1e31e6315838f1eaaa2454",
+        "arpeggiator": "e2b25e5e5304eee3fde2b6c9c09d16f588d346b67b54b2bdd30df98bfdf03602"
+      },
+      "resultHash": "6300903f0722624add785528dc234eef0387086aba6f2395b106ecc89ff6b642",
+      "canonicalUtf8Sha256": "cd987d939f144c7c8cece46aff126be2e6ca973a743a21a88e244251088286de"
+    },
+    {
+      "vectorId": "FP-08",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 2701,
+        "resultHashInput": 5176,
+        "canonical": 5256
+      },
+      "componentHashes": {
+        "harmony": "c9b2c0ac4114b7337b4ad81922cada525866f9d2925d8571618437803e8eddb8",
+        "bass": "9b22b2c9cf750441803ca46e654861dbae0528fadc1e31e6315838f1eaaa2454",
+        "arpeggiator": "d60a336ae94a586f83e74f538653ba314a5aa66129fe02c646d89b02ba812dd0"
+      },
+      "resultHash": "e7cebed01fd6cb518df1635bdb3cb2f161aa78783e83a9c486db8b6d0fe02a82",
+      "canonicalUtf8Sha256": "58d0939d2ab69a0093a6c7eb9bd6b1a9690ec4bf0da0e5ea68ad1ba3cbee8144"
+    },
+    {
+      "vectorId": "FP-09",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 1883,
+        "arpeggiator": 2701,
+        "resultHashInput": 6592,
+        "canonical": 6672
+      },
+      "componentHashes": {
+        "harmony": "c9b2c0ac4114b7337b4ad81922cada525866f9d2925d8571618437803e8eddb8",
+        "bass": "1b81d4d93e213ce41c47e8577d66c1148192f32902ba88ce08d9ef901b391202",
+        "arpeggiator": "e9c688f98e22277b1eb9c13e1513a1a2b6b3b5b61a089fb44f6135c852c2b98d"
+      },
+      "resultHash": "0f66a86c3735e55236e3e8c14f9f21104a94cfba3688e548df3c4c2c7a2ef55d",
+      "canonicalUtf8Sha256": "b2efa1ca9a9b2f72738ac2784ce9271bf37cb1bbdc5cb2f50c0a9f1a0e98bbd2"
+    },
+    {
+      "vectorId": "FP-10",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 2701,
+        "resultHashInput": 5174,
+        "canonical": 5254
+      },
+      "componentHashes": {
+        "harmony": "c9b2c0ac4114b7337b4ad81922cada525866f9d2925d8571618437803e8eddb8",
+        "bass": "1d4d51d62d60dfaf6b8a7451c39820285f8eb3f1d38b3d625658f64bbe971bcb",
+        "arpeggiator": "e9c688f98e22277b1eb9c13e1513a1a2b6b3b5b61a089fb44f6135c852c2b98d"
+      },
+      "resultHash": "01bed4b87f77e29f8a0d2a2a461528e5399ac6d90021934cae6e80ea68a06631",
+      "canonicalUtf8Sha256": "eaa8c0fb3a661f949c472963ebb0b51037999d29bf3797796a2b9c2fb52ff748"
+    },
+    {
+      "vectorId": "FP-11",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 2701,
+        "resultHashInput": 5174,
+        "canonical": 5254
+      },
+      "componentHashes": {
+        "harmony": "c9b2c0ac4114b7337b4ad81922cada525866f9d2925d8571618437803e8eddb8",
+        "bass": "9b22b2c9cf750441803ca46e654861dbae0528fadc1e31e6315838f1eaaa2454",
+        "arpeggiator": "e9c688f98e22277b1eb9c13e1513a1a2b6b3b5b61a089fb44f6135c852c2b98d"
+      },
+      "resultHash": "69be5a7fc4ac6fd94b605fa345a14c60ee78d628824aba62e0cb12258db6e560",
+      "canonicalUtf8Sha256": "735032b4d5154346d04697da06d08f9721b85ae8e33f017768a39e57fda8edc1"
+    },
+    {
+      "vectorId": "FP-12",
+      "utf8ByteLengths": {
+        "harmony": 1522,
+        "bass": 469,
+        "arpeggiator": 2701,
+        "resultHashInput": 5174,
+        "canonical": 5254
+      },
+      "componentHashes": {
+        "harmony": "e2d5e9516a89f4e6fc4f5801de107b13e01b61a33787084a8657c13caeb0d1ba",
+        "bass": "3e803474a8277b09134df15bf99f0d99f44862fe22b7605e3ceb1087ae6fcd87",
+        "arpeggiator": "fda8a6d44edbc36f309c90e7d150167853717e4d874b3a8a41bbfd964822a113"
+      },
+      "resultHash": "e2dcf31687d8cd477406511d16d5fa4a3ea93c3450b78c87524c61597e9c5a2e",
+      "canonicalUtf8Sha256": "f96565e12a0fca4e237ce75f0b426cecaf0b46fc1059fc8668cbf52af18e8299"
+    }
+  ]
+}
