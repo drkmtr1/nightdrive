@@ -1,3 +1,4 @@
+/.gitattributes text eol=lf
 /docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json text eol=lf
 /docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json text eol=lf
 /src/evaluation/first-playable-source-capture-runner.test.ts text eol=lf
@@ -6,3 +7,12 @@
 /src/music-domain/dependency-boundary.test.ts text eol=lf
 /src/music-domain/scale.test.ts text eol=lf
 /src/music-domain/scale.ts text eol=lf
+/src/evaluation/first-playable-reference-vectors.ts text eol=lf
+/src/evaluation/first-playable-reference-vectors.test.ts text eol=lf
+/src/evaluation/first-playable-reference-independence.test.ts text eol=lf
+/src/evaluation/first-playable-reference-runner.test.ts text eol=lf
+/src/evaluation/first-playable-reference-production-comparison.test.ts text eol=lf
+/src/evaluation/first-playable-oracle-second-implementation.ps1 text eol=lf
+/docs/reviews/FIRST_PLAYABLE_REFERENCE_MANIFEST.json text eol=lf
+/docs/reviews/FIRST_PLAYABLE_CANONICAL_ORACLE.json text eol=lf
+/docs/reviews/FIRST_PLAYABLE_ORACLE_RECOMPUTATION.json text eol=lf
