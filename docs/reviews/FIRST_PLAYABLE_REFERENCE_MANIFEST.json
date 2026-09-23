@@ -1,0 +1,1701 @@
+{
+  "schema": "nightdrive.first-playable-reference-manifest.v1",
+  "status": "ACCEPTED/FROZEN",
+  "acceptedMethodCommit": "eca89a990dc132a99f45fa88f05b96ebb8286ec8",
+  "sourceRuntimeInputCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+  "captureToolCommit": "a72d75c6f3fcfaa0aacdaa1b8b65aaa7a7342fd3",
+  "sourceIdentity": {
+    "manifestPath": "docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json",
+    "manifestByteLength": 27554,
+    "manifestSha256": "b024ccc2e4b4507cee2614f86a117836817c91e030bc5311a98d06a4264202f1",
+    "recordsPath": "docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json",
+    "recordsByteLength": 124275,
+    "recordsSha256": "3a067218a0dd9d992e236ccff5fab839fa8c14b832c3436718453f305fda1946",
+    "vectorCount": 12,
+    "vectorFingerprintSha256": "bb2c45ed2590e257cac659bfa01e4fc84520c019f87e469f0a7e566fcb0c97a8",
+    "inventoryCount": 62,
+    "inventoryVerified": true,
+    "manifestCommit": "e4ee4515963ec180df2db17772544b0f9fafaf8a",
+    "manifestIntegratedCommit": "f5fb2df0d840b18b72c6a67ed5cd9cd0a194f409",
+    "manifestGitBlobOid": "92480a972f45cc0b929e5809ee6b400b3a5fcb22",
+    "historicalSupersededBinding": {
+      "status": "Pre-ADR-024 source-manifest identity; retained as historical PR #184 binding, superseded only as the current source-manifest binding.",
+      "manifestStatus": "ACCEPTED/FROZEN",
+      "path": "docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json",
+      "commit": "8a8dd3f102367f9c58ac995bc0e16fe9c4e0279b",
+      "byteLength": 12255,
+      "sha256": "5f940d12e59b49e2aaa34c59e4443c3f31c1bb1ebf0f6c0fb42e9bf9311454c7",
+      "gitBlobOid": "d487fe63de9d8442dd74d15c17e221d080c73673"
+    },
+    "recordsCommit": "8a8dd3f102367f9c58ac995bc0e16fe9c4e0279b",
+    "recordsGitBlobOid": "3a97ed6017321ba0237837a21013eb524269cee9",
+    "inventoryCountMeaning": "Preserved historical source-manifest capture inventory count (62 entries: 61 tracked checkout observations plus one generated source-record artifact); the corrected portable source-manifest trackedSourceBlobInventory contains 61 rows.",
+    "trackedSourceBlobInventoryCount": 61
+  },
+  "buildVsBuy": {
+    "classification": "Mixed",
+    "nightdriveOwned": "Projection semantics, key/array ordering, primitive wire embeddings, provenance, component hash domains, result self-exclusion, and oracle schema.",
+    "commodity": "JSON.stringify, UTF-8, SHA-256.",
+    "selection": "Evidence-local TypeScript representation plus node:crypto and existing locked test tooling; no new dependency."
+  },
+  "referenceImplementation": {
+    "identityBasis": "Each tracked repository source/tool file is identified by slash-relative path, explicit immutable commit, raw Git-blob byte length, and SHA-256 in trackedSourceBlobInventory; Git blob OIDs are supplementary. Historical checkout bytes and installed/platform tools are recorded separately.",
+    "referenceCommit": "16f507a159e5b27de548349dda1432af166914d6",
+    "toolFiles": [
+      "src/evaluation/first-playable-reference-vectors.ts",
+      "src/evaluation/first-playable-reference-vectors.test.ts",
+      "src/evaluation/first-playable-reference-independence.test.ts",
+      "src/evaluation/first-playable-reference-runner.test.ts",
+      "src/evaluation/first-playable-reference-production-comparison.test.ts",
+      "src/evaluation/first-playable-oracle-second-implementation.ps1"
+    ]
+  },
+  "derivation": {
+    "manifestPreparation": {
+      "command": "Get-FileHash -LiteralPath docs/reviews/FIRST_PLAYABLE_REFERENCE_MANIFEST.json -Algorithm SHA256",
+      "sequence": "Finalize and formatter-check this manifest first, then compute SHA-256 over its exact raw bytes with the command above and pass this unchanged manifest path to the reference runner. Do not place the reference-manifest digest or the oracle digest in this manifest."
+    },
+    "command": "$manifestPath = 'docs/reviews/FIRST_PLAYABLE_REFERENCE_MANIFEST.json'; $outputPath = 'docs/reviews/FIRST_PLAYABLE_CANONICAL_ORACLE.json'; if (Test-Path -LiteralPath $outputPath) { throw 'Output path must be new; refusing to overwrite an existing candidate.' }; $env:FIRST_PLAYABLE_REFERENCE_OUTPUT = $outputPath; $env:FIRST_PLAYABLE_REFERENCE_MANIFEST_INPUT = $manifestPath; & C:\\Users\\WILLI\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe node_modules/vitest/vitest.mjs run src/evaluation/first-playable-reference-runner.test.ts --reporter=verbose; $runnerExit = $LASTEXITCODE; Remove-Item Env:FIRST_PLAYABLE_REFERENCE_OUTPUT -ErrorAction SilentlyContinue; Remove-Item Env:FIRST_PLAYABLE_REFERENCE_MANIFEST_INPUT -ErrorAction SilentlyContinue; if ($runnerExit -ne 0) { exit $runnerExit }",
+    "outputContract": {
+      "encoding": "UTF-8 without BOM",
+      "lineEndings": "LF",
+      "terminalNewline": "Exactly one LF",
+      "jsonFormatting": "Two-space indentation and required outer evidence field order, emitted directly by JSON.stringify(candidate, null, 2) followed by one LF.",
+      "postGenerationFormatter": "Check-only; it must not modify candidate oracle bytes."
+    },
+    "provenanceCorrection": {
+      "priorRecordedProcedure": "The prior derivation command appended Biome format --write after the reference runner.",
+      "directOutputComparison": "The runner was invoked at a separate new output path with the then-final reference manifest explicitly supplied through FIRST_PLAYABLE_REFERENCE_MANIFEST_INPUT; its bytes were compared byte-for-byte with the candidate oracle.",
+      "result": "The output was identical at 251744 bytes, proving the formatter invocation was a byte-preserving no-op. The corrected derivation procedure omits that mutating formatter."
+    },
+    "shell": "PowerShell",
+    "node": {
+      "version": "v24.19.0",
+      "platform": "win32",
+      "architecture": "arm64",
+      "executable": "C:\\Users\\WILLI\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe"
+    },
+    "packageManager": {
+      "declared": "npm@11.19.0",
+      "invoked": false
+    },
+    "vitest": "5.0.0",
+    "formatter": "Biome 2.5.12",
+    "dependencyGraphParser": "es-module-lexer@2.3.2 (test-only; already present in the package lock)"
+  },
+  "secondImplementation": {
+    "scriptPath": "src/evaluation/first-playable-oracle-second-implementation.ps1",
+    "api": "System.Security.Cryptography.SHA256.HashData",
+    "encoding": "System.Text.UTF8Encoding(false)",
+    "powershellCore": "7.6.3",
+    "dotNet": "10.0.9",
+    "reportPath": "docs/reviews/FIRST_PLAYABLE_ORACLE_RECOMPUTATION.json",
+    "reportByteLength": 9074,
+    "reportSha256": "6e7206ef07b3b922f7f2ecf625a383dff20f656f79f25bc06016c51374d43ad1",
+    "vectorsRecomputed": 12,
+    "allFiveLengthsAndDigestsMatch": true
+  },
+  "sourceCoverage": {
+    "vectors": [
+      {
+        "vectorId": "FP-01",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 43,
+            "max": 48
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "b414c238ce395de4425b1d0f690fdede0c63712fc3e8e8d97c62265229710440"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "9a13fb4a82c46cb753229cc76131cb290c1e4770fd9d4fdbc7d88fd2809d7c5e"
+        }
+      },
+      {
+        "vectorId": "FP-02",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 49,
+            "max": 59
+          },
+          "projectionSha256": "5908b12a493d52878b71ad0aac8d318ea20df5b2db4ab3e36dcfa3faa4da3be9"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 38,
+            "max": 50
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "08868da2177722fad4767164cd08977253ee0755e507dd145e85013352bd3775"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 49,
+            "max": 55
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "42d36380e5d81ac25fcf1a314abef570d02feac41a9eea960ff44567814a8a42"
+        }
+      },
+      {
+        "vectorId": "FP-03",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 35,
+            "max": 47
+          },
+          "projectionSha256": "d704db3a08ccf7b4f00315944cc1ea9f74330019b57890572c5822282b73b087"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 40,
+            "max": 52
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "9e428f50c1c21fe5a373489e3424a656c93f7846ed78a390ee564f8815c74b5e"
+        },
+        "arpeggiator": {
+          "eventCount": 32,
+          "pitchSpan": {
+            "min": 35,
+            "max": 47
+          },
+          "startDurationPairs": [
+            [480, 480],
+            [1440, 480],
+            [2400, 480],
+            [3360, 480],
+            [4320, 480],
+            [5280, 480],
+            [6240, 480],
+            [7200, 480],
+            [8160, 480],
+            [9120, 480],
+            [10080, 480],
+            [11040, 480],
+            [12000, 480],
+            [12960, 480],
+            [13920, 480],
+            [14880, 480],
+            [15840, 480],
+            [16800, 480],
+            [17760, 480],
+            [18720, 480],
+            [19680, 480],
+            [20640, 480],
+            [21600, 480],
+            [22560, 480],
+            [23520, 480],
+            [24480, 480],
+            [25440, 480],
+            [26400, 480],
+            [27360, 480],
+            [28320, 480],
+            [29280, 480],
+            [30240, 480]
+          ],
+          "eventArraySha256": "c65948e31bea2eac87ef2f6d565331a52365c964cc4e482fb5c6c32a52a1627a"
+        }
+      },
+      {
+        "vectorId": "FP-04",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 38,
+            "max": 51
+          },
+          "projectionSha256": "5f097d3ba1ec87aa4d63f78e8354ef25d759e1a36877fac224456030d4b2e4bb"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 38,
+            "max": 43
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "aa9089fba188a39444932196e777c6d37257950076ab9dfb9f544a9ecbb38365"
+        },
+        "arpeggiator": {
+          "eventCount": 32,
+          "pitchSpan": {
+            "min": 38,
+            "max": 51
+          },
+          "startDurationPairs": [
+            [0, 240],
+            [960, 240],
+            [1920, 240],
+            [2880, 240],
+            [3840, 240],
+            [4800, 240],
+            [5760, 240],
+            [6720, 240],
+            [7680, 240],
+            [8640, 240],
+            [9600, 240],
+            [10560, 240],
+            [11520, 240],
+            [12480, 240],
+            [13440, 240],
+            [14400, 240],
+            [15360, 240],
+            [16320, 240],
+            [17280, 240],
+            [18240, 240],
+            [19200, 240],
+            [20160, 240],
+            [21120, 240],
+            [22080, 240],
+            [23040, 240],
+            [24000, 240],
+            [24960, 240],
+            [25920, 240],
+            [26880, 240],
+            [27840, 240],
+            [28800, 240],
+            [29760, 240]
+          ],
+          "eventArraySha256": "ebdd10557120fb6eece22a34dd1b5307581b6d49b64e723d33703f6cff384a13"
+        }
+      },
+      {
+        "vectorId": "FP-05",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 43,
+            "max": 48
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "b414c238ce395de4425b1d0f690fdede0c63712fc3e8e8d97c62265229710440"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "9a13fb4a82c46cb753229cc76131cb290c1e4770fd9d4fdbc7d88fd2809d7c5e"
+        }
+      },
+      {
+        "vectorId": "FP-06",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 43,
+            "max": 48
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "b414c238ce395de4425b1d0f690fdede0c63712fc3e8e8d97c62265229710440"
+        },
+        "arpeggiator": {
+          "eventCount": 96,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 120],
+            [240, 120],
+            [720, 120],
+            [960, 120],
+            [1200, 120],
+            [1680, 120],
+            [1920, 120],
+            [2160, 120],
+            [2640, 120],
+            [2880, 120],
+            [3120, 120],
+            [3600, 120],
+            [3840, 120],
+            [4080, 120],
+            [4560, 120],
+            [4800, 120],
+            [5040, 120],
+            [5520, 120],
+            [5760, 120],
+            [6000, 120],
+            [6480, 120],
+            [6720, 120],
+            [6960, 120],
+            [7440, 120],
+            [7680, 120],
+            [7920, 120],
+            [8400, 120],
+            [8640, 120],
+            [8880, 120],
+            [9360, 120],
+            [9600, 120],
+            [9840, 120],
+            [10320, 120],
+            [10560, 120],
+            [10800, 120],
+            [11280, 120],
+            [11520, 120],
+            [11760, 120],
+            [12240, 120],
+            [12480, 120],
+            [12720, 120],
+            [13200, 120],
+            [13440, 120],
+            [13680, 120],
+            [14160, 120],
+            [14400, 120],
+            [14640, 120],
+            [15120, 120],
+            [15360, 120],
+            [15600, 120],
+            [16080, 120],
+            [16320, 120],
+            [16560, 120],
+            [17040, 120],
+            [17280, 120],
+            [17520, 120],
+            [18000, 120],
+            [18240, 120],
+            [18480, 120],
+            [18960, 120],
+            [19200, 120],
+            [19440, 120],
+            [19920, 120],
+            [20160, 120],
+            [20400, 120],
+            [20880, 120],
+            [21120, 120],
+            [21360, 120],
+            [21840, 120],
+            [22080, 120],
+            [22320, 120],
+            [22800, 120],
+            [23040, 120],
+            [23280, 120],
+            [23760, 120],
+            [24000, 120],
+            [24240, 120],
+            [24720, 120],
+            [24960, 120],
+            [25200, 120],
+            [25680, 120],
+            [25920, 120],
+            [26160, 120],
+            [26640, 120],
+            [26880, 120],
+            [27120, 120],
+            [27600, 120],
+            [27840, 120],
+            [28080, 120],
+            [28560, 120],
+            [28800, 120],
+            [29040, 120],
+            [29520, 120],
+            [29760, 120],
+            [30000, 120],
+            [30480, 120]
+          ],
+          "eventArraySha256": "131558bd2add40d91b2042d34026390a5c5627b96ab79e1784a722ce323bf554"
+        }
+      },
+      {
+        "vectorId": "FP-07",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 43,
+            "max": 48
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "b414c238ce395de4425b1d0f690fdede0c63712fc3e8e8d97c62265229710440"
+        },
+        "arpeggiator": {
+          "eventCount": 128,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 120],
+            [240, 120],
+            [480, 120],
+            [720, 120],
+            [960, 120],
+            [1200, 120],
+            [1440, 120],
+            [1680, 120],
+            [1920, 120],
+            [2160, 120],
+            [2400, 120],
+            [2640, 120],
+            [2880, 120],
+            [3120, 120],
+            [3360, 120],
+            [3600, 120],
+            [3840, 120],
+            [4080, 120],
+            [4320, 120],
+            [4560, 120],
+            [4800, 120],
+            [5040, 120],
+            [5280, 120],
+            [5520, 120],
+            [5760, 120],
+            [6000, 120],
+            [6240, 120],
+            [6480, 120],
+            [6720, 120],
+            [6960, 120],
+            [7200, 120],
+            [7440, 120],
+            [7680, 120],
+            [7920, 120],
+            [8160, 120],
+            [8400, 120],
+            [8640, 120],
+            [8880, 120],
+            [9120, 120],
+            [9360, 120],
+            [9600, 120],
+            [9840, 120],
+            [10080, 120],
+            [10320, 120],
+            [10560, 120],
+            [10800, 120],
+            [11040, 120],
+            [11280, 120],
+            [11520, 120],
+            [11760, 120],
+            [12000, 120],
+            [12240, 120],
+            [12480, 120],
+            [12720, 120],
+            [12960, 120],
+            [13200, 120],
+            [13440, 120],
+            [13680, 120],
+            [13920, 120],
+            [14160, 120],
+            [14400, 120],
+            [14640, 120],
+            [14880, 120],
+            [15120, 120],
+            [15360, 120],
+            [15600, 120],
+            [15840, 120],
+            [16080, 120],
+            [16320, 120],
+            [16560, 120],
+            [16800, 120],
+            [17040, 120],
+            [17280, 120],
+            [17520, 120],
+            [17760, 120],
+            [18000, 120],
+            [18240, 120],
+            [18480, 120],
+            [18720, 120],
+            [18960, 120],
+            [19200, 120],
+            [19440, 120],
+            [19680, 120],
+            [19920, 120],
+            [20160, 120],
+            [20400, 120],
+            [20640, 120],
+            [20880, 120],
+            [21120, 120],
+            [21360, 120],
+            [21600, 120],
+            [21840, 120],
+            [22080, 120],
+            [22320, 120],
+            [22560, 120],
+            [22800, 120],
+            [23040, 120],
+            [23280, 120],
+            [23520, 120],
+            [23760, 120],
+            [24000, 120],
+            [24240, 120],
+            [24480, 120],
+            [24720, 120],
+            [24960, 120],
+            [25200, 120],
+            [25440, 120],
+            [25680, 120],
+            [25920, 120],
+            [26160, 120],
+            [26400, 120],
+            [26640, 120],
+            [26880, 120],
+            [27120, 120],
+            [27360, 120],
+            [27600, 120],
+            [27840, 120],
+            [28080, 120],
+            [28320, 120],
+            [28560, 120],
+            [28800, 120],
+            [29040, 120],
+            [29280, 120],
+            [29520, 120],
+            [29760, 120],
+            [30000, 120],
+            [30240, 120],
+            [30480, 120]
+          ],
+          "eventArraySha256": "8c1942365428d708dd2ee45254b6739dcc8dbd8342e001b84dc5672b8dc241a5"
+        }
+      },
+      {
+        "vectorId": "FP-08",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 43,
+            "max": 48
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "b414c238ce395de4425b1d0f690fdede0c63712fc3e8e8d97c62265229710440"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 39,
+            "max": 47
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "699bb6aac449b112777f06f8043f31389b681e8a66b0e9709d8b7c64eb0f1265"
+        }
+      },
+      {
+        "vectorId": "FP-09",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 32,
+          "pitchSpan": {
+            "min": 43,
+            "max": 48
+          },
+          "startDurationPairs": [
+            [0, 960],
+            [960, 960],
+            [1920, 960],
+            [2880, 960],
+            [3840, 960],
+            [4800, 960],
+            [5760, 960],
+            [6720, 960],
+            [7680, 960],
+            [8640, 960],
+            [9600, 960],
+            [10560, 960],
+            [11520, 960],
+            [12480, 960],
+            [13440, 960],
+            [14400, 960],
+            [15360, 960],
+            [16320, 960],
+            [17280, 960],
+            [18240, 960],
+            [19200, 960],
+            [20160, 960],
+            [21120, 960],
+            [22080, 960],
+            [23040, 960],
+            [24000, 960],
+            [24960, 960],
+            [25920, 960],
+            [26880, 960],
+            [27840, 960],
+            [28800, 960],
+            [29760, 960]
+          ],
+          "eventArraySha256": "126550a7c683996030edc7e421adca3889476de4b964409da0139daf4cc8c40f"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "9a13fb4a82c46cb753229cc76131cb290c1e4770fd9d4fdbc7d88fd2809d7c5e"
+        }
+      },
+      {
+        "vectorId": "FP-10",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 24,
+            "max": 34
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "7e05d52c2a2e86e29dc59250bae1956a8c606280bd685da372b84946431c4512"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "9a13fb4a82c46cb753229cc76131cb290c1e4770fd9d4fdbc7d88fd2809d7c5e"
+        }
+      },
+      {
+        "vectorId": "FP-11",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "f02bd66f3cc8a3fd8e94a5eb8a112ce58f768ca7905fb1aa75c581961f0b3d25"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 43,
+            "max": 48
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "b414c238ce395de4425b1d0f690fdede0c63712fc3e8e8d97c62265229710440"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "9a13fb4a82c46cb753229cc76131cb290c1e4770fd9d4fdbc7d88fd2809d7c5e"
+        }
+      },
+      {
+        "vectorId": "FP-12",
+        "harmony": {
+          "slotCount": 4,
+          "pitchSpan": {
+            "min": 36,
+            "max": 47
+          },
+          "projectionSha256": "6dbe0ec5405432f0a94e613e6433a994bc16654577dade625615db33e8898a88"
+        },
+        "bass": {
+          "eventCount": 4,
+          "pitchSpan": {
+            "min": 37,
+            "max": 47
+          },
+          "startDurationPairs": [[0, 7680], [7680, 7680], [15360, 7680], [23040, 7680]],
+          "eventArraySha256": "b5c33357cff5cb860953498b59356877b091487784f11e3cd5cb7cd4c5253bfc"
+        },
+        "arpeggiator": {
+          "eventCount": 48,
+          "pitchSpan": {
+            "min": 36,
+            "max": 59
+          },
+          "startDurationPairs": [
+            [0, 360],
+            [480, 360],
+            [1440, 360],
+            [1920, 360],
+            [2400, 360],
+            [3360, 360],
+            [3840, 360],
+            [4320, 360],
+            [5280, 360],
+            [5760, 360],
+            [6240, 360],
+            [7200, 360],
+            [7680, 360],
+            [8160, 360],
+            [9120, 360],
+            [9600, 360],
+            [10080, 360],
+            [11040, 360],
+            [11520, 360],
+            [12000, 360],
+            [12960, 360],
+            [13440, 360],
+            [13920, 360],
+            [14880, 360],
+            [15360, 360],
+            [15840, 360],
+            [16800, 360],
+            [17280, 360],
+            [17760, 360],
+            [18720, 360],
+            [19200, 360],
+            [19680, 360],
+            [20640, 360],
+            [21120, 360],
+            [21600, 360],
+            [22560, 360],
+            [23040, 360],
+            [23520, 360],
+            [24480, 360],
+            [24960, 360],
+            [25440, 360],
+            [26400, 360],
+            [26880, 360],
+            [27360, 360],
+            [28320, 360],
+            [28800, 360],
+            [29280, 360],
+            [30240, 360]
+          ],
+          "eventArraySha256": "71aa8c8c19b2fc879a2e7610e55957ced6e3699f61ae5fc181fe421e9e7274c2"
+        }
+      }
+    ],
+    "harmonyDistinctProjectionCount": 5,
+    "arpeggiatorDistinctTimingPatternCount": 5,
+    "arpeggiatorDistinctTimingPatternSha256": [
+      "9276368eea0566ce87a5a476b27673f2fa25ed604a899d7f486ebc06319520b1",
+      "fc3306f0eadc3d26c671c9d930ca24746a0f466b23f267eb1e900b93861ff762",
+      "c99204e24ab588a906e457745d94e14788ae989cf159fc57cf210c45958f3ec9",
+      "2249f8e5b89fee0798d78587e9a76b1a8f874240ca265f5cc3aeb603d1bc200e",
+      "a4bc44b2607474732660947f48c9c8c7b516be4309beb69fc650942b25568194"
+    ]
+  },
+  "candidateOracle": {
+    "path": "docs/reviews/FIRST_PLAYABLE_CANONICAL_ORACLE.json",
+    "status": "CANDIDATE",
+    "identityBinding": "Git commit and separate review/freeze record; no oracle digest is embedded in this manifest."
+  },
+  "trackedSourceBlobInventory": [
+    {
+      "path": ".gitattributes",
+      "role": "checkout-configuration",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 1117,
+      "sha256": "da91616c08248f0f884560641f3da2bdfbf26701946205cf8c5a0aa63aad567a",
+      "gitBlobOid": "5041659fbdf741275c569fd32c105bdf4e18cb5c"
+    },
+    {
+      "path": ".nvmrc",
+      "role": "runtime-pin",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 8,
+      "sha256": "73fb1b615e2043a933be1c0895cde4358036acc28d785692509b822aa53c761f",
+      "gitBlobOid": "df6ae3370f9f89272d88629c442cf554d6c1f9fb"
+    },
+    {
+      "path": "docs/COMPOSITION_ENGINE.md",
+      "role": "source-contract-documentation",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 58189,
+      "sha256": "2d597a9cd8cc2d4769a73e05c6b22b4624e4390685b01b08683d0b50dec1f378",
+      "gitBlobOid": "a9e48ff08dd3ddb3c11e526a53d89a5f89b45fd8"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "role": "source-contract-documentation",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 48164,
+      "sha256": "2d126fb93443b0f0990faea0e445a93c91ca52685342cf5ac6412c472eca0a6d",
+      "gitBlobOid": "8c3351530d5a646cdc1b32d1066794c822886bd5"
+    },
+    {
+      "path": "docs/TESTING_STRATEGY.md",
+      "role": "source-contract-documentation",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 108560,
+      "sha256": "3585b0f57ebe726249193bf9be83ab985659ab4f04997fb3777fb82584b0d258",
+      "gitBlobOid": "e751e662745e0a0d861f380832fb93cf913707c2"
+    },
+    {
+      "path": "package-lock.json",
+      "role": "locked-toolchain-input",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 115931,
+      "sha256": "fa7944ad22e15150fb057bfa216857791e99ebbc9a57540f1f0fb5d9077dadbd",
+      "gitBlobOid": "737f41b5e4eac986604ef6bbab323314c1c0f119"
+    },
+    {
+      "path": "package.json",
+      "role": "locked-toolchain-input",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 1266,
+      "sha256": "0135f5290f55aef8466338575eaa5c22cf81d10044f3629351877c7332777ff1",
+      "gitBlobOid": "a09d6ed2b12dfc25f87ca41ced756e65b15b0697"
+    },
+    {
+      "path": "src/evaluation/first-playable-oracle-second-implementation.ps1",
+      "role": "independent-recomputation-script",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 3813,
+      "sha256": "02d863e103009a233e27417413f7636dfb5799ed09ea5a7e13365dd86e7ba202",
+      "gitBlobOid": "cd3a64de63b88d698c43ed4ccf03fa256e50e80b"
+    },
+    {
+      "path": "src/evaluation/first-playable-reference-independence.test.ts",
+      "role": "reference-test",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 4835,
+      "sha256": "c12bdc962c0099734e00108e84ee982de3873e0f1dc6aa50e66e09e0bbd2211a",
+      "gitBlobOid": "3a497bbcb52bd6e84dbb5259469b4687259055d0"
+    },
+    {
+      "path": "src/evaluation/first-playable-reference-production-comparison.test.ts",
+      "role": "reference-test",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 9961,
+      "sha256": "083ee5125914b4a07755bacc9168b40100b12fbe3f01abadd898973f5298ec59",
+      "gitBlobOid": "98edf0be0f7fca368647336286e3c02d57cf4ef3"
+    },
+    {
+      "path": "src/evaluation/first-playable-reference-runner.test.ts",
+      "role": "reference-test",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 1587,
+      "sha256": "555eea621b29a6ff6da7b9b5daea6ecdc3c27ca1f410fb7c805387925b735fd0",
+      "gitBlobOid": "ae2c8ab7b6b9c49f054af77c589659dc32986f29"
+    },
+    {
+      "path": "src/evaluation/first-playable-reference-vectors.test.ts",
+      "role": "reference-test",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 22155,
+      "sha256": "a926bba132ad976db2ff92efc301df45ca7967192be52313932f2c97c23a9fbf",
+      "gitBlobOid": "95564ac8c71dc9053d3c3bfd679fd69e211350fa"
+    },
+    {
+      "path": "src/evaluation/first-playable-reference-vectors.ts",
+      "role": "reference-implementation",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 28486,
+      "sha256": "e1e5b4e58d61b75e1db7f087440ea81baa774e2a8655f01f1b4c80c01fa325fa",
+      "gitBlobOid": "60b6152e8138bdefc92bff3a46ae3f88192577ae"
+    },
+    {
+      "path": "vitest.config.ts",
+      "role": "test-runner-configuration",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 295,
+      "sha256": "87801421377f06d5d826247d4c87bb74ef7ddfe393a76d43c9a8f6dc0741a864",
+      "gitBlobOid": "559d2f225ce5e4be4e5663e9017abe22fea62055"
+    },
+    {
+      "path": "vitest.setup.ts",
+      "role": "test-runner-configuration",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 166,
+      "sha256": "25440be8dd96559803d4eb6a9755661aae74f6ae5db421afb84f87f39fa234a0",
+      "gitBlobOid": "004761e544bc58d76fb478b0b4349ae426aab895"
+    }
+  ],
+  "generatedEvidenceArtifacts": [
+    {
+      "path": "docs/reviews/FIRST_PLAYABLE_ORACLE_RECOMPUTATION.json",
+      "role": "second-implementation recomputation report",
+      "lifecycle": "historical PR #184 candidate evidence; no separate acceptance state declared",
+      "commit": "16f507a159e5b27de548349dda1432af166914d6",
+      "byteLength": 9074,
+      "sha256": "6e7206ef07b3b922f7f2ecf625a383dff20f656f79f25bc06016c51374d43ad1",
+      "gitBlobOid": "f16f7274a2ca157a43c2c044d6903cf300cf8881"
+    },
+    {
+      "path": "docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json",
+      "role": "accepted/frozen upstream source manifest binding",
+      "lifecycle": "ACCEPTED/FROZEN",
+      "commit": "e4ee4515963ec180df2db17772544b0f9fafaf8a",
+      "integratedCommit": "f5fb2df0d840b18b72c6a67ed5cd9cd0a194f409",
+      "byteLength": 27554,
+      "sha256": "b024ccc2e4b4507cee2614f86a117836817c91e030bc5311a98d06a4264202f1",
+      "gitBlobOid": "92480a972f45cc0b929e5809ee6b400b3a5fcb22"
+    },
+    {
+      "path": "docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json",
+      "role": "upstream source-record artifact",
+      "lifecycle": "ACCEPTED/FROZEN",
+      "commit": "8a8dd3f102367f9c58ac995bc0e16fe9c4e0279b",
+      "byteLength": 124275,
+      "sha256": "3a067218a0dd9d992e236ccff5fab839fa8c14b832c3436718453f305fda1946",
+      "gitBlobOid": "3a97ed6017321ba0237837a21013eb524269cee9"
+    }
+  ],
+  "historicalCheckoutEvidence": {
+    "observation": {
+      "candidateCommit": "16f507a159e5b27de548349dda1432af166914d6",
+      "platform": "win32",
+      "architecture": "arm64",
+      "checkoutConfigurationPath": ".gitattributes",
+      "checkoutConfigurationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+      "checkoutConfigurationGitBlobOid": "5041659fbdf741275c569fd32c105bdf4e18cb5c",
+      "effectiveCoreAutocrlf": "not historically recorded",
+      "effectiveCoreEol": "not historically recorded",
+      "interpretation": "Recorded checkout bytes remain execution-environment evidence. Verified LF-to-CRLF byte expansion does not attribute a specific Git configuration cause."
+    },
+    "files": [
+      {
+        "path": ".gitattributes",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 1117,
+        "sha256": "da91616c08248f0f884560641f3da2bdfbf26701946205cf8c5a0aa63aad567a",
+        "portableBlobCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "portableBlobByteLength": 1117,
+        "portableBlobSha256": "da91616c08248f0f884560641f3da2bdfbf26701946205cf8c5a0aa63aad567a",
+        "matchesRawGitBlob": true,
+        "verifiedByteRelationship": "historical checkout bytes match raw Git blob bytes",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": ".nvmrc",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 9,
+        "sha256": "04d43a993a37e6543c8b1cc37d498fa4a10250034ab922207b1a6a1e41e216da",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 8,
+        "portableBlobSha256": "73fb1b615e2043a933be1c0895cde4358036acc28d785692509b822aa53c761f",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": true
+      },
+      {
+        "path": "docs/COMPOSITION_ENGINE.md",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 58559,
+        "sha256": "296c907a2211789f1769fd5449be0ef3e853fc465f22c49f88e3a58cb26ce0f9",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 58189,
+        "portableBlobSha256": "2d597a9cd8cc2d4769a73e05c6b22b4624e4390685b01b08683d0b50dec1f378",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": true
+      },
+      {
+        "path": "docs/DECISIONS.md",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 48510,
+        "sha256": "69af6f117ed09cdfe5684b7c6268764ff6ce0df591a881af73d77dc728d4f531",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 48164,
+        "portableBlobSha256": "2d126fb93443b0f0990faea0e445a93c91ca52685342cf5ac6412c472eca0a6d",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": "docs/TESTING_STRATEGY.md",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 108983,
+        "sha256": "96bec87399dfe87605f7aa1478ac55c143940d9b8dcafad92b2f0b4b690f781b",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 108560,
+        "portableBlobSha256": "3585b0f57ebe726249193bf9be83ab985659ab4f04997fb3777fb82584b0d258",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": true
+      },
+      {
+        "path": "package-lock.json",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 119483,
+        "sha256": "0dbb500f09abfea29c7d4aab2079f5f5df3956cece7cbb027e5acf1d86ed9464",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 115931,
+        "portableBlobSha256": "fa7944ad22e15150fb057bfa216857791e99ebbc9a57540f1f0fb5d9077dadbd",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": true
+      },
+      {
+        "path": "package.json",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 1311,
+        "sha256": "51a099b67a701106afee403196c62ab72f796bb81d123f643a25e9e5417c7e0f",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 1266,
+        "portableBlobSha256": "0135f5290f55aef8466338575eaa5c22cf81d10044f3629351877c7332777ff1",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": true
+      },
+      {
+        "path": "src/evaluation/first-playable-oracle-second-implementation.ps1",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 3813,
+        "sha256": "02d863e103009a233e27417413f7636dfb5799ed09ea5a7e13365dd86e7ba202",
+        "portableBlobCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "portableBlobByteLength": 3813,
+        "portableBlobSha256": "02d863e103009a233e27417413f7636dfb5799ed09ea5a7e13365dd86e7ba202",
+        "matchesRawGitBlob": true,
+        "verifiedByteRelationship": "historical checkout bytes match raw Git blob bytes",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": "src/evaluation/first-playable-reference-independence.test.ts",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 4835,
+        "sha256": "c12bdc962c0099734e00108e84ee982de3873e0f1dc6aa50e66e09e0bbd2211a",
+        "portableBlobCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "portableBlobByteLength": 4835,
+        "portableBlobSha256": "c12bdc962c0099734e00108e84ee982de3873e0f1dc6aa50e66e09e0bbd2211a",
+        "matchesRawGitBlob": true,
+        "verifiedByteRelationship": "historical checkout bytes match raw Git blob bytes",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": "src/evaluation/first-playable-reference-production-comparison.test.ts",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 9961,
+        "sha256": "083ee5125914b4a07755bacc9168b40100b12fbe3f01abadd898973f5298ec59",
+        "portableBlobCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "portableBlobByteLength": 9961,
+        "portableBlobSha256": "083ee5125914b4a07755bacc9168b40100b12fbe3f01abadd898973f5298ec59",
+        "matchesRawGitBlob": true,
+        "verifiedByteRelationship": "historical checkout bytes match raw Git blob bytes",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": "src/evaluation/first-playable-reference-runner.test.ts",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 1587,
+        "sha256": "555eea621b29a6ff6da7b9b5daea6ecdc3c27ca1f410fb7c805387925b735fd0",
+        "portableBlobCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "portableBlobByteLength": 1587,
+        "portableBlobSha256": "555eea621b29a6ff6da7b9b5daea6ecdc3c27ca1f410fb7c805387925b735fd0",
+        "matchesRawGitBlob": true,
+        "verifiedByteRelationship": "historical checkout bytes match raw Git blob bytes",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": "src/evaluation/first-playable-reference-vectors.test.ts",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 22155,
+        "sha256": "a926bba132ad976db2ff92efc301df45ca7967192be52313932f2c97c23a9fbf",
+        "portableBlobCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "portableBlobByteLength": 22155,
+        "portableBlobSha256": "a926bba132ad976db2ff92efc301df45ca7967192be52313932f2c97c23a9fbf",
+        "matchesRawGitBlob": true,
+        "verifiedByteRelationship": "historical checkout bytes match raw Git blob bytes",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": "src/evaluation/first-playable-reference-vectors.ts",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 28486,
+        "sha256": "e1e5b4e58d61b75e1db7f087440ea81baa774e2a8655f01f1b4c80c01fa325fa",
+        "portableBlobCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "portableBlobByteLength": 28486,
+        "portableBlobSha256": "e1e5b4e58d61b75e1db7f087440ea81baa774e2a8655f01f1b4c80c01fa325fa",
+        "matchesRawGitBlob": true,
+        "verifiedByteRelationship": "historical checkout bytes match raw Git blob bytes",
+        "acceptedSourceCaptureInventoryMatch": false
+      },
+      {
+        "path": "vitest.config.ts",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 309,
+        "sha256": "efa8b83bd376ae69852363b489310ea4100c412d288bdb72b605cf6cc0535675",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 295,
+        "portableBlobSha256": "87801421377f06d5d826247d4c87bb74ef7ddfe393a76d43c9a8f6dc0741a864",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": true
+      },
+      {
+        "path": "vitest.setup.ts",
+        "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+        "platform": "win32",
+        "architecture": "arm64",
+        "byteLength": 174,
+        "sha256": "c1e79eb224e7fcf3e3bd5530c54368b07b71620eb5736b976b1ce47c9c074b5f",
+        "portableBlobCommit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+        "portableBlobByteLength": 166,
+        "portableBlobSha256": "25440be8dd96559803d4eb6a9755661aae74f6ae5db421afb84f87f39fa234a0",
+        "matchesRawGitBlob": false,
+        "verifiedByteRelationship": "LF-to-CRLF expansion of the recorded raw Git blob exactly reproduces historical checkout length and SHA-256; historical effective Git configuration is not recorded",
+        "acceptedSourceCaptureInventoryMatch": true
+      }
+    ]
+  },
+  "installedToolEvidence": {
+    "observation": {
+      "candidateCommit": "16f507a159e5b27de548349dda1432af166914d6",
+      "platform": "win32",
+      "architecture": "arm64",
+      "node": {
+        "version": "v24.19.0",
+        "executablePath": "C:\\Users\\WILLI\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+        "executableByteLength": "not recorded",
+        "executableSha256": "not recorded",
+        "actualUse": "The historical derivation command invoked this executable."
+      },
+      "npm": {
+        "declaredPackageManager": "npm@11.19.0",
+        "invoked": false,
+        "executedVersion": "not recorded; npm was not invoked"
+      },
+      "shell": "PowerShell",
+      "powershellCoreVersion": "7.6.3",
+      "dotNetVersion": "10.0.9",
+      "platformQualification": "Historical Windows ARM64 candidate observation only; no Linux tool qualification or Linux executable identity is claimed."
+    },
+    "packageLock": {
+      "path": "package-lock.json",
+      "commit": "dcc796f4a5284ffbaff581d0937ac11b16f78249",
+      "byteLength": 115931,
+      "sha256": "fa7944ad22e15150fb057bfa216857791e99ebbc9a57540f1f0fb5d9077dadbd",
+      "gitBlobOid": "737f41b5e4eac986604ef6bbab323314c1c0f119"
+    },
+    "packages": [
+      {
+        "name": "@biomejs/biome",
+        "version": "2.5.12",
+        "packageLockResolved": "https://registry.npmjs.org/@biomejs/biome/-/biome-2.5.12.tgz",
+        "packageLockIntegrity": "sha512-Lw4VHZRebrReBBnlHa12JQjnIBm3JJAA55PDB9LbBVBF0q4RYphm6KfmIjqtPhf61MxZ5Q9KoK8R8x+7per5Aw==",
+        "actualToolEvidence": "Formatter Biome 2.5.12 is recorded; the prior procedure invoked format --write after the runner and direct output comparison showed the output bytes were unchanged.",
+        "files": [
+          {
+            "path": "node_modules/@biomejs/biome/bin/biome",
+            "byteLength": 2207,
+            "sha256": "7ffb4d217e5ddefcc19ca6afe76bb982f5eb36c9a124448105195fbcfc84bd77",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          },
+          {
+            "path": "node_modules/@biomejs/biome/package.json",
+            "byteLength": 1352,
+            "sha256": "e8c70a380a4f0bfdd738942b9394de4675b2bcc620c9e0a7220f0e429fca4332",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          }
+        ]
+      },
+      {
+        "name": "@biomejs/cli-win32-arm64",
+        "version": "2.5.12",
+        "packageLockResolved": "https://registry.npmjs.org/@biomejs/cli-win32-arm64/-/cli-win32-arm64-2.5.12.tgz",
+        "packageLockIntegrity": "sha512-b9vtoZFsuZt1pdjNwJvXl0f+BpayRzV008uS2+JpmwIKdSE2qdu4A/l04FESwLoou5g2E/Qlec0xwJydZplH+A==",
+        "actualToolEvidence": "Optional native Biome CLI package for the recorded Windows ARM64 host; historical formatter invocation is recorded, but the binary-resolution chain was not separately logged.",
+        "files": [
+          {
+            "path": "node_modules/@biomejs/cli-win32-arm64/biome.exe",
+            "byteLength": 64262656,
+            "sha256": "e0148babfa207b79bc9ed50c22479722e314ae07e989c9bdae9611cd3c6511bf",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          },
+          {
+            "path": "node_modules/@biomejs/cli-win32-arm64/package.json",
+            "byteLength": 373,
+            "sha256": "cc0d451516a83936f98893a013517ed3918e1590bf30e938cb4ba02cfb2b2431",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          }
+        ],
+        "os": ["win32"],
+        "cpu": ["arm64"],
+        "optional": true
+      },
+      {
+        "name": "es-module-lexer",
+        "version": "2.3.2",
+        "packageLockResolved": "https://registry.npmjs.org/es-module-lexer/-/es-module-lexer-2.3.2.tgz",
+        "packageLockIntegrity": "sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==",
+        "actualToolEvidence": "Test-only dependency-graph parser as recorded; no standalone executable invocation is claimed.",
+        "files": [
+          {
+            "path": "node_modules/es-module-lexer/dist/lexer.js",
+            "byteLength": 17811,
+            "sha256": "e0e77e4cb28bcbad6e8dd31499c0fa5f93285081b9da7c0ad5df823cfa62abed",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          },
+          {
+            "path": "node_modules/es-module-lexer/package.json",
+            "byteLength": 1756,
+            "sha256": "6ac33aba7ed35abf79f1bfa12f39563369cb2b5ffa25bd7b7982e9554c7de4af",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          },
+          {
+            "path": "node_modules/es-module-lexer/types/lexer.d.ts",
+            "byteLength": 6466,
+            "sha256": "a4bc676f3e73a1119af7c40dc94bc596fb9545748bba193670207e2d7f6cfa70",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          }
+        ]
+      },
+      {
+        "name": "vitest",
+        "version": "5.0.0",
+        "packageLockResolved": "https://registry.npmjs.org/vitest/-/vitest-5.0.0.tgz",
+        "packageLockIntegrity": "sha512-gpsMNoRhMjMktVxPtstOH4/PJuPyovVaMDr4oDilXaGH1EcqM2OE96SoHT2VIQ6fTGtTjqmHDrEu2X9RQiXf8Q==",
+        "actualToolEvidence": "The recorded derivation command invokes node_modules/vitest/vitest.mjs run src/evaluation/first-playable-reference-runner.test.ts --reporter=verbose.",
+        "files": [
+          {
+            "path": "node_modules/vitest/package.json",
+            "byteLength": 5445,
+            "sha256": "a4f269c689b346c33446feaa8adea6bc1c1bd35a21e12c9ffac74198687b0fbc",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          },
+          {
+            "path": "node_modules/vitest/vitest.mjs",
+            "byteLength": 43,
+            "sha256": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+            "observationCommit": "16f507a159e5b27de548349dda1432af166914d6",
+            "platform": "win32",
+            "architecture": "arm64"
+          }
+        ]
+      }
+    ]
+  }
+}
