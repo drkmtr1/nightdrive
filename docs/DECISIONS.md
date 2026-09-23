@@ -348,7 +348,7 @@ Human comparison must answer whether R1 improves perceived Energy activity/inten
 ## ADR-024 — First Playable evidence byte identity and cross-platform custody
 
 **Date:** 2026-09-22
-**Status:** Product Owner policy decision accepted; this documentation is a local review candidate, not yet reviewed or published. Corrective implementation and evidence acceptance remain separate gates.
+**Status:** Product Owner policy decision accepted and published/merged through PR #185. Corrective implementation and evidence acceptance remain separate gates.
 
 **Context:** The accepted First Playable source manifest records raw bytes from a Windows capture checkout, including CRLF bytes for tracked files whose Git blobs contain LF. The candidate reference inventory also includes a Windows ARM64 installed binary. Requiring a Linux checkout or installation to match those host-specific bytes conflates portable source identity, evidence of what executed, and artifact custody. The First Playable oracle remains a candidate; Stage 7 acceptance is unaffected.
 
