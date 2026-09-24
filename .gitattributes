@@ -1,4 +1,5 @@
 /docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json text eol=lf
+/docs/reviews/FIRST_PLAYABLE_REFERENCE_MANIFEST.json text eol=lf
 /docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json text eol=lf
 /src/evaluation/first-playable-source-capture-runner.test.ts text eol=lf
 /src/evaluation/first-playable-source-capture.ts text eol=lf
