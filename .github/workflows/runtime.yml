@@ -37,3 +37,15 @@ jobs:
           name: nightdrive-stage7-ac004-linux-${{ github.sha }}
           path: ${{ runner.temp }}/nightdrive-stage7-ac004-linux/stage7-ac004-linux-evidence.json
           if-no-files-found: error
+      - name: Execute Linux First Playable frozen qualification evidence
+        env:
+          FP_LINUX_EVIDENCE: "1"
+          FP_LINUX_OUTPUT_DIR: ${{ runner.temp }}/nightdrive-first-playable-linux
+        run: npm exec -- vitest run src/evaluation/first-playable-linux-evidence.test.ts --reporter=verbose
+      - name: Upload Linux First Playable evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightdrive-first-playable-linux-${{ github.sha }}
+          path: ${{ runner.temp }}/nightdrive-first-playable-linux/first-playable-linux-evidence.json
+          if-no-files-found: error
