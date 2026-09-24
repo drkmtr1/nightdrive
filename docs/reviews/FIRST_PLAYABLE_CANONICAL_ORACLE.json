@@ -1,5 +1,5 @@
 {
-  "status": "CANDIDATE",
+  "status": "ACCEPTED/FROZEN",
   "sourceManifestSha256": "b024ccc2e4b4507cee2614f86a117836817c91e030bc5311a98d06a4264202f1",
   "referenceManifestSha256": "087a23f06a1bbe5dd834b6c533de0c9a5aef9228c719667390d33458ac514a28",
   "vectors": [
