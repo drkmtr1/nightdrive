@@ -4,8 +4,9 @@
 
 Reusable, read-only engineering checkpoints for milestone-gated software
 projects. Reviews inspect evidence and report findings; they do **not**
-authorize implementation. Corrective work should be reviewed and
-authorized separately.
+implement corrections. After REVISE, ChatGPT may initiate a separate bounded,
+contract-determined correction under standing execution authority. A finding
+that exposes an unresolved consequential decision stops for Product Owner input.
 
 ## Core rules
 
@@ -349,7 +350,7 @@ for Next Phase, Practices to Preserve.
 
 ## Normal development
 
-`DEFINE/RESEARCH → DOCUMENT → SMALL IMPLEMENTATION TASK → TEST → REPORT → REVIEW → PASS/REVISE/BLOCK → NEXT AUTHORIZED TASK`
+`DEFINE/RESEARCH → DOCUMENT → SMALL IMPLEMENTATION TASK → TEST → REPORT → REVIEW → PASS/REVISE/BLOCK → NEXT REPOSITORY-ELIGIBLE BOUNDED TASK`
 
 ## Every \~3--5 meaningful milestones
 
@@ -403,9 +404,12 @@ Stop after recommending the review plan.
 
 After a review: independently verify substantive findings; reject false
 positives and preference-only findings; reconcile against authoritative
-requirements/architecture; issue PASS/REVISE/BLOCK; authorize only the
-smallest justified corrective task; validate it; review it before
-continuing.
+requirements/architecture; issue PASS/REVISE/BLOCK. REVISE may lead to the
+smallest separate contract-determined correction under standing execution
+authority; validate and review that correction before continuing. BLOCKED may
+lead to a separate, objectively determined prerequisite assessment or
+specification. Stop for Product Owner input when a consequential decision is
+unresolved.
 
 # Maintaining This Playbook
 

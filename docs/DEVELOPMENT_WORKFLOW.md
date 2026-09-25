@@ -16,15 +16,15 @@ flowchart LR
   V --> N[Recommend next bounded task]
 ```
 
-1. Confirm the authorized roadmap stage, requirement IDs, acceptance criteria, non-goals, and dependencies.
+1. Confirm repository eligibility for the bounded roadmap task, requirement IDs, acceptance criteria, non-goals, and dependencies.
 2. Inspect repository/status/branch/remotes and preserve unrelated work.
 3. Create a focused issue/task and branch. Record assumptions or blocking decisions.
 4. Make the smallest coherent change with documentation and tests.
 5. Run proportionate local/CI validation; do not weaken gates.
 6. Verify acceptance, failure states, UX, accessibility, security, data, and deployment impact.
-7. Open a reviewable PR with evidence; merge/deploy only when expressly authorized by task/workflow.
+7. After exact-head review passes, publish and merge through the accepted Git workflow when the reviewed tuple remains valid and required checks pass. Deployment remains subject to its own accepted policy and any unresolved consequential decision.
 8. Verify the resulting environment and observability when deployment is in scope.
-9. Report and stop. A recommendation is not permission to start another milestone.
+9. Report the completed bounded task. ChatGPT may initiate the next separately bounded task when repository truth already makes it eligible; a recommendation alone never establishes eligibility for another milestone or capability.
 
 ## Branches, commits, and reviews
 
@@ -42,4 +42,4 @@ The authoritative current register is [Dependencies](DEPENDENCIES.md). Dependenc
 
 ## Required task report
 
-Report: task completed; files modified; implementation summary; tests/results; acceptance verification; UX/accessibility verification; architecture/docs, Supabase, and deployment changes; branch; commit; push; assumptions; remaining risks/debt; recommended next smallest backlog task. Do not implement that recommendation automatically.
+Report: task completed; files modified; implementation summary; tests/results; acceptance verification; UX/accessibility verification; architecture/docs, Supabase, and deployment changes; branch; commit; push; assumptions; remaining risks/debt; recommended next smallest backlog task. Implement a subsequent bounded task only when repository truth independently establishes its eligibility.

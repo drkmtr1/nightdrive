@@ -2,12 +2,12 @@
 
 ## Before changing anything
 
-Read `AGENTS.md`, decisions, scope, requirements, acceptance criteria, and relevant domain contract. Inspect the full relevant tree, Git state/branch/remotes, existing code/tests/dependencies, and contradictory documentation. Inspect Supabase, Vercel, deployment, persistence, security, secrets/environment configuration, or other external-platform sources when the authorized task involves or may affect those boundaries; tasks unrelated to those systems do not require their inspection solely as ceremony. Preserve valid user work.
+Read `AGENTS.md`, decisions, scope, requirements, acceptance criteria, and relevant domain contract. Inspect the full relevant tree, Git state/branch/remotes, existing code/tests/dependencies, and contradictory documentation. Inspect Supabase, Vercel, deployment, persistence, security, secrets/environment configuration, or other external-platform sources when the current bounded task involves or may affect those boundaries; tasks unrelated to those systems do not require their inspection solely as ceremony. Preserve valid user work.
 
 ## Scope and authority
 
-- Work only on the explicitly assigned bounded task and authorized roadmap stage.
-- Do not scaffold ahead, provision services, deploy, install large models, or begin the next backlog item without authorization.
+- Work only on the current bounded task and repository-eligible roadmap scope.
+- Do not scaffold ahead, provision services, deploy, install large models, or begin a future capability before current coordination state and accepted roadmap scope identify it as eligible and its prerequisites are satisfied. A separately bounded next task may start under standing execution authority when repository truth establishes eligibility.
 - Ask only when a decision materially changes scope/risk and cannot be conservatively resolved.
 - Never invent requirements, mark provisional decisions accepted, or imply documentation equals implementation.
 

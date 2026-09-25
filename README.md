@@ -8,7 +8,7 @@ The Version 1 north star is one excellent workflow: create, audition, adjust, va
 
 Nightdrive's deterministic Version 1 music foundations and Stage 7 baseline evaluation evidence are recorded in the authoritative project documents. The public V2 runtime is accepted through PR #131; the [Product Owner acceptance record](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) records bounded R1/V2 acceptance after partial listening, not completion of the full comparison or Stage 7. See [Project State](PROJECT_STATE.md) for the active milestone and gate, and [Roadmap](docs/ROADMAP.md) for stage authorization.
 
-Later capabilities remain separately authorized by the roadmap, including broader theory, production workflows, persistence, AI, deployment, and future generation behavior.
+Later capabilities remain outside current repository eligibility until the current coordination state and accepted roadmap scope identify them as eligible and their prerequisites are satisfied, including broader theory, production workflows, persistence, AI, deployment, and future generation behavior.
 
 Start with:
 
@@ -51,4 +51,4 @@ Natural-language interpretation and explanation are separated from canonical mus
 
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md), [Development workflow](docs/DEVELOPMENT_WORKFLOW.md), and [Coding-agent rules](docs/CODING_AGENT_RULES.md). Work only within an explicitly authorized roadmap stage.
+Read [AGENTS.md](AGENTS.md), [Development workflow](docs/DEVELOPMENT_WORKFLOW.md), and [Coding-agent rules](docs/CODING_AGENT_RULES.md). Work only within a repository-eligible bounded roadmap task.
