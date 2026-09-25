@@ -111,7 +111,7 @@ The section is exactly four two-bar phrases at ticks `[0,7680)`, `[7680,15360)`,
 3. `harmony-aware-transposition`;
 4. `contour-preserving-response`.
 
-Phrase 1 establishes the selected rhythm template, fixed contour identity, and realized pitches. Phrase 2 repeats the exact motif form against its own Harmony. Phrase 3 re-anchors the same contour to its own Harmony and preserves Phrase 1's realized chromatic intervals where those intervals satisfy every hard constraint; otherwise it uses the deterministic projection order below. Phrase 4 retains the same signed diatonic interval directions and magnitudes, re-anchors them to its own Harmony, and applies only its resolved optional displacement. Response does not mean inversion, retrograde, augmentation, diminution, chromatic transformation, or another hidden transformation.
+Phrase 1 establishes the selected rhythm template, fixed contour identity, and realized pitches. Phrase 2 repeats the exact motif form against its own Harmony. Phrase 3 re-anchors the same contour to its own Harmony and must preserve Phrase 1's realized semitone-interval sequence exactly whenever any complete legal eight-bar path can do so; only when no such complete path exists does Phrase 3 use ordinary deterministic projection. Phrase 4 retains the same signed diatonic interval directions and magnitudes, re-anchors them to its own Harmony, and applies only its resolved optional displacement. Response does not mean inversion, retrograde, augmentation, diminution, chromatic transformation, or another hidden transformation.
 
 For `motif-form-repetition`, these properties are invariant and equal to Phrase 1: rhythm-template ID, relative onsets, duration sequence, signed diatonic contour offsets and interval magnitudes, event count, event order, and absence of displacement. Projection may change only the phrase anchor and resulting MIDI pitches needed to satisfy Phrase 2 Harmony, the current Key vocabulary, selected register band, chord targets, leap limit, and exceptional-leap recovery. It may not add, remove, reorder, retime, lengthen, shorten, or substitute contour data.
 
@@ -143,14 +143,18 @@ The phrase anchor is the legal chord tone in the selected register band nearest 
 
 Adjacent sounded notes normally differ by at most 7 semitones. An exceptional leap may be 8 through 12 semitones only when the next sounded note exists, moves in the opposite direction, and is at most 2 semitones from the exceptional-leap destination. Exceptional leaps may cross phrase boundaries; the final section interval cannot be exceptional because no recovery note follows. Repeated pitches have direction zero and cannot satisfy opposite-direction recovery.
 
-Projection considers all complete eight-bar paths over legal candidate pitches. It rejects candidates that violate vocabulary, structural targets, mode, band, phrase bounds, event ordering, durations, the 12-semitone absolute maximum, or recovery. Among remaining paths it chooses the unique lexicographic minimum of:
+Projection considers all complete eight-bar paths over legal candidate pitches. It rejects candidates that violate vocabulary, structural targets, mode, band, phrase bounds, event ordering, durations, the 12-semitone absolute maximum, or recovery, including leap/recovery obligations that cross phrase boundaries.
+
+Let Phrase 1's realized MIDI pitches be `p1[0..n-1]` and define its realized semitone-interval sequence as `d1[i] = p1[i] - p1[i-1]` for `i = 1..n-1`. Let `L` be the set of complete legal eight-bar paths. Let `E` be the subset of `L` whose Phrase-3 pitches `p3` satisfy `p3[i] - p3[i-1] = d1[i]` at every `i = 1..n-1`. This equality requires one constant chromatic transposition of the complete Phrase-1 pitch sequence; it is not approximate contour similarity.
+
+If `E` is nonempty, projection must select only from `E`. If `E` is empty, projection selects from `L`. Within the selected set, including when multiple exact-preservation transpositions exist, it chooses the unique lexicographic minimum of the unchanged ordinary objective:
 
 1. total absolute diatonic-step deviation from the accepted contour intervals;
 2. count of intervals whose signed direction differs from the accepted contour;
 3. total absolute MIDI-pitch distance from each ideal pitch;
 4. the complete ordered MIDI-pitch sequence, compared numerically.
 
-This is the only permitted pitch adjustment. It makes Harmony and hard constraints authoritative while preserving motif identity as closely as the contract permits. No random retry, alternate contour, nearest-profile lookup, repair after selection, or partial result exists. No legal complete path returns `NO_VALID_MOTIF`.
+The existence test and selection operate over complete paths, so Phrase-3 preservation never bypasses its Harmony, Key vocabulary, structural targets, selected register band, tension mode, timing, leap/recovery, or neighboring-phrase constraints. This is the only permitted pitch adjustment. It makes Harmony and hard constraints authoritative while preserving exact Phrase-3 transposition whenever legal and otherwise preserving motif identity as closely as the ordinary objective permits. No random retry, alternate contour, nearest-profile lookup, repair after selection, or partial result exists. No legal complete path returns `NO_VALID_MOTIF`.
 
 ## Deterministic profile resolution
 
