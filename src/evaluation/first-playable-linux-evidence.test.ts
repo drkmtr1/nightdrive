@@ -437,11 +437,33 @@ describe("First Playable Linux evidence harness", () => {
       expect(evidence.disposition).toBe("PASS");
       expect(evidence.count).toBe(61);
       expect(evidence.identities).toEqual(manifest.trackedSourceBlobInventory);
+      expect(evidence.historicalCheckout).toMatchObject({
+        disposition: "PASS",
+        platform: "win32",
+        architecture: "arm64",
+        count: 61,
+      });
+      expect(
+        evidence.historicalCheckout.relationships.filter(
+          ({ relationship }) => relationship === "raw-git-blob",
+        ),
+      ).toHaveLength(6);
+      expect(
+        evidence.historicalCheckout.relationships.filter(
+          ({ relationship }) => relationship === "lf-to-crlf",
+        ),
+      ).toHaveLength(55);
 
       const mismatched = structuredClone(manifest);
       mismatched.trackedSourceBlobInventory[0].sha256 = "0".repeat(64);
       expect(() => verifyTrackedSourceCustody(process.cwd(), mismatched)).toThrow(
         "tracked blob SHA-256 mismatch",
+      );
+
+      const invalidHistorical = structuredClone(manifest);
+      invalidHistorical.historicalCaptureInventory[0].sha256 = "0".repeat(64);
+      expect(() => verifyTrackedSourceCustody(process.cwd(), invalidHistorical)).toThrow(
+        "historical checkout SHA-256 mismatch",
       );
     },
     30_000,

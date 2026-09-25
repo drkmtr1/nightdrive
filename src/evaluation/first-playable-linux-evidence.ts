@@ -15,6 +15,7 @@ import {
 import { generateFirstPlayableCompositionV1 } from "../generators/first-playable-composition";
 import {
   verifyGeneratedArtifact,
+  verifyHistoricalCheckout,
   verifyTrackedBlob,
   type TrackedBlobIdentity,
 } from "./first-playable-provenance-verifier";
@@ -68,6 +69,18 @@ type FrozenData = {
       disposition: "PASS";
       count: number;
       identities: TrackedBlobIdentity[];
+      historicalCheckout: {
+        disposition: "PASS";
+        platform: string;
+        architecture: string;
+        count: number;
+        relationships: Array<{
+          path: string;
+          relationship: "raw-git-blob" | "lf-to-crlf";
+          portableIdentity: TrackedBlobIdentity;
+          historicalIdentity: { byteLength: number; sha256: string };
+        }>;
+      };
     };
   };
 };
@@ -550,22 +563,100 @@ export function verifyTrackedSourceCustody(
   disposition: "PASS";
   count: number;
   identities: TrackedBlobIdentity[];
+  historicalCheckout: {
+    disposition: "PASS";
+    platform: string;
+    architecture: string;
+    count: number;
+    relationships: Array<{
+      path: string;
+      relationship: "raw-git-blob" | "lf-to-crlf";
+      portableIdentity: TrackedBlobIdentity;
+      historicalIdentity: { byteLength: number; sha256: string };
+    }>;
+  };
 } {
   const inventory = sourceManifest.trackedSourceBlobInventory;
   if (!Array.isArray(inventory) || inventory.length !== 61)
     throw new Error("Frozen source manifest must contain exactly 61 tracked source blobs");
+  const historicalInventory = sourceManifest.historicalCaptureInventory;
+  if (!Array.isArray(historicalInventory) || historicalInventory.length !== 62)
+    throw new Error("Frozen source manifest must contain exactly 62 historical observations");
+  const historicalByPath = new Map<string, JsonRecord>();
+  for (const [index, value] of historicalInventory.entries()) {
+    const observation = record(value, `historical checkout observation ${index}`);
+    if (typeof observation.path !== "string" || historicalByPath.has(observation.path))
+      throw new Error("Frozen source manifest has an invalid or duplicate historical path");
+    historicalByPath.set(observation.path, observation);
+  }
+  const runtime = record(sourceManifest.runtime, "source capture runtime");
+  if (typeof runtime.platform !== "string" || typeof runtime.architecture !== "string")
+    throw new Error("Frozen source manifest source capture runtime is incomplete");
+  const platform = runtime.platform;
+  const architecture = runtime.architecture;
+  const relationships: Array<{
+    path: string;
+    relationship: "raw-git-blob" | "lf-to-crlf";
+    portableIdentity: TrackedBlobIdentity;
+    historicalIdentity: { byteLength: number; sha256: string };
+  }> = [];
   const identities = inventory.map((value, index) => {
     const identity = record(value, `tracked source blob ${index}`) as TrackedBlobIdentity;
-    verifyTrackedBlob(repositoryRoot, identity);
-    return {
+    const portableBytes = verifyTrackedBlob(repositoryRoot, identity);
+    const portableIdentity = {
       path: identity.path,
       commit: identity.commit,
       byteLength: identity.byteLength,
       sha256: identity.sha256,
       ...(identity.gitBlobOid === undefined ? {} : { gitBlobOid: identity.gitBlobOid }),
     };
+    const historical = historicalByPath.get(identity.path);
+    if (!historical) throw new Error(`Missing historical checkout observation: ${identity.path}`);
+    const historicalIdentity = {
+      byteLength: historical.byteLength as number,
+      sha256: historical.sha256 as string,
+    };
+    const relationship: "raw-git-blob" | "lf-to-crlf" =
+      historicalIdentity.byteLength === portableBytes.byteLength &&
+      historicalIdentity.sha256 === sha256(portableBytes)
+        ? "raw-git-blob"
+        : "lf-to-crlf";
+    verifyHistoricalCheckout(portableBytes, {
+      platform,
+      architecture,
+      ...historicalIdentity,
+      relationship,
+    });
+    historicalByPath.delete(identity.path);
+    relationships.push({
+      path: identity.path,
+      relationship,
+      portableIdentity,
+      historicalIdentity,
+    });
+    return portableIdentity;
   });
-  return { disposition: "PASS", count: identities.length, identities };
+  const sourceRecords = record(sourceManifest.sourceRecords, "source records identity");
+  const remainingHistorical = [...historicalByPath.values()];
+  if (
+    remainingHistorical.length !== 1 ||
+    remainingHistorical[0]?.path !== sourceRecords.path ||
+    remainingHistorical[0]?.byteLength !== sourceRecords.byteLength ||
+    remainingHistorical[0]?.sha256 !== sourceRecords.sha256
+  )
+    throw new Error("Historical inventory remainder is not the frozen generated source record");
+  return {
+    disposition: "PASS",
+    count: identities.length,
+    identities,
+    historicalCheckout: {
+      disposition: "PASS",
+      platform,
+      architecture,
+      count: relationships.length,
+      relationships,
+    },
+  };
 }
 
 function loadFrozenData(
