@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Stage 7 is accepted and complete. The separate canonical First Playable Harmony+Bass+Arpeggiator specification and deterministic runtime are accepted through PR #173 and PR #175; pinned Node `24.21.0` representation/replay qualification passed on supported Windows ARM64 and Linux x64 with exact cross-platform equality. The Product Owner selected Stage 8 deterministic melody and motif as the next milestone and accepted the V1 musical-policy constants, contours, phrase semantics, and profile tables. The complete Stage 8 contract is now the current documentation candidate; production implementation remains gated on consequential exact-head review.
+Stage 7 is accepted and complete. The separate canonical First Playable Harmony+Bass+Arpeggiator specification and deterministic runtime are accepted through PR #173 and PR #175; pinned Node `24.21.0` representation/replay qualification passed on supported Windows ARM64 and Linux x64 with exact cross-platform equality. The complete Stage 8 deterministic melody and motif contract is accepted through PR #217, including its V1 musical-policy constants, contours, phrase semantics, and profile tables. Bounded production implementation under that settled contract is the current milestone.
 
 ## Current Milestone
 
@@ -16,11 +16,11 @@ Git refs are authoritative for the current `HEAD` and local/remote synchronizati
 
 ## Current Gate
 
-Stage 7 exit criteria AC-011, AC-004, and AC-013 are satisfied. The Product Owner-authorized First Playable specification and deterministic runtime are accepted through PR #173 and PR #175. The [First Playable platform qualification](docs/reviews/FIRST_PLAYABLE_PLATFORM_QUALIFICATION.md) records passing pinned Node `24.21.0` Windows ARM64 and Linux x64 representation/replay evidence with exact cross-platform equality. The current gate is consequential review of the complete [Stage 8 V1 Motif contract](docs/MOTIF_MODEL.md), profile data, ADR-025, and evidence requirements. No Stage 8 runtime is eligible before that review passes.
+Stage 7 exit criteria AC-011, AC-004, and AC-013 are satisfied. The Product Owner-authorized First Playable specification and deterministic runtime are accepted through PR #173 and PR #175. The [First Playable platform qualification](docs/reviews/FIRST_PLAYABLE_PLATFORM_QUALIFICATION.md) records passing pinned Node `24.21.0` Windows ARM64 and Linux x64 representation/replay evidence with exact cross-platform equality. The complete [Stage 8 V1 Motif contract](docs/MOTIF_MODEL.md), profile data, ADR-025, and evidence requirements are accepted through PR #217. The current gate is bounded implementation under that settled contract.
 
 The [Product Owner R1/V2 acceptance and comparison override](docs/reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override) is accepted and merged through PR #142. The Product Owner accepts current R1/V2 behavior for continued development after personally listening to/analyzing the first 35 presented fixtures, together with existing deterministic and prior evidence. The remaining 245 Pass 1 judgments, full Pass 1 completion/lock, and Pass 2 are waived as prerequisites for that product acceptance. Pass 1 is incomplete/unlocked; Pass 2 was not executed; the 280-fixture protocol did not complete or pass. No profile/root/panel coverage is inferred from the 35-fixture count.
 
-The accepted comparison protocol and evidence remain preserved; their remaining execution path is superseded and does not block Stage 7 closure. Baseline findings, deterministic limitations, V1 replay, and ADR-019/020/021 semantics remain unchanged. First Playable qualification is complete. Stage 8 contract definition is authorized, but runtime, musical acceptance, browser/audio, UI, and Stage 9 remain separately gated.
+The accepted comparison protocol and evidence remain preserved; their remaining execution path is superseded and does not block Stage 7 closure. Baseline findings, deterministic limitations, V1 replay, and ADR-019/020/021 semantics remain unchanged. First Playable qualification is complete. Bounded Stage 8 implementation is eligible under its accepted contract; musical acceptance, browser/audio, UI, and Stage 9 remain separately gated.
 
 ## Unresolved Risks
 
@@ -32,7 +32,7 @@ The completed evidence is an exploratory single-reviewer baseline, not a populat
 
 ## Next Eligible Task
 
-The First Playable canonical evidence chain and [platform qualification record](docs/reviews/FIRST_PLAYABLE_PLATFORM_QUALIFICATION.md) remain accepted/frozen and establish exact twelve-vector Windows ARM64/Linux x64 representation/replay equality with complete custody evidence. PR #184 remains preserved as historical failed-candidate evidence; FP-LINUX-002, FP-LINUX-003, and FP-LINUX-004 remain resolved. The next eligible action is external consequential exact-head review of the Stage 8 contract candidate. After PASS and integration, the smallest eligible work is bounded implementation under that settled contract using the qualified dedicated-reviewer path. Browser canonical generation, playback/audio, UI, Stage 9, and later capabilities remain unauthorized. MIA-003 remains deferred/non-blocking and untouched.
+The First Playable canonical evidence chain and [platform qualification record](docs/reviews/FIRST_PLAYABLE_PLATFORM_QUALIFICATION.md) remain accepted/frozen and establish exact twelve-vector Windows ARM64/Linux x64 representation/replay equality with complete custody evidence. PR #184 remains preserved as historical failed-candidate evidence; FP-LINUX-002, FP-LINUX-003, and FP-LINUX-004 remain resolved. The smallest eligible work is the Stage 8 Motif contract foundation under the qualified dedicated-reviewer path. Browser canonical generation, playback/audio, UI, Stage 9, and later capabilities remain unauthorized. MIA-003 remains deferred/non-blocking and untouched.
 
 ## Maintenance
 

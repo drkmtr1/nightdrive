@@ -373,7 +373,7 @@ Sequential gates retain their order; each execution gate requires its own reposi
 
 ## Stage 8 V1 Motif evidence contract
 
-**Status:** Contract candidate only. No Stage 8 runtime or acceptance evidence exists until the [Motif contract](MOTIF_MODEL.md) passes consequential review and later bounded implementation/evidence tasks complete.
+**Status:** The [Motif contract](MOTIF_MODEL.md) is accepted through PR #217. No Stage 8 runtime or acceptance evidence exists yet; later bounded implementation and evidence tasks must satisfy this section.
 
 Implementation evidence must trace MUS-004/AC-012, NFR-001/AC-004, MUS-006/AC-013, and NFR-005/AC-029. It must independently establish:
 
