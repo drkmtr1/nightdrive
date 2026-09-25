@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
+import { describe, expect, it } from "vitest";
 import {
   assertAmbientRuns,
   assertLinuxCiIdentity,
@@ -11,6 +11,7 @@ import {
   assertRowOrder,
   defaultLinuxEvidenceDirectory,
   executeFrozenRow,
+  FIRST_PLAYABLE_LINUX_AMBIENT,
   FirstPlayableMismatch,
   FrozenArtifactCustodyFailure,
   inspectRepositoryIntegrity,
@@ -19,7 +20,6 @@ import {
   verifyFrozenCustody,
   verifyTrackedSourceCustody,
   workerMismatchLine,
-  FIRST_PLAYABLE_LINUX_AMBIENT,
 } from "./first-playable-linux-evidence";
 import { FIRST_PLAYABLE_VECTOR_IDS } from "./first-playable-reference-vectors";
 
@@ -92,6 +92,7 @@ function persistedFailure(mismatch: FirstPlayableMismatch) {
     const artifact = JSON.parse(
       readFileSync(join(directory, "first-playable-linux-evidence.json"), "utf8"),
     );
+    expect(artifact.schema).toBe("nightdrive.first-playable-linux-evidence.v1");
     expect(artifact.status).toBe("FAIL");
     expect(artifact.diagnostics.phase).toBe("row-execution");
     expect(artifact.diagnostics.vectorId).toBe("FP-01");
@@ -556,6 +557,7 @@ describe("First Playable Linux evidence harness", () => {
       const artifact = JSON.parse(
         readFileSync(join(directory, "first-playable-linux-evidence.json"), "utf8"),
       );
+      expect(artifact.schema).toBe("nightdrive.first-playable-linux-evidence.v1");
       expect(artifact.status).toBe("FAIL");
       expect(artifact.diagnostics.phase).toBe("preflight");
       expect(artifact.runs).toBeUndefined();
@@ -635,8 +637,9 @@ describe("First Playable Linux evidence harness", () => {
         cwd: process.cwd(),
         env: {
           ...process.env,
-          FP_LINUX_WORKER: "1",
-          FP_LINUX_INDEX: "0",
+          FP_EVIDENCE_WORKER: "1",
+          FP_EVIDENCE_INDEX: "0",
+          FP_EVIDENCE_TARGET: "linux",
           FP_LINUX_TEST_MISMATCH: "1",
         },
         encoding: "utf8",

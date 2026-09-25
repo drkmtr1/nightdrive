@@ -4,25 +4,46 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { release, tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import {
+  type FirstPlayableCompositionRequestV1,
   serializeFirstPlayableArpeggiatorComponentV1,
   serializeFirstPlayableBassComponentV1,
   serializeFirstPlayableCompositionHashInputV1,
   serializeFirstPlayableCompositionV1,
   serializeFirstPlayableHarmonyComponentV1,
   verifyFirstPlayableCompositionV1,
-  type FirstPlayableCompositionRequestV1,
 } from "../composition/first-playable-composition";
 import { generateFirstPlayableCompositionV1 } from "../generators/first-playable-composition";
 import {
+  type TrackedBlobIdentity,
   verifyGeneratedArtifact,
   verifyHistoricalCheckout,
   verifyTrackedBlob,
-  type TrackedBlobIdentity,
 } from "./first-playable-provenance-verifier";
 import { FIRST_PLAYABLE_VECTOR_IDS } from "./first-playable-reference-vectors";
 
-const SCHEMA = "nightdrive.first-playable-linux-evidence.v1";
-const ARTIFACT_NAME = "first-playable-linux-evidence.json";
+export type FirstPlayableEvidenceTarget = "linux" | "windows";
+const TARGETS = Object.freeze({
+  linux: {
+    schema: "nightdrive.first-playable-linux-evidence.v1",
+    artifactName: "first-playable-linux-evidence.json",
+    platform: "linux",
+    architecture: "x64",
+    outputEnvironment: "FP_LINUX_OUTPUT_DIR",
+    defaultDirectory: "nightdrive-first-playable-linux",
+    testFile: "src/evaluation/first-playable-linux-evidence.test.ts",
+    rowPrefix: "FP_LINUX_ROW",
+  },
+  windows: {
+    schema: "nightdrive.first-playable-windows-evidence.v1",
+    artifactName: "first-playable-windows-evidence.json",
+    platform: "win32",
+    architecture: "arm64",
+    outputEnvironment: "FP_WINDOWS_OUTPUT_DIR",
+    defaultDirectory: "nightdrive-first-playable-windows",
+    testFile: "src/evaluation/first-playable-windows-evidence.test.ts",
+    rowPrefix: "FP_WINDOWS_ROW",
+  },
+} as const);
 const FROZEN = Object.freeze([
   {
     path: "docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json",
@@ -507,6 +528,50 @@ export function assertLinuxEnvironment(environment: {
     throw new Error(`First Playable Linux evidence requires npm 11.19.0, got ${environment.npm}`);
 }
 
+export function assertWindowsEnvironment(environment: {
+  platform: string;
+  architecture: string;
+  hostArchitecture?: string;
+  node: string;
+  npm: string;
+}): void {
+  if (environment.platform !== "win32")
+    throw new Error(`First Playable Windows evidence requires win32, got ${environment.platform}`);
+  if (environment.architecture !== "arm64")
+    throw new Error(
+      `First Playable Windows evidence requires arm64, got ${environment.architecture}`,
+    );
+  if (environment.hostArchitecture !== "arm64")
+    throw new Error(
+      `First Playable Windows evidence requires an observed ARM64 host, got ${environment.hostArchitecture ?? "unavailable"}`,
+    );
+  if (environment.node !== "v24.21.0")
+    throw new Error(
+      `First Playable Windows evidence requires Node v24.21.0, got ${environment.node}`,
+    );
+  if (environment.npm !== "11.19.0")
+    throw new Error(`First Playable Windows evidence requires npm 11.19.0, got ${environment.npm}`);
+}
+
+export function parseWindowsHostArchitecture(registryOutput: string): string {
+  const match = registryOutput.match(
+    /^\s*PROCESSOR_ARCHITECTURE\s+REG_[A-Z_]+\s+([^\r\n]+?)\s*$/imu,
+  );
+  if (!match?.[1]) throw new Error("Windows host architecture is unavailable");
+  return match[1].toLowerCase();
+}
+
+function observeWindowsHostArchitecture(): string {
+  return parseWindowsHostArchitecture(
+    command("reg.exe", [
+      "query",
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment",
+      "/v",
+      "PROCESSOR_ARCHITECTURE",
+    ]),
+  );
+}
+
 export function assertLinuxCiIdentity(environment: {
   githubActions: string;
   githubRunId: string;
@@ -530,6 +595,31 @@ export function assertLinuxCiIdentity(environment: {
     environment.runnerImageVersion === "local"
   )
     throw new Error("Incomplete GitHub Linux runner identity");
+}
+
+export function assertWindowsLocalIdentity(environment: {
+  githubActions: string;
+  githubRunId: string;
+  githubRunAttempt: string;
+  githubJob: string;
+  runnerOs: string;
+  runnerArchitecture: string;
+  runnerName: string;
+  runnerImage: string;
+  runnerImageVersion: string;
+}): void {
+  if (
+    environment.githubActions !== "false" ||
+    environment.githubRunId !== "local" ||
+    environment.githubRunAttempt !== "local" ||
+    environment.githubJob !== "local" ||
+    environment.runnerOs !== "local" ||
+    environment.runnerArchitecture !== "local" ||
+    environment.runnerName !== "local" ||
+    environment.runnerImage !== "local" ||
+    environment.runnerImageVersion !== "local"
+  )
+    throw new Error("First Playable Windows evidence requires an explicit local runner identity");
 }
 
 export function assertRowOrder(rows: readonly { vectorId: string }[]): void {
@@ -913,9 +1003,16 @@ function observedAmbient() {
   };
 }
 
-export async function executeWorker(index: number) {
-  if (process.platform !== "linux" || process.arch !== "x64" || process.version !== "v24.21.0")
-    throw new Error("First Playable worker requires pinned Linux x64 Node v24.21.0");
+export async function executeWorker(index: number, target: FirstPlayableEvidenceTarget = "linux") {
+  const expected = TARGETS[target];
+  if (
+    process.platform !== expected.platform ||
+    process.arch !== expected.architecture ||
+    process.version !== "v24.21.0"
+  )
+    throw new Error(
+      `First Playable worker requires pinned ${target} ${expected.architecture} Node v24.21.0`,
+    );
   const row = await executeFrozenRow(index, loadFrozenData());
   return {
     row,
@@ -930,25 +1027,30 @@ export async function executeWorker(index: number) {
   };
 }
 
-function writeArtifact(directory: string, artifact: unknown): void {
+function writeArtifact(directory: string, artifactName: string, artifact: unknown): void {
   mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, ARTIFACT_NAME), `${JSON.stringify(artifact)}\n`, "utf8");
+  writeFileSync(join(directory, artifactName), `${JSON.stringify(artifact)}\n`, "utf8");
 }
 
-export function runLinuxFirstPlayableEvidence(
+type FirstPlayableEvidenceOptions = {
+  forcePreflightFailure?: boolean;
+  forceComparisonFailure?: FirstPlayableMismatch;
+  forceCustodyFailure?: FrozenArtifactCustodyFailure;
+  preflightFixture?: { repositoryRoot: string; testedCommit: string };
+};
+
+function runFirstPlayableEvidence(
+  target: FirstPlayableEvidenceTarget,
   directory: string,
-  options: {
-    forcePreflightFailure?: boolean;
-    forceComparisonFailure?: FirstPlayableMismatch;
-    forceCustodyFailure?: FrozenArtifactCustodyFailure;
-    preflightFixture?: { repositoryRoot: string; testedCommit: string };
-  } = {},
+  options: FirstPlayableEvidenceOptions = {},
 ): void {
+  const expected = TARGETS[target];
   const startedAtUtc = new Date().toISOString();
   const outputRelative = relative(process.cwd(), resolve(directory));
   const environment = {
     platform: process.platform,
     architecture: process.arch,
+    hostArchitecture: target === "windows" ? "unavailable" : undefined,
     node: process.version,
     npm: "unavailable",
     osRelease: release(),
@@ -974,8 +1076,7 @@ export function runLinuxFirstPlayableEvidence(
         isAbsolute(outputRelative),
     },
     packageLockSha256: "unavailable",
-    invocation:
-      "npm exec -- vitest run src/evaluation/first-playable-linux-evidence.test.ts --reporter=verbose",
+    invocation: `npm exec -- vitest run ${expected.testFile} --reporter=verbose`,
   };
   let phase = "preflight";
   let failedProcess: unknown;
@@ -990,7 +1091,12 @@ export function runLinuxFirstPlayableEvidence(
       throw options.forceCustodyFailure;
     }
     environment.osDistribution =
-      process.platform === "linux" ? readFileSync("/etc/os-release", "utf8") : "not-linux";
+      process.platform === "linux"
+        ? readFileSync("/etc/os-release", "utf8")
+        : process.platform === "win32"
+          ? "Windows"
+          : "unsupported";
+    if (target === "windows") environment.hostArchitecture = observeWindowsHostArchitecture();
     environment.packageLockSha256 = sha256(readFileSync("package-lock.json"));
     environment.testedCommit =
       options.preflightFixture?.testedCommit ??
@@ -1011,8 +1117,13 @@ export function runLinuxFirstPlayableEvidence(
     if (options.preflightFixture)
       throw new Error("A preflight fixture cannot produce qualification evidence");
     environment.npm = command("npm", ["--version"]);
-    assertLinuxEnvironment(environment);
-    assertLinuxCiIdentity(environment);
+    if (target === "linux") {
+      assertLinuxEnvironment(environment);
+      assertLinuxCiIdentity(environment);
+    } else {
+      assertWindowsEnvironment(environment);
+      assertWindowsLocalIdentity(environment);
+    }
     phase = "frozen-custody";
     const frozen = verifyFrozenCustody();
     phase = "row-execution";
@@ -1024,8 +1135,9 @@ export function runLinuxFirstPlayableEvidence(
           ...process.env,
           TZ: ambient.tz,
           LANG: ambient.lang,
-          FP_LINUX_WORKER: "1",
-          FP_LINUX_INDEX: String(index),
+          FP_EVIDENCE_WORKER: "1",
+          FP_EVIDENCE_INDEX: String(index),
+          FP_EVIDENCE_TARGET: target,
         };
         delete env.LC_ALL;
         delete env.LC_TIME;
@@ -1062,7 +1174,7 @@ export function runLinuxFirstPlayableEvidence(
             `${ambient.name}/${FIRST_PLAYABLE_VECTOR_IDS[index]} worker exited ${result.status}: ${result.error?.message ?? ""}\n${result.stdout}\n${result.stderr}`,
           );
         }
-        const matches = result.stdout.matchAll(/^FP_LINUX_ROW:(.+)$/gmu);
+        const matches = result.stdout.matchAll(new RegExp(`^${expected.rowPrefix}:(.+)$`, "gmu"));
         const payloads = [...matches];
         if (payloads.length !== 1 || !payloads[0]?.[1])
           throw new Error(
@@ -1118,8 +1230,8 @@ export function runLinuxFirstPlayableEvidence(
     const honoluluProbe = record(runs[3]?.processes[0], "Honolulu process").observed as JsonRecord;
     if (utcProbe.fixedInstantProbe === honoluluProbe.fixedInstantProbe)
       throw new Error("UTC/Honolulu fixed-instant timezone probes did not differ");
-    writeArtifact(directory, {
-      schema: SCHEMA,
+    writeArtifact(directory, expected.artifactName, {
+      schema: expected.schema,
       status: "PASS",
       startedAtUtc,
       finishedAtUtc: new Date().toISOString(),
@@ -1130,8 +1242,8 @@ export function runLinuxFirstPlayableEvidence(
     });
   } catch (error) {
     try {
-      writeArtifact(directory, {
-        schema: SCHEMA,
+      writeArtifact(directory, expected.artifactName, {
+        schema: expected.schema,
         status: "FAIL",
         startedAtUtc,
         finishedAtUtc: new Date().toISOString(),
@@ -1157,6 +1269,26 @@ export function runLinuxFirstPlayableEvidence(
   }
 }
 
+export function runLinuxFirstPlayableEvidence(
+  directory: string,
+  options: FirstPlayableEvidenceOptions = {},
+): void {
+  runFirstPlayableEvidence("linux", directory, options);
+}
+
+export function runWindowsFirstPlayableEvidence(
+  directory: string,
+  options: FirstPlayableEvidenceOptions = {},
+): void {
+  runFirstPlayableEvidence("windows", directory, options);
+}
+
 export function defaultLinuxEvidenceDirectory(): string {
-  return process.env.FP_LINUX_OUTPUT_DIR ?? join(tmpdir(), "nightdrive-first-playable-linux");
+  const target = TARGETS.linux;
+  return process.env[target.outputEnvironment] ?? join(tmpdir(), target.defaultDirectory);
+}
+
+export function defaultWindowsEvidenceDirectory(): string {
+  const target = TARGETS.windows;
+  return process.env[target.outputEnvironment] ?? join(tmpdir(), target.defaultDirectory);
 }
