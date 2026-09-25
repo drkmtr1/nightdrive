@@ -105,6 +105,50 @@ For every existing profile/decision slot, the first successor retains V1 candida
 
 The R1 dataset adjusts Complexity rows across all four profiles and Energy rows in Dark Synthwave, Classic Synthwave, and Midtempo Cyberpunk. Darkwave's medium-Complexity Energy path is preserved as a positive control. The candidate record supplies all 500 effective lists by exact construction and documents its retained regressions. Its arithmetic, hash, structure, and permitted-delta evidence were independently verified; collision totals are now reproduced by the accepted retained diagnostic; historical search/finalist chronology remains unreproduced. The diagnostic and public V2 runtime are accepted through PR #114 and PR #131 respectively; V1 replay isolation and exact data remain unchanged. Current R1/V2 behavior is Product Owner accepted for continued development under the [35-fixture evaluation override](reviews/STAGE7_ARPEGGIATOR_EVALUATION_RESULTS.md#product-owner-r1v2-acceptance-and-comparison-override). This is not a completed full matched-comparison result; retained numerical limitations remain unchanged, and aggregate provenance and Stage 8 remain gated.
 
+## Stage 8 V1 motif profile policy
+
+The Product Owner accepts `nightdrive.genre-profile.motif.v1` as an initial musical-policy hypothesis for structured evaluation. The shared mechanics and exact operation contract are in [Stage 8 melody and motif model](MOTIF_MODEL.md). These tables are literal V1 data, not objective genre claims. A later change creates a new profile-data version and preserves V1 history.
+
+The exact slot schedule is rhythm template, register band, tension mode, then Phrase-4 displacement. Each slot consumes one chained Motif PRNG output. Table labels `VL / L / M / H / VH` mean `very-low / low / medium / high / very-high`. `same` supplies the displayed vector for all five rows. Final weights are the selected Energy vector plus the selected Complexity vector element by element in the declared candidate order. There is no sorting, normalization, interpolation, rescaling, candidate removal, fallback, or additional draw.
+
+### Dark Synthwave
+
+| Slot | Ordered candidates | Energy weights `VL / L / M / H / VH` | Complexity additions `VL / L / M / H / VH` |
+|---|---|---|---|
+| rhythm | `sparse-4, steady-6, active-8` | `[6,3,1] / [5,4,1] / [3,6,3] / [2,5,6] / [1,3,8]` | same `[0,0,0]` |
+| register | `middle, upper` | `[6,2] / [5,3] / [4,4] / [3,5] / [2,6]` | same `[0,0]` |
+| tension | `chordal, diatonic-passing` | same `[5,3]` | `[2,0] / [1,0] / [0,0] / [0,2] / [0,4]` |
+| displacement | `none, later-480, earlier-480` | same `[6,3,2]` | `[2,0,0] / [1,0,0] / [0,0,0] / [0,1,1] / [0,2,2]` |
+
+### Classic Synthwave
+
+| Slot | Ordered candidates | Energy weights `VL / L / M / H / VH` | Complexity additions `VL / L / M / H / VH` |
+|---|---|---|---|
+| rhythm | `sparse-4, steady-6, active-8` | `[5,4,1] / [4,5,1] / [2,7,3] / [2,6,5] / [1,5,7]` | same `[0,0,0]` |
+| register | `middle, upper` | `[6,2] / [5,3] / [4,4] / [3,5] / [2,6]` | same `[0,0]` |
+| tension | `chordal, diatonic-passing` | same `[6,2]` | `[2,0] / [1,0] / [0,0] / [0,2] / [0,3]` |
+| displacement | `none, earlier-480, later-480` | same `[7,2,2]` | `[2,0,0] / [1,0,0] / [0,0,0] / [0,1,1] / [0,2,2]` |
+
+### Darkwave
+
+| Slot | Ordered candidates | Energy weights `VL / L / M / H / VH` | Complexity additions `VL / L / M / H / VH` |
+|---|---|---|---|
+| rhythm | `sparse-4, steady-6, active-8` | `[8,2,1] / [7,3,1] / [5,5,2] / [3,7,3] / [2,7,5]` | same `[0,0,0]` |
+| register | `lower, middle` | same `[7,3]` | `[2,0] / [1,0] / [0,0] / [0,1] / [0,2]` |
+| tension | `chordal, diatonic-passing` | same `[4,4]` | `[2,0] / [1,0] / [0,0] / [0,2] / [0,4]` |
+| displacement | `none, later-480, earlier-480` | same `[5,4,2]` | `[2,0,0] / [1,0,0] / [0,0,0] / [0,2,1] / [0,3,2]` |
+
+### Midtempo Cyberpunk
+
+| Slot | Ordered candidates | Energy weights `VL / L / M / H / VH` | Complexity additions `VL / L / M / H / VH` |
+|---|---|---|---|
+| rhythm | `sparse-4, steady-6, active-8` | `[6,4,1] / [5,5,1] / [4,6,3] / [3,7,4] / [2,7,6]` | same `[0,0,0]` |
+| register | `lower, middle, upper` | `[5,5,2] / [4,6,2] / [3,7,3] / [2,7,5] / [1,6,7]` | same `[0,0,0]` |
+| tension | `chordal, diatonic-passing` | same `[5,3]` | `[2,0] / [1,0] / [0,0] / [0,2] / [0,4]` |
+| displacement | `none, earlier-480, later-480` | same `[4,4,3]` | `[2,0,0] / [1,0,0] / [0,0,0] / [0,2,2] / [0,3,3]` |
+
+Every V1 literal, order, and construction rule is immutable. Runtime validation must exhaustively reject any altered identity, profile order, slot order, candidate order, row, vector length, integer, or final weight rather than normalize or repair it.
+
 ## Governance
 
 Profile changes create new versions and require deterministic fixtures plus structured musical review. Historical generation retains the exact version. Do not add dozens of genres; a new profile requires user need, distinct rule evidence, evaluation cases, maintenance owner, and roadmap/scope approval.
