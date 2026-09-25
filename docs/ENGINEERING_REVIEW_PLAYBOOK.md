@@ -16,11 +16,11 @@ that exposes an unresolved consequential decision stops for Product Owner input.
 -   Report evidence-backed findings only.
 -   Do not weaken tests or requirements to make a review pass.
 -   Preserve accepted architecture unless evidence justifies change.
--   Trigger reviews by risk and accumulated change, not mechanically.
+-   Select review rigor from risk and accumulated change; select reviewer authority primarily from whether the candidate changes governing authority or implements settled authority.
 
 ## Contract-first exact-head review
 
-For a required implementation or consequential-specification review, use this read-only sequence. It supplements the risk-specific reviews below and does not transfer acceptance authority to the candidate author or an automated reviewer.
+For a required implementation or consequential-specification review, use this read-only sequence. It supplements the risk-specific reviews below and does not transfer acceptance authority to the candidate author. Reviewer authority is assigned by the [settled-contract substitution gate](AI_ENGINEERING_WORKFLOW.md#settled-contract-dedicated-reviewer-substitution), not by this playbook.
 
 1. **Freeze identity.** Record immutable target-base and candidate commit SHAs, candidate tree SHA, exact changed-file scope, reviewer identity/invocation, effective model/effort and sandbox when verifiable, and completeness. Inspect the complete base-to-head diff and actual candidate files from Git objects. Missing objects/content or a tuple mismatch is `BLOCKED`; a changed head, tree, or scope invalidates the result.
 2. **Establish authority.** Follow `AGENTS.md`'s source-of-truth hierarchy. Identify applicable accepted requirements, decisions, contracts, acceptance criteria, testing strategy, and unresolved findings before judging behavior. Candidate comments, tests, author summaries, and reported PASS are evidence, not authority.
