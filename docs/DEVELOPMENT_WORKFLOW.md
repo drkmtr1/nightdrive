@@ -18,13 +18,13 @@ flowchart LR
 
 1. Confirm repository eligibility for the bounded roadmap task, requirement IDs, acceptance criteria, non-goals, and dependencies.
 2. Inspect repository/status/branch/remotes and preserve unrelated work.
-3. Create a focused issue/task and branch. Record assumptions or blocking decisions.
+3. Codex selects one repository-eligible bounded task, prepares its compact task packet, and creates a focused branch when needed. Record assumptions or blocking decisions.
 4. Make the smallest coherent change with documentation and tests.
 5. Run proportionate local/CI validation; do not weaken gates.
 6. Verify acceptance, failure states, UX, accessibility, security, data, and deployment impact.
 7. After exact-head review passes, publish and merge through the accepted Git workflow when the reviewed tuple remains valid and required checks pass. Deployment remains subject to its own accepted policy and any unresolved consequential decision.
 8. Verify the resulting environment and observability when deployment is in scope.
-9. Report the completed bounded task. ChatGPT may initiate the next separately bounded task when repository truth already makes it eligible; a recommendation alone never establishes eligibility for another milestone or capability.
+9. Report the completed bounded task. During the active execution session, Codex may select the next separately bounded task when repository truth already makes it eligible and no task-specific stop boundary applies; a recommendation alone never establishes eligibility for another milestone or capability.
 
 ## Branches, commits, and reviews
 

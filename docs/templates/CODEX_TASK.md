@@ -1,6 +1,6 @@
 # Codex task packet
 
-Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md). This reusable packet is subordinate to [AGENTS.md](../../AGENTS.md) and the governing repository documents; it records a bounded task's eligibility and scope but cannot expand either.
+Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md). Codex prepares this reusable packet for one bounded repository-eligible task; it is subordinate to [AGENTS.md](../../AGENTS.md) and governing documents and cannot expand their scope. A separate ChatGPT-authored prompt is not required for a routine transition.
 
 ## TASK / CLASSIFICATION
 
@@ -10,14 +10,15 @@ Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md). This reus
 
 ## CODEX EXECUTION SETTINGS
 
-For every substantive task, resolve this block before issuing the packet:
+For every substantive task, record this block during precheck:
 
-- Codex model: exact currently selectable label.
-- Reasoning effort: exact currently selectable label.
+- Recommended/requested Codex model: verified selectable label when available; otherwise state the concrete availability limitation.
+- Recommended/requested reasoning effort: verified selectable label when available; otherwise state the concrete availability limitation.
+- Effective settings/configuration: observed values and method when available; otherwise state what cannot be verified or changed.
 - Why: brief task-specific capability/risk rationale.
 - Escalate if: specific condition requiring stronger settings or a stop.
 
-ChatGPT records these settings in the task packet for Product Owner visibility. Select the lowest-capability model and lowest effort reasonably likely to succeed; prefer increasing effort before model when the same model remains capable. Verify current availability when uncertain. Do not guess labels, use unresolved placeholders, or establish defaults. A substantive packet without this resolved block, rationale, or escalation condition is incomplete. Displaying the packet does not create an acknowledgement gate.
+Codex records a task-specific model/effort recommendation, rationale, and escalation condition for Product Owner visibility. Verify selectable labels when available; distinguish a recommendation from settings actually configured for an execution, and record effective settings only when observable. A prompt does not switch the running model. If selection or configuration is unavailable, state the limitation and assess whether the current execution can safely perform the task; do not invent labels, claim a switch, or establish a permanent default. Displaying the packet creates no acknowledgement gate.
 
 ## REPOSITORY ELIGIBILITY / STATE
 

@@ -4,8 +4,8 @@
 
 Reusable, read-only engineering checkpoints for milestone-gated software
 projects. Reviews inspect evidence and report findings; they do **not**
-implement corrections. After REVISE, ChatGPT may initiate a separate bounded,
-contract-determined correction under standing execution authority. A finding
+implement corrections. After REVISE, a separate bounded, contract-determined
+correction may follow under standing execution authority. A finding
 that exposes an unresolved consequential decision stops for Product Owner input.
 
 ## Core rules
