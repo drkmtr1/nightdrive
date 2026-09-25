@@ -373,7 +373,7 @@ Sequential gates retain their order; each execution gate requires its own reposi
 
 ## Stage 8 V1 Motif evidence contract
 
-**Status:** The [Motif contract](MOTIF_MODEL.md) is accepted through PR #217. Focused runtime evidence now covers the exact immutable rhythm/contour catalogs integrated through PR #219 and the exact immutable profile data plus all 400 constructed candidate lists integrated through PR #220. Four-draw resolution, pitch projection, canonical events/results, public generation, deterministic qualification, and musical acceptance evidence do not exist yet; later bounded implementation and evidence tasks must satisfy the remaining requirements in this section.
+**Status:** The [Motif contract](MOTIF_MODEL.md) is accepted through PR #217. Focused runtime evidence covers the exact immutable rhythm/contour catalogs integrated through PR #219, the exact immutable profile data plus all 400 constructed candidate lists integrated through PR #220, and the exact four-draw resolver schedule, plan identity, replay, and isolation integrated through PR #222. Pitch projection, canonical public results and provenance, public generation, deterministic qualification, and musical acceptance evidence do not exist yet; later bounded implementation and evidence tasks must satisfy the remaining requirements in this section.
 
 Implementation evidence must trace MUS-004/AC-012, NFR-001/AC-004, MUS-006/AC-013, and NFR-005/AC-029. It must independently establish:
 
