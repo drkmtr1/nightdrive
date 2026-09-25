@@ -104,14 +104,66 @@ function firstByteDifference(actual: Buffer, expected: Buffer): number {
     if (actual[index] !== expected[index]) return index;
   return limit;
 }
+export type FirstPlayableMismatchDiagnostic = Readonly<{
+  vectorId: string;
+  field: string;
+  message: string;
+  firstByteOffset?: number;
+  actualLength?: number;
+  expectedLength?: number;
+  actualSha256?: string;
+  expectedSha256?: string;
+  calculatedSha256?: string;
+}>;
+
+export class FirstPlayableMismatch extends Error {
+  readonly diagnostic: FirstPlayableMismatchDiagnostic;
+
+  constructor(diagnostic: FirstPlayableMismatchDiagnostic) {
+    super(diagnostic.message);
+    this.name = "FirstPlayableMismatch";
+    this.diagnostic = Object.freeze(diagnostic);
+  }
+}
+
+export function workerMismatchLine(error: unknown): string | undefined {
+  return error instanceof FirstPlayableMismatch
+    ? `FP_LINUX_FAILURE_JSON:${JSON.stringify(error.diagnostic)}`
+    : undefined;
+}
+
+export function parseWorkerMismatch(output: string): FirstPlayableMismatch | undefined {
+  const lines = [...output.matchAll(/^FP_LINUX_FAILURE_JSON:(.+)$/gmu)];
+  if (lines.length !== 1 || !lines[0]?.[1]) return undefined;
+  try {
+    const diagnostic = JSON.parse(lines[0][1]) as FirstPlayableMismatchDiagnostic;
+    if (
+      typeof diagnostic.vectorId !== "string" ||
+      typeof diagnostic.field !== "string" ||
+      typeof diagnostic.message !== "string"
+    )
+      return undefined;
+    return new FirstPlayableMismatch(diagnostic);
+  } catch {
+    return undefined;
+  }
+}
+
 function exact(actual: string, expected: unknown, vectorId: string, field: string): void {
   if (typeof expected !== "string") throw new Error(`${vectorId}.${field}: frozen value missing`);
   const a = utf8(actual),
     e = utf8(expected);
   if (!a.equals(e))
-    throw new Error(
-      `${vectorId}.${field}: firstByte=${firstByteDifference(a, e)} actualLength=${a.length} expectedLength=${e.length} actualSha256=${sha256(a)} expectedSha256=${sha256(e)}`,
-    );
+    throw new FirstPlayableMismatch({
+      vectorId,
+      field,
+      message: `${vectorId}.${field}: firstByte=${firstByteDifference(a, e)} actualLength=${a.length} expectedLength=${e.length} actualSha256=${sha256(a)} expectedSha256=${sha256(e)}`,
+      firstByteOffset: firstByteDifference(a, e),
+      actualLength: a.length,
+      expectedLength: e.length,
+      actualSha256: sha256(a),
+      expectedSha256: sha256(e),
+    });
 }
 
 export function assertLinuxEnvironment(environment: {
@@ -304,24 +356,58 @@ export async function executeFrozenRow(
   for (const [key, value] of Object.entries(strings)) {
     utf8ByteLengths[key] = utf8(value).length;
     utf8Base64[key] = utf8(value).toString("base64");
-    if (utf8ByteLengths[key] !== expectedLengths[key])
-      throw new Error(`${source.vectorId}.${key} byte length mismatch`);
+    if (utf8ByteLengths[key] !== expectedLengths[key]) {
+      const frozenString =
+        key === "resultHashInput"
+          ? oracle.resultHashInputJson
+          : key === "canonical"
+            ? oracle.canonicalJson
+            : expected[key];
+      throw new FirstPlayableMismatch({
+        vectorId: source.vectorId as string,
+        field: `utf8ByteLengths.${key}`,
+        message: `${source.vectorId}.${key} byte length mismatch`,
+        actualLength: utf8ByteLengths[key],
+        expectedLength: expectedLengths[key] as number,
+        actualSha256: sha256(utf8(value)),
+        ...(typeof frozenString === "string" ? { expectedSha256: sha256(utf8(frozenString)) } : {}),
+      });
+    }
   }
   for (const key of ["harmony", "bass", "arpeggiator"] as const) {
+    const calculatedSha256 = sha256(utf8(strings[key]));
     if (
       result.componentHashes[key] !== expectedHashes[key] ||
-      sha256(utf8(strings[key])) !== expectedHashes[key]
+      calculatedSha256 !== expectedHashes[key]
     )
-      throw new Error(`${source.vectorId}.${key} digest mismatch`);
+      throw new FirstPlayableMismatch({
+        vectorId: source.vectorId as string,
+        field: `componentHashes.${key}`,
+        message: `${source.vectorId}.${key} digest mismatch`,
+        actualSha256: result.componentHashes[key],
+        expectedSha256: expectedHashes[key] as string,
+        calculatedSha256,
+      });
   }
-  if (
-    result.resultHash !== oracle.resultHash ||
-    sha256(utf8(resultHashInputJson)) !== result.resultHash
-  )
-    throw new Error(`${source.vectorId} resultHash mismatch`);
+  const calculatedResultHash = sha256(utf8(resultHashInputJson));
+  if (result.resultHash !== oracle.resultHash || calculatedResultHash !== result.resultHash)
+    throw new FirstPlayableMismatch({
+      vectorId: source.vectorId as string,
+      field: "resultHash",
+      message: `${source.vectorId} resultHash mismatch`,
+      actualSha256: result.resultHash,
+      expectedSha256: oracle.resultHash as string,
+      calculatedSha256: calculatedResultHash,
+    });
   const canonicalUtf8Sha256 = sha256(utf8(canonicalJson));
   if (canonicalUtf8Sha256 !== oracle.canonicalUtf8Sha256)
-    throw new Error(`${source.vectorId} final-byte digest mismatch`);
+    throw new FirstPlayableMismatch({
+      vectorId: source.vectorId as string,
+      field: "canonicalUtf8Sha256",
+      message: `${source.vectorId} final-byte digest mismatch`,
+      actualSha256: canonicalUtf8Sha256,
+      expectedSha256: oracle.canonicalUtf8Sha256 as string,
+    });
   const replay = await generateFirstPlayableCompositionV1(
     replayRequest(result as unknown as JsonRecord),
   );
@@ -381,7 +467,7 @@ function writeArtifact(directory: string, artifact: unknown): void {
 
 export function runLinuxFirstPlayableEvidence(
   directory: string,
-  options: { forcePreflightFailure?: boolean } = {},
+  options: { forcePreflightFailure?: boolean; forceComparisonFailure?: FirstPlayableMismatch } = {},
 ): void {
   const startedAtUtc = new Date().toISOString();
   const environment = {
@@ -407,8 +493,13 @@ export function runLinuxFirstPlayableEvidence(
       "npm exec -- vitest run src/evaluation/first-playable-linux-evidence.test.ts --reporter=verbose",
   };
   let phase = "preflight";
+  let failedProcess: unknown;
   try {
     if (options.forcePreflightFailure) throw new Error("Forced First Playable preflight failure");
+    if (options.forceComparisonFailure) {
+      phase = "row-execution";
+      throw options.forceComparisonFailure;
+    }
     environment.osDistribution =
       process.platform === "linux" ? readFileSync("/etc/os-release", "utf8") : "not-linux";
     environment.npm = command("npm", ["--version"]);
@@ -458,10 +549,14 @@ export function runLinuxFirstPlayableEvidence(
           stdout: result.stdout,
           stderr: result.stderr,
         });
-        if (result.status !== 0)
+        if (result.status !== 0) {
+          failedProcess = processes[processes.length - 1];
+          const mismatch = parseWorkerMismatch(`${result.stdout}\n${result.stderr}`);
+          if (mismatch) throw mismatch;
           throw new Error(
             `${ambient.name}/${FIRST_PLAYABLE_VECTOR_IDS[index]} worker exited ${result.status}: ${result.error?.message ?? ""}\n${result.stdout}\n${result.stderr}`,
           );
+        }
         const matches = result.stdout.matchAll(/^FP_LINUX_ROW:(.+)$/gmu);
         const payloads = [...matches];
         if (payloads.length !== 1 || !payloads[0]?.[1])
@@ -536,7 +631,11 @@ export function runLinuxFirstPlayableEvidence(
         startedAtUtc,
         finishedAtUtc: new Date().toISOString(),
         environment,
-        diagnostics: { phase, message: error instanceof Error ? error.message : String(error) },
+        diagnostics:
+          error instanceof FirstPlayableMismatch
+            ? { phase, ...error.diagnostic }
+            : { phase, message: error instanceof Error ? error.message : String(error) },
+        ...(failedProcess === undefined ? {} : { failedProcess }),
       });
     } catch {
       /* Original failure remains primary. */

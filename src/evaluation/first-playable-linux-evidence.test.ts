@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import {
   assertAmbientRuns,
   assertLinuxCiIdentity,
@@ -9,14 +10,70 @@ import {
   assertRowOrder,
   defaultLinuxEvidenceDirectory,
   executeFrozenRow,
+  FirstPlayableMismatch,
+  parseWorkerMismatch,
   runLinuxFirstPlayableEvidence,
   verifyFrozenCustody,
+  workerMismatchLine,
   FIRST_PLAYABLE_LINUX_AMBIENT,
 } from "./first-playable-linux-evidence";
 import { FIRST_PLAYABLE_VECTOR_IDS } from "./first-playable-reference-vectors";
 
 const valid = { platform: "linux", architecture: "x64", node: "v24.21.0", npm: "11.19.0" };
 const rows = FIRST_PLAYABLE_VECTOR_IDS.map((vectorId) => ({ vectorId }));
+type MutableOracleVector = {
+  componentJson: { harmony: string };
+  utf8ByteLengths: { harmony: number };
+  componentHashes: { harmony: string };
+  resultHash: string;
+  canonicalUtf8Sha256: string;
+};
+
+async function inducedMismatch(
+  change: (vector: MutableOracleVector) => void,
+): Promise<FirstPlayableMismatch> {
+  const sources = JSON.parse(
+    readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json", "utf8"),
+  );
+  const oracle = JSON.parse(
+    readFileSync("docs/reviews/FIRST_PLAYABLE_CANONICAL_ORACLE.json", "utf8"),
+  ) as {
+    status: string;
+    sourceManifestSha256: string;
+    referenceManifestSha256: string;
+    vectors: MutableOracleVector[];
+  };
+  change(oracle.vectors[0]);
+  try {
+    await executeFrozenRow(0, { sources, oracle, identities: [] as never });
+  } catch (error) {
+    expect(error).toBeInstanceOf(FirstPlayableMismatch);
+    return error as FirstPlayableMismatch;
+  }
+  throw new Error("Induced qualification mismatch was not rejected");
+}
+
+function persistedFailure(mismatch: FirstPlayableMismatch) {
+  const directory = mkdtempSync(join(tmpdir(), "nightdrive-fp-mismatch-"));
+  try {
+    expect(() =>
+      runLinuxFirstPlayableEvidence(directory, { forceComparisonFailure: mismatch }),
+    ).toThrow();
+    const artifact = JSON.parse(
+      readFileSync(join(directory, "first-playable-linux-evidence.json"), "utf8"),
+    );
+    expect(artifact.status).toBe("FAIL");
+    expect(artifact.diagnostics.phase).toBe("row-execution");
+    expect(artifact.diagnostics.vectorId).toBe("FP-01");
+    expect(artifact.runs).toBeUndefined();
+    const line = workerMismatchLine(mismatch);
+    expect(line).toBeDefined();
+    expect(parseWorkerMismatch(`${line}\n`)?.diagnostic).toEqual(mismatch.diagnostic);
+    return artifact.diagnostics;
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
 
 describe("First Playable Linux evidence harness", () => {
   it("requires the exact qualified runtime", () => {
@@ -128,6 +185,94 @@ describe("First Playable Linux evidence harness", () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it("retains first-byte and explicit-length mismatch details", async () => {
+    const bytes = persistedFailure(
+      await inducedMismatch((vector) => {
+        vector.componentJson.harmony += " ";
+      }),
+    );
+    expect(bytes.field).toBe("harmonyJson");
+    expect(bytes.firstByteOffset).toBeTypeOf("number");
+    expect(bytes.actualLength).toBeTypeOf("number");
+    expect(bytes.expectedLength).toBeTypeOf("number");
+    expect(bytes.actualSha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(bytes.expectedSha256).toMatch(/^[0-9a-f]{64}$/u);
+    const length = persistedFailure(
+      await inducedMismatch((vector) => {
+        vector.utf8ByteLengths.harmony += 1;
+      }),
+    );
+    expect(length.field).toBe("utf8ByteLengths.harmony");
+    expect(length.actualLength).toBe(length.expectedLength - 1);
+    expect(length.actualSha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(length.expectedSha256).toMatch(/^[0-9a-f]{64}$/u);
+  });
+
+  it("retains actual, expected and independently calculated component digests", async () => {
+    const details = persistedFailure(
+      await inducedMismatch((vector) => {
+        vector.componentHashes.harmony = "0".repeat(64);
+      }),
+    );
+    expect(details.field).toBe("componentHashes.harmony");
+    expect(details.actualSha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(details.expectedSha256).toBe("0".repeat(64));
+    expect(details.calculatedSha256).toBe(details.actualSha256);
+  });
+
+  it("retains actual and expected resultHash plus calculated hash-input digest", async () => {
+    const details = persistedFailure(
+      await inducedMismatch((vector) => {
+        vector.resultHash = "0".repeat(64);
+      }),
+    );
+    expect(details.field).toBe("resultHash");
+    expect(details.actualSha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(details.expectedSha256).toBe("0".repeat(64));
+    expect(details.calculatedSha256).toBe(details.actualSha256);
+  });
+
+  it("retains independently calculated and frozen final-byte digests", async () => {
+    const details = persistedFailure(
+      await inducedMismatch((vector) => {
+        vector.canonicalUtf8Sha256 = "0".repeat(64);
+      }),
+    );
+    expect(details.field).toBe("canonicalUtf8Sha256");
+    expect(details.actualSha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(details.expectedSha256).toBe("0".repeat(64));
+  });
+
+  it("carries structured mismatch evidence through a failing fresh-process worker", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        resolve("node_modules/vitest/vitest.mjs"),
+        "run",
+        "src/evaluation/first-playable-linux-worker.test.ts",
+        "--reporter=dot",
+      ],
+      {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          FP_LINUX_WORKER: "1",
+          FP_LINUX_INDEX: "0",
+          FP_LINUX_TEST_MISMATCH: "1",
+        },
+        encoding: "utf8",
+      },
+    );
+    expect(result.status).not.toBe(0);
+    const diagnostic = parseWorkerMismatch(`${result.stdout}\n${result.stderr}`)?.diagnostic;
+    expect(diagnostic).toMatchObject({
+      vectorId: "FP-01",
+      field: "componentHashes.harmony",
+      actualSha256: "a".repeat(64),
+      expectedSha256: "b".repeat(64),
+    });
+  }, 30_000);
 
   it.skipIf(process.env.FP_LINUX_EVIDENCE !== "1")(
     "writes complete actual evidence only on explicit Linux opt-in",
