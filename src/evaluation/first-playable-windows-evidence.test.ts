@@ -7,7 +7,9 @@ import {
   assertWindowsLocalIdentity,
   defaultWindowsEvidenceDirectory,
   FirstPlayableMismatch,
+  npmVersionInvocation,
   parseWindowsHostArchitecture,
+  readNpmVersion,
   runWindowsFirstPlayableEvidence,
 } from "./first-playable-linux-evidence";
 
@@ -32,6 +34,24 @@ const validLocalIdentity = {
 };
 
 describe("First Playable Windows evidence harness", () => {
+  it("uses a supported npm invocation for each process platform", () => {
+    expect(npmVersionInvocation("win32")).toEqual({
+      executable: process.env.ComSpec ?? "cmd.exe",
+      args: ["/d", "/s", "/c", "npm.cmd --version"],
+    });
+    expect(npmVersionInvocation("linux")).toEqual({
+      executable: "npm",
+      args: ["--version"],
+    });
+  });
+
+  it.skipIf(process.platform !== "win32")(
+    "executes the selected Windows npm command-script path",
+    () => {
+      expect(readNpmVersion()).toMatch(/^\d+\.\d+\.\d+$/u);
+    },
+  );
+
   it("requires the exact native Windows ARM64 runtime", () => {
     expect(() => assertWindowsEnvironment(validRuntime)).not.toThrow();
     for (const change of [

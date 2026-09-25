@@ -138,6 +138,21 @@ function sha256(bytes: Uint8Array | string): string {
 function command(name: string, args: string[]): string {
   return execFileSync(name, args, { encoding: "utf8" }).trim();
 }
+export function npmVersionInvocation(platform: string): Readonly<{
+  executable: string;
+  args: readonly string[];
+}> {
+  return platform === "win32"
+    ? {
+        executable: process.env.ComSpec ?? "cmd.exe",
+        args: ["/d", "/s", "/c", "npm.cmd --version"],
+      }
+    : { executable: "npm", args: ["--version"] };
+}
+export function readNpmVersion(platform: string = process.platform): string {
+  const invocation = npmVersionInvocation(platform);
+  return command(invocation.executable, [...invocation.args]);
+}
 function utf8(value: string): Buffer {
   return Buffer.from(value, "utf8");
 }
@@ -1116,7 +1131,7 @@ function runFirstPlayableEvidence(
       );
     if (options.preflightFixture)
       throw new Error("A preflight fixture cannot produce qualification evidence");
-    environment.npm = command("npm", ["--version"]);
+    environment.npm = readNpmVersion();
     if (target === "linux") {
       assertLinuxEnvironment(environment);
       assertLinuxCiIdentity(environment);
