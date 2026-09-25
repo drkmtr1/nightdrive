@@ -17,6 +17,7 @@ import {
   parseWorkerMismatch,
   runLinuxFirstPlayableEvidence,
   verifyFrozenCustody,
+  verifyTrackedSourceCustody,
   workerMismatchLine,
   FIRST_PLAYABLE_LINUX_AMBIENT,
 } from "./first-playable-linux-evidence";
@@ -50,6 +51,7 @@ function withGitFixture(
   }
 }
 type MutableOracleVector = {
+  normalizedRequest: Record<string, unknown>;
   componentJson: { harmony: string };
   utf8ByteLengths: { harmony: number };
   componentHashes: { harmony: string };
@@ -425,6 +427,26 @@ describe("First Playable Linux evidence harness", () => {
     ).toThrow("missing frozen source records");
   });
 
+  it(
+    "verifies every accepted tracked source identity against its immutable Git blob",
+    () => {
+      const manifest = JSON.parse(
+        readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json", "utf8"),
+      );
+      const evidence = verifyTrackedSourceCustody(process.cwd(), manifest);
+      expect(evidence.disposition).toBe("PASS");
+      expect(evidence.count).toBe(61);
+      expect(evidence.identities).toEqual(manifest.trackedSourceBlobInventory);
+
+      const mismatched = structuredClone(manifest);
+      mismatched.trackedSourceBlobInventory[0].sha256 = "0".repeat(64);
+      expect(() => verifyTrackedSourceCustody(process.cwd(), mismatched)).toThrow(
+        "tracked blob SHA-256 mismatch",
+      );
+    },
+    30_000,
+  );
+
   it("retains exact frozen-artifact identity on a raw-byte mismatch", () => {
     const original = readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json");
     const altered = Buffer.concat([original, Buffer.from(" ")]);
@@ -498,6 +520,16 @@ describe("First Playable Linux evidence harness", () => {
       expect(readFileSync(path).equals(before[index] as Buffer)).toBe(true);
     });
   }, 30_000);
+
+  it("rejects an oracle/source normalized-request mismatch before production comparison", async () => {
+    const mismatch = await inducedMismatch((vector) => {
+      vector.normalizedRequest.rootSeed = 1;
+    });
+    expect(mismatch.diagnostic.field).toBe("normalizedRequest");
+    expect(mismatch.diagnostic.firstByteOffset).toBeTypeOf("number");
+    expect(mismatch.diagnostic.actualSha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(mismatch.diagnostic.expectedSha256).toMatch(/^[0-9a-f]{64}$/u);
+  });
 
   it("writes a FAIL artifact and propagates a preflight failure without executing rows", () => {
     const directory = mkdtempSync(join(tmpdir(), "nightdrive-fp-linux-fail-"));

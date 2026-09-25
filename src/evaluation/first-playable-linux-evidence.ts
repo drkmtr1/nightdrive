@@ -13,7 +13,11 @@ import {
   type FirstPlayableCompositionRequestV1,
 } from "../composition/first-playable-composition";
 import { generateFirstPlayableCompositionV1 } from "../generators/first-playable-composition";
-import { verifyGeneratedArtifact } from "./first-playable-provenance-verifier";
+import {
+  verifyGeneratedArtifact,
+  verifyTrackedBlob,
+  type TrackedBlobIdentity,
+} from "./first-playable-provenance-verifier";
 import { FIRST_PLAYABLE_VECTOR_IDS } from "./first-playable-reference-vectors";
 
 const SCHEMA = "nightdrive.first-playable-linux-evidence.v1";
@@ -60,6 +64,11 @@ type FrozenData = {
     acceptedMethodCommit: unknown;
     sourceRuntimeInputCommit: unknown;
     captureToolCommit: unknown;
+    trackedSourceBlobs?: {
+      disposition: "PASS";
+      count: number;
+      identities: TrackedBlobIdentity[];
+    };
   };
 };
 type ActualRow = {
@@ -534,8 +543,34 @@ export function assertAmbientRuns(
   });
 }
 
-export function verifyFrozenCustody(
+export function verifyTrackedSourceCustody(
+  repositoryRoot: string,
+  sourceManifest: JsonRecord,
+): {
+  disposition: "PASS";
+  count: number;
+  identities: TrackedBlobIdentity[];
+} {
+  const inventory = sourceManifest.trackedSourceBlobInventory;
+  if (!Array.isArray(inventory) || inventory.length !== 61)
+    throw new Error("Frozen source manifest must contain exactly 61 tracked source blobs");
+  const identities = inventory.map((value, index) => {
+    const identity = record(value, `tracked source blob ${index}`) as TrackedBlobIdentity;
+    verifyTrackedBlob(repositoryRoot, identity);
+    return {
+      path: identity.path,
+      commit: identity.commit,
+      byteLength: identity.byteLength,
+      sha256: identity.sha256,
+      ...(identity.gitBlobOid === undefined ? {} : { gitBlobOid: identity.gitBlobOid }),
+    };
+  });
+  return { disposition: "PASS", count: identities.length, identities };
+}
+
+function loadFrozenData(
   readBytes: (path: string) => Buffer = (path) => readFileSync(path),
+  trackedSourceRepositoryRoot?: string,
 ): FrozenData {
   const raw = new Map<string, Buffer>();
   for (const identity of FROZEN) {
@@ -597,6 +632,10 @@ export function verifyFrozenCustody(
   assertRowOrder(sources.vectors as { vectorId: string }[]);
   assertRowOrder(oracle.vectors as { vectorId: string }[]);
   assertRowOrder(record(recomputation, "recomputation").vectors as { vectorId: string }[]);
+  const trackedSourceBlobs =
+    trackedSourceRepositoryRoot === undefined
+      ? undefined
+      : verifyTrackedSourceCustody(trackedSourceRepositoryRoot, sourceManifest);
   return {
     sources,
     oracle,
@@ -605,8 +644,16 @@ export function verifyFrozenCustody(
       acceptedMethodCommit: sourceManifest.acceptedMethodCommit,
       sourceRuntimeInputCommit: sourceManifest.sourceRuntimeInputCommit,
       captureToolCommit: sourceManifest.captureToolCommit,
+      ...(trackedSourceBlobs === undefined ? {} : { trackedSourceBlobs }),
     },
   };
+}
+
+export function verifyFrozenCustody(
+  readBytes: (path: string) => Buffer = (path) => readFileSync(path),
+  repositoryRoot: string = process.cwd(),
+): FrozenData {
+  return loadFrozenData(readBytes, repositoryRoot);
 }
 
 function replayRequest(result: JsonRecord): FirstPlayableCompositionRequestV1 {
@@ -640,6 +687,12 @@ export async function executeFrozenRow(
     oracle.vectorId !== source.vectorId
   )
     throw new Error(`Invalid frozen row index ${index}`);
+  exact(
+    JSON.stringify(source.normalizedRequest),
+    JSON.stringify(oracle.normalizedRequest),
+    source.vectorId as string,
+    "normalizedRequest",
+  );
   const result = await generateFirstPlayableCompositionV1(
     structuredClone(source.normalizedRequest) as FirstPlayableCompositionRequestV1,
   );
@@ -772,7 +825,7 @@ function observedAmbient() {
 export async function executeWorker(index: number) {
   if (process.platform !== "linux" || process.arch !== "x64" || process.version !== "v24.21.0")
     throw new Error("First Playable worker requires pinned Linux x64 Node v24.21.0");
-  const row = await executeFrozenRow(index);
+  const row = await executeFrozenRow(index, loadFrozenData());
   return {
     row,
     observed: observedAmbient(),
