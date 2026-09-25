@@ -368,7 +368,7 @@ Generated evidence artifacts, including source records, manifests, oracle files,
 
 **Date:** 2026-09-25
 
-**Status:** Product Owner roadmap and musical-policy decisions accepted; complete contract candidate pending consequential exact-head review. Runtime implementation remains unauthorized.
+**Status:** Accepted and integrated through PR #217 after consequential exact-head review. Bounded runtime implementation under the settled contract is eligible.
 
 **Context:** First Playable Harmony+Bass+Arpeggiator representation/replay qualification is complete. Stage 8 is the Product Owner-selected next milestone, but lead generation requires explicit motif identity, phrase development, Harmony interaction, deterministic policy, canonical representation, and evaluation boundaries. Literal MIDI repetition conflicts with phrase-local chord targets when Harmony changes.
 
@@ -378,6 +378,6 @@ Generated evidence artifacts, including source records, manifests, oracle files,
 
 **Rationale:** The selected boundary preserves Harmony authority, deterministic replay, component-seed isolation, inspectable motif identity, and the accepted four-draw policy while allowing phrase-local chord targets across changing Harmony. Shared mechanics plus versioned profile data keep subjective hypotheses reviewable and replaceable without rewriting history.
 
-**Consequences:** Stage 8 V1 uses the accepted fixed contours, rhythms, ranges, leap/recovery constants, phrase roles, catalogs, candidate orders, and weights exactly as written. Evaluation assesses V1 unchanged; weaknesses motivate a new version. No production implementation, dependency, First Playable mutation, browser/audio/UI work, Stage 9 work, persistence, or frozen-evidence change is authorized by this ADR candidate. Because this changes governing musical and canonical authority, the complete contract requires external consequential exact-head review; dedicated settled-contract substitution becomes eligible only for later faithful implementation after acceptance.
+**Consequences:** Stage 8 V1 uses the accepted fixed contours, rhythms, ranges, leap/recovery constants, phrase roles, catalogs, candidate orders, and weights exactly as written. Evaluation assesses V1 unchanged; weaknesses motivate a new version. Bounded faithful production implementation may proceed through the settled-contract dedicated-reviewer path. No dependency, First Playable mutation, browser/audio/UI work, Stage 9 work, persistence, or frozen-evidence change is authorized by this ADR.
 
 **Revisit:** Revisit only with structured musical or deterministic evidence identifying a V1 weakness. Preserve V1 replay and specify a new compatible policy/profile/contour identity before changing accepted behavior.

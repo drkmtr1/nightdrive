@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-This document is the normative Stage 8 V1 contract candidate for deterministic lead-motif generation. The Product Owner has accepted the musical-policy choices recorded here; production implementation remains unauthorized until this complete contract passes consequential exact-head review. Stage 8 does not modify the accepted First Playable Harmony+Bass+Arpeggiator result or its frozen evidence.
+This document is the accepted normative Stage 8 V1 contract for deterministic lead-motif generation, integrated through PR #217 after consequential exact-head review. Bounded production implementation under this settled contract is eligible. Stage 8 does not modify the accepted First Playable Harmony+Bass+Arpeggiator result or its frozen evidence.
 
 The V1 policy is an initial, versioned musical hypothesis for structured evaluation, not an objective description of any genre. Poor evaluation results require a separately versioned successor. They never authorize silent tuning of V1 values or historical replay.
 
