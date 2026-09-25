@@ -43,7 +43,7 @@ For a read-only exact-head review, add the [contract-first playbook](../ENGINEER
 
 The receiving agent verifies field presence and tuple freshness independently. A review tool's schema option does not substitute for checking the actual returned result; absent fields or an uncertain material obligation make the result incomplete even if its narrative says PASS.
 
-If [routine dedicated-reviewer substitution](../AI_ENGINEERING_WORKFLOW.md#routine-dedicated-reviewer-substitution) is claimed, report the specific eligibility/exclusion audit, separate reviewer invocation and effective settings/sandbox receipt, immutable tuple and current-tuple recheck, complete contract-first result, applicable OPEN-finding search/disposition, and whether the result actually satisfies the gate. Otherwise identify the existing independent reviewer path. A reviewer PASS without this evidence is preliminary only; it does not grant publication or unattended merge authority.
+If [settled-contract dedicated-reviewer substitution](../AI_ENGINEERING_WORKFLOW.md#settled-contract-dedicated-reviewer-substitution) is claimed, report the specific settled-authority eligibility/external-boundary audit, separate reviewer invocation and effective settings/sandbox receipt, immutable tuple and current-tuple recheck, complete contract-first result, applicable OPEN-finding search/disposition, and whether the result actually satisfies the gate. Otherwise identify the applicable external reviewer or Product Owner path. A reviewer PASS without this evidence is preliminary only; it does not replace required CI/evidence or protected merge policy.
 
 For substantial/nontrivial local committed candidates, default to a standalone `.patch` outside the repository, equivalent to complete `git diff --full-index <base>..<head>` evidence including new files. Report its filename/path, byte size, SHA-256, changed-file count, and complete base-to-head coverage confirmation. Do not emit the complete patch inline unless the task or reviewer explicitly requests it. A genuinely small diff may be supplied inline when more efficient. Local committed candidates still require complete base-to-head evidence; uncommitted candidates require complete working-tree/index evidence; remotely fetchable candidates must identify the authoritative source and exact base/head evidence. Patch metadata, validation, scope summaries, or commit messages do not replace inspection of actual candidate content. Partial evidence cannot support exact-head implementation approval.
 
@@ -77,5 +77,16 @@ For a resumable checkpoint, record the current bounded task, actual base/head an
 ## NEXT SMALLEST BACKLOG TASK
 
 Recommend or select only the smallest eligible follow-up. During the active session, Codex may begin a subsequent bounded task under standing execution authority when repository truth independently establishes eligibility and the current task's stop boundary has been honored. Stop when no next task is eligible or required independent review is unavailable.
+
+## USER ACTION REQUIRED
+
+Every returned terminal or checkpoint result must end with this section, using the [handoff contract](../AI_ENGINEERING_WORKFLOW.md#user-action-required-handoff). Omission is a result-format defect. This footer describes an unavoidable stop; it never creates one.
+
+- Type: `NONE | EXTERNAL REVIEW | PRODUCT OWNER DECISION | ACCESS/ENVIRONMENT | TECHNICAL BLOCKER | NO ELIGIBLE WORK`
+- Why: concise plain-language reason execution stopped.
+- Action: exact action the Product Owner should take.
+- Provide: exact files, SHAs, evidence, decision, access action, or `NONE`.
+- Return to Codex with: exact expected result, answer, evidence, or `NONE`.
+- Can I just say `continue`? `YES | NO` followed by one concise explanation.
 
 > Recommendation alone does not make a future capability eligible.

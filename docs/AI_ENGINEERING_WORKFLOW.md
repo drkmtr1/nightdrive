@@ -18,7 +18,7 @@ Retains final authority over product direction, architecture changes, consequent
 
 ### ChatGPT
 
-Provides independent exact-head review outside the narrow [routine dedicated-reviewer substitution gate](#routine-dedicated-reviewer-substitution), consequential architecture and contract review, and help with genuinely unresolved blockers through an available review channel. ChatGPT does not override accepted repository contracts or routinely author every task packet. An exact-head PASS may lead to publication and merge under standing authority only when the reviewed tuple, required checks, accepted merge method, and current repository eligibility all hold.
+Provides independent exact-head review when the candidate establishes or changes consequential authority outside the [settled-contract dedicated-reviewer substitution gate](#settled-contract-dedicated-reviewer-substitution), and helps with genuinely unresolved blockers through an available review channel. ChatGPT does not override accepted repository contracts or routinely author every task packet. An exact-head PASS may lead to publication and merge under standing authority only when the reviewed tuple, required checks, accepted merge method, and current repository eligibility all hold.
 
 ### Codex
 
@@ -97,19 +97,80 @@ Every implementation task subject to the [AGENTS.md dependency evaluation gate](
 
 ## Reviews
 
-Formal review procedures remain owned by the [Engineering Review Playbook](ENGINEERING_REVIEW_PLAYBOOK.md). Select review type based on risk/change. Reviews remain read-only. Preserve independent exact-head review before publication of nontrivial implementation candidates and independent review for consequential contracts, architecture, canonical/evidence changes, milestone closure, and releases. Codex self-review is preliminary and never substitutes for required independent acceptance. A separate Codex reviewer may add findings but replaces the required reviewer only if accepted policy explicitly permits that substitution. A REVISE finding may lead automatically to a subsequent bounded contract-determined correction; a finding requiring consequential judgment stops for Product Owner input. An R0/R1 label alone grants no self-approval or automatic-merge exemption.
+Formal review procedures remain owned by the [Engineering Review Playbook](ENGINEERING_REVIEW_PLAYBOOK.md). Select review rigor based on risk and change, and select reviewer authority primarily by whether the candidate changes governing authority or only implements settled authority. Reviews remain read-only. Preserve independent exact-head review before publication of nontrivial implementation candidates. Codex self-review is preliminary and never substitutes for required independent acceptance. A qualified separate Codex reviewer may satisfy that review only through the gate below; an external reviewer remains required when the candidate establishes or changes reserved consequential authority. A REVISE finding may lead automatically to a subsequent bounded contract-determined correction; a finding requiring consequential judgment stops for Product Owner input. No risk or implementation-category label grants self-approval or an automatic-merge exemption.
 
 For an exact-head review handoff, freeze the target-base commit, candidate commit and tree, changed-file scope, governing authority, and applicable OPEN findings before review. The read-only reviewer inspects immutable candidate content and returns the [playbook's contract-first result](ENGINEERING_REVIEW_PLAYBOOK.md#contract-first-exact-head-review), including obligation and permissive-path dispositions. Keep material finding details in existing review/result evidence with stable IDs, origin tuple, affected paths/blobs where practical, and closure evidence; put only current coordination impact in `PROJECT_STATE.md`. During RECONCILE and before readiness or publication, compare affected content and behavior with OPEN findings. A new SHA, base, or branch does not close an unchanged finding. Missing review fields, unresolved applicable violations, unverified material obligations, or incomplete candidate evidence preclude PASS. This procedure does not itself authorize a separate Codex reviewer to provide required independent acceptance.
 
-## Routine dedicated-reviewer substitution
+## Settled-contract dedicated-reviewer substitution
 
-A separate Codex reviewer may satisfy the required independent exact-head review only for a routine R0 or R1 candidate whose accepted contract, scope, and validation are already determined and whose review can be decided without new product, architecture, contract, roadmap, acceptance, or risk judgment. The author records the eligibility basis in the task packet before invoking the reviewer. A risk label alone is insufficient. The author and reviewer must run in separate contexts; author self-review never qualifies.
+A qualified, separate Codex reviewer may satisfy required independent exact-head review when all of the following hold:
 
-This substitution is unavailable for R2/R3 work; changes to review or publication governance, accepted decisions, requirements, scope, roadmap, architecture, public contracts, canonical musical semantics/bytes/hashes, frozen evidence, provenance/custody/qualification, security or other fail-closed trust boundaries, dependencies, CI/configuration, milestone closure, or release. It is also unavailable when an applicable material finding remains OPEN, authoritative sources conflict, or a consequential interpretation is needed. Route such work to the existing independent reviewer; do not relabel it R0/R1 to obtain substitution. A corrected OPEN finding requires independent adjudication before it can cease blocking this gate.
+1. The governing behavior, contract, scope, and validation are accepted and sufficiently defined.
+2. The candidate only implements, verifies, integrates, or corrects behavior under that settled authority.
+3. The candidate does not create, change, weaken, reinterpret, or supersede the governing authority.
+4. No unresolved Product Owner choice exists.
+5. The reviewer can inspect the complete immutable candidate and applicable authority.
+6. The contract-first review protocol and finding-continuity requirements can be satisfied.
+7. Required validation, CI, and evidence remain independently enforceable.
+8. No repository authority explicitly reserves the exact decision for external review.
 
-For an eligible candidate, invoke the dedicated Codex `exec review` path demonstrated in qualification. The initial configuration requests `gpt-6-sol`/high effort, a read-only sandbox, and disabled approvals; a different configuration needs separate qualification. Verify effective settings from an execution receipt rather than the prompt or the reviewer's self-report. Supply a neutral request containing the immutable base/head/tree/scope, governing accepted authority, applicable prior findings and validation evidence, and the [contract-first playbook](ENGINEERING_REVIEW_PLAYBOOK.md#contract-first-exact-head-review); do not supply a desired verdict or let a candidate summary replace source inspection. Retain the invocation/settings/sandbox receipt, complete reviewer result, inspected-object evidence, and validation limitations. The receiving agent independently verifies the current tuple, every required result field, materially complete obligation and permissive-path audits, and prior-finding disposition. Only a complete PASS with no material `VIOLATED` or `NOT VERIFIED` obligation and no applicable blocking finding satisfies routine review. REVISE, BLOCKED, missing or unverifiable settings, incomplete content/result, or an uncertain eligibility basis return to correction or the existing independent reviewer, never to inferred PASS.
+Reviewer routing is determined primarily by decision authority, not implementation difficulty, risk label, or category. R2/R3, deterministic, evidence-heavy, qualification, canonical, provenance/custody, CI/configuration, security-sensitive, and fail-closed implementation can use the dedicated reviewer when every eligibility condition above holds. The author records the eligibility basis in the task packet before invoking the reviewer. The author and reviewer must run in separate contexts; author self-review never qualifies.
 
-Material changes to the reviewer model, invocation, sandbox enforcement, review protocol, or a failed qualification control suspend substitution until new independent qualification is accepted. The reviewer cannot approve changes to this gate or its own qualification. Even a valid routine PASS remains bound to the reviewed base/head/tree/scope and leaves current-base assessment, required CI, Product Owner-set Git policy, and merge checks intact. It grants no unattended merge authority; the separate server-side enforcement prerequisite remains binding.
+External ChatGPT or Product Owner review remains required when the candidate itself establishes or changes consequential authority, including product requirements or subjective product/musical acceptance; architecture or architectural decisions; accepted behavioral or public contracts; roadmap or material scope; reviewer authority or review/validation policy; weakening, removal, bypass, or material redefinition of a quality/evidence gate; consequential security, trust, or permission policy; dependency policy not determined by accepted authority; release/deployment policy or a consequential production-release decision; conflicting authoritative documents; unresolved reviewer/engineer disagreement; an incomplete, `NOT VERIFIED`, uncertain, or otherwise non-PASS review; a genuine Product Owner choice; or any decision explicitly reserved externally. Classification labels alone do not establish this boundary.
+
+An applicable OPEN finding does not by itself require external review. When it concerns implementation under a settled accepted contract, the dedicated reviewer loads the durable finding record, inspects affected blob and behavior continuity, verifies the correction against accepted authority, and explicitly returns `OPEN | RESOLVED | SUPERSEDED` with evidence. PASS is forbidden while an applicable blocking finding remains `OPEN` or `NOT VERIFIED`. If disposition requires changing accepted authority or making a reserved consequential decision, route externally.
+
+For an eligible candidate, invoke the dedicated Codex `exec review` path demonstrated in qualification. The qualified configuration requests `gpt-6-sol`/high effort, a read-only sandbox, and disabled approvals; a different configuration needs separate qualification. Verify effective settings from an execution receipt rather than the prompt or the reviewer's self-report. Supply a neutral request containing the immutable base/head/tree/scope, governing accepted authority, applicable prior findings and validation evidence, and the [contract-first playbook](ENGINEERING_REVIEW_PLAYBOOK.md#contract-first-exact-head-review); do not supply a desired verdict or let a candidate summary replace source inspection. Retain the invocation/settings/sandbox receipt, complete reviewer result, inspected-object evidence, and validation limitations. The receiving agent independently verifies the current tuple, every required result field, materially complete obligation and permissive-path audits, adversarial-test review, and prior-finding disposition. Only a complete PASS with no material `VIOLATED` or `NOT VERIFIED` obligation and no applicable blocking finding satisfies review. REVISE returns to a bounded contract-determined correction and re-review when authority remains settled. BLOCKED, missing or unverifiable settings, incomplete content/result, uncertain eligibility, or a reserved decision routes to the applicable external boundary, never to inferred PASS.
+
+Material changes to the reviewer model, invocation, sandbox enforcement, review protocol, or a failed qualification control suspend substitution until new independent qualification is accepted. The reviewer cannot approve changes to this gate or its own qualification. Even a valid PASS remains bound to the reviewed base/head/tree/scope and leaves current-base assessment, required CI/evidence, Product Owner-set Git policy, and merge checks intact. The accepted GitHub protections remain required: pull request, exact required checks, strict up-to-date branch, no bypass actors, deletion protection, and force-push protection. A dedicated-reviewer PASS does not replace those protections; after PASS and successful checks, Codex may merge and reconcile automatically only when repository policy otherwise permits.
+
+Use these routing controls when validating this gate:
+
+| Scenario | Required route |
+| --- | --- |
+| Routine R1 implementation under a settled contract | Qualified dedicated reviewer |
+| Complex R2 deterministic implementation under a settled contract | Qualified dedicated reviewer |
+| Qualification-harness implementation under a settled qualification contract | Qualified dedicated reviewer |
+| Canonical or provenance implementation under a settled contract | Qualified dedicated reviewer |
+| Correction of an OPEN implementation finding under a settled contract | Qualified dedicated reviewer, with explicit finding disposition |
+| New architecture decision | External review |
+| Behavioral-contract change | External review |
+| Reviewer-authority or review-policy change | External review |
+| Proposed weakening of a validation or evidence gate | External review |
+| Unresolved disagreement or material `NOT VERIFIED` result | External review |
+| Subjective musical or product acceptance | Product Owner |
+| Protected publication after dedicated PASS | Required CI/evidence, then protected merge automatically when otherwise eligible |
+
+## USER ACTION REQUIRED handoff
+
+Whenever Codex returns control instead of continuing routine repository-eligible work automatically, the terminal or checkpoint result must end with exactly one `## USER ACTION REQUIRED` section. It is a Product Owner interface, not a new approval gate. Do not stop merely to emit `NONE`; when routine work can continue within the execution, continue.
+
+Use this exact structure:
+
+```text
+## USER ACTION REQUIRED
+
+Type: NONE | EXTERNAL REVIEW | PRODUCT OWNER DECISION | ACCESS/ENVIRONMENT | TECHNICAL BLOCKER | NO ELIGIBLE WORK
+
+Why: <plain-language reason execution stopped>
+
+Action: <exact action the Product Owner should take>
+
+Provide: <exact files, SHAs, evidence, decision, access action, or NONE>
+
+Return to Codex with: <exact result, answer, evidence, or NONE>
+
+Can I just say `continue`? YES | NO — <one concise explanation>
+```
+
+- `NONE`: no substantive Product Owner action is required, but the environment or session returned control while eligible work remains. `Action`, `Provide`, and `Return to Codex with` may be `NONE`; the final answer is `YES`.
+- `EXTERNAL REVIEW`: identify the review type, exact base/head/tree when required, exact patch/evidence files, request `PASS | REVISE | BLOCKED`, and state exactly what result/evidence must return. The final answer is `NO`.
+- `PRODUCT OWNER DECISION`: state the precise reserved decision, viable options, material tradeoffs, a supported recommendation, and exact answer format. Do not use it for ceremonial authorization. The final answer is `NO`.
+- `ACCESS/ENVIRONMENT`: identify the unavailable minimum credential, permission, account action, hardware/runtime, or external capability and the exact action needed. The final answer is `NO` unless the condition is already satisfied and only resumption remains.
+- `TECHNICAL BLOCKER`: use only after repository-eligible investigation/correction is exhausted. State the demonstrated blocker, evidence, attempts, why automatic progression is unsafe, and exact assistance/evidence needed.
+- `NO ELIGIBLE WORK`: state the absent roadmap, product, or scope prerequisite; do not manufacture eligibility.
+
+For every type, use plain language and make the required action explicit. Phrases such as “next gate,” “separately gated,” “requires authorization,” or “BLOCKED” do not suffice without the concrete action. If execution is continuing internally and no result is being returned, no interim footer is required. Omission from a returned terminal/checkpoint result is a result-format defect.
 
 ## Implementation review evidence
 
