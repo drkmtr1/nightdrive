@@ -8,6 +8,7 @@ This is a supplement/superset of the [AGENTS.md delivery-report requirements](..
 - Task completed: concise description; distinguish completed and remaining work when blocked.
 - Task type: `ASSESS | SPECIFY | IMPLEMENT`.
 - Risk class: `R0 | R1 | R2 | R3` with rationale.
+- Execution settings: recommended/requested model and effort; effective settings if observable; configuration method or limitation. Do not infer an actual switch from task text.
 
 ## REPOSITORY STATE
 
@@ -65,8 +66,10 @@ State exact push/PR/check/merge status, whether the reviewed head remains unchan
 
 For `BLOCKED`, clearly state the blocker, verified repository state, work/evidence completed, unsafe or unauthorized next action, and decision/authorization required. ASSESS and SPECIFY results report evidence appropriate to their type rather than fabricated implementation evidence.
 
+For a resumable checkpoint, record the current bounded task, actual base/head and worktree state, completed checks, unresolved findings, review disposition, and next safe action. A resumed session rechecks refs, working state, authority, and review validity before acting; it does not assume that this result restarted or contacted another session.
+
 ## NEXT SMALLEST BACKLOG TASK
 
-Recommend only the smallest eligible follow-up. A subsequent bounded task may begin under standing execution authority when repository truth independently establishes eligibility and the current task's stop boundary has been honored.
+Recommend or select only the smallest eligible follow-up. During the active session, Codex may begin a subsequent bounded task under standing execution authority when repository truth independently establishes eligibility and the current task's stop boundary has been honored. Stop when no next task is eligible or required independent review is unavailable.
 
 > Recommendation alone does not make a future capability eligible.
