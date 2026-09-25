@@ -1,6 +1,6 @@
 # Codex result evidence
 
-This is a supplement/superset of the [AGENTS.md delivery-report requirements](../../AGENTS.md#delivery-report), not a replacement. Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md), distinguish observed results from assumptions/checks not run, and remember that `PASS` applies only to this bounded task.
+This is a supplement/superset of the [AGENTS.md delivery-report requirements](../../AGENTS.md#delivery-report), not a replacement. Use with the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md), distinguish observed results from assumptions/checks not run, and remember that `PASS` applies only to this bounded task. Standing progression still requires independent repository eligibility for each next task.
 
 ## RESULT / TASK
 
@@ -23,7 +23,7 @@ This is a supplement/superset of the [AGENTS.md delivery-report requirements](..
 
 ## ACCEPTANCE / VALIDATION
 
-- Acceptance verification: map every criterion to evidence and identify unmet/unverified conditions.
+- Acceptance verification: map every criterion to evidence and identify unmet/unverified conditions; reserve subjective product or musical acceptance for the Product Owner.
 - Tests/validation: exact commands and results, failures, and checks not run with reasons; do not present inherited evidence as freshly executed.
 - Diff check: `PASS | FAIL | N/A` with command/result or reason.
 
@@ -54,7 +54,7 @@ State applicability/classification, dependency changes, governing decision, sele
 
 ## PUBLICATION / INTEGRATION
 
-State exact push/PR/check/merge status, whether the reviewed head remains unchanged, and—when applicable—the reviewed-base/implementation-head/PR-head/merge-commit/final-target relationship, ancestry, whether merged scope matches review, and whether unauthorized changes entered. Technical approval does not replace Product Owner publication or merge authority.
+State exact push/PR/check/merge status, whether the reviewed head remains unchanged, and—when applicable—the reviewed-base/implementation-head/PR-head/merge-commit/final-target relationship, ancestry, and whether merged scope matches review. Exact-head PASS may progress through publication and merge under standing execution authority only when repository eligibility, required checks, and Product Owner-set Git policy permit it.
 
 ## DEVIATIONS / ASSUMPTIONS / RISKS / QUESTIONS
 
@@ -67,6 +67,6 @@ For `BLOCKED`, clearly state the blocker, verified repository state, work/eviden
 
 ## NEXT SMALLEST BACKLOG TASK
 
-Recommend only the smallest eligible follow-up, without beginning it.
+Recommend only the smallest eligible follow-up. A subsequent bounded task may begin under standing execution authority when repository truth independently establishes eligibility and the current task's stop boundary has been honored.
 
-> Recommendation does not authorize the next task.
+> Recommendation alone does not make a future capability eligible.

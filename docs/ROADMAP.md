@@ -1,6 +1,6 @@
 # Capability-gated roadmap
 
-This roadmap has no calendar promises. Each stage requires explicit authorization, satisfies its exit evidence, and stops before the next stage. A future-capable schema does not authorize future behavior. Implementation stages must complete the Build vs. Buy / Dependency Evaluation Gate before custom commodity infrastructure or consequential dependencies are authorized.
+This roadmap has no calendar promises. Each bounded stage becomes eligible only when current coordination state and accepted scope, decisions, contracts, and dependencies identify it as eligible; its exit evidence must pass before completion. Completing one stage does not by itself make the next capability eligible. A future-capable schema does not grant future behavior. Implementation stages must complete the Build vs. Buy / Dependency Evaluation Gate before custom commodity infrastructure or consequential dependencies are adopted.
 
 ## Stage 1 — Documentation and architecture
 
