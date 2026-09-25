@@ -114,16 +114,14 @@ describe("First Playable Linux evidence harness", () => {
       expect(evidence.disposition, JSON.stringify(evidence, null, 2)).toBe("PASS");
       expect(evidence.observedHead).toBe(testedCommit);
       expect(evidence.headMatchesTestedCommit).toBe(true);
-      expect(evidence.ignoredState.entries).toEqual(
-        [
-          expect.objectContaining({
-            path: "node_modules/",
-            role: "locked-installation-input",
-            disposition: "LOCKED_INSTALLATION_INPUT",
-            reason: expect.stringContaining("npm, package-lock, and actual runtime evidence"),
-          }),
-        ],
-      );
+      expect(evidence.ignoredState.entries).toEqual([
+        expect.objectContaining({
+          path: "node_modules/",
+          role: "locked-installation-input",
+          disposition: "LOCKED_INSTALLATION_INPUT",
+          reason: expect.stringContaining("npm, package-lock, and actual runtime evidence"),
+        }),
+      ]);
     });
   });
 
@@ -427,47 +425,43 @@ describe("First Playable Linux evidence harness", () => {
     ).toThrow("missing frozen source records");
   });
 
-  it(
-    "verifies every accepted tracked source identity against its immutable Git blob",
-    () => {
-      const manifest = JSON.parse(
-        readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json", "utf8"),
-      );
-      const evidence = verifyTrackedSourceCustody(process.cwd(), manifest);
-      expect(evidence.disposition).toBe("PASS");
-      expect(evidence.count).toBe(61);
-      expect(evidence.identities).toEqual(manifest.trackedSourceBlobInventory);
-      expect(evidence.historicalCheckout).toMatchObject({
-        disposition: "PASS",
-        platform: "win32",
-        architecture: "arm64",
-        count: 61,
-      });
-      expect(
-        evidence.historicalCheckout.relationships.filter(
-          ({ relationship }) => relationship === "raw-git-blob",
-        ),
-      ).toHaveLength(6);
-      expect(
-        evidence.historicalCheckout.relationships.filter(
-          ({ relationship }) => relationship === "lf-to-crlf",
-        ),
-      ).toHaveLength(55);
+  it("verifies every accepted tracked source identity against its immutable Git blob", () => {
+    const manifest = JSON.parse(
+      readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_MANIFEST.json", "utf8"),
+    );
+    const evidence = verifyTrackedSourceCustody(process.cwd(), manifest);
+    expect(evidence.disposition).toBe("PASS");
+    expect(evidence.count).toBe(61);
+    expect(evidence.identities).toEqual(manifest.trackedSourceBlobInventory);
+    expect(evidence.historicalCheckout).toMatchObject({
+      disposition: "PASS",
+      platform: "win32",
+      architecture: "arm64",
+      count: 61,
+    });
+    expect(
+      evidence.historicalCheckout.relationships.filter(
+        ({ relationship }) => relationship === "raw-git-blob",
+      ),
+    ).toHaveLength(6);
+    expect(
+      evidence.historicalCheckout.relationships.filter(
+        ({ relationship }) => relationship === "lf-to-crlf",
+      ),
+    ).toHaveLength(55);
 
-      const mismatched = structuredClone(manifest);
-      mismatched.trackedSourceBlobInventory[0].sha256 = "0".repeat(64);
-      expect(() => verifyTrackedSourceCustody(process.cwd(), mismatched)).toThrow(
-        "tracked blob SHA-256 mismatch",
-      );
+    const mismatched = structuredClone(manifest);
+    mismatched.trackedSourceBlobInventory[0].sha256 = "0".repeat(64);
+    expect(() => verifyTrackedSourceCustody(process.cwd(), mismatched)).toThrow(
+      "tracked blob SHA-256 mismatch",
+    );
 
-      const invalidHistorical = structuredClone(manifest);
-      invalidHistorical.historicalCaptureInventory[0].sha256 = "0".repeat(64);
-      expect(() => verifyTrackedSourceCustody(process.cwd(), invalidHistorical)).toThrow(
-        "historical checkout SHA-256 mismatch",
-      );
-    },
-    30_000,
-  );
+    const invalidHistorical = structuredClone(manifest);
+    invalidHistorical.historicalCaptureInventory[0].sha256 = "0".repeat(64);
+    expect(() => verifyTrackedSourceCustody(process.cwd(), invalidHistorical)).toThrow(
+      "historical checkout SHA-256 mismatch",
+    );
+  }, 30_000);
 
   it("retains exact frozen-artifact identity on a raw-byte mismatch", () => {
     const original = readFileSync("docs/reviews/FIRST_PLAYABLE_SOURCE_RECORDS.json");
