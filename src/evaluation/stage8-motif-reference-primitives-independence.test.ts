@@ -84,6 +84,9 @@ describe("Stage 8 Motif reference primitive independence", () => {
     expect(sourceText).not.toMatch(/\brequire\s*\(/);
     expect(sourceText).not.toMatch(/\beval\s*\(/);
     expect(sourceText).not.toMatch(/\bFunction\s*\(/);
+    expect(sourceText).not.toMatch(/\b(?:process|module)\s*(?:\.|\[)/);
+    expect(sourceText.toLowerCase()).not.toContain("random");
+    expect(sourceText).not.toMatch(/\b(?:crypto|getRandomValues)\b/);
     return init.then(async () => expect(await referenceRuntimeImports(ENTRY)).toEqual([]));
   });
 

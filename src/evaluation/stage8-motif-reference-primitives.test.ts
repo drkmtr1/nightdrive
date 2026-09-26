@@ -109,6 +109,16 @@ describe("Stage 8 Motif independent reference primitives", () => {
     expect(
       selectStage8MotifReferenceWeightedCandidate([{ value: "A", weight: 7 }], 0xffff_ffff),
     ).toBe("A");
+    expect(
+      selectStage8MotifReferenceWeightedCandidate(
+        [
+          { value: "Z", weight: 2 },
+          { value: "A", weight: 3 },
+          { value: "M", weight: 1 },
+        ],
+        0,
+      ),
+    ).toBe("Z");
   });
 
   it("rejects malformed weighted choices and preserves frozen candidate input", () => {
@@ -143,5 +153,19 @@ describe("Stage 8 Motif independent reference primitives", () => {
         0,
       ),
     ).toThrow(/total weight/);
+    for (const weight of [-1, 0.5, Number.NaN, Infinity, "1", null, undefined]) {
+      expect(() =>
+        selectStage8MotifReferenceWeightedCandidate([{ value: "A", weight: weight as never }], 0),
+      ).toThrow(/weight/);
+    }
+    expect(() => selectStage8MotifReferenceWeightedCandidate([undefined] as never, 0)).toThrow(
+      /object/,
+    );
+    expect(() => selectStage8MotifReferenceWeightedCandidate([{ value: "A" }] as never, 0)).toThrow(
+      /weight/,
+    );
+    expect(() => selectStage8MotifReferenceWeightedCandidate(new Array(1) as never, 0)).toThrow(
+      /object/,
+    );
   });
 });
