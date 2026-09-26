@@ -263,7 +263,7 @@ function checkedHarmonySnapshot(harmony: HarmonyProgressionRealization): MotifHa
   }
 }
 
-function checkedHarmony(
+export function validateMotifHarmonyInputV1(
   harmony: HarmonyProgressionRealization,
 ): Readonly<{ snapshot: MotifHarmonySnapshotV1; harmony: HarmonyProgressionRealization }> {
   return validateHarmonySnapshot(checkedHarmonySnapshot(harmony));
@@ -475,7 +475,7 @@ function assertCanonicalProjection(
     fail("events", "events must equal the canonical resolved Motif projection.");
 }
 
-export function createMotifGenerationResultV1(
+function assembleMotifGenerationResultV1(
   input: Readonly<{
     plan: ResolvedMotifPlanV1;
     events: readonly MotifEventV1[];
@@ -485,6 +485,7 @@ export function createMotifGenerationResultV1(
     componentSeed: number;
     intent: NormalizedCompositionIntentV1;
   }>,
+  independentlyVerifyResolution: boolean,
 ): MotifGenerationResultV1 {
   const inputRecord = exactKeys(
     input,
@@ -497,7 +498,7 @@ export function createMotifGenerationResultV1(
   const sourcePlan = inputRecord.plan as ResolvedMotifPlanV1;
   const sourceEvents = inputRecord.events as readonly MotifEventV1[];
   if (!isHarmonyProfileId(profileId)) fail("provenance.profile.id", "invalid profile.");
-  const validatedHarmony = checkedHarmony(harmony);
+  const validatedHarmony = validateMotifHarmonyInputV1(harmony);
   if (profileId !== validatedHarmony.harmony.profile)
     fail("provenance.profile.id", "profile must match supplied Harmony.");
   const intentRecord = exactKeys(sourceIntent, ["energy", "complexity"], "intent");
@@ -509,10 +510,12 @@ export function createMotifGenerationResultV1(
   const events = copyEvents(sourceEvents);
   const rootSeed = uint32(inputRecord.rootSeed, "provenance.rootSeed");
   const componentSeed = uint32(inputRecord.componentSeed, "provenance.componentSeed");
-  if (componentSeed !== deriveComponentSeedV1(rootSeed, "motif"))
-    fail("provenance.componentSeed", "component seed does not match root-seed derivation.");
-  assertPlanResolution(plan, profileId, intent, componentSeed);
-  assertCanonicalProjection(events, validatedHarmony.harmony, plan);
+  if (independentlyVerifyResolution) {
+    if (componentSeed !== deriveComponentSeedV1(rootSeed, "motif"))
+      fail("provenance.componentSeed", "component seed does not match root-seed derivation.");
+    assertPlanResolution(plan, profileId, intent, componentSeed);
+    assertCanonicalProjection(events, validatedHarmony.harmony, plan);
+  }
   const provenance = Object.freeze({
     profile: Object.freeze({ id: profileId, version: MOTIF_PROFILE_DATA_VERSION_V1 }),
     policy: Object.freeze({ version: MOTIF_POLICY_VERSION_V1 }),
@@ -534,6 +537,18 @@ export function createMotifGenerationResultV1(
     events,
     provenance,
   });
+}
+
+export function createMotifGenerationResultV1(
+  input: Parameters<typeof assembleMotifGenerationResultV1>[0],
+): MotifGenerationResultV1 {
+  return assembleMotifGenerationResultV1(input, true);
+}
+
+export function assembleResolvedMotifGenerationResultV1(
+  input: Parameters<typeof assembleMotifGenerationResultV1>[0],
+): MotifGenerationResultV1 {
+  return assembleMotifGenerationResultV1(input, false);
 }
 
 export function serializeMotifGenerationResultV1(result: MotifGenerationResultV1): string {
