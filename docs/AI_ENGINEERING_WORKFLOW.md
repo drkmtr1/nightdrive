@@ -124,6 +124,42 @@ For an eligible candidate, invoke the dedicated Codex `exec review` path demonst
 
 Material changes to the reviewer model, invocation, sandbox enforcement, review protocol, or a failed qualification control suspend substitution until new independent qualification is accepted. The reviewer cannot approve changes to this gate or its own qualification. Even a valid PASS remains bound to the reviewed base/head/tree/scope and leaves current-base assessment, required CI/evidence, Product Owner-set Git policy, and merge checks intact. The accepted GitHub protections remain required: pull request, exact required checks, strict up-to-date branch, no bypass actors, deletion protection, and force-push protection. A dedicated-reviewer PASS does not replace those protections; after PASS and successful checks, Codex may merge and reconcile automatically only when repository policy otherwise permits.
 
+### Standing dedicated-review material egress
+
+**CANDIDATE.** This exact standing egress authorization becomes binding only after consequential external exact-head review PASS, then explicit Product Owner acceptance of that exact reviewed tuple, followed by protected integration. External PASS is technical approval only. Until every condition is satisfied, it is not authority and cannot authorize transmission to review the candidate that introduces it. No status-only post-review mutation is required for the accepted rule to take effect.
+
+After it is binding, this is a repository- and purpose-scoped data-transmission authorization only. It permits a fresh, per-invocation, minimum-necessary, provenance-known material set solely to the OpenAI Codex API used by the qualified dedicated `exec review` workflow in this section: `gpt-6-sol` at high effort, a read-only sandbox, and disabled approvals. It authorizes neither a different provider or destination nor any purpose other than independent contract-first exact-head review of a separately eligible settled-contract candidate. The invocation must still satisfy every substitution condition above and preserve all external-review boundaries.
+
+Before each permitted transmission, prepare and retain an itemized egress receipt that binds the Nightdrive repository and frozen tuple, and records each material item or Git object, its relevance to that tuple, its source and provenance, its SHA-256 and byte length where applicable, the verified destination and review purpose, the requested qualified configuration, the eligibility basis, and the exclusion audit. The exclusion audit records only the disposition, never excluded values. The receipt is the exposure allowlist: every prompt, tool argument, attachment, sandbox mount, or reviewer-facing workspace item must be receipt-listed, and the reviewer workspace may expose only receipt-listed material. Read-only access does not permit broad checkout or worktree discovery. The receipt may include only what the reviewer needs to inspect the exact candidate and its authority:
+
+- the exact base/head/tree, changed-file scope, and the minimum Git object or patch evidence needed to verify their relationship;
+- complete candidate content for that scope, normally a full-index base-to-head patch or the authoritative equivalent, never a summary or silently partial packet;
+- the accepted governing contracts, review procedure, applicable OPEN-finding records, and source material necessary to assess the candidate against them; and
+- sanitized validation receipts and other task-specific evidence necessary to assess a material obligation or stated limitation.
+
+Do not transmit secrets; `.env` contents; credentials, API keys, tokens, passwords, cookies, or session/authentication material; environment-variable values; credential-store contents; deferred stash contents; unrelated local files, logs, diagnostics, or repository material; personal data unrelated to Nightdrive; material from another repository or project; connected-account data; or unauthorized private external material. Categorically exclude `.git/config`, reflogs, raw object databases or object bundles, local absolute paths, author/committer identity data, signing material, broad worktree or history discovery, and Git metadata beyond the declared non-sensitive base/head/tree/scope/ancestry/patch evidence. A Codex-generated review artifact outside the repository may be included only when its receipt demonstrates that it derives solely from otherwise permitted Nightdrive material and that it contains none of the excluded content.
+
+If classification, provenance, purpose, destination, eligibility, or exclusion status is uncertain, fail closed: do not transmit the item and request explicit Product Owner authorization identifying the specific material, destination, and purpose. If excluded material would be required for complete exact-head review, do not substitute a redacted or incomplete packet and represent the review as PASS. A new candidate SHA or contract-determined corrective head requires fresh per-invocation classification and a fresh immutable base/head/tree/scope review; this standing egress authorization does not make a task eligible, carry technical PASS between tuples, expand reviewer authority, weaken finding continuity, bypass external or Product Owner boundaries, or authorize CI, protected merge, deployment, or release.
+
+After invocation, retain the effective reviewer settings and sandbox receipt, complete reviewer result, and inspection-completeness disposition. After valid egress, a qualified reviewer sandbox or read-access failure is a reviewer execution/access failure. Preserve the candidate and route it as `BLOCKED` through the existing external-review policy; it is not a reason to request duplicate Product Owner transmission authorization for the same already-permitted tuple. A material reviewer, model, invocation, sandbox, or qualification change remains governed by the suspension rule above.
+
+| Scenario | Required egress result |
+| --- | --- |
+| Ordinary tracked Nightdrive source or documentation candidate | Allow only the receipt's minimum necessary material when the candidate independently satisfies the settled-contract substitution gate. |
+| Contract-determined corrective head | Allow only after fresh tuple, provenance, purpose, and eligibility classification; require renewed immutable exact-head review. |
+| Codex-generated review packet outside the repository | Allow only when the receipt proves that it derives solely from permitted Nightdrive material and contains no excluded content. |
+| Minimum Git metadata for tuple, scope, or ancestry verification | Allow only declared non-sensitive base/head/tree/scope/ancestry/patch facts; deny configuration, identity, signing, reflog, raw-object, broad-history, and local-path material. |
+| Secrets, `.env` contents, credentials, tokens, passwords, cookies, session/authentication material, or credential stores | Deny. |
+| Environment-variable values | Deny. |
+| Deferred stash contents | Deny. |
+| Unrelated local logs, diagnostics, files, or broad worktree material | Deny. |
+| Material from another repository or project, connected-account data, or unrelated personal files | Deny. |
+| Unknown provenance or unauthorized private external material | Fail closed; request explicit Product Owner authorization for the identified material, destination, and purpose. |
+| Non-OpenAI destination or provider | Deny; require separate explicit Product Owner authorization. |
+| Non-review purpose, including debugging, publication, deployment, release, or training | Deny; require separate explicit Product Owner authorization. |
+| This policy candidate before the lifecycle conditions above are satisfied | Deny under this policy; consequential external exact-head review remains required. |
+| Qualified reviewer cannot inspect already-permitted material | Preserve the immutable tuple; record `BLOCKED` reviewer execution/access failure and route through the existing external-review policy without duplicate egress authorization. |
+
 Use these routing controls when validating this gate:
 
 | Scenario | Required route |
