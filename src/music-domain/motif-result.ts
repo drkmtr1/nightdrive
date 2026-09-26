@@ -263,7 +263,7 @@ function checkedHarmonySnapshot(harmony: HarmonyProgressionRealization): MotifHa
   }
 }
 
-function checkedHarmony(
+export function validateMotifHarmonyInputV1(
   harmony: HarmonyProgressionRealization,
 ): Readonly<{ snapshot: MotifHarmonySnapshotV1; harmony: HarmonyProgressionRealization }> {
   return validateHarmonySnapshot(checkedHarmonySnapshot(harmony));
@@ -497,7 +497,7 @@ export function createMotifGenerationResultV1(
   const sourcePlan = inputRecord.plan as ResolvedMotifPlanV1;
   const sourceEvents = inputRecord.events as readonly MotifEventV1[];
   if (!isHarmonyProfileId(profileId)) fail("provenance.profile.id", "invalid profile.");
-  const validatedHarmony = checkedHarmony(harmony);
+  const validatedHarmony = validateMotifHarmonyInputV1(harmony);
   if (profileId !== validatedHarmony.harmony.profile)
     fail("provenance.profile.id", "profile must match supplied Harmony.");
   const intentRecord = exactKeys(sourceIntent, ["energy", "complexity"], "intent");
