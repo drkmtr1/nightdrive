@@ -115,6 +115,17 @@ const CLASSIC_SYNTHWAVE_LOW_LOW_ZERO_PLAN = deepFreeze({
   phraseRoles: [...PHRASE_ROLES],
 } as const) satisfies Stage8MotifReferencePlanV1;
 
+const CLASSIC_SYNTHWAVE_MEDIUM_MEDIUM_MAX_PLAN = deepFreeze({
+  policyVersion: "nightdrive.motif-policy.v1",
+  profileVersion: "nightdrive.genre-profile.motif.v1",
+  rhythmTemplate: "steady-6",
+  registerBand: "middle",
+  tensionMode: "chordal",
+  phrase4Displacement: "none",
+  contourOffsets: [0, 1, 2, 1, 2, 0],
+  phraseRoles: [...PHRASE_ROLES],
+} as const) satisfies Stage8MotifReferencePlanV1;
+
 const DARKWAVE_HIGH_HIGH_ZERO_PLAN = deepFreeze({
   policyVersion: "nightdrive.motif-policy.v1",
   profileVersion: "nightdrive.genre-profile.motif.v1",
@@ -248,6 +259,16 @@ const EXPECTED_HARMONIC_MINOR_FALLBACK = staticEvents(
 );
 const ALTERNATE_DARK_SYNTHWAVE_EXACT_PATH = staticEvents(
   [75, 75, 79, 75, 79, 75, 74, 77, 77, 74, 77, 74, 80, 80, 84, 80, 84, 80, 79, 79, 79, 79, 79, 74],
+  STEADY_STARTS,
+  STEADY_DURATIONS,
+);
+const CLASSIC_SYNTHWAVE_EXACT_TIE_WINNER = staticEvents(
+  [72, 76, 76, 72, 76, 72, 69, 72, 72, 69, 72, 69, 67, 71, 71, 67, 71, 67, 72, 72, 76, 72, 76, 72],
+  STEADY_STARTS,
+  STEADY_DURATIONS,
+);
+const CLASSIC_SYNTHWAVE_EXACT_TIE_RUNNER_UP = staticEvents(
+  [72, 76, 76, 72, 76, 72, 69, 72, 72, 69, 72, 69, 67, 71, 71, 67, 71, 67, 72, 76, 76, 72, 76, 72],
   STEADY_STARTS,
   STEADY_DURATIONS,
 );
@@ -667,6 +688,37 @@ function scoreDarkSynthwaveExactPath(events: readonly Stage8MotifReferenceEventV
   return { pitches, stepDeviation, directionChanges, idealDistance };
 }
 
+/** Scores the documented classic-synthwave exact-path tie candidates. */
+function scoreClassicSynthwaveExactPath(
+  events: readonly Stage8MotifReferenceEventV1[],
+): FallbackPath {
+  const scale = [0, 2, 4, 5, 7, 9, 11] as const;
+  const contour = [0, 1, 2, 1, 2, 0] as const;
+  const ideals = [
+    72, 74, 76, 74, 76, 72, 72, 74, 76, 74, 76, 72, 71, 72, 74, 72, 74, 71, 72, 74, 76, 74, 76, 72,
+  ] as const;
+  if (events.length !== 24) throw new Error("Expected the exact steady-6 section.");
+  let stepDeviation = 0;
+  let directionChanges = 0;
+  let idealDistance = 0;
+  const pitches = events.map((current) => current.pitch);
+  for (const [index, pitch] of pitches.entries()) {
+    const ideal = ideals[index];
+    if (ideal === undefined) throw new Error("Incomplete classic tie ideals.");
+    idealDistance += Math.abs(pitch - ideal);
+    const eventIndex = index % contour.length;
+    if (eventIndex === 0) continue;
+    const previous = pitches[index - 1];
+    const expected = contour[eventIndex] - contour[eventIndex - 1];
+    if (previous === undefined || expected === undefined)
+      throw new Error("Incomplete classic tie contour.");
+    const actual = scaleOrdinal(pitch, 0, scale) - scaleOrdinal(previous, 0, scale);
+    stepDeviation += Math.abs(actual - expected);
+    if (direction(actual) !== direction(expected)) directionChanges += 1;
+  }
+  return { pitches, stepDeviation, directionChanges, idealDistance };
+}
+
 describe("Stage 8 Motif reference projector", () => {
   it("matches independently derived source fixtures, including cache-null regression coverage", () => {
     for (const [sourceIndex, plan, expected] of SOURCE_CASES) {
@@ -745,6 +797,48 @@ describe("Stage 8 Motif reference projector", () => {
       idealDistance: 60,
     });
     expect(compareFallbackPaths(selected, alternateScore)).toBeLessThan(0);
+  });
+
+  it("breaks an equal-score exact-path tie by complete numeric pitch sequence", () => {
+    const source = sourceAt(1);
+    const count = RHYTHMS["steady-6"].onsets.length;
+    const winnerPitches = CLASSIC_SYNTHWAVE_EXACT_TIE_WINNER.map((current) => current.pitch);
+    const runnerUpPitches = CLASSIC_SYNTHWAVE_EXACT_TIE_RUNNER_UP.map((current) => current.pitch);
+    const result = projectStage8MotifReferencePlanV1(
+      source.harmony,
+      CLASSIC_SYNTHWAVE_MEDIUM_MEDIUM_MAX_PLAN,
+    );
+
+    assertProjectionConforms(
+      source.harmony,
+      CLASSIC_SYNTHWAVE_MEDIUM_MEDIUM_MAX_PLAN,
+      CLASSIC_SYNTHWAVE_EXACT_TIE_WINNER,
+    );
+    assertProjectionConforms(
+      source.harmony,
+      CLASSIC_SYNTHWAVE_MEDIUM_MEDIUM_MAX_PLAN,
+      CLASSIC_SYNTHWAVE_EXACT_TIE_RUNNER_UP,
+    );
+    expect(winnerPitches.slice(count * 2, count * 3)).toEqual(
+      winnerPitches.slice(0, count).map((pitch) => pitch - 5),
+    );
+    expect(runnerUpPitches.slice(count * 2, count * 3)).toEqual(
+      runnerUpPitches.slice(0, count).map((pitch) => pitch - 5),
+    );
+    const winnerScore = scoreClassicSynthwaveExactPath(CLASSIC_SYNTHWAVE_EXACT_TIE_WINNER);
+    const runnerUpScore = scoreClassicSynthwaveExactPath(CLASSIC_SYNTHWAVE_EXACT_TIE_RUNNER_UP);
+    expect(winnerScore).toMatchObject({
+      stepDeviation: 16,
+      directionChanges: 4,
+      idealDistance: 49,
+    });
+    expect(runnerUpScore).toMatchObject({
+      stepDeviation: 16,
+      directionChanges: 4,
+      idealDistance: 49,
+    });
+    expect(compareFallbackPaths(winnerScore, runnerUpScore)).toBeLessThan(0);
+    expect(result).toEqual(CLASSIC_SYNTHWAVE_EXACT_TIE_WINNER);
   });
 
   it("returns detached deeply frozen results without input mutation or ambient randomness", () => {
