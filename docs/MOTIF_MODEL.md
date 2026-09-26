@@ -151,11 +151,82 @@ The independent reference required by the [Stage 8 evidence method](reviews/STAG
 | `natural-minor` | `[0,2,3,5,7,8,10]` |
 | `phrygian` | `[0,1,3,5,7,8,10]` |
 
+The matrix remains limited to those three formulas. The one supplemental evaluation-only fixture below is additionally authorized to use the existing V1 [`harmonic-minor` identity](MUSIC_DOMAIN_MODEL.md#primitive-types) with the ordered formula `[0,2,3,5,7,8,11]`. This narrow addition exists only to prove the required Phrase-3 ordinary-projection branch. It is not a source-matrix row, candidate vector, capture input, production request, new scale identity, or general-generation authority.
+
+### Supplemental Phrase-3 fallback fixture
+
+The fixed evaluation-only fixture ID is `stage8-motif-reference-p3-fallback-harmonic-minor-v1`. It supplies this deeply frozen Harmony snapshot, with the displayed object and array order:
+
+```ts
+{
+  profile: "dark-synthwave",
+  templateId: "degree-0344-harmonic-minor-v1",
+  templateVersion: "v1",
+  key: { tonic: 0, scale: "harmonic-minor" },
+  slots: [
+    {
+      index: 0,
+      degree: 0,
+      bars: 2,
+      chord: { root: 0, quality: "minor-triad" },
+      inversion: 0,
+      voicing: { midiPitches: [48, 51, 55] },
+    },
+    {
+      index: 1,
+      degree: 3,
+      bars: 2,
+      chord: { root: 5, quality: "minor-triad" },
+      inversion: 0,
+      voicing: { midiPitches: [53, 56, 60] },
+    },
+    {
+      index: 2,
+      degree: 4,
+      bars: 2,
+      chord: { root: 7, quality: "major-triad" },
+      inversion: 0,
+      voicing: { midiPitches: [55, 59, 62] },
+    },
+    {
+      index: 3,
+      degree: 0,
+      bars: 2,
+      chord: { root: 0, quality: "minor-triad" },
+      inversion: 0,
+      voicing: { midiPitches: [48, 51, 55] },
+    },
+  ],
+}
+```
+
+Its companion deeply frozen plan is:
+
+```ts
+{
+  policyVersion: "nightdrive.motif-policy.v1",
+  profileVersion: "nightdrive.genre-profile.motif.v1",
+  rhythmTemplate: "sparse-4",
+  registerBand: "middle",
+  tensionMode: "diatonic-passing",
+  phrase4Displacement: "none",
+  contourOffsets: [0, 1, 2, 0],
+  phraseRoles: [
+    "identity",
+    "motif-form-repetition",
+    "harmony-aware-transposition",
+    "contour-preserving-response",
+  ],
+}
+```
+
+Under the complete-path rules in this model, this fixture has no complete legal Phrase-3 exact-preservation path (`E`) and has at least one complete legal ordinary path (`L`). Focused reference evidence must prove those two predicates independently, then select only from `L` with the unchanged ordinary objective. It must not obtain an expected pitch sequence, a scale formula, or an existence result from production code. The independent reference may accept `harmonic-minor` only when both frozen values above match exactly; every other supplemental or unsupported scale context fails closed. The fixture grants no production behavior, canonical result, capture, evidence freeze, qualification closure, or musical acceptance.
+
 For a row's validated integer tonic `t` and its ordered formula `F[0..6]`, a validated current-Key scale-tone MIDI pitch `p` has degree `d` and octave quotient `q` only when `p = t + 12q + F[d]` for exactly one `d` in `0..6` and an integer `q`. Its diatonic ordinal is then `7q + d`. If no such equality holds, the reference fails closed; it does not use modulo normalization, rounding, coercion, nearest-tone selection, fallback, or generation to obtain an ordinal.
 
 For any integer ordinal `o`, let `q = floor(o / 7)` and `d = o - 7q`, so `d` is in `0..6`. The corresponding lifted current-Key scale tone is `t + 12q + F[d]`. Applying contour offset `k` to an anchor uses the exact lifted value for `ordinal(anchor) + k`. This arithmetic supplies only ordered scale motion for the independent reference. The existing range, chord-target, tension-mode, timing, leap/recovery, and complete-path constraints continue to decide whether that candidate is legal.
 
-This is a no-semantic-drift transcription of the accepted V1 scale behavior for the frozen qualification matrix. It creates no public operation, canonical type, scale identity, octave-label convention, spelling semantics, or general-generation authority, and it does not alter any Stage 8 qualification finding or acceptance state.
+This is a no-semantic-drift transcription of the accepted V1 scale behavior for the frozen qualification matrix plus its one named evaluation-only fallback fixture. It creates no public operation, canonical type, scale identity, octave-label convention, spelling semantics, or general-generation authority, and it does not alter any Stage 8 qualification finding or acceptance state.
 
 Adjacent sounded notes normally differ by at most 7 semitones. An exceptional leap may be 8 through 12 semitones only when the next sounded note exists, moves in the opposite direction, and is at most 2 semitones from the exceptional-leap destination. Exceptional leaps may cross phrase boundaries; the final section interval cannot be exceptional because no recovery note follows. Repeated pitches have direction zero and cannot satisfy opposite-direction recovery.
 
