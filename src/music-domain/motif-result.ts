@@ -480,20 +480,30 @@ export function createMotifGenerationResultV1(
     intent: NormalizedCompositionIntentV1;
   }>,
 ): MotifGenerationResultV1 {
-  if (!isHarmonyProfileId(input.profileId)) fail("provenance.profile.id", "invalid profile.");
-  if (input.profileId !== input.harmony.profile)
+  const inputRecord = exactKeys(
+    input,
+    ["profileId", "harmony", "intent", "rootSeed", "componentSeed", "plan", "events"],
+    "input",
+  );
+  const profileId = inputRecord.profileId;
+  const harmony = inputRecord.harmony as HarmonyProgressionRealization;
+  const sourceIntent = inputRecord.intent as NormalizedCompositionIntentV1;
+  const sourcePlan = inputRecord.plan as ResolvedMotifPlanV1;
+  const sourceEvents = inputRecord.events as readonly MotifEventV1[];
+  if (!isHarmonyProfileId(profileId)) fail("provenance.profile.id", "invalid profile.");
+  if (profileId !== harmony.profile)
     fail("provenance.profile.id", "profile must match supplied Harmony.");
-  const plan = copyPlan(input.plan);
-  const events = copyEvents(input.events);
-  const intent = validateNormalizedCompositionIntentV1(input.intent);
-  const rootSeed = uint32(input.rootSeed, "provenance.rootSeed");
-  const componentSeed = uint32(input.componentSeed, "provenance.componentSeed");
+  const plan = copyPlan(sourcePlan);
+  const events = copyEvents(sourceEvents);
+  const intent = validateNormalizedCompositionIntentV1(sourceIntent);
+  const rootSeed = uint32(inputRecord.rootSeed, "provenance.rootSeed");
+  const componentSeed = uint32(inputRecord.componentSeed, "provenance.componentSeed");
   if (componentSeed !== deriveComponentSeedV1(rootSeed, "motif"))
     fail("provenance.componentSeed", "component seed does not match root-seed derivation.");
-  assertPlanResolution(plan, input.profileId, intent, componentSeed);
-  assertCanonicalProjection(events, input.harmony, plan);
+  assertPlanResolution(plan, profileId, intent, componentSeed);
+  assertCanonicalProjection(events, harmony, plan);
   const provenance = Object.freeze({
-    profile: Object.freeze({ id: input.profileId, version: MOTIF_PROFILE_DATA_VERSION_V1 }),
+    profile: Object.freeze({ id: profileId, version: MOTIF_PROFILE_DATA_VERSION_V1 }),
     policy: Object.freeze({ version: MOTIF_POLICY_VERSION_V1 }),
     contour: Object.freeze({ version: MOTIF_CONTOUR_VERSION_V1 }),
     rhythm: Object.freeze({ version: MOTIF_RHYTHM_VERSION_V1 }),
@@ -503,7 +513,7 @@ export function createMotifGenerationResultV1(
     rootSeed,
     componentSeed,
     normalizedInputs: Object.freeze({ intent }),
-    harmony: checkedHarmonySnapshot(input.harmony),
+    harmony: checkedHarmonySnapshot(harmony),
     parent: null,
   });
   return Object.freeze({

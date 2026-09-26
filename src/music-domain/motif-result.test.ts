@@ -94,6 +94,33 @@ describe("MotifGenerationResultV1", () => {
     expect(first.plan).not.toBe(source.plan);
   });
 
+  it("rejects accessor-bearing constructor inputs before binding provenance", () => {
+    const source = fixture();
+    let profileReads = 0;
+    const changingProfile = {
+      ...source,
+      get profileId() {
+        profileReads += 1;
+        return profileReads < 4
+          ? source.profileId
+          : HARMONY_PROFILE_IDS.classicSynthwave;
+      },
+    };
+    expect(() => createMotifGenerationResultV1(changingProfile)).toThrow(MotifResultValueError);
+    expect(profileReads).toBe(0);
+
+    let harmonyReads = 0;
+    const changingHarmony = {
+      ...source,
+      get harmony() {
+        harmonyReads += 1;
+        return source.harmony;
+      },
+    };
+    expect(() => createMotifGenerationResultV1(changingHarmony)).toThrow(MotifResultValueError);
+    expect(harmonyReads).toBe(0);
+  });
+
   it("is recursively immutable across canonical result-owned values", () => {
     const result = createMotifGenerationResultV1(fixture());
     expect(Object.isFrozen(result)).toBe(true);
