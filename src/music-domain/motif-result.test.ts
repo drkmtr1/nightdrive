@@ -101,9 +101,7 @@ describe("MotifGenerationResultV1", () => {
       ...source,
       get profileId() {
         profileReads += 1;
-        return profileReads < 4
-          ? source.profileId
-          : HARMONY_PROFILE_IDS.classicSynthwave;
+        return profileReads < 4 ? source.profileId : HARMONY_PROFILE_IDS.classicSynthwave;
       },
     };
     expect(() => createMotifGenerationResultV1(changingProfile)).toThrow(MotifResultValueError);
@@ -128,9 +126,9 @@ describe("MotifGenerationResultV1", () => {
       },
       complexity: source.intent.complexity,
     };
-    expect(() =>
-      createMotifGenerationResultV1({ ...source, intent: changingIntent }),
-    ).toThrow(MotifResultValueError);
+    expect(() => createMotifGenerationResultV1({ ...source, intent: changingIntent })).toThrow(
+      MotifResultValueError,
+    );
     expect(intentReads).toBe(0);
 
     let nestedHarmonyReads = 0;
