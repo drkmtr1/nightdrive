@@ -12,7 +12,7 @@ import {
 import {
   MOTIF_GENERATOR_VERSION_V1,
   MotifResultValueError,
-  createMotifGenerationResultV1,
+  assembleResolvedMotifGenerationResultV1,
   validateMotifHarmonyInputV1,
   type MotifGenerationResultV1,
 } from "../music-domain/motif-result";
@@ -113,8 +113,9 @@ function readData(record: UnknownRecord, field: string): unknown {
   return descriptor !== undefined && "value" in descriptor ? descriptor.value : undefined;
 }
 
-function isDeeplyFrozenData(value: unknown): boolean {
+function isDeeplyFrozenData(value: unknown, ancestors = new Set<object>()): boolean {
   if (typeof value !== "object" || value === null) return true;
+  if (ancestors.has(value)) return false;
   if (!Object.isFrozen(value) || Object.getOwnPropertySymbols(value).length !== 0) return false;
   const names = Object.getOwnPropertyNames(value);
   if (Array.isArray(value)) {
@@ -125,12 +126,17 @@ function isDeeplyFrozenData(value: unknown): boolean {
     if (Object.getPrototypeOf(value) !== Array.prototype || names.join(",") !== expected.join(","))
       return false;
   } else if (Object.getPrototypeOf(value) !== Object.prototype) return false;
-  return names.every((name) => {
+  ancestors.add(value);
+  const valid = names.every((name) => {
     const descriptor = Object.getOwnPropertyDescriptor(value, name);
     return (
-      descriptor !== undefined && "value" in descriptor && isDeeplyFrozenData(descriptor.value)
+      descriptor !== undefined &&
+      "value" in descriptor &&
+      isDeeplyFrozenData(descriptor.value, ancestors)
     );
   });
+  ancestors.delete(value);
+  return valid;
 }
 
 function validateRequestShape(request: unknown): Readonly<{
@@ -264,7 +270,7 @@ export function generateMotifV1(request: unknown): MotifGenerationResultV1 {
       return fail("NO_VALID_MOTIF", "harmony", "no complete legal Motif path exists.");
     throw error;
   }
-  return createMotifGenerationResultV1({
+  return assembleResolvedMotifGenerationResultV1({
     profileId,
     harmony,
     intent,

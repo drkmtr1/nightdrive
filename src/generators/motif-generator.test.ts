@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createKey } from "../music-domain/key";
+import * as componentSeedModule from "../music-domain/component-seed";
 import {
   HARMONY_PROFILE_IDS,
   getHarmonyTemplatesForProfile,
@@ -17,6 +18,7 @@ import {
   MotifGenreProfileConfigurationError,
 } from "../music-domain/motif-profile-configuration";
 import * as projector from "./motif-pitch-projector";
+import * as policyResolver from "./motif-policy-resolver";
 import { MotifProjectionNoValidPathError } from "./motif-pitch-projector";
 import { createPitchClass } from "../music-domain/pitch";
 import {
@@ -59,12 +61,14 @@ function replace(source: ReturnType<typeof request>, patch: Record<string, unkno
 }
 
 function expectError(value: unknown, code: MotifValueError["code"], field: string): void {
-  expect(() => generateMotifV1(value)).toThrow(MotifValueError);
+  let thrown: unknown;
   try {
     generateMotifV1(value);
   } catch (error) {
-    expect(error).toMatchObject({ code, field });
+    thrown = error;
   }
+  expect(thrown).toBeInstanceOf(MotifValueError);
+  expect(thrown).toMatchObject({ code, field });
 }
 
 describe("generateMotifV1", () => {
@@ -85,6 +89,19 @@ describe("generateMotifV1", () => {
       expect(Object.isFrozen(first.events)).toBe(true);
       expect(Object.isFrozen(first.provenance.harmony)).toBe(true);
       expect(JSON.stringify(input)).toBe(before);
+    }
+  });
+
+  it("derives the component seed once and resolves exactly one four-draw plan", () => {
+    const derive = vi.spyOn(componentSeedModule, "deriveComponentSeedV1");
+    const resolve = vi.spyOn(policyResolver, "resolveMotifPlanV1");
+    try {
+      generateMotifV1(request());
+      expect(derive).toHaveBeenCalledTimes(1);
+      expect(resolve).toHaveBeenCalledTimes(1);
+    } finally {
+      derive.mockRestore();
+      resolve.mockRestore();
     }
   });
 
@@ -122,6 +139,11 @@ describe("generateMotifV1", () => {
     Object.freeze(accessor);
     expectError(accessor, "INVALID_MOTIF_REQUEST", "request");
     expect(reads).toBe(0);
+
+    const cyclic: { self?: unknown } = {};
+    cyclic.self = cyclic;
+    Object.freeze(cyclic);
+    expectError(replace(input, { harmony: cyclic }), "INVALID_MOTIF_REQUEST", "request");
   });
 
   it("uses the accepted public error precedence for identities and profile context", () => {
