@@ -118,6 +118,9 @@ describe("MotifGenerationResultV1", () => {
       MotifResultValueError,
     );
     expect(() =>
+      createMotifGenerationResultV1({ ...source, componentSeed: source.componentSeed ^ 1 }),
+    ).toThrow(MotifResultValueError);
+    expect(() =>
       createMotifGenerationResultV1({
         ...source,
         plan: Object.freeze({ ...source.plan, contourOffsets: Object.freeze([0]) }),
@@ -135,5 +138,85 @@ describe("MotifGenerationResultV1", () => {
     const wrongProvenance = Object.freeze({ ...result.provenance, harmony: wrongHarmony });
     const forgedNested = Object.freeze({ ...result, provenance: wrongProvenance });
     expect(() => serializeMotifGenerationResultV1(forgedNested)).toThrow(MotifResultValueError);
+  });
+
+  it("rejects noncanonical plans and invalid Harmony identities", () => {
+    const source = fixture();
+    const reorderedPlan = Object.freeze({
+      profileVersion: source.plan.profileVersion,
+      policyVersion: source.plan.policyVersion,
+      rhythmTemplate: source.plan.rhythmTemplate,
+      registerBand: source.plan.registerBand,
+      tensionMode: source.plan.tensionMode,
+      phrase4Displacement: source.plan.phrase4Displacement,
+      contourOffsets: source.plan.contourOffsets,
+      phraseRoles: source.plan.phraseRoles,
+    }) as typeof source.plan;
+    expect(() => createMotifGenerationResultV1({ ...source, plan: reorderedPlan })).toThrow(
+      MotifResultValueError,
+    );
+    const invalidPlan = Object.freeze({
+      ...source.plan,
+      registerBand: "outside",
+    }) as unknown as typeof source.plan;
+    expect(() => createMotifGenerationResultV1({ ...source, plan: invalidPlan })).toThrow(
+      MotifResultValueError,
+    );
+    const invalidHarmony = Object.freeze({
+      ...source.harmony,
+      templateId: "unknown-template",
+    });
+    expect(() => createMotifGenerationResultV1({ ...source, harmony: invalidHarmony })).toThrow(
+      MotifResultValueError,
+    );
+    const invalidSlot = Object.freeze({ ...source.harmony.slots[0], degree: 6 });
+    const invalidSlots = Object.freeze([invalidSlot, ...source.harmony.slots.slice(1)]);
+    expect(() =>
+      createMotifGenerationResultV1({
+        ...source,
+        harmony: Object.freeze({
+          ...source.harmony,
+          slots: invalidSlots,
+        }) as unknown as typeof source.harmony,
+      }),
+    ).toThrow(MotifResultValueError);
+  });
+
+  it("rejects sparse, overlapping, out-of-section, and forged serialized values", () => {
+    const source = fixture();
+    const sparse = [...source.events];
+    delete sparse[1];
+    expect(() => createMotifGenerationResultV1({ ...source, events: sparse })).toThrow(
+      MotifResultValueError,
+    );
+    const overlap = Object.freeze([
+      source.events[0],
+      Object.freeze({ ...source.events[1], startTick: source.events[0].startTick }),
+    ]);
+    expect(() => createMotifGenerationResultV1({ ...source, events: overlap })).toThrow(
+      MotifResultValueError,
+    );
+    const result = createMotifGenerationResultV1(source);
+    const forgedIntent = Object.freeze({
+      ...result.provenance.normalizedInputs.intent,
+      extra: undefined,
+    });
+    const forged = Object.freeze({
+      ...result,
+      provenance: Object.freeze({
+        ...result.provenance,
+        normalizedInputs: Object.freeze({ intent: forgedIntent }),
+      }),
+    });
+    expect(() => serializeMotifGenerationResultV1(forged)).toThrow(MotifResultValueError);
+
+    const withToJson = { ...result.provenance.profile };
+    Object.defineProperty(withToJson, "toJSON", { value: () => ({ id: "forged" }) });
+    Object.freeze(withToJson);
+    const forgedSerializer = Object.freeze({
+      ...result,
+      provenance: Object.freeze({ ...result.provenance, profile: withToJson }),
+    });
+    expect(() => serializeMotifGenerationResultV1(forgedSerializer)).toThrow(MotifResultValueError);
   });
 });
