@@ -119,6 +119,37 @@ describe("MotifGenerationResultV1", () => {
     };
     expect(() => createMotifGenerationResultV1(changingHarmony)).toThrow(MotifResultValueError);
     expect(harmonyReads).toBe(0);
+
+    let intentReads = 0;
+    const changingIntent = {
+      get energy() {
+        intentReads += 1;
+        return source.intent.energy;
+      },
+      complexity: source.intent.complexity,
+    };
+    expect(() =>
+      createMotifGenerationResultV1({ ...source, intent: changingIntent }),
+    ).toThrow(MotifResultValueError);
+    expect(intentReads).toBe(0);
+
+    let nestedHarmonyReads = 0;
+    const changingNestedHarmony = { ...source.harmony };
+    Object.defineProperty(changingNestedHarmony, "profile", {
+      enumerable: true,
+      get() {
+        nestedHarmonyReads += 1;
+        return source.profileId;
+      },
+    });
+    Object.freeze(changingNestedHarmony);
+    expect(() =>
+      createMotifGenerationResultV1({
+        ...source,
+        harmony: changingNestedHarmony as typeof source.harmony,
+      }),
+    ).toThrow(MotifResultValueError);
+    expect(nestedHarmonyReads).toBe(0);
   });
 
   it("is recursively immutable across canonical result-owned values", () => {

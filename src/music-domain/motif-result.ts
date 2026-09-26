@@ -263,6 +263,12 @@ function checkedHarmonySnapshot(harmony: HarmonyProgressionRealization): MotifHa
   }
 }
 
+function checkedHarmony(
+  harmony: HarmonyProgressionRealization,
+): Readonly<{ snapshot: MotifHarmonySnapshotV1; harmony: HarmonyProgressionRealization }> {
+  return validateHarmonySnapshot(checkedHarmonySnapshot(harmony));
+}
+
 function snapshotHarmony(harmony: HarmonyProgressionRealization): MotifHarmonySnapshotV1 {
   if (!isDeeplyFrozen(harmony)) fail("provenance.harmony", "Harmony must be deeply immutable.");
   const harmonyRecord = exactKeys(
@@ -491,17 +497,22 @@ export function createMotifGenerationResultV1(
   const sourcePlan = inputRecord.plan as ResolvedMotifPlanV1;
   const sourceEvents = inputRecord.events as readonly MotifEventV1[];
   if (!isHarmonyProfileId(profileId)) fail("provenance.profile.id", "invalid profile.");
-  if (profileId !== harmony.profile)
+  const validatedHarmony = checkedHarmony(harmony);
+  if (profileId !== validatedHarmony.harmony.profile)
     fail("provenance.profile.id", "profile must match supplied Harmony.");
+  const intentRecord = exactKeys(sourceIntent, ["energy", "complexity"], "intent");
+  const intent = validateNormalizedCompositionIntentV1({
+    energy: intentRecord.energy,
+    complexity: intentRecord.complexity,
+  });
   const plan = copyPlan(sourcePlan);
   const events = copyEvents(sourceEvents);
-  const intent = validateNormalizedCompositionIntentV1(sourceIntent);
   const rootSeed = uint32(inputRecord.rootSeed, "provenance.rootSeed");
   const componentSeed = uint32(inputRecord.componentSeed, "provenance.componentSeed");
   if (componentSeed !== deriveComponentSeedV1(rootSeed, "motif"))
     fail("provenance.componentSeed", "component seed does not match root-seed derivation.");
   assertPlanResolution(plan, profileId, intent, componentSeed);
-  assertCanonicalProjection(events, harmony, plan);
+  assertCanonicalProjection(events, validatedHarmony.harmony, plan);
   const provenance = Object.freeze({
     profile: Object.freeze({ id: profileId, version: MOTIF_PROFILE_DATA_VERSION_V1 }),
     policy: Object.freeze({ version: MOTIF_POLICY_VERSION_V1 }),
@@ -513,7 +524,7 @@ export function createMotifGenerationResultV1(
     rootSeed,
     componentSeed,
     normalizedInputs: Object.freeze({ intent }),
-    harmony: checkedHarmonySnapshot(harmony),
+    harmony: validatedHarmony.snapshot,
     parent: null,
   });
   return Object.freeze({
