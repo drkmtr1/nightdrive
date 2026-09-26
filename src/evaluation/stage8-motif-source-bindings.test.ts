@@ -85,13 +85,22 @@ describe("Stage 8 Motif qualification source bindings", () => {
         ["high", "high", 0],
         ["high", "high", 4_294_967_295],
       ]);
+      for (const row of rows) {
+        const seed = row.rootSeed.toString(16).padStart(8, "0");
+        expect(row.vectorId).toBe(
+          `${row.sourceRecordId}-${row.intent.energy}-${row.intent.complexity}-${seed}`,
+        );
+        expect(row.vectorId).toMatch(
+          /^[a-z0-9-]+-(low|medium|high)-(low|medium|high)-[0-9a-f]{8}$/,
+        );
+      }
     }
   });
 
   it("looks up only declared source and vector identities", () => {
     const source = getStage8MotifSourceBinding("darkwave-verse-001");
     expect(source.harmony.profile).toBe("darkwave");
-    expect(getStage8MotifQualificationInput("S8-MOTIF-darkwave-verse-001-medium-medium-0")).toEqual(
+    expect(getStage8MotifQualificationInput("darkwave-verse-001-medium-medium-00000000")).toEqual(
       STAGE8_MOTIF_QUALIFICATION_INPUTS[14],
     );
     expect(() => getStage8MotifSourceBinding("unknown")).toThrow(/Unknown Stage 8 Motif source/);

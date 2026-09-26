@@ -272,7 +272,9 @@ export const STAGE8_MOTIF_QUALIFICATION_INPUTS: readonly Stage8MotifQualificatio
       QUALIFICATION_INTENTS.flatMap((intent) =>
         QUALIFICATION_SEEDS.map((rootSeed) =>
           deepFreeze({
-            vectorId: `S8-MOTIF-${binding.sourceRecordId}-${intent.energy}-${intent.complexity}-${rootSeed}`,
+            vectorId: `${binding.sourceRecordId}-${intent.energy}-${intent.complexity}-${rootSeed
+              .toString(16)
+              .padStart(8, "0")}`,
             sourceRecordId: binding.sourceRecordId,
             profileId: binding.harmony.profile,
             intent: { energy: intent.energy, complexity: intent.complexity },
