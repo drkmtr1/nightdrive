@@ -141,6 +141,22 @@ All sounded pitches are current-Key scale tones. Structural events are the first
 
 The phrase anchor is the legal chord tone in the selected register band nearest the band's integer midpoint; ties choose the lower MIDI pitch. The ideal pitch at each event is obtained by applying its contour offset in the current Key's ordered diatonic scale to that anchor, preserving octave placement.
 
+### Qualification-reference ordered-scale rule
+
+The independent reference required by the [Stage 8 evidence method](reviews/STAGE8_MOTIF_EVIDENCE_METHOD_PROPOSAL.md) derives its ordered-scale values from this subsection, never from production scale or Motif-projector code. The initial frozen 24-row source matrix admits exactly these current-Key scale formulas:
+
+| Scale ID | Ordered tonic-relative semitone offsets |
+| --- | --- |
+| `major` | `[0,2,4,5,7,9,11]` |
+| `natural-minor` | `[0,2,3,5,7,8,10]` |
+| `phrygian` | `[0,1,3,5,7,8,10]` |
+
+For a row's validated integer tonic `t` and its ordered formula `F[0..6]`, a validated current-Key scale-tone MIDI pitch `p` has degree `d` and octave quotient `q` only when `p = t + 12q + F[d]` for exactly one `d` in `0..6` and an integer `q`. Its diatonic ordinal is then `7q + d`. If no such equality holds, the reference fails closed; it does not use modulo normalization, rounding, coercion, nearest-tone selection, fallback, or generation to obtain an ordinal.
+
+For any integer ordinal `o`, let `q = floor(o / 7)` and `d = o - 7q`, so `d` is in `0..6`. The corresponding lifted current-Key scale tone is `t + 12q + F[d]`. Applying contour offset `k` to an anchor uses the exact lifted value for `ordinal(anchor) + k`. This arithmetic supplies only ordered scale motion for the independent reference. The existing range, chord-target, tension-mode, timing, leap/recovery, and complete-path constraints continue to decide whether that candidate is legal.
+
+This is a no-semantic-drift transcription of the accepted V1 scale behavior for the frozen qualification matrix. It creates no public operation, canonical type, scale identity, octave-label convention, spelling semantics, or general-generation authority, and it does not alter any Stage 8 qualification finding or acceptance state.
+
 Adjacent sounded notes normally differ by at most 7 semitones. An exceptional leap may be 8 through 12 semitones only when the next sounded note exists, moves in the opposite direction, and is at most 2 semitones from the exceptional-leap destination. Exceptional leaps may cross phrase boundaries; the final section interval cannot be exceptional because no recovery note follows. Repeated pitches have direction zero and cannot satisfy opposite-direction recovery.
 
 Projection considers all complete eight-bar paths over legal candidate pitches. It rejects candidates that violate vocabulary, structural targets, mode, band, phrase bounds, event ordering, durations, the 12-semitone absolute maximum, or recovery, including leap/recovery obligations that cross phrase boundaries.
