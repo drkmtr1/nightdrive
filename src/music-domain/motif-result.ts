@@ -1,3 +1,4 @@
+import { projectResolvedMotifPlanV1 } from "../generators/motif-pitch-projector";
 import { createChord, serializeChord } from "./chord";
 import { createChordInversion, serializeChordInversion } from "./chord-inversion";
 import { createChordQuality } from "./chord-quality";
@@ -147,17 +148,23 @@ function exactKeys(
 
 function denseArray(value: unknown, field: string): readonly unknown[] {
   if (!Array.isArray(value)) fail(field, `${field} must be an array.`);
+  const expectedNames = [
+    ...Array.from({ length: value.length }, (_, index) => String(index)),
+    "length",
+  ];
   if (
     Object.getPrototypeOf(value) !== Array.prototype ||
     Object.getOwnPropertySymbols(value).length !== 0 ||
-    Object.keys(value).join(",") !==
-      Array.from({ length: value.length }, (_, index) => index).join(",")
+    Object.getOwnPropertyNames(value).join(",") !== expectedNames.join(",")
   )
     fail(field, `${field} must be a dense canonical array.`);
   return value;
 }
 
-function validateHarmonySnapshot(snapshot: MotifHarmonySnapshotV1): MotifHarmonySnapshotV1 {
+function validateHarmonySnapshot(snapshot: MotifHarmonySnapshotV1): Readonly<{
+  snapshot: MotifHarmonySnapshotV1;
+  harmony: HarmonyProgressionRealization;
+}> {
   const record = exactKeys(
     snapshot,
     ["profile", "templateId", "templateVersion", "key", "slots"],
@@ -224,18 +231,17 @@ function validateHarmonySnapshot(snapshot: MotifHarmonySnapshotV1): MotifHarmony
       rationale: Object.freeze({ preferenceRank: 0, tieBreak: "snapshot validation" }),
     });
   });
-  const reconstructed = snapshotHarmony(
-    Object.freeze({
-      profile: record.profile,
-      templateId: record.templateId,
-      templateVersion: "v1",
-      key: canonicalKey,
-      slots: Object.freeze(slots),
-    }),
-  );
+  const harmony = Object.freeze({
+    profile: record.profile,
+    templateId: record.templateId,
+    templateVersion: "v1" as const,
+    key: canonicalKey,
+    slots: Object.freeze(slots),
+  });
+  const reconstructed = snapshotHarmony(harmony);
   if (JSON.stringify(reconstructed) !== JSON.stringify(snapshot))
     fail("provenance.harmony", "Harmony snapshot is not canonical.");
-  return reconstructed;
+  return Object.freeze({ snapshot: reconstructed, harmony });
 }
 
 function checkedHarmonySnapshot(harmony: HarmonyProgressionRealization): MotifHarmonySnapshotV1 {
@@ -253,7 +259,8 @@ function snapshotHarmony(harmony: HarmonyProgressionRealization): MotifHarmonySn
     fail("provenance.harmony.templateId", "templateId must be non-empty.");
   if (harmony.templateVersion !== "v1")
     fail("provenance.harmony.templateVersion", "unsupported template version.");
-  if (!Array.isArray(harmony.slots) || harmony.slots.length !== 4)
+  const sourceSlots = denseArray(harmony.slots, "provenance.harmony.slots");
+  if (sourceSlots.length !== 4)
     fail("provenance.harmony.slots", "Harmony must contain exactly four slots.");
 
   let template: ReturnType<typeof getHarmonyTemplate>;
@@ -269,7 +276,8 @@ function snapshotHarmony(harmony: HarmonyProgressionRealization): MotifHarmonySn
     fail("provenance.harmony.key.scale", "Harmony key scale must match its template.");
   const expectedChords = realizeHarmonyTemplate(template, canonicalKey);
 
-  const slots = harmony.slots.map((slot, index) => {
+  const slots = sourceSlots.map((value, index) => {
+    const slot = value as HarmonyProgressionRealization["slots"][number];
     if (slot.index !== index)
       fail(`provenance.harmony.slots[${index}].index`, "invalid slot index.");
     if (slot.bars !== 2)
@@ -336,12 +344,12 @@ function copyPlan(plan: ResolvedMotifPlanV1): ResolvedMotifPlanV1 {
   denseArray(record.phraseRoles, "plan.phraseRoles");
   if (
     plan.contourOffsets.length !== template.contourOffsets.length ||
-    plan.contourOffsets.some((value, index) => value !== template.contourOffsets[index])
+    Array.from(plan.contourOffsets).some((value, index) => value !== template.contourOffsets[index])
   )
     fail("plan.contourOffsets", "contour must match the selected catalog value.");
   if (
     plan.phraseRoles.length !== MOTIF_PHRASE_ROLES_V1.length ||
-    plan.phraseRoles.some((value, index) => value !== MOTIF_PHRASE_ROLES_V1[index])
+    Array.from(plan.phraseRoles).some((value, index) => value !== MOTIF_PHRASE_ROLES_V1[index])
   )
     fail("plan.phraseRoles", "phrase roles must match the catalog value.");
   return Object.freeze({
@@ -384,6 +392,29 @@ function copyEvents(value: readonly MotifEventV1[]): readonly MotifEventV1[] {
   return Object.freeze(events);
 }
 
+function assertCanonicalProjection(
+  events: readonly MotifEventV1[],
+  harmony: HarmonyProgressionRealization,
+  plan: ResolvedMotifPlanV1,
+): void {
+  let expected: readonly MotifEventV1[];
+  try {
+    expected = projectResolvedMotifPlanV1(harmony, plan);
+  } catch {
+    fail("events", "events cannot be verified against the resolved Motif projection.");
+  }
+  if (
+    events.length !== expected.length ||
+    events.some(
+      (event, index) =>
+        event.pitch !== expected[index]?.pitch ||
+        event.startTick !== expected[index]?.startTick ||
+        event.durationTicks !== expected[index]?.durationTicks,
+    )
+  )
+    fail("events", "events must equal the canonical resolved Motif projection.");
+}
+
 export function createMotifGenerationResultV1(
   input: Readonly<{
     plan: ResolvedMotifPlanV1;
@@ -400,6 +431,7 @@ export function createMotifGenerationResultV1(
     fail("provenance.profile.id", "profile must match supplied Harmony.");
   const plan = copyPlan(input.plan);
   const events = copyEvents(input.events);
+  assertCanonicalProjection(events, input.harmony, plan);
   const intent = validateNormalizedCompositionIntentV1(input.intent);
   const provenance = Object.freeze({
     profile: Object.freeze({ id: input.profileId, version: MOTIF_PROFILE_DATA_VERSION_V1 }),
@@ -490,12 +522,14 @@ export function serializeMotifGenerationResultV1(result: MotifGenerationResultV1
     fail("provenance", "provenance identities are invalid.");
   if (result.provenance.profile.id !== result.provenance.harmony.profile)
     fail("provenance.profile.id", "profile must match Harmony snapshot.");
+  let validatedHarmony: ReturnType<typeof validateHarmonySnapshot>;
   try {
-    validateHarmonySnapshot(result.provenance.harmony);
+    validatedHarmony = validateHarmonySnapshot(result.provenance.harmony);
   } catch (error) {
     if (error instanceof MotifResultValueError) throw error;
     fail("provenance.harmony", "Harmony snapshot is not canonical.");
   }
+  assertCanonicalProjection(events, validatedHarmony.harmony, plan);
   return JSON.stringify({
     schema: MOTIF_GENERATION_RESULT_SCHEMA_V1,
     generatorVersion: MOTIF_GENERATOR_VERSION_V1,
@@ -512,7 +546,7 @@ export function serializeMotifGenerationResultV1(result: MotifGenerationResultV1
       rootSeed,
       componentSeed,
       normalizedInputs: { intent },
-      harmony: validateHarmonySnapshot(result.provenance.harmony),
+      harmony: validatedHarmony.snapshot,
       parent: null,
     },
   });

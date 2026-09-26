@@ -162,6 +162,15 @@ describe("MotifGenerationResultV1", () => {
     expect(() => createMotifGenerationResultV1({ ...source, plan: invalidPlan })).toThrow(
       MotifResultValueError,
     );
+    const hiddenMethodOffsets = [...source.plan.contourOffsets];
+    Object.defineProperty(hiddenMethodOffsets, "some", { value: () => false });
+    const hiddenMethodPlan = Object.freeze({
+      ...source.plan,
+      contourOffsets: Object.freeze(hiddenMethodOffsets),
+    });
+    expect(() => createMotifGenerationResultV1({ ...source, plan: hiddenMethodPlan })).toThrow(
+      MotifResultValueError,
+    );
     const invalidHarmony = Object.freeze({
       ...source.harmony,
       templateId: "unknown-template",
@@ -180,6 +189,17 @@ describe("MotifGenerationResultV1", () => {
         }) as unknown as typeof source.harmony,
       }),
     ).toThrow(MotifResultValueError);
+    const sparseSlots = [...source.harmony.slots];
+    delete sparseSlots[1];
+    expect(() =>
+      createMotifGenerationResultV1({
+        ...source,
+        harmony: Object.freeze({
+          ...source.harmony,
+          slots: sparseSlots,
+        }) as typeof source.harmony,
+      }),
+    ).toThrow(MotifResultValueError);
   });
 
   it("rejects sparse, overlapping, out-of-section, and forged serialized values", () => {
@@ -196,6 +216,20 @@ describe("MotifGenerationResultV1", () => {
     expect(() => createMotifGenerationResultV1({ ...source, events: overlap })).toThrow(
       MotifResultValueError,
     );
+    expect(() => createMotifGenerationResultV1({ ...source, events: Object.freeze([]) })).toThrow(
+      MotifResultValueError,
+    );
+    const retimed = Object.freeze(
+      source.events.map((event, index) =>
+        index === 0 ? Object.freeze({ ...event, startTick: event.startTick + 480 }) : event,
+      ),
+    );
+    expect(() =>
+      createMotifGenerationResultV1({
+        ...source,
+        events: retimed as unknown as typeof source.events,
+      }),
+    ).toThrow(MotifResultValueError);
     const result = createMotifGenerationResultV1(source);
     const forgedIntent = Object.freeze({
       ...result.provenance.normalizedInputs.intent,
