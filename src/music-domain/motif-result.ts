@@ -1,4 +1,5 @@
 import { projectResolvedMotifPlanV1 } from "../generators/motif-pitch-projector";
+import { resolveMotifPlanV1 } from "../generators/motif-policy-resolver";
 import { createChord, serializeChord } from "./chord";
 import { createChordInversion, serializeChordInversion } from "./chord-inversion";
 import { createChordQuality } from "./chord-quality";
@@ -122,7 +123,11 @@ function deepFreeze<T>(value: T): T {
 
 function isDeeplyFrozen(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return true;
-  return Object.isFrozen(value) && Object.values(value).every(isDeeplyFrozen);
+  if (!Object.isFrozen(value)) return false;
+  return Reflect.ownKeys(value).every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor !== undefined && "value" in descriptor && isDeeplyFrozen(descriptor.value);
+  });
 }
 
 function exactKeys(
@@ -155,7 +160,11 @@ function denseArray(value: unknown, field: string): readonly unknown[] {
   if (
     Object.getPrototypeOf(value) !== Array.prototype ||
     Object.getOwnPropertySymbols(value).length !== 0 ||
-    Object.getOwnPropertyNames(value).join(",") !== expectedNames.join(",")
+    Object.getOwnPropertyNames(value).join(",") !== expectedNames.join(",") ||
+    Array.from({ length: value.length }, (_, index) => index).some((index) => {
+      const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+      return descriptor === undefined || !("value" in descriptor) || !descriptor.enumerable;
+    })
   )
     fail(field, `${field} must be a dense canonical array.`);
   return value;
@@ -217,6 +226,7 @@ function validateHarmonySnapshot(snapshot: MotifHarmonySnapshotV1): Readonly<{
     );
     if (voicing.schema !== "nightdrive.chord-voicing.v1")
       fail(`provenance.harmony.slots[${index}].voicing.schema`, "invalid schema.");
+    denseArray(voicing.midiPitches, `provenance.harmony.slots[${index}].voicing.midiPitches`);
     return Object.freeze({
       index,
       degree: createScaleDegree(slot.degree as number),
@@ -254,6 +264,12 @@ function checkedHarmonySnapshot(harmony: HarmonyProgressionRealization): MotifHa
 }
 
 function snapshotHarmony(harmony: HarmonyProgressionRealization): MotifHarmonySnapshotV1 {
+  if (!isDeeplyFrozen(harmony)) fail("provenance.harmony", "Harmony must be deeply immutable.");
+  const harmonyRecord = exactKeys(
+    harmony,
+    ["profile", "templateId", "templateVersion", "key", "slots"],
+    "provenance.harmony",
+  );
   if (!isHarmonyProfileId(harmony.profile)) fail("provenance.harmony.profile", "invalid profile.");
   if (typeof harmony.templateId !== "string" || harmony.templateId.length === 0)
     fail("provenance.harmony.templateId", "templateId must be non-empty.");
@@ -271,21 +287,48 @@ function snapshotHarmony(harmony: HarmonyProgressionRealization): MotifHarmonySn
   }
   if (!isHarmonyTemplateSupportedForProfile(harmony.profile, template))
     fail("provenance.harmony.templateId", "Harmony template is incompatible with profile.");
-  const canonicalKey = createKey(harmony.key.tonic, harmony.key.scale);
+  const keyRecord = exactKeys(harmonyRecord.key, ["tonic", "scale"], "provenance.harmony.key");
+  const canonicalKey = createKey(
+    createPitchClass(keyRecord.tonic as number),
+    createScaleType(keyRecord.scale),
+  );
   if (canonicalKey.scale !== template.scale)
     fail("provenance.harmony.key.scale", "Harmony key scale must match its template.");
   const expectedChords = realizeHarmonyTemplate(template, canonicalKey);
 
   const slots = sourceSlots.map((value, index) => {
-    const slot = value as HarmonyProgressionRealization["slots"][number];
+    const slot = exactKeys(
+      value,
+      ["index", "degree", "bars", "chord", "inversion", "voicing", "adjacentCost", "rationale"],
+      `provenance.harmony.slots[${index}]`,
+    );
     if (slot.index !== index)
       fail(`provenance.harmony.slots[${index}].index`, "invalid slot index.");
     if (slot.bars !== 2)
       fail(`provenance.harmony.slots[${index}].bars`, "each slot must span two bars.");
-    const degree = createScaleDegree(slot.degree);
-    const chord = createChord(slot.chord.root, slot.chord.quality);
-    const inversion = createChordInversion(slot.inversion);
-    const voicing = createChordVoicing(slot.voicing.midiPitches);
+    const degree = createScaleDegree(slot.degree as number);
+    const chordRecord = exactKeys(
+      slot.chord,
+      ["root", "quality"],
+      `provenance.harmony.slots[${index}].chord`,
+    );
+    const chord = createChord(
+      createPitchClass(chordRecord.root as number),
+      createChordQuality(chordRecord.quality),
+    );
+    const inversion = createChordInversion(slot.inversion as number);
+    const voicingRecord = exactKeys(
+      slot.voicing,
+      ["midiPitches"],
+      `provenance.harmony.slots[${index}].voicing`,
+    );
+    denseArray(voicingRecord.midiPitches, `provenance.harmony.slots[${index}].voicing.midiPitches`);
+    const voicing = createChordVoicing(voicingRecord.midiPitches);
+    exactKeys(
+      slot.rationale,
+      ["preferenceRank", "tieBreak"],
+      `provenance.harmony.slots[${index}].rationale`,
+    );
     const expected = expectedChords[index];
     if (
       degree !== template.slots[index]?.degree ||
@@ -298,11 +341,11 @@ function snapshotHarmony(harmony: HarmonyProgressionRealization): MotifHarmonySn
       fail(`provenance.harmony.slots[${index}].voicing`, "voicing is incompatible with chord.");
     return Object.freeze({
       index: slot.index,
-      degree: slot.degree,
+      degree,
       bars: slot.bars,
-      chord: deepFreeze(parsed(serializeChord(slot.chord))),
-      inversion: deepFreeze(parsed(serializeChordInversion(slot.inversion))),
-      voicing: deepFreeze(parsed(serializeChordVoicing(slot.voicing))),
+      chord: deepFreeze(parsed(serializeChord(chord))),
+      inversion: deepFreeze(parsed(serializeChordInversion(inversion))),
+      voicing: deepFreeze(parsed(serializeChordVoicing(voicing))),
     });
   });
 
@@ -313,6 +356,17 @@ function snapshotHarmony(harmony: HarmonyProgressionRealization): MotifHarmonySn
     key: deepFreeze(parsed(serializeKey(harmony.key))),
     slots: Object.freeze(slots),
   });
+}
+
+function assertPlanResolution(
+  plan: ResolvedMotifPlanV1,
+  profileId: HarmonyProfileId,
+  intent: NormalizedCompositionIntentV1,
+  componentSeed: number,
+): void {
+  const expected = resolveMotifPlanV1({ profileId, ...intent }, componentSeed);
+  if (JSON.stringify(plan) !== JSON.stringify(expected))
+    fail("plan", "plan must equal the deterministic resolution of its recorded inputs.");
 }
 
 function copyPlan(plan: ResolvedMotifPlanV1): ResolvedMotifPlanV1 {
@@ -431,8 +485,13 @@ export function createMotifGenerationResultV1(
     fail("provenance.profile.id", "profile must match supplied Harmony.");
   const plan = copyPlan(input.plan);
   const events = copyEvents(input.events);
-  assertCanonicalProjection(events, input.harmony, plan);
   const intent = validateNormalizedCompositionIntentV1(input.intent);
+  const rootSeed = uint32(input.rootSeed, "provenance.rootSeed");
+  const componentSeed = uint32(input.componentSeed, "provenance.componentSeed");
+  if (componentSeed !== deriveComponentSeedV1(rootSeed, "motif"))
+    fail("provenance.componentSeed", "component seed does not match root-seed derivation.");
+  assertPlanResolution(plan, input.profileId, intent, componentSeed);
+  assertCanonicalProjection(events, input.harmony, plan);
   const provenance = Object.freeze({
     profile: Object.freeze({ id: input.profileId, version: MOTIF_PROFILE_DATA_VERSION_V1 }),
     policy: Object.freeze({ version: MOTIF_POLICY_VERSION_V1 }),
@@ -441,14 +500,12 @@ export function createMotifGenerationResultV1(
     seedDerivation: Object.freeze({ version: MOTIF_SEED_DERIVATION_VERSION_V1 }),
     prng: Object.freeze({ version: MOTIF_PRNG_VERSION_V1 }),
     weightedChoice: Object.freeze({ version: MOTIF_WEIGHTED_CHOICE_VERSION_V1 }),
-    rootSeed: uint32(input.rootSeed, "provenance.rootSeed"),
-    componentSeed: uint32(input.componentSeed, "provenance.componentSeed"),
+    rootSeed,
+    componentSeed,
     normalizedInputs: Object.freeze({ intent }),
     harmony: checkedHarmonySnapshot(input.harmony),
     parent: null,
   });
-  if (provenance.componentSeed !== deriveComponentSeedV1(provenance.rootSeed, "motif"))
-    fail("provenance.componentSeed", "component seed does not match root-seed derivation.");
   return Object.freeze({
     schema: MOTIF_GENERATION_RESULT_SCHEMA_V1,
     generatorVersion: MOTIF_GENERATOR_VERSION_V1,
@@ -522,6 +579,9 @@ export function serializeMotifGenerationResultV1(result: MotifGenerationResultV1
     fail("provenance", "provenance identities are invalid.");
   if (result.provenance.profile.id !== result.provenance.harmony.profile)
     fail("provenance.profile.id", "profile must match Harmony snapshot.");
+  if (!isHarmonyProfileId(result.provenance.profile.id))
+    fail("provenance.profile.id", "invalid profile.");
+  assertPlanResolution(plan, result.provenance.profile.id, intent, componentSeed);
   let validatedHarmony: ReturnType<typeof validateHarmonySnapshot>;
   try {
     validatedHarmony = validateHarmonySnapshot(result.provenance.harmony);

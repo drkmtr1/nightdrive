@@ -120,6 +120,14 @@ describe("MotifGenerationResultV1", () => {
     expect(() =>
       createMotifGenerationResultV1({ ...source, componentSeed: source.componentSeed ^ 1 }),
     ).toThrow(MotifResultValueError);
+    const reboundRootSeed = 0;
+    expect(() =>
+      createMotifGenerationResultV1({
+        ...source,
+        rootSeed: reboundRootSeed,
+        componentSeed: deriveComponentSeedV1(reboundRootSeed, "motif"),
+      }),
+    ).toThrow(MotifResultValueError);
     expect(() =>
       createMotifGenerationResultV1({
         ...source,
@@ -200,6 +208,21 @@ describe("MotifGenerationResultV1", () => {
         }) as typeof source.harmony,
       }),
     ).toThrow(MotifResultValueError);
+    const accessorSlot = { ...source.harmony.slots[0] };
+    Object.defineProperty(accessorSlot, "degree", {
+      enumerable: true,
+      get: () => source.harmony.slots[0].degree,
+    });
+    Object.freeze(accessorSlot);
+    expect(() =>
+      createMotifGenerationResultV1({
+        ...source,
+        harmony: Object.freeze({
+          ...source.harmony,
+          slots: Object.freeze([accessorSlot, ...source.harmony.slots.slice(1)]),
+        }) as typeof source.harmony,
+      }),
+    ).toThrow(MotifResultValueError);
   });
 
   it("rejects sparse, overlapping, out-of-section, and forged serialized values", () => {
@@ -252,5 +275,48 @@ describe("MotifGenerationResultV1", () => {
       provenance: Object.freeze({ ...result.provenance, profile: withToJson }),
     });
     expect(() => serializeMotifGenerationResultV1(forgedSerializer)).toThrow(MotifResultValueError);
+
+    const hiddenSlotArray = [...result.provenance.harmony.slots];
+    Object.defineProperty(hiddenSlotArray, "0", {
+      value: { ...result.provenance.harmony.slots[0] },
+      enumerable: false,
+    });
+    Object.freeze(hiddenSlotArray);
+    const hiddenSlotResult = Object.freeze({
+      ...result,
+      provenance: Object.freeze({
+        ...result.provenance,
+        harmony: Object.freeze({ ...result.provenance.harmony, slots: hiddenSlotArray }),
+      }),
+    });
+    expect(() => serializeMotifGenerationResultV1(hiddenSlotResult)).toThrow(MotifResultValueError);
+
+    const originalVoicing = result.provenance.harmony.slots[0].voicing as Readonly<{
+      midiPitches: readonly number[];
+    }>;
+    const pitchesWithToJson = [...originalVoicing.midiPitches];
+    Object.defineProperty(pitchesWithToJson, "toJSON", { value: () => pitchesWithToJson });
+    Object.freeze(pitchesWithToJson);
+    const forgedSlots = Object.freeze(
+      result.provenance.harmony.slots.map((slot, index) =>
+        index === 0
+          ? Object.freeze({
+              ...slot,
+              voicing: Object.freeze({
+                ...(slot.voicing as Record<string, unknown>),
+                midiPitches: pitchesWithToJson,
+              }),
+            })
+          : slot,
+      ),
+    );
+    const nestedArrayHook = Object.freeze({
+      ...result,
+      provenance: Object.freeze({
+        ...result.provenance,
+        harmony: Object.freeze({ ...result.provenance.harmony, slots: forgedSlots }),
+      }),
+    });
+    expect(() => serializeMotifGenerationResultV1(nestedArrayHook)).toThrow(MotifResultValueError);
   });
 });
