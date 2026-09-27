@@ -473,7 +473,16 @@ describe("Stage 8 Motif reference plan resolution", () => {
     expect(() => resolveStage8MotifReferencePlanV1(nonEnumerableContext, 0)).toThrow(
       /canonical Stage 8/,
     );
-    for (const rootSeed of [undefined, null, -0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, "0"]) {
+    for (const rootSeed of [
+      undefined,
+      null,
+      -0,
+      -1,
+      0.5,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      "0",
+    ]) {
       expect(() => resolveStage8MotifReferencePlanV1(valid, rootSeed)).toThrow(/rootSeed/);
     }
     expect(() => resolveStage8MotifReferencePlanFromComponentSeedV1(valid, -0)).toThrow(/seed/);

@@ -15,7 +15,17 @@ describe("Stage 8 Motif independent reference primitives", () => {
   });
 
   it("rejects malformed reference root seeds without coercion", () => {
-    for (const rootSeed of [undefined, null, -0, -1, 0.5, Number.NaN, Infinity, 4_294_967_296, "0"]) {
+    for (const rootSeed of [
+      undefined,
+      null,
+      -0,
+      -1,
+      0.5,
+      Number.NaN,
+      Infinity,
+      4_294_967_296,
+      "0",
+    ]) {
       expect(() => deriveStage8MotifReferenceSeed(rootSeed)).toThrow(/rootSeed/);
     }
   });
