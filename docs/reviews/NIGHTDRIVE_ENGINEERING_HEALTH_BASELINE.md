@@ -381,3 +381,20 @@ subsequent protected-integration evidence.
 | Closure verification | The durable replacement record satisfies the required per-ID replacement form: explicit authoritative replacement in place of an unavailable origin tuple, affected scope, condition, contract basis, and explicit closure criteria/evidence for each stable ID. |
 | Closure scope | This closes only the Engineering Health finding `ND-QA-001`. It does not close or redefine `S8-QUAL-001`, `S8-QUAL-002`, or `S8-QUAL-003`; all remain OPEN under the protected-integrated forward-looking definitions. |
 | Continuing gate | The Health Baseline remains `REVISE`. `ND-QA-003` remains OPEN and is the next MUST FIX priority. Real Stage 8 capture, evidence freeze, production/reference comparison, supported-platform qualification, implementation, and ordinary roadmap progression remain blocked. |
+
+## Post-assessment ND-QA-003 mechanism-selection record
+
+This addendum is a separately bounded, mechanical post-integration reconciliation. It preserves the original ASSESS identity, observed condition, affected components, authority, impact, closure requirement, and `REVISE` result above. It records only the completed mechanism-selection lifecycle; it does not enable a control or close the finding.
+
+| Field | Evidence |
+| --- | --- |
+| Finding | `ND-QA-003` |
+| Current status | `MUST FIX BEFORE NEXT MILESTONE - OPEN` |
+| Accepted control-design component | The [ND-QA-003 supply-chain security-control specification](NDQA003_SUPPLY_CHAIN_SECURITY_CONTROL_SPECIFICATION.md) supplies the accepted bounded native-first mechanism-selection authority only: pinned npm audit for full-graph vulnerability evidence, pinned npm SBOM for declared-license inventory, and GitHub dependency graph / Dependabot alerts / security updates for hosted advisory/remediation workflow. It reserves all consequential policy values and implementation. |
+| Reviewed candidate | Consequential external exact-head PASS for base `64b86b45bf1ec7152a265ac19de0ba6a7c81b137`, head `e356447fb1ae8bd0232d15b58b6f4eefd4db3716`, tree `887cd26ac008f6538b19848d3dc3b210bbc4bce0`, one-document scope, 22,292-byte full-index patch, and SHA-256 `9FA3023B54BFF46EC6328B2DD4D5B98410A4B73B5084C2A563FC40F3CE24D6CD`. |
+| Product Owner acceptance | The Product Owner explicitly accepted the exact reviewed tuple as mechanism-selection authority only, expressly withholding registry egress, policy values, GitHub administration, implementation/configuration, and finding closure. |
+| Protected integration | [PR #246](https://github.com/drkmtr1/nightdrive/pull/246) bound the reviewed tuple and then squash-integrated the reviewed tree as `b4523d9d16a4b67044f216cb7b57a85f06dab0dd`. Post-merge verification found the integration tree equal to the reviewed tree and no out-of-scope merged path. |
+| Required CI | Documentation / validate passed in [run 36306594034](https://github.com/drkmtr1/nightdrive/actions/runs/36306594034); Runtime foundation / validate passed in [run 36306594016](https://github.com/drkmtr1/nightdrive/actions/runs/36306594016). |
+| Closure-criterion disposition | **Accepted control design:** satisfied. **Enabled/configured automation:** not demonstrated. **Successful-run evidence:** not demonstrated. **Required GitHub security-configuration evidence:** not demonstrated. All four conditions remain required for closure. |
+| Continuing gate | The Health Baseline remains `REVISE`. `ND-QA-003` remains OPEN; `ND-QA-004` and `ND-QA-005` remain OPEN; MIA-003 remains deferred. No networked npm audit, GitHub security setting, workflow/scanner implementation, compatibility/egress spike, Stage 8 qualification progression, or ordinary roadmap work is authorized. |
+| Next eligible task | A separate consequential Product Owner policy specification for registry/data egress, vulnerability threshold/remediation and exceptions, declared-license rules and exceptions, alert ownership/response, and GitHub access/administrative decisions. |

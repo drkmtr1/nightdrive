@@ -1,16 +1,16 @@
 # ND-QA-003 supply-chain security-control specification
 
-## Status and decision requested
+## Status and decision record
 
-**CANDIDATE.** This is a consequential security, trust, permission, and dependency-policy proposal. External exact-head review PASS is technical approval of this exact candidate only. It becomes binding **mechanism-selection authority** only after consequential external review PASS, explicit Product Owner acceptance of the reviewed tuple, and protected integration. Before then, it authorizes no workflow, GitHub setting, package, dependency, action, policy, exception, artifact, alert, or qualification claim. No status-only post-review mutation is needed to make an accepted reviewed tuple binding.
+**ACCEPTED / BINDING.** The exact reviewed tuple — base `64b86b45bf1ec7152a265ac19de0ba6a7c81b137`, head `e356447fb1ae8bd0232d15b58b6f4eefd4db3716`, tree `887cd26ac008f6538b19848d3dc3b210bbc4bce0`, scope `docs/reviews/NDQA003_SUPPLY_CHAIN_SECURITY_CONTROL_SPECIFICATION.md` only, and 22,292-byte full-index patch SHA-256 `9FA3023B54BFF46EC6328B2DD4D5B98410A4B73B5084C2A563FC40F3CE24D6CD` — received consequential external exact-head PASS and explicit Product Owner acceptance. [PR #246](https://github.com/drkmtr1/nightdrive/pull/246) protected-squash-integrated the reviewed tree as `b4523d9d16a4b67044f216cb7b57a85f06dab0dd`; the integration tree is exactly the reviewed tree. Documentation / validate passed in [run 36306594034](https://github.com/drkmtr1/nightdrive/actions/runs/36306594034), and Runtime foundation / validate passed in [run 36306594016](https://github.com/drkmtr1/nightdrive/actions/runs/36306594016). The mechanism-selection authority became binding at protected integration; this lifecycle record does not create authority retroactively.
 
-Even if accepted, this specification does **not** supply the later Product Owner-owned registry-egress disposition, vulnerability threshold, license policy, exception authority, alert owner, or GitHub administrative action. Those are deliberately separate prerequisites for implementation. It does not close `ND-QA-003`.
+This accepted specification does **not** supply the later Product Owner-owned registry-egress disposition, vulnerability threshold, license policy, exception authority, alert owner, or GitHub administrative action. Those remain deliberately separate prerequisites for implementation. It does not close `ND-QA-003`.
 
 ## Objective and strict boundary
 
 Specify the smallest auditable control design that can eventually satisfy the accepted requirements for automated vulnerability review, automated license review, and vulnerability alerts without silently selecting an external provider, accepting a legal license policy, or changing existing CI/security configuration.
 
-This candidate changes only this new review record. It does not change `AGENTS.md`, `PROJECT_STATE.md`, the roadmap, `docs/SECURITY.md`, decisions, workflows, Dependabot configuration, package manifests, lockfiles, scripts, source, tests, GitHub settings, branch protection, dependencies, or runtime behavior. It installs nothing, invokes no security scanner, uploads no artifact, enables no alert, and transmits no dependency data.
+The exact reviewed candidate changed only this new review record. It does not change `AGENTS.md`, `PROJECT_STATE.md`, the roadmap, `docs/SECURITY.md`, decisions, workflows, Dependabot configuration, package manifests, lockfiles, scripts, source, tests, GitHub settings, branch protection, dependencies, or runtime behavior. It installs nothing, invokes no security scanner, uploads no artifact, enables no alert, and transmits no dependency data.
 
 ## Governing authority and current finding
 
@@ -64,7 +64,7 @@ Primary external behavior references are [npm audit](https://docs.npmjs.com/cli/
 
 ## Recommended nonbinding control design
 
-If this exact proposal becomes binding mechanism-selection authority, subsequent work may prepare a separate policy specification and then an implementation/configuration candidate with these constraints:
+Because this exact proposal is binding mechanism-selection authority, subsequent work may prepare a separate policy specification and then an implementation/configuration candidate only under these constraints:
 
 ### Vulnerability review
 
@@ -124,7 +124,7 @@ A failed or ambiguous spike does not authorize a substitute tool. It returns to 
 
 ## Implementation, validation, and closure plan
 
-After external review PASS, explicit Product Owner acceptance, and protected integration of this mechanism-selection proposal:
+After the completed external review, Product Owner acceptance, and protected-integration lifecycle recorded above:
 
 1. Specify the reserved registry-egress, vulnerability, license, exception, alert-owner, and access values as a separate consequential policy task.
 2. Perform the bounded compatibility/egress spike only after that task makes its inputs eligible.
@@ -135,12 +135,12 @@ After external review PASS, explicit Product Owner acceptance, and protected int
 
 This proposal does not authorize Stage 8 capture, evidence freeze, production/reference comparison, supported-platform qualification, further Stage 8 implementation, or ordinary roadmap work.
 
-## Review and acceptance handoff
+## Review and acceptance record
 
-This candidate creates consequential security/trust/permission/dependency-policy authority. It is outside the settled-contract dedicated-reviewer substitution gate. Required route:
+This consequential security/trust/permission/dependency-policy specification was outside the settled-contract dedicated-reviewer substitution gate. Completed route:
 
 1. consequential external exact-head review of the immutable base/head/tree/scope and complete candidate content;
 2. explicit Product Owner acceptance of the reviewed tuple, limited to this mechanism-selection authority; and
 3. protected integration with required CI, followed by mechanical coordination reconciliation if repository truth becomes stale.
 
-External PASS does not accept later policy values, hosted settings, external providers, dependency additions, implementation, alert operation, vulnerability/license results, `ND-QA-003` closure, or Stage 8 qualification.
+External PASS did not accept later policy values, hosted settings, external providers, dependency additions, implementation, alert operation, vulnerability/license results, `ND-QA-003` closure, or Stage 8 qualification.
