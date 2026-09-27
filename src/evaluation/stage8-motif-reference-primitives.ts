@@ -26,6 +26,7 @@ export type Stage8MotifReferenceWeightedCandidate<T> = Readonly<{
 function assertCanonicalUint32(value: unknown, field: string): number {
   if (
     typeof value !== "number" ||
+    Object.is(value, -0) ||
     !Number.isSafeInteger(value) ||
     value < 0 ||
     value > UINT32_MAX
