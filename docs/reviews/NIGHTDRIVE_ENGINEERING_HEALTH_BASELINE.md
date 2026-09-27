@@ -83,7 +83,7 @@ the missing record.
 originating base/head (or an explicit authoritative replacement), affected
 scope, condition, contract basis, and explicit closure criteria/evidence.
 
-### ND-QA-002 - MUST FIX BEFORE NEXT MILESTONE - OPEN
+### ND-QA-002 - MUST FIX BEFORE NEXT MILESTONE - RESOLVED
 
 **Observed condition:** Several live authority documents described an earlier
 Stage 8 or Product Integration gate as current or eligible even though the
@@ -314,3 +314,20 @@ then address the supply-chain control under its own required gate.
 ## Final disposition
 
 REVISE
+
+## Post-assessment ND-QA-002 closure record
+
+This addendum is a separately bounded, mechanical post-merge reconciliation. It
+preserves the original ASSESS identity, observed condition, authority, impact,
+closure requirement, and `REVISE` result above; the assessment itself did not
+close a finding.
+
+| Field | Evidence |
+| --- | --- |
+| Finding | `ND-QA-002` |
+| Current status | `RESOLVED` |
+| Reviewed correction | External exact-head PASS for base `d46bbbfa7b05095d60461de5387d824913759547`, head `0f1317fc2ccf9e00058e51201065bed7acb08ac7`, tree `30abd6d57ea914efac3c6aaa98a00a9cfa3355a7`, nine-document scope, 67,445-byte full-index patch, and SHA-256 `8dd7477a1365778ced63ace0de4bfc7ce6895aea2f956808c892573fa86da9b0`. |
+| Protected integration | [PR #242](https://github.com/drkmtr1/nightdrive/pull/242) bound the reviewed base and head, then squash-integrated the reviewed tree as `282f378b3b9089c2a0eb306b5ce503f76f1db6e6`; post-merge verification found `origin/main` at that commit with no out-of-scope merged path. |
+| Required CI | Documentation / validate passed in [run 36297305489](https://github.com/drkmtr1/nightdrive/actions/runs/36297305489); Runtime foundation / validate passed in [run 36297305454](https://github.com/drkmtr1/nightdrive/actions/runs/36297305454). |
+| Closure scope | The integrated correction removes only the stale live eligibility/current-gate clauses identified above. It does not alter a behavioral contract, roadmap order, qualification evidence, or historical review result. |
+| Continuing gate | The Health Baseline remains `REVISE`. `ND-QA-001` and `ND-QA-003` remain OPEN, the three `S8-QUAL-*` findings remain OPEN with original terms NOT VERIFIED, and Stage 8 qualification progression remains blocked. |
