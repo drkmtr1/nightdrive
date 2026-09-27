@@ -331,3 +331,31 @@ close a finding.
 | Required CI | Documentation / validate passed in [run 36297305489](https://github.com/drkmtr1/nightdrive/actions/runs/36297305489); Runtime foundation / validate passed in [run 36297305454](https://github.com/drkmtr1/nightdrive/actions/runs/36297305454). |
 | Closure scope | The integrated correction removes only the stale live eligibility/current-gate clauses identified above. It does not alter a behavioral contract, roadmap order, qualification evidence, or historical review result. |
 | Continuing gate | The Health Baseline remains `REVISE`. `ND-QA-001` and `ND-QA-003` remain OPEN, the three `S8-QUAL-*` findings remain OPEN with original terms NOT VERIFIED, and Stage 8 qualification progression remains blocked. |
+
+## Post-assessment S8-QUAL replacement-definition candidate
+
+This addendum records the Product Owner's later bounded consequential SPECIFY
+authorization after `ND-QA-001` historical evidence recovery completed with a
+BLOCKED result. It preserves the original assessment finding, the continuity
+table's `NOT VERIFIED` cells, and the Health Baseline result of `REVISE`.
+
+| Field | Evidence |
+| --- | --- |
+| Finding | `ND-QA-001` |
+| Current status | `BLOCKER - OPEN` |
+| Historical-recovery outcome | Original individual finding provenance for `S8-QUAL-001`, `S8-QUAL-002`, and `S8-QUAL-003` is `NOT VERIFIED / unrecoverable`. No original terms are reconstructed. |
+| Candidate record | [Stage 8 Motif qualification finding replacements](STAGE8_MOTIF_QUALIFICATION_FINDING_REPLACEMENTS.md) is a Product Owner-authorized forward-looking replacement-definition candidate dated 2026-09-26. |
+| Binding lifecycle | Consequential external exact-head review PASS is technical approval only. The exact record becomes binding only after that PASS, explicit Product Owner acceptance of the reviewed tuple, and protected integration. Its binding commit is recorded during later post-integration reconciliation and is never asserted as a historical origin. |
+| Continuing gate | Until the lifecycle completes, `ND-QA-001` remains OPEN, all three `S8-QUAL-*` findings remain OPEN, and no Stage 8 qualification work may rely on the candidate for continuity or closure. The Health Baseline remains `REVISE`. |
+
+The candidate supersedes ambiguous use of the stable `S8-QUAL-*` labels only
+from protected integration forward. Historical commits, pull requests, and
+reviews that merely state “remain OPEN” remain historical evidence and are not
+rewritten. The candidate does not close an `S8-QUAL-*` finding or accept real
+Stage 8 capture, evidence freeze, production/reference comparison,
+supported-platform qualification, AC closure, Stage 8 exit, or musical output.
+
+Only after protected integration may a separate post-integration reconciliation
+mark `ND-QA-001` RESOLVED, and only if the Health Baseline's durable per-ID
+record closure criterion is verified. Until then, no ordinary roadmap or Stage
+8 qualification progression is eligible.
