@@ -2,29 +2,33 @@
 
 ## Authority status and lifecycle
 
-**Status:** CANDIDATE
-**Task classification:** CONSEQUENTIAL SPECIFY
+**Status:** ACCEPTED / BINDING
+**Task classification:** CONSEQUENTIAL SPECIFY, completed through protected integration
 **Replacement-authority source:** Product Owner Authority — Replacement Finding Definitions, 2026-09-26
 **Original individual finding provenance:** NOT VERIFIED / unrecoverable
 **Historic originating tuple:** NOT VERIFIED / unrecoverable
+**Reviewed candidate:** Base `e64ce881d0b4ad47934a43122af04a7a3ef9cbee`; head `92f9188f067140773dd763efd89d9aa3c52f8f9d`; tree `9c7c2937e606888466efc7183d8582816b457dae`; full-index patch SHA-256 `76D22A56B0E280445F3A244064C35DF1B2A46F8174B1EAF3D259CA82116D7E70`
+**External review:** Consequential exact-head PASS for the reviewed candidate
+**Product Owner disposition:** Explicit acceptance of the exact reviewed tuple as forward-looking authority only
+**Protected integration:** [PR #244](https://github.com/drkmtr1/nightdrive/pull/244) squash-integrated the reviewed tree as `5c230878a7500f29ac37d53634b77bd42cfafca5`
 **Binding point:** Protected integration of the exact externally passed and Product Owner-accepted tuple
-**Binding commit:** Recorded from Git during post-integration reconciliation; it must never be substituted for a historical origin.
+**Binding commit:** `5c230878a7500f29ac37d53634b77bd42cfafca5`; it records the forward-looking binding point and must never be substituted for a historical origin.
 
-**CANDIDATE.** The original individual provenance, scope, condition, contract
-basis, and closure terms for `S8-QUAL-001`, `S8-QUAL-002`, and
+**ACCEPTED / BINDING.** The original individual provenance, scope, condition,
+contract basis, and closure terms for `S8-QUAL-001`, `S8-QUAL-002`, and
 `S8-QUAL-003` are NOT VERIFIED / unrecoverable. This document records Product
 Owner-authorized forward-looking replacement definitions; it neither
-reconstructs nor changes the missing historical meanings. This exact
-replacement record becomes binding forward-looking authority only after
-consequential external exact-head review PASS, explicit Product Owner
-acceptance of the reviewed tuple, and protected integration. External PASS is
-technical approval only. Until all conditions are satisfied, it is not
-authority, `ND-QA-001` remains OPEN, and no Stage 8 qualification work may
-rely on it for continuity or closure. Once binding, it governs future use of
-the stable IDs from its protected integration forward. Historical commits, PRs,
-and group-level “remain OPEN” statements remain unchanged historical evidence
-and acquire no reconstructed meaning. No status-only post-review mutation is
-required for this record to become binding.
+reconstructs nor changes the missing historical meanings. Consequential
+external exact-head review PASS was technical approval of the exact candidate;
+the Product Owner then explicitly accepted that reviewed tuple; and protected
+integration completed the lifecycle in PR #244. This record is therefore
+binding forward-looking authority from that protected integration forward.
+
+The `ACCEPTED / BINDING` label records the completed lifecycle; this
+post-integration reconciliation did not itself create the authority. No
+status-only post-review mutation was required for the record to become
+binding. Historical commits, PRs, and group-level “remain OPEN” statements
+remain unchanged historical evidence and acquire no reconstructed meaning.
 
 ## Historical-recovery boundary
 
@@ -140,12 +144,13 @@ final deterministic qualification record.
 
 ## Continuity and non-claims
 
-This record does not resolve any `S8-QUAL-*` finding. It does not itself
-resolve `ND-QA-001`. Only after protected integration may post-integration
-reconciliation mark `ND-QA-001` RESOLVED, and only if the Engineering Health
-Baseline's durable per-ID-record criterion is verified. The three replacement
-findings remain OPEN until their individual closure criteria are independently
-evidenced, reviewed, and accepted.
+This record does not resolve any `S8-QUAL-*` finding. The separate
+post-integration reconciliation records `ND-QA-001` as RESOLVED because the
+Engineering Health Baseline's durable per-ID-record criterion is verified by
+this now-binding record; it does not convert the S8 findings into historical
+reconstructions or closure evidence. The three replacement findings remain
+OPEN until their individual closure criteria are independently evidenced,
+reviewed, and accepted.
 
 This record does not accept a real Stage 8 candidate capture, evidence freeze,
 production/reference comparison, supported-platform qualification, AC closure,
