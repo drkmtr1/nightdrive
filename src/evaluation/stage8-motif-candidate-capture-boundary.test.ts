@@ -17,6 +17,13 @@ const BOUNDARY_PATH = resolve(
   "src/evaluation/stage8-motif-candidate-capture-boundary.mjs",
 );
 const BOUNDARY_SOURCE = readFileSync(BOUNDARY_PATH, "utf8");
+const LAUNCHER_PATH = resolve(
+  process.cwd(),
+  "src/evaluation/stage8-motif-candidate-capture-launcher.mjs",
+);
+const LAUNCHER_SOURCE = readFileSync(LAUNCHER_PATH, "utf8");
+const WRAPPER_PATH = resolve(process.cwd(), "scripts/capture-stage8-motif-candidate.ps1");
+const WRAPPER_SOURCE = readFileSync(WRAPPER_PATH, "utf8");
 const VITEST_CONFIG_PATH = resolve(
   process.cwd(),
   "src/evaluation/stage8-motif-candidate-capture.vitest.config.mjs",
@@ -52,6 +59,10 @@ function workerOutputForArtifact(
 
 function exactWorkerOutput(overrides: Readonly<Record<string, unknown>> = {}): Buffer {
   return workerOutputForArtifact(buildStage8MotifCandidateArtifact(), overrides);
+}
+
+function untrackedInventory(paths: readonly string[]): Buffer {
+  return paths.length === 0 ? Buffer.alloc(0) : Buffer.from(`${paths.join("\0")}\0`, "utf8");
 }
 
 type MutableCandidateArtifact = {
@@ -234,6 +245,107 @@ describe("Stage 8 Motif candidate capture custody boundary", () => {
     },
   );
 
+  it("classifies only the explicit node_modules execution input across dependency preparation", () => {
+    const before = boundary.assertStage8MotifCandidateCaptureUntrackedState(
+      untrackedInventory([]),
+      "before-dependency-preparation",
+    );
+    expect(before).toMatchObject({
+      enumeration: "git ls-files --others -z",
+      ignoreRulesConsulted: false,
+      permittedRoot: "node_modules/",
+      pathCount: 0,
+      disposition: "no-untracked-state-before-fixed-dependency-preparation",
+    });
+
+    const nodes = untrackedInventory([
+      "node_modules/.package-lock.json",
+      "node_modules/vitest/vitest.mjs",
+    ]);
+    expect(
+      boundary.assertStage8MotifCandidateCaptureUntrackedState(
+        nodes,
+        "before-dependency-preparation",
+      ),
+    ).toMatchObject({
+      pathCount: 2,
+      disposition: "only-transient-node-modules-replaced-by-fixed-npm-ci",
+    });
+    expect(
+      boundary.assertStage8MotifCandidateCaptureUntrackedState(
+        nodes,
+        "after-dependency-preparation",
+      ),
+    ).toMatchObject({
+      pathCount: 2,
+      disposition: "only-fresh-locked-node-modules-required-execution-input",
+    });
+    expect(() =>
+      boundary.assertStage8MotifCandidateCaptureUntrackedState(
+        untrackedInventory([]),
+        "after-dependency-preparation",
+      ),
+    ).toThrow(/fresh locked node_modules execution input is absent/u);
+  });
+
+  it("fails closed for every unexplained ignored or untracked path", () => {
+    for (const path of [
+      ".env",
+      ".next/cache/metadata",
+      "coverage/summary.json",
+      "tmp/capture.log",
+      "distNGLLog.txt",
+      "node_modules",
+      "node_modules-malicious/vitest.mjs",
+      "foo/node_modules/vitest.mjs",
+      "node_modules/../.env",
+    ]) {
+      expect(() =>
+        boundary.assertStage8MotifCandidateCaptureUntrackedState(
+          untrackedInventory(["node_modules/vitest/vitest.mjs", path]),
+          "before-dependency-preparation",
+        ),
+      ).toThrow(/disallowed path/u);
+    }
+    expect(() =>
+      boundary.assertStage8MotifCandidateCaptureUntrackedState(
+        Buffer.from("node_modules/vitest/vitest.mjs", "utf8"),
+        "before-dependency-preparation",
+      ),
+    ).toThrow(/NUL-delimited/u);
+    expect(() =>
+      boundary.assertStage8MotifCandidateCaptureUntrackedState(
+        Buffer.from([0]),
+        "before-dependency-preparation",
+      ),
+    ).toThrow(/empty NUL record/u);
+    expect(() =>
+      boundary.assertStage8MotifCandidateCaptureUntrackedState(
+        Buffer.from([0xff, 0]),
+        "before-dependency-preparation",
+      ),
+    ).toThrow(/utf-8/u);
+  });
+
+  it("parses the live PowerShell witness as Windows argv instead of substring matching", () => {
+    expect(
+      boundary.parseStage8MotifCandidateCaptureWindowsCommandLine(
+        '"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -NoProfile -File "C:\\repo root\\scripts\\capture.ps1" "C:\\out dir" commit tree',
+      ),
+    ).toEqual([
+      "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "-NoProfile",
+      "-File",
+      "C:\\repo root\\scripts\\capture.ps1",
+      "C:\\out dir",
+      "commit",
+      "tree",
+    ]);
+    expect(() =>
+      boundary.parseStage8MotifCandidateCaptureWindowsCommandLine('pwsh -File "unterminated'),
+    ).toThrow(/unmatched quote/u);
+  });
+
   it("fixes dependency preparation and disables all configured Vitest write paths", () => {
     expect(boundary.STAGE8_MOTIF_CANDIDATE_CAPTURE_DEPENDENCY_INSTALL_ARGUMENTS).toEqual([
       "ci",
@@ -285,6 +397,36 @@ describe("Stage 8 Motif candidate capture custody boundary", () => {
     expect(BOUNDARY_SOURCE).toContain("exclusiveWorkerScratchDirectory");
     expect(BOUNDARY_SOURCE).toContain("removeWorkerScratchDirectory(preflight.workerScratch)");
     expect(BOUNDARY_SOURCE).toContain("workerTemporaryState");
+  });
+
+  it("binds capture evidence to the PowerShell wrapper and all untracked repository state", () => {
+    const repositoryIntegritySource = BOUNDARY_SOURCE.slice(
+      BOUNDARY_SOURCE.indexOf("function assertRepositoryIntegrity"),
+      BOUNDARY_SOURCE.indexOf("function pathIsWithin"),
+    );
+    const untrackedStateSource = BOUNDARY_SOURCE.slice(
+      BOUNDARY_SOURCE.indexOf("export function assertStage8MotifCandidateCaptureUntrackedState"),
+      BOUNDARY_SOURCE.indexOf("function assertInspectableIndexFlags"),
+    );
+    expect(repositoryIntegritySource).toContain('["ls-files", "--others", "-z"]');
+    expect(repositoryIntegritySource).not.toContain("--exclude-standard");
+    expect(untrackedStateSource).not.toContain("--exclude-standard");
+    expect(untrackedStateSource).not.toContain("--directory");
+    expect(BOUNDARY_SOURCE).toContain("preDependencyUntrackedState");
+    expect(BOUNDARY_SOURCE).toContain("beforeDependencyPreparation");
+    expect(BOUNDARY_SOURCE).toContain("afterDependencyPreparation");
+    expect(BOUNDARY_SOURCE).not.toContain("cleanBeforeCapture");
+    expect(BOUNDARY_SOURCE).toContain("assertStage8MotifCandidateCaptureWrapperIngress");
+    expect(BOUNDARY_SOURCE).toContain("inspectWindowsParentProcess");
+    expect(BOUNDARY_SOURCE).toContain(
+      "parent command line does not equal the approved wrapper invocation",
+    );
+    expect(WRAPPER_SOURCE).toContain("RedirectStandardInput = $true");
+    expect(WRAPPER_SOURCE).toContain("ArgumentList.Add");
+    expect(WRAPPER_SOURCE).toContain("wrapper-ingress-v1");
+    expect(WRAPPER_SOURCE).not.toContain("& $nodePath $launcher");
+    expect(LAUNCHER_SOURCE).toContain("readWrapperIngress");
+    expect(LAUNCHER_SOURCE).toContain("WRAPPER_INGRESS_SENTINEL");
   });
 
   it("holds output incomplete until final custody and scratch cleanup have succeeded", () => {

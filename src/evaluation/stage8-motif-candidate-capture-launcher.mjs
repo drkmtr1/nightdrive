@@ -6,12 +6,14 @@
  * derivation supervision, and retained writes to the native-Node boundary.
  */
 
-import { realpathSync } from "node:fs";
+import { readSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 
 import {
   runStage8MotifCandidateCapture,
   STAGE8_MOTIF_CANDIDATE_CAPTURE_LAUNCHER_PATH,
+  STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_MAX_BYTES,
+  STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_SENTINEL,
 } from "./stage8-motif-candidate-capture-boundary.mjs";
 
 function fail(message) {
@@ -46,10 +48,15 @@ function assertNeutralLauncherEnvironment() {
 }
 
 function assertExactArguments() {
-  if (process.argv.length !== 5) {
-    fail("requires exactly <absolute-output-directory> <reviewed-commit> <reviewed-tree>");
+  if (process.argv.length !== 6) {
+    fail(
+      "requires the wrapper-ingress sentinel and exactly <absolute-output-directory> <reviewed-commit> <reviewed-tree>",
+    );
   }
-  const [outputDirectory, reviewedCommit, reviewedTree] = process.argv.slice(2);
+  const [ingressSentinel, outputDirectory, reviewedCommit, reviewedTree] = process.argv.slice(2);
+  if (ingressSentinel !== STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_SENTINEL) {
+    fail("requires the approved PowerShell wrapper ingress sentinel");
+  }
   if (outputDirectory === undefined || reviewedCommit === undefined || reviewedTree === undefined) {
     fail("arguments are missing");
   }
@@ -68,13 +75,33 @@ function assertTrackedLauncher(cwd) {
   }
 }
 
+function readWrapperIngress() {
+  const chunks = [];
+  const scratch = Buffer.allocUnsafe(4096);
+  let byteLength = 0;
+  for (;;) {
+    const read = readSync(0, scratch, 0, scratch.byteLength, null);
+    if (read === 0) break;
+    byteLength += read;
+    if (byteLength > STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_MAX_BYTES) {
+      fail("wrapper ingress attestation exceeds its fixed byte limit");
+    }
+    chunks.push(Buffer.from(scratch.subarray(0, read)));
+  }
+  return Buffer.concat(chunks, byteLength);
+}
+
 async function main() {
   assertNeutralLauncherEnvironment();
   if (process.execArgv.length !== 0) fail("must start without Node execution arguments");
   const argumentsValue = assertExactArguments();
   const cwd = realpathSync(process.cwd());
   assertTrackedLauncher(cwd);
-  return runStage8MotifCandidateCapture({ cwd, ...argumentsValue });
+  return runStage8MotifCandidateCapture({
+    cwd,
+    ...argumentsValue,
+    wrapperIngress: readWrapperIngress(),
+  });
 }
 
 main()

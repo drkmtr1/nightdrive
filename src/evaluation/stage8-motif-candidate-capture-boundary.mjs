@@ -33,6 +33,9 @@ export const STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_PATH =
   "scripts/capture-stage8-motif-candidate.ps1";
 export const STAGE8_MOTIF_CANDIDATE_CAPTURE_LAUNCHER_PATH =
   "src/evaluation/stage8-motif-candidate-capture-launcher.mjs";
+export const STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_SENTINEL =
+  "--stage8-motif-candidate-wrapper-ingress-v1";
+export const STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_MAX_BYTES = 32 * 1024;
 export const STAGE8_MOTIF_CANDIDATE_CAPTURE_WORKER_PATH =
   "src/evaluation/stage8-motif-candidate-capture-worker.test.ts";
 export const STAGE8_MOTIF_CANDIDATE_CAPTURE_VITEST_CONFIG_PATH =
@@ -72,6 +75,13 @@ export const STAGE8_MOTIF_CANDIDATE_CAPTURE_TRACKED_INPUT_PATHS = Object.freeze(
 
 const CANDIDATE_ARTIFACT_SCHEMA = "nightdrive.stage8-motif-candidate-vectors.v1";
 const CANDIDATE_STATUS = "CANDIDATE";
+const WRAPPER_INGRESS_SCHEMA = "nightdrive.stage8-motif-candidate-wrapper-ingress.v1";
+const WINDOWS_POWERSHELL_RELATIVE_PATH = [
+  "System32",
+  "WindowsPowerShell",
+  "v1.0",
+  "powershell.exe",
+];
 const REQUIRED_INSTALLED_PACKAGES = Object.freeze([
   Object.freeze({
     name: "vitest",
@@ -478,6 +488,374 @@ function discoverGitContext(cwd) {
   });
 }
 
+function exactPositiveSafeInteger(value, label) {
+  if (!Number.isSafeInteger(value) || value <= 0) fail(`${label} must be a positive safe integer`);
+  return value;
+}
+
+function nonemptyText(value, label) {
+  if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
+    fail(`${label} must be non-empty text without NUL`);
+  }
+  return value;
+}
+
+function normalizedAbsoluteInvocationPath(value, label) {
+  const path = nonemptyText(value, label);
+  if (!isAbsolute(path)) fail(`${label} must be absolute`);
+  return resolve(path);
+}
+
+function sameInvocationPath(left, right) {
+  return process.platform === "win32" ? left.toLowerCase() === right.toLowerCase() : left === right;
+}
+
+function realExistingFile(value, label) {
+  const path = normalizedAbsoluteInvocationPath(value, label);
+  if (!existsSync(path) || !lstatSync(path).isFile())
+    fail(`${label} must name an existing regular file`);
+  return realpathSync(path);
+}
+
+function realExistingDirectory(value, label) {
+  const path = normalizedAbsoluteInvocationPath(value, label);
+  if (!existsSync(path) || !lstatSync(path).isDirectory()) {
+    fail(`${label} must name an existing directory`);
+  }
+  return realpathSync(path);
+}
+
+function assertExactWrapperIngressStdin(stdin) {
+  if (!(stdin instanceof Uint8Array)) fail("wrapper ingress must be raw stdin bytes");
+  const bytes = Buffer.from(stdin);
+  if (
+    bytes.byteLength === 0 ||
+    bytes.byteLength > STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_MAX_BYTES
+  ) {
+    fail("wrapper ingress attestation has an invalid byte length");
+  }
+  const text = exactUtf8(bytes, "wrapper ingress attestation");
+  if (!text.endsWith("\n") || text.includes("\r") || text.slice(0, -1).includes("\n")) {
+    fail("wrapper ingress attestation must be exactly one LF-terminated JSON line");
+  }
+  const json = text.slice(0, -1);
+  let value;
+  try {
+    value = JSON.parse(json);
+  } catch {
+    fail("wrapper ingress attestation is not JSON");
+  }
+  return Object.freeze({ bytes, value });
+}
+
+function wrapperIngressClaim(value) {
+  const ingress = exactRecord(value, ["schema", "nonce", "wrapper", "child"], "wrapper ingress");
+  if (ingress.schema !== WRAPPER_INGRESS_SCHEMA) fail("wrapper ingress schema is unsupported");
+  if (typeof ingress.nonce !== "string" || !/^[0-9a-f]{64}$/u.test(ingress.nonce)) {
+    fail("wrapper ingress nonce must be lowercase 32-byte hexadecimal");
+  }
+  const wrapper = exactRecord(
+    ingress.wrapper,
+    ["processId", "executable", "script"],
+    "wrapper ingress.wrapper",
+  );
+  const child = exactRecord(
+    ingress.child,
+    [
+      "processId",
+      "executable",
+      "launcher",
+      "workingDirectory",
+      "outputDirectory",
+      "reviewedCommit",
+      "reviewedTree",
+    ],
+    "wrapper ingress.child",
+  );
+  return Object.freeze({
+    nonce: ingress.nonce,
+    wrapper: Object.freeze({
+      processId: exactPositiveSafeInteger(wrapper.processId, "wrapper ingress.wrapper.processId"),
+      executable: nonemptyText(wrapper.executable, "wrapper ingress.wrapper.executable"),
+      script: nonemptyText(wrapper.script, "wrapper ingress.wrapper.script"),
+    }),
+    child: Object.freeze({
+      processId: exactPositiveSafeInteger(child.processId, "wrapper ingress.child.processId"),
+      executable: nonemptyText(child.executable, "wrapper ingress.child.executable"),
+      launcher: nonemptyText(child.launcher, "wrapper ingress.child.launcher"),
+      workingDirectory: nonemptyText(
+        child.workingDirectory,
+        "wrapper ingress.child.workingDirectory",
+      ),
+      outputDirectory: nonemptyText(child.outputDirectory, "wrapper ingress.child.outputDirectory"),
+      reviewedCommit: exactSha1(child.reviewedCommit, "wrapper ingress.child.reviewedCommit"),
+      reviewedTree: exactSha1(child.reviewedTree, "wrapper ingress.child.reviewedTree"),
+    }),
+  });
+}
+
+function isWindowsCommandWhitespace(character) {
+  return character === " " || character === "\t";
+}
+
+/**
+ * Parses the quoting rules used by CreateProcess command lines. The parent
+ * process record is an inspectable witness, so argument matching never relies
+ * on substring searches or a caller-controlled output-path spelling.
+ */
+export function parseStage8MotifCandidateCaptureWindowsCommandLine(commandLine) {
+  const source = nonemptyText(commandLine, "Windows parent command line");
+  if (source.includes("\r") || source.includes("\n")) {
+    fail("Windows parent command line contains a line break");
+  }
+  const argumentsValue = [];
+  let index = 0;
+  while (index < source.length) {
+    while (index < source.length && isWindowsCommandWhitespace(source[index])) index += 1;
+    if (index === source.length) break;
+    let argument = "";
+    let quoted = false;
+    for (;;) {
+      let slashCount = 0;
+      while (source[index] === "\\") {
+        slashCount += 1;
+        index += 1;
+      }
+      if (index === source.length) {
+        argument += "\\".repeat(slashCount);
+        break;
+      }
+      const character = source[index];
+      if (character === '"') {
+        argument += "\\".repeat(Math.floor(slashCount / 2));
+        if (slashCount % 2 === 1) {
+          argument += '"';
+          index += 1;
+          continue;
+        }
+        if (quoted && source[index + 1] === '"') {
+          argument += '"';
+          index += 2;
+          continue;
+        }
+        quoted = !quoted;
+        index += 1;
+        continue;
+      }
+      argument += "\\".repeat(slashCount);
+      if (!quoted && isWindowsCommandWhitespace(character)) break;
+      argument += character;
+      index += 1;
+    }
+    if (quoted) fail("Windows parent command line has an unmatched quote");
+    argumentsValue.push(argument);
+  }
+  if (argumentsValue.length === 0) fail("Windows parent command line has no arguments");
+  return Object.freeze(argumentsValue);
+}
+
+function inspectWindowsParentProcess(parentProcessId, cwd) {
+  if (process.platform !== "win32")
+    fail("wrapper ingress requires Windows PowerShell process evidence");
+  const systemRoot = uniqueHostEnvironmentValue("SYSTEMROOT");
+  if (systemRoot === undefined || !isAbsolute(systemRoot)) {
+    fail("wrapper ingress cannot locate the Windows system root");
+  }
+  const queryExecutable = resolve(systemRoot, ...WINDOWS_POWERSHELL_RELATIVE_PATH);
+  if (!existsSync(queryExecutable) || !lstatSync(queryExecutable).isFile()) {
+    fail("wrapper ingress cannot locate the Windows parent-process inspector");
+  }
+  const resolvedQueryExecutable = realpathSync(queryExecutable);
+  const queryScript = [
+    "$ErrorActionPreference = 'Stop'",
+    `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8`,
+    `$parent = Get-CimInstance -ClassName Win32_Process -Filter 'ProcessId = ${parentProcessId}'`,
+    "if ($null -eq $parent) { exit 3 }",
+    "$record = [ordered]@{ processId = [int]$parent.ProcessId; executablePath = [string]$parent.ExecutablePath; commandLine = [string]$parent.CommandLine }",
+    "[Console]::Out.Write(($record | ConvertTo-Json -Compress -Depth 2))",
+  ].join("; ");
+  const result = command(
+    resolvedQueryExecutable,
+    ["-NoProfile", "-NonInteractive", "-Command", queryScript],
+    cwd,
+    "wrapper parent-process inspection",
+  );
+  if (result.status !== 0 || result.stderr.byteLength !== 0 || result.stdout.byteLength === 0) {
+    fail("wrapper parent-process inspection was unavailable");
+  }
+  const text = exactUtf8(result.stdout, "wrapper parent-process inspection");
+  if (text.includes("\r") || text.includes("\n")) {
+    fail("wrapper parent-process inspection was not one JSON record");
+  }
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    fail("wrapper parent-process inspection was not JSON");
+  }
+  const record = exactRecord(
+    value,
+    ["processId", "executablePath", "commandLine"],
+    "wrapper parent-process inspection",
+  );
+  return Object.freeze({
+    processId: exactPositiveSafeInteger(
+      record.processId,
+      "wrapper parent-process inspection.processId",
+    ),
+    executable: realExistingFile(
+      nonemptyText(record.executablePath, "wrapper parent-process inspection.executablePath"),
+      "wrapper parent-process inspection.executablePath",
+    ),
+    commandLine: nonemptyText(record.commandLine, "wrapper parent-process inspection.commandLine"),
+    queryExecutable: resolvedQueryExecutable,
+    queryScript,
+  });
+}
+
+function sameArray(left, right) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+/**
+ * Verifies the only pre-Node ingress accepted for evidence-producing capture.
+ * A tracked launcher invoked directly cannot satisfy both the one-time stdin
+ * attestation and the independently inspected immediate PowerShell parent.
+ */
+export function assertStage8MotifCandidateCaptureWrapperIngress({
+  cwd,
+  outputDirectory,
+  reviewedCommit,
+  reviewedTree,
+  wrapperIngress,
+}) {
+  const root = realExistingDirectory(cwd, "capture working directory");
+  if (!sameInvocationPath(root, realpathSync(process.cwd()))) {
+    fail("wrapper ingress working directory does not equal the current process directory");
+  }
+  const expectedOutput = normalizedAbsoluteInvocationPath(
+    outputDirectory,
+    "capture output directory",
+  );
+  const expectedCommit = exactSha1(reviewedCommit, "reviewed commit");
+  const expectedTree = exactSha1(reviewedTree, "reviewed tree");
+  const stdin = assertExactWrapperIngressStdin(wrapperIngress);
+  const claim = wrapperIngressClaim(stdin.value);
+  const expectedWrapper = realpathSync(resolve(root, STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_PATH));
+  const expectedLauncher = realpathSync(
+    resolve(root, STAGE8_MOTIF_CANDIDATE_CAPTURE_LAUNCHER_PATH),
+  );
+  const actualLauncher = realExistingFile(process.argv[1], "capture launcher process argument");
+  const actualExecutable = realExistingFile(process.execPath, "capture Node executable");
+  if (
+    process.argv.length !== 6 ||
+    process.argv[2] !== STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_INGRESS_SENTINEL ||
+    !sameInvocationPath(
+      normalizedAbsoluteInvocationPath(process.argv[3], "capture launcher output argument"),
+      expectedOutput,
+    ) ||
+    process.argv[4] !== expectedCommit ||
+    process.argv[5] !== expectedTree
+  ) {
+    fail("capture launcher process arguments do not prove the wrapper ingress tuple");
+  }
+  if (
+    claim.child.processId !== process.pid ||
+    claim.wrapper.processId !== process.ppid ||
+    !sameInvocationPath(
+      realExistingFile(claim.child.executable, "wrapper ingress child executable"),
+      actualExecutable,
+    ) ||
+    !sameInvocationPath(
+      realExistingFile(claim.child.launcher, "wrapper ingress child launcher"),
+      expectedLauncher,
+    ) ||
+    !sameInvocationPath(
+      realExistingDirectory(
+        claim.child.workingDirectory,
+        "wrapper ingress child working directory",
+      ),
+      root,
+    ) ||
+    !sameInvocationPath(
+      normalizedAbsoluteInvocationPath(
+        claim.child.outputDirectory,
+        "wrapper ingress child output directory",
+      ),
+      expectedOutput,
+    ) ||
+    claim.child.reviewedCommit !== expectedCommit ||
+    claim.child.reviewedTree !== expectedTree ||
+    !sameInvocationPath(actualLauncher, expectedLauncher) ||
+    !sameInvocationPath(
+      realExistingFile(claim.wrapper.script, "wrapper ingress wrapper script"),
+      expectedWrapper,
+    )
+  ) {
+    fail("wrapper ingress attestation does not equal the capture process tuple");
+  }
+  const parent = inspectWindowsParentProcess(process.ppid, root);
+  const wrapperExecutable = realExistingFile(
+    claim.wrapper.executable,
+    "wrapper ingress wrapper executable",
+  );
+  const parentBasename = basename(parent.executable).toLowerCase();
+  if (
+    parent.processId !== process.ppid ||
+    !sameInvocationPath(parent.executable, wrapperExecutable) ||
+    parentBasename !== "pwsh.exe"
+  ) {
+    fail("wrapper ingress parent process is not the approved PowerShell wrapper host");
+  }
+  const parentArguments = parseStage8MotifCandidateCaptureWindowsCommandLine(parent.commandLine);
+  const expectedParentArguments = Object.freeze([
+    "-NoProfile",
+    "-File",
+    expectedWrapper,
+    expectedOutput,
+    expectedCommit,
+    expectedTree,
+  ]);
+  if (
+    parentArguments.length !== expectedParentArguments.length + 1 ||
+    !sameArray(parentArguments.slice(1), expectedParentArguments)
+  ) {
+    fail("wrapper ingress parent command line does not equal the approved wrapper invocation");
+  }
+  const commandLineBytes = new TextEncoder().encode(parent.commandLine);
+  return Object.freeze({
+    protocol: WRAPPER_INGRESS_SCHEMA,
+    attestation: Object.freeze({
+      byteLength: stdin.bytes.byteLength,
+      sha256: sha256(stdin.bytes),
+      nonceSha256: sha256(Buffer.from(claim.nonce, "ascii")),
+    }),
+    wrapper: Object.freeze({
+      processId: parent.processId,
+      path: STAGE8_MOTIF_CANDIDATE_CAPTURE_WRAPPER_PATH,
+      executable: fileEvidence(parent.executable, basename(parent.executable)),
+      commandLine: Object.freeze({
+        arguments: parentArguments,
+        ...byteIdentity(commandLineBytes),
+      }),
+    }),
+    parentInspection: Object.freeze({
+      executable: fileEvidence(
+        parent.queryExecutable,
+        "SYSTEMROOT/System32/WindowsPowerShell/v1.0/powershell.exe",
+      ),
+      script: byteIdentity(new TextEncoder().encode(parent.queryScript)),
+    }),
+    child: Object.freeze({
+      processId: process.pid,
+      executable: actualExecutable,
+      launcher: STAGE8_MOTIF_CANDIDATE_CAPTURE_LAUNCHER_PATH,
+      arguments: Object.freeze([...process.argv.slice(1)]),
+      workingDirectory: root,
+    }),
+  });
+}
+
 function exactObjectId(bytes, label) {
   const value = exactUtf8(bytes, label);
   if (!/^[0-9a-f]{40}\n$/u.test(value)) fail(`${label} was not one full lowercase SHA-1`);
@@ -505,6 +883,53 @@ function nulRecords(bytes, label) {
     start = index + 1;
   }
   return Object.freeze(records);
+}
+
+function permittedNodeModulesPath(path) {
+  if (!path.startsWith("node_modules/")) return false;
+  const segments = path.split("/");
+  return (
+    segments.length > 1 &&
+    segments.every(
+      (segment, index) =>
+        index === 0 || (segment.length > 0 && segment !== "." && segment !== ".."),
+    )
+  );
+}
+
+/**
+ * Classifies every Git-untracked path without consulting ignore rules. The
+ * only allowed path family is node_modules after (or immediately before) the
+ * fixed npm ci that replaces and inventories it as a required execution input.
+ */
+export function assertStage8MotifCandidateCaptureUntrackedState(bytes, phase) {
+  if (phase !== "before-dependency-preparation" && phase !== "after-dependency-preparation") {
+    fail("untracked-state inspection has an unsupported phase");
+  }
+  const records = nulRecords(bytes, "all untracked-path inspection");
+  const paths = records.map((record) => exactUtf8(record, "all untracked-path inspection"));
+  for (const path of paths) {
+    if (!permittedNodeModulesPath(path)) {
+      fail(`all untracked-path inspection reported disallowed path: ${path}`);
+    }
+  }
+  if (phase === "after-dependency-preparation" && paths.length === 0) {
+    fail("fresh locked node_modules execution input is absent after dependency preparation");
+  }
+  return Object.freeze({
+    phase,
+    enumeration: "git ls-files --others -z",
+    ignoreRulesConsulted: false,
+    permittedRoot: "node_modules/",
+    pathCount: paths.length,
+    listing: byteIdentity(bytes),
+    disposition:
+      phase === "before-dependency-preparation"
+        ? paths.length === 0
+          ? "no-untracked-state-before-fixed-dependency-preparation"
+          : "only-transient-node-modules-replaced-by-fixed-npm-ci"
+        : "only-fresh-locked-node-modules-required-execution-input",
+  });
 }
 
 function assertInspectableIndexFlags(context) {
@@ -538,7 +963,7 @@ function assertSparseCheckoutDisabled(context) {
   fail("sparse-checkout configuration was malformed");
 }
 
-function assertRepositoryIntegrity(context, expected) {
+function assertRepositoryIntegrity(context, expected, untrackedPhase) {
   const expectedCommit = exactSha1(expected.commit, "reviewed commit");
   const expectedTree = exactSha1(expected.tree, "reviewed tree");
   const observedRoot = exactUtf8(
@@ -595,12 +1020,11 @@ function assertRepositoryIntegrity(context, expected) {
     ],
     "index-to-worktree comparison",
   );
-  requireNoOutput(
-    context,
-    ["ls-files", "--others", "--exclude-standard", "-z"],
-    "non-ignored untracked-path inspection",
+  const untrackedState = assertStage8MotifCandidateCaptureUntrackedState(
+    git(context, ["ls-files", "--others", "-z"], "all untracked-path inspection"),
+    untrackedPhase,
   );
-  return Object.freeze({ commit: expectedCommit, tree: expectedTree });
+  return Object.freeze({ commit: expectedCommit, tree: expectedTree, untrackedState });
 }
 
 function pathIsWithin(parent, candidate) {
@@ -1299,7 +1723,7 @@ function equalJson(left, right) {
 }
 
 function buildDetails(context, expected, outputDirectory) {
-  const state = assertRepositoryIntegrity(context, expected);
+  const state = assertRepositoryIntegrity(context, expected, "after-dependency-preparation");
   const trackedInputs = STAGE8_MOTIF_CANDIDATE_CAPTURE_TRACKED_INPUT_PATHS.map((path) =>
     trackedInput(context, state.commit, path),
   );
@@ -1313,7 +1737,8 @@ function buildDetails(context, expected, outputDirectory) {
       expectedTree: expected.tree,
       commit: state.commit,
       tree: state.tree,
-      cleanBeforeCapture: true,
+      trackedCheckout: "exact-reviewed-commit-index-worktree-clean",
+      untrackedState: state.untrackedState,
     }),
     frozenSourceRecords: Object.freeze(frozenSourceRecords),
     checkout: checkoutEvidence(context, trackedInputs, frozenSourceRecords),
@@ -1331,21 +1756,34 @@ function preflightStage8MotifCandidateCapture({
   outputDirectory,
   reviewedCommit,
   reviewedTree,
+  wrapperIngress,
 }) {
   assertNeutralCaptureEnvironment();
-  const context = discoverGitContext(realpathSync(cwd));
+  const resolvedCwd = realpathSync(cwd);
+  const verifiedWrapperIngress = assertStage8MotifCandidateCaptureWrapperIngress({
+    cwd: resolvedCwd,
+    outputDirectory,
+    reviewedCommit,
+    reviewedTree,
+    wrapperIngress,
+  });
+  const context = discoverGitContext(resolvedCwd);
   const expected = Object.freeze({
     commit: exactSha1(reviewedCommit, "reviewed commit"),
     tree: exactSha1(reviewedTree, "reviewed tree"),
   });
   const output = externalOutputDirectory(context, outputDirectory);
-  assertRepositoryIntegrity(context, expected);
+  const preDependencyUntrackedState = assertRepositoryIntegrity(
+    context,
+    expected,
+    "before-dependency-preparation",
+  ).untrackedState;
   let workerScratch;
   try {
     workerScratch = exclusiveWorkerScratchDirectory(output);
     const npm = verifiedNpmRuntime(context.root, output);
     const dependencyPreparation = installLockedDependencyTree(context.root, output, npm);
-    assertRepositoryIntegrity(context, expected);
+    assertRepositoryIntegrity(context, expected, "after-dependency-preparation");
     const details = buildDetails(context, expected, output);
     const preflight = Object.freeze({
       context,
@@ -1353,6 +1791,8 @@ function preflightStage8MotifCandidateCapture({
       output,
       workerScratch,
       dependencyPreparation,
+      wrapperIngress: verifiedWrapperIngress,
+      preDependencyUntrackedState,
       details,
     });
     LIVE_PREFLIGHTS.add(preflight);
@@ -1888,6 +2328,7 @@ function executionEvidence(exitCode, stdout, stderr) {
 
 function captureInvocation(preflight) {
   return Object.freeze({
+    wrapperIngress: preflight.wrapperIngress,
     captureProcess: Object.freeze({
       executable: realpathSync(process.execPath),
       arguments: Object.freeze([...process.argv.slice(1)]),
@@ -1914,7 +2355,13 @@ function receiptText(preflight, candidate, execution) {
       cleanupBeforeArtifactPublication: true,
       cleanup: "required before the capture command returns",
     }),
-    repository: preflight.details.repository,
+    repository: Object.freeze({
+      ...preflight.details.repository,
+      untrackedState: Object.freeze({
+        beforeDependencyPreparation: preflight.preDependencyUntrackedState,
+        afterDependencyPreparation: preflight.details.repository.untrackedState,
+      }),
+    }),
     frozenSourceRecords: preflight.details.frozenSourceRecords,
     checkout: preflight.details.checkout,
     runtime: preflight.details.runtime,
@@ -2085,12 +2532,14 @@ export async function runStage8MotifCandidateCapture({
   outputDirectory,
   reviewedCommit,
   reviewedTree,
+  wrapperIngress,
 }) {
   const preflight = preflightStage8MotifCandidateCapture({
     cwd,
     outputDirectory,
     reviewedCommit,
     reviewedTree,
+    wrapperIngress,
   });
   let workerScratchRemoved = false;
   try {

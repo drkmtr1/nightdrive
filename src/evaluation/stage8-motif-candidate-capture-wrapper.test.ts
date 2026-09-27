@@ -7,6 +7,11 @@ import { describe, expect, it } from "vitest";
 
 const REPOSITORY_ROOT = process.cwd();
 const WRAPPER_PATH = resolve(REPOSITORY_ROOT, "scripts/capture-stage8-motif-candidate.ps1");
+const LAUNCHER_PATH = resolve(
+  REPOSITORY_ROOT,
+  "src/evaluation/stage8-motif-candidate-capture-launcher.mjs",
+);
+const WRAPPER_INGRESS_SENTINEL = "--stage8-motif-candidate-wrapper-ingress-v1";
 const PLACEHOLDER_COMMIT = "0".repeat(40);
 const PLACEHOLDER_TREE = "1".repeat(40);
 
@@ -59,6 +64,57 @@ function invokeWrapper(
   });
 }
 
+function invokeDirectLauncher(
+  environment: NodeJS.ProcessEnv,
+  output: string,
+): Readonly<{ status: number | null; output: string }> {
+  const result = spawnSync(
+    process.execPath,
+    [LAUNCHER_PATH, WRAPPER_INGRESS_SENTINEL, output, PLACEHOLDER_COMMIT, PLACEHOLDER_TREE],
+    {
+      cwd: REPOSITORY_ROOT,
+      encoding: "utf8",
+      env: environment,
+      input: "",
+      windowsHide: true,
+    },
+  );
+  return Object.freeze({
+    status: result.status,
+    output: `${result.stdout ?? ""}${result.stderr ?? ""}`,
+  });
+}
+
+function invokeForgedDirectLauncher(
+  environment: NodeJS.ProcessEnv,
+  output: string,
+): Readonly<{ status: number | null; output: string }> {
+  const harness = [
+    'const { spawn } = require("node:child_process");',
+    `const launcher = ${JSON.stringify(LAUNCHER_PATH)};`,
+    `const cwd = ${JSON.stringify(REPOSITORY_ROOT)};`,
+    `const outputDirectory = ${JSON.stringify(output)};`,
+    `const reviewedCommit = ${JSON.stringify(PLACEHOLDER_COMMIT)};`,
+    `const reviewedTree = ${JSON.stringify(PLACEHOLDER_TREE)};`,
+    `const sentinel = ${JSON.stringify(WRAPPER_INGRESS_SENTINEL)};`,
+    "const child = spawn(process.execPath, [launcher, sentinel, outputDirectory, reviewedCommit, reviewedTree], { cwd, env: process.env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });",
+    "let output = ''; child.stdout.on('data', (chunk) => { output += chunk; }); child.stderr.on('data', (chunk) => { output += chunk; });",
+    "child.once('spawn', () => { const ingress = { schema: 'nightdrive.stage8-motif-candidate-wrapper-ingress.v1', nonce: '0'.repeat(64), wrapper: { processId: process.pid, executable: process.execPath, script: require('node:path').resolve(cwd, 'scripts/capture-stage8-motif-candidate.ps1') }, child: { processId: child.pid, executable: process.execPath, launcher, workingDirectory: cwd, outputDirectory, reviewedCommit, reviewedTree } }; child.stdin.end(JSON.stringify(ingress) + '\\n'); });",
+    "child.once('close', (code) => { process.stdout.write(JSON.stringify({ code, output })); });",
+  ].join("");
+  const result = spawnSync(process.execPath, ["-e", harness], {
+    cwd: REPOSITORY_ROOT,
+    encoding: "utf8",
+    env: environment,
+    windowsHide: true,
+  });
+  const parsed = JSON.parse(result.stdout || "{}") as { code?: number; output?: string };
+  return Object.freeze({
+    status: parsed.code ?? result.status,
+    output: parsed.output ?? `${result.stdout ?? ""}${result.stderr ?? ""}`,
+  });
+}
+
 describe.skipIf(process.platform !== "win32")("Stage 8 Motif capture PowerShell ingress", () => {
   it("does not expose a package-script capture route", () => {
     const packageJson = JSON.parse(
@@ -74,6 +130,31 @@ describe.skipIf(process.platform !== "win32")("Stage 8 Motif capture PowerShell 
     const result = invokeWrapper(cleanCaptureEnvironment(), output, tmpdir());
     expect(result.status).not.toBe(0);
     expect(result.output).toContain("tracked wrapper directly from the repository root");
+    expect(existsSync(output)).toBe(false);
+  });
+
+  it("refuses direct launcher invocation before custody preflight or output creation", () => {
+    const output = outputDirectory("direct-launcher");
+    const result = invokeDirectLauncher(cleanCaptureEnvironment(), output);
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain("wrapper ingress attestation has an invalid byte length");
+    expect(existsSync(output)).toBe(false);
+  });
+
+  it("refuses a forged stdin attestation when the live parent is not the wrapper host", () => {
+    const output = outputDirectory("forged-launcher");
+    const result = invokeForgedDirectLauncher(cleanCaptureEnvironment(), output);
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain("parent process is not the approved PowerShell wrapper host");
+    expect(existsSync(output)).toBe(false);
+  });
+
+  it("proves the wrapper ingress before later reviewed-tuple preflight fails", () => {
+    const output = outputDirectory("approved-wrapper");
+    const result = invokeWrapper(cleanCaptureEnvironment(), output);
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain("reviewed commit object");
+    expect(result.output).not.toContain("wrapper ingress");
     expect(existsSync(output)).toBe(false);
   });
 
