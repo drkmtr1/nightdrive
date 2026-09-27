@@ -2,13 +2,13 @@
 
 ## Status and decision record
 
-**CANDIDATE. This exact policy becomes accepted implementation authority only after consequential external review PASS, explicit Product Owner acceptance of the reviewed tuple, and protected integration. Before those conditions are satisfied, it is not implementation authority.**
+**ACCEPTED / BINDING.** The exact reviewed tuple — base `25481e89ecae16d6df945552ed0efe67861e4217`, head `af220dba37ecf1a4a0461f9c8a8c47d2f027d268`, tree `1e42f46fbbff2cd2922ed111887aa09659c1ee14`, scope `docs/reviews/NDQA003_SUPPLY_CHAIN_SECURITY_POLICY_SPECIFICATION.md` only, and 16,249-byte full-index patch SHA-256 `0FA035425F5357BAE35BC082F8ABBAEFD98818774F16565DD2F8D6A2EE4AA211` — received consequential external exact-head PASS and explicit Product Owner acceptance. [PR #249](https://github.com/drkmtr1/nightdrive/pull/249) protected-squash-integrated the reviewed tree as `f265d8b397352ff4e81014c55c2af8bbfaa0d3c7`; its integration tree exactly equals the reviewed tree. Documentation / validate passed in [run 36342388746](https://github.com/drkmtr1/nightdrive/actions/runs/36342388746), and Runtime foundation / validate passed in [run 36342388654](https://github.com/drkmtr1/nightdrive/actions/runs/36342388654). The policy became binding at protected integration. This lifecycle record does not create authority retroactively.
 
 **Policy identifier:** `nightdrive.supply-chain.ndqa003.v1`.
 
 **Decision authority input:** Product Owner policy decision record supplied on 2026-09-27 for repository baseline `25481e89ecae16d6df945552ed0efe67861e4217`.
 
-This candidate resolves only the values intentionally reserved by the accepted [ND-QA-003 supply-chain security-control specification](NDQA003_SUPPLY_CHAIN_SECURITY_CONTROL_SPECIFICATION.md). It preserves that accepted native-first mechanism: pinned npm `audit`, pinned npm SBOM, and GitHub dependency graph / Dependabot alert and security-update controls. It does not revise the control design, add a provider, add a dependency, change a workflow, invoke a scanner, configure GitHub, or close `ND-QA-003`.
+This accepted policy resolves only the values intentionally reserved by the accepted [ND-QA-003 supply-chain security-control specification](NDQA003_SUPPLY_CHAIN_SECURITY_CONTROL_SPECIFICATION.md). It preserves that accepted native-first mechanism: pinned npm `audit`, pinned npm SBOM, and GitHub dependency graph / Dependabot alert and security-update controls. It does not revise the control design, add a provider, add a dependency, change a workflow, invoke a scanner, configure GitHub, or close `ND-QA-003`.
 
 ## Governing authority and current finding
 
@@ -133,7 +133,7 @@ The legacy branch-protection endpoint observation does not establish the effecti
 
 ## Required sequence and remaining closure evidence
 
-After this exact policy receives consequential external exact-head PASS, explicit Product Owner acceptance of its reviewed tuple, and protected integration:
+After the completed acceptance lifecycle, protected integration, and this mechanical lifecycle reconciliation:
 
 1. Run the accepted bounded compatibility/egress spike on a clean checkout at Node `24.21.0` and npm `11.19.0`.
 2. If it passes, prepare a separate implementation/configuration candidate. Do not bundle policy selection, hosted configuration, workflow changes, action pinning, dependencies, or unrelated security work.
@@ -146,4 +146,4 @@ When a later accepted implementation/configuration candidate enables the control
 
 ## Review and integration boundary
 
-This is a consequential security, trust, permission, egress, and dependency-policy candidate. It requires consequential external exact-head review. External PASS is technical approval only; explicit Product Owner acceptance of the exact reviewed tuple and protected integration are also required. No status-only post-review mutation is needed to convert this candidate into accepted implementation authority.
+This was a consequential security, trust, permission, egress, and dependency-policy candidate. It required consequential external exact-head review. External PASS was technical approval only; explicit Product Owner acceptance of the exact reviewed tuple and protected integration were also required. Those completed lifecycle conditions, rather than this status record, made the policy binding. No status-only post-review mutation was a prerequisite to implementation authority.
