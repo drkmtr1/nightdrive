@@ -86,8 +86,9 @@ function exactRecord(
   for (const [index, key] of expectedKeys.entries()) {
     if (keys[index] !== key) return fail(field);
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (descriptor === undefined || !Object.hasOwn(descriptor, "value"))
+    if (descriptor === undefined || !Object.hasOwn(descriptor, "value") || !descriptor.enumerable) {
       return fail(`${field}.${key}`);
+    }
   }
   return value as Record<string, unknown>;
 }
@@ -151,17 +152,14 @@ function phrase4Displacement(value: string): Stage8MotifReferencePhrase4Displace
 }
 
 /**
- * Resolves one immutable canonical plan from a strict policy context and root seed.
- *
- * The fixed Motif component seed is derived once, then one shared stream supplies
- * exactly four declared-order selections: rhythm, register, tension, displacement.
+ * Resolves one immutable canonical plan from an already validated context and a
+ * canonical Motif component seed.
  */
-export function resolveStage8MotifReferencePlanV1(
-  contextValue: unknown,
-  rootSeed: unknown,
+function resolvePlanFromComponentSeed(
+  context: Stage8MotifReferencePlanContextV1,
+  componentSeed: unknown,
 ): Stage8MotifReferencePlanV1 {
-  const context = assertContext(contextValue);
-  const prng = createStage8MotifReferencePrng(deriveStage8MotifReferenceSeed(rootSeed));
+  const prng = createStage8MotifReferencePrng(componentSeed);
 
   const selectedRhythm = rhythmTemplate(selectSlot(context, "rhythm", prng));
   const selectedRegister = registerBand(selectSlot(context, "register", prng));
@@ -179,6 +177,33 @@ export function resolveStage8MotifReferencePlanV1(
     contourOffsets: Object.freeze([...contourOffsets]),
     phraseRoles: Object.freeze([...PHRASE_ROLES]) as Stage8MotifReferencePhraseRoles,
   });
+}
+
+/**
+ * Resolves one immutable canonical plan from a strict policy context and an
+ * already-derived canonical Motif component seed. This entry point lets an
+ * evidence caller retain that same seed in provenance without deriving it a
+ * second time or creating another stream.
+ */
+export function resolveStage8MotifReferencePlanFromComponentSeedV1(
+  contextValue: unknown,
+  componentSeed: unknown,
+): Stage8MotifReferencePlanV1 {
+  return resolvePlanFromComponentSeed(assertContext(contextValue), componentSeed);
+}
+
+/**
+ * Resolves one immutable canonical plan from a strict policy context and root seed.
+ *
+ * The fixed Motif component seed is derived once, then one shared stream supplies
+ * exactly four declared-order selections: rhythm, register, tension, displacement.
+ */
+export function resolveStage8MotifReferencePlanV1(
+  contextValue: unknown,
+  rootSeed: unknown,
+): Stage8MotifReferencePlanV1 {
+  const context = assertContext(contextValue);
+  return resolvePlanFromComponentSeed(context, deriveStage8MotifReferenceSeed(rootSeed));
 }
 
 function contourOffsetsForRhythm(rhythm: Stage8MotifReferenceRhythmTemplate): readonly number[] {

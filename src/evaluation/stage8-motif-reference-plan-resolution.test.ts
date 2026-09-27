@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { resolveStage8MotifReferencePlanV1 } from "./stage8-motif-reference-plan-resolution";
+import {
+  resolveStage8MotifReferencePlanFromComponentSeedV1,
+  resolveStage8MotifReferencePlanV1,
+} from "./stage8-motif-reference-plan-resolution";
 import { STAGE8_MOTIF_QUALIFICATION_INPUTS } from "./stage8-motif-source-bindings";
 
 const PHRASE_ROLES = [
@@ -462,9 +465,27 @@ describe("Stage 8 Motif reference plan resolution", () => {
     for (const context of malformedContexts) {
       expect(() => resolveStage8MotifReferencePlanV1(context, 0)).toThrow(/canonical Stage 8/);
     }
-    for (const rootSeed of [undefined, null, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, "0"]) {
+    const nonEnumerableContext = { ...valid };
+    Object.defineProperty(nonEnumerableContext, "profileId", {
+      value: valid.profileId,
+      enumerable: false,
+    });
+    expect(() => resolveStage8MotifReferencePlanV1(nonEnumerableContext, 0)).toThrow(
+      /canonical Stage 8/,
+    );
+    for (const rootSeed of [
+      undefined,
+      null,
+      -0,
+      -1,
+      0.5,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      "0",
+    ]) {
       expect(() => resolveStage8MotifReferencePlanV1(valid, rootSeed)).toThrow(/rootSeed/);
     }
+    expect(() => resolveStage8MotifReferencePlanFromComponentSeedV1(valid, -0)).toThrow(/seed/);
   });
 
   it("does not consume an ambient entropy source", () => {
