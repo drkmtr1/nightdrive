@@ -43,7 +43,7 @@ as domain-specific authority.
 
 ## Findings ledger
 
-### ND-QA-001 - BLOCKER - OPEN
+### ND-QA-001 - BLOCKER - RESOLVED
 
 **Observed condition:** The durable repository record does not contain the
 required individual origin tuple, affected scope, violation condition,
@@ -359,3 +359,25 @@ Only after protected integration may a separate post-integration reconciliation
 mark `ND-QA-001` RESOLVED, and only if the Health Baseline's durable per-ID
 record closure criterion is verified. Until then, no ordinary roadmap or Stage
 8 qualification progression is eligible.
+
+## Post-assessment ND-QA-001 closure record
+
+This addendum is a separately bounded, mechanical post-integration
+reconciliation. It preserves the original ASSESS identity, observed condition,
+authority, impact, and `REVISE` result above. The historical assessment text
+is not rewritten; this record establishes the current finding status from
+subsequent protected-integration evidence.
+
+| Field | Evidence |
+| --- | --- |
+| Finding | `ND-QA-001` |
+| Current status | `RESOLVED` |
+| Historical-recovery boundary | Original individual provenance, scope, condition, contract basis, closure terms, and originating tuple for `S8-QUAL-001`, `S8-QUAL-002`, and `S8-QUAL-003` remain `NOT VERIFIED / unrecoverable`. No historical meaning is reconstructed. |
+| Explicit authoritative replacement | The protected-integrated [Stage 8 Motif qualification finding replacements](STAGE8_MOTIF_QUALIFICATION_FINDING_REPLACEMENTS.md) record provides a durable per-ID forward-looking authority with affected scope, condition, contract basis, and explicit closure criteria/evidence. |
+| Reviewed candidate | Consequential external exact-head PASS for base `e64ce881d0b4ad47934a43122af04a7a3ef9cbee`, head `92f9188f067140773dd763efd89d9aa3c52f8f9d`, tree `9c7c2937e606888466efc7183d8582816b457dae`, three-document scope, 18,594-byte full-index patch, and SHA-256 `76D22A56B0E280445F3A244064C35DF1B2A46F8174B1EAF3D259CA82116D7E70`. |
+| Product Owner acceptance | The Product Owner explicitly accepted the exact reviewed tuple as forward-looking authority only, without asserting reconstruction of any unrecoverable historical meaning. |
+| Protected integration | [PR #244](https://github.com/drkmtr1/nightdrive/pull/244) bound the reviewed base and head, then squash-integrated the reviewed tree as `5c230878a7500f29ac37d53634b77bd42cfafca5`. Post-merge verification found `origin/main` at that commit, the integrated tree equal to the reviewed tree, and no out-of-scope merged path. |
+| Required CI | Documentation / validate passed in [run 36301387195](https://github.com/drkmtr1/nightdrive/actions/runs/36301387195); Runtime foundation / validate passed in [run 36301387265](https://github.com/drkmtr1/nightdrive/actions/runs/36301387265). |
+| Closure verification | The durable replacement record satisfies the required per-ID replacement form: explicit authoritative replacement in place of an unavailable origin tuple, affected scope, condition, contract basis, and explicit closure criteria/evidence for each stable ID. |
+| Closure scope | This closes only the Engineering Health finding `ND-QA-001`. It does not close or redefine `S8-QUAL-001`, `S8-QUAL-002`, or `S8-QUAL-003`; all remain OPEN under the protected-integrated forward-looking definitions. |
+| Continuing gate | The Health Baseline remains `REVISE`. `ND-QA-003` remains OPEN and is the next MUST FIX priority. Real Stage 8 capture, evidence freeze, production/reference comparison, supported-platform qualification, implementation, and ordinary roadmap progression remain blocked. |
