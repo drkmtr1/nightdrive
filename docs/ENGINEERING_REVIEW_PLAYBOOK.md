@@ -48,8 +48,8 @@ evidence, impact, recommended action, and whether it blocks progress.
 
 # 1. Milestone Integrity Audit
 
-**When:** About every 3--5 meaningful milestones or before a major phase
-change.
+**When:** Current evidence shows material accumulated change, or a major phase
+boundary makes project-wide integrity risk consequential.
 
 ``` text
 Conduct a read-only Milestone Integrity Audit of this project. Do not modify anything.
@@ -276,7 +276,8 @@ Do not implement them.
 
 # 11. Technical Debt Review
 
-**When:** Every several milestones or at phase boundaries.
+**When:** Evidence shows accumulated debt materially affects current or upcoming
+work, or a phase boundary makes its impact consequential.
 
 ``` text
 Conduct a read-only Technical Debt Review. Do not refactor.
@@ -360,18 +361,26 @@ for Next Phase, Practices to Preserve.
 
 ------------------------------------------------------------------------
 
-# Recommended Cadence
+# Risk-Triggered Review Consideration
 
 ## Normal development
 
 `DEFINE/RESEARCH → DOCUMENT → SMALL IMPLEMENTATION TASK → TEST → REPORT → REVIEW → PASS/REVISE/BLOCK → NEXT REPOSITORY-ELIGIBLE BOUNDED TASK`
 
-## Every \~3--5 meaningful milestones
+## During reconciliation and task selection
 
-Consider the Milestone Integrity Audit, plus Test Quality and/or
-Technical Debt reviews when their surfaces have materially grown.
+During normal reconciliation and task selection, consider the current milestone,
+recently completed and upcoming work, accepted or OPEN findings, accumulated
+change, technical boundaries, evidence/qualification, security, dependency,
+cross-platform, and repeated-rework risk. Select or recommend the smallest
+existing read-only review proportionate to demonstrated need. Otherwise continue
+normal repository-eligible work.
 
-## When crossing a technical boundary
+Do not trigger a review solely because time elapsed, a number of milestones, or a
+recurring schedule. Milestones and phase boundaries may be evidence-bearing
+signals, but do not create a mechanical cadence.
+
+## When a technical boundary creates review risk
 
 -   architecture/subsystem change → Architecture Conformance Review
 -   database/persistence → Data Model and Persistence Review
@@ -382,7 +391,7 @@ Technical Debt reviews when their surfaces have materially grown.
 -   usable end-to-end UI → UX and Accessibility Review
 -   representative workload → Performance and Scalability Review
 
-## Major phase boundary
+## When a phase boundary makes accumulated risk consequential
 
 Consider Requirements Traceability, Scope/Roadmap Alignment, Technical
 Debt, and Engineering Retrospective reviews.
@@ -405,7 +414,8 @@ Do not perform the review yet.
 
 Inspect the current milestone, recently completed work, upcoming roadmap work, known
 risks, and accumulated changes. Choose the smallest review or combination justified
-by current risk. Do not recommend reviews mechanically based on elapsed time.
+by current risk. Do not recommend reviews mechanically based on elapsed time,
+milestone count, or a recurring schedule.
 
 For each recommendation state why it is needed now, what risk it addresses, what
 evidence triggered it, and whether it should happen before or after the next milestone.
