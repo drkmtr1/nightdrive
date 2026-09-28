@@ -44,6 +44,53 @@ proceeding.\
 For substantive findings include ID, severity, files/components,
 evidence, impact, recommended action, and whether it blocks progress.
 
+## Materiality, proportionality, and corrective-scope boundaries
+
+Reviews reduce material project risk proportionally; they do not maximize
+theoretical engineering completeness. This shared rule applies across the
+Playbook to new review-originated candidate findings and their proposed
+corrective work unless a more-specific accepted authority controls. It does not
+reclassify or waive an
+accepted requirement, exact-head PASS condition, CI/protected-integration or
+release gate, current OPEN binding finding, or task-specific stop. Incomplete
+candidate inspection/evidence or a materially violated or unverified accepted
+obligation cannot be called not material to obtain PASS.
+
+Before assigning `BLOCKER`, `MUST FIX BEFORE NEXT MILESTONE`, or an equivalent
+roadmap-blocking severity to a candidate finding, record a qualitative
+materiality basis: the plausible failure mode; affected current or
+already-authorized near-term capability; supporting evidence; plausible
+likelihood; impact if unresolved; reason to interrupt the roadmap; smallest
+sufficient response; and approximate remediation complexity. Do not invent
+numeric likelihood or cost estimates. A theoretical or best-practice concern
+alone does not create blocking work. It can block only when current scope or
+maturity, the actual threat model, authorized near-term work, or a release
+requirement makes it materially consequential.
+
+Choose a response in proportion to demonstrated risk, product maturity, actual
+threat model, authorized near-term roadmap, expected product/user impact, and
+correction cost/complexity. Valid treatments include fix now; fix before a named
+milestone; bounded mitigation; accept; defer; monitor; identify as not
+currently material; or escalate to the Product Owner. Acceptance or deferral
+requires existing decision authority and never waives a binding requirement.
+
+If a proposed corrective response materially expands in cumulative scope or
+complexity--for example, it needs additional specifications, infrastructure,
+abstractions, dependencies, platform harnesses, recurring processes or
+governance, substantial cross-module work, multiple support generations, or
+materially greater cost--stop before expanding further. Reassess the original
+severity, materiality, proportionality, current product impact, the smallest
+mitigation, risk treatment, and whether Product Owner input is required. Do not
+justify expansion only because each local step appears defensible. This stop
+does not prohibit ordinary in-scope correction.
+
+A candidate finding must not create a standalone subsystem, generalized
+framework, general infrastructure layer, recurring governance mechanism, or
+permanent process unless accepted authority requires it or the Product Owner
+explicitly accepts it. Small supporting implementation needed for a bounded
+correction remains permitted. Broad audits identify candidate findings;
+discovery alone does not require immediate remediation.
+
 ------------------------------------------------------------------------
 
 # 1. Milestone Integrity Audit
@@ -68,6 +115,10 @@ Run the project's existing validation suite where appropriate.
 Classify findings: BLOCKER, MUST FIX BEFORE NEXT MILESTONE, SHOULD FIX SOON,
 ACCEPTABLE / DEFERRED, or NO ISSUE. For each finding provide evidence, affected
 files/components, impact, recommended correction, and whether it blocks progress.
+
+Audit discoveries are candidate findings; apply the shared materiality,
+proportionality, and corrective-scope boundaries before treating one as
+roadmap-blocking corrective work.
 
 Finish with: Executive Assessment; Validation Results; Findings; Technical Debt
 Inventory; Recommended Corrective Actions; Safe-to-Defer Items; Readiness for Next
@@ -434,6 +485,10 @@ authority; validate and review that correction before continuing. BLOCKED may
 lead to a separate, objectively determined prerequisite assessment or
 specification. Stop for Product Owner input when a consequential decision is
 unresolved.
+
+If a proposed corrective response materially expands, stop and reassess it
+under the shared materiality, proportionality, and corrective-scope boundaries
+before initiating further corrective work.
 
 # Maintaining This Playbook
 
