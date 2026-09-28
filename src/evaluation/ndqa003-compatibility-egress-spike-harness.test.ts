@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const harnessUrl = new URL("./ndqa003-compatibility-egress-spike-harness.mjs", import.meta.url);
-const harness = await import(harnessUrl.href);
+// @ts-expect-error Native ESM harness has no declaration file.
+import * as harness from "./ndqa003-compatibility-egress-spike-harness.mjs";
 
 const configurationValues = Object.freeze({
   "https-proxy": "null",
@@ -524,7 +525,7 @@ describe("ND-QA-003 compatibility/egress spike harness", () => {
 
   it("keeps the workflow manual, temporary, receipt-only, and free of package installation", () => {
     const workflow = readFileSync(
-      new URL("../../.github/workflows/ndqa003-compatibility-egress-spike.yml", import.meta.url),
+      resolve(process.cwd(), ".github/workflows/ndqa003-compatibility-egress-spike.yml"),
       "utf8",
     );
     const triggers = workflow.slice(0, workflow.indexOf("permissions:"));
