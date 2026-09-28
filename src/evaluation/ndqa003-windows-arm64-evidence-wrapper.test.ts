@@ -84,6 +84,66 @@ describe("ND-QA-003 Windows ARM64 evidence wrapper boundary", () => {
     expect(wrapperSource).not.toContain("Set-NetFirewallProfile");
   });
 
+  it("verifies Rule A and Rule B immediately before and after every protected npm child", () => {
+    const wrapperSource = source(wrapper);
+    const protectedStart = wrapperSource.indexOf("$ruleA = $null");
+    const protectedEnd = wrapperSource.indexOf(
+      'Mark-PhaseExecutionAttempt -Ledger $ledger -Phase "positive-audit"',
+    );
+    expect(protectedStart).toBeGreaterThanOrEqual(0);
+    expect(protectedEnd).toBeGreaterThan(protectedStart);
+    const lines = wrapperSource
+      .slice(protectedStart, protectedEnd)
+      .split(/\r?\n/)
+      .map((line) => line.trim());
+    const protectedCalls = [
+      { variable: "$negative", rule: "$firewall.ruleA", phase: "negative-audit" },
+      { variable: "$first", rule: "$firewall.ruleB", phase: "sbom-first" },
+      { variable: "$second", rule: "$firewall.ruleB", phase: "sbom-second" },
+      { variable: "$fixtureResult", rule: "$firewall.ruleB", phase: "fixture" },
+    ];
+    expect(lines.filter((line) => line.includes("Invoke-FreshNpmCommand"))).toHaveLength(4);
+    for (const protectedCall of protectedCalls) {
+      const invocationIndex = lines.findIndex((line) =>
+        line.startsWith(`${protectedCall.variable} = Invoke-FreshNpmCommand`),
+      );
+      const verification =
+        "Set-FirewallLifecycleActive -Lifecycle " +
+        protectedCall.rule +
+        " -Rule " +
+        (protectedCall.rule === "$firewall.ruleA" ? "$ruleA" : "$ruleB") +
+        " -Runtime $runtime";
+      const marker =
+        protectedCall.phase === "fixture"
+          ? 'Mark-PhaseExecutionAttempt -Ledger $ledger -Phase ("fixture-" + $kind)'
+          : `Mark-PhaseExecutionAttempt -Ledger $ledger -Phase "${protectedCall.phase}"`;
+      const markerIndex = lines.indexOf(marker);
+      expect(markerIndex).toBeGreaterThanOrEqual(0);
+      expect(invocationIndex).toBeGreaterThan(markerIndex + 1);
+      expect(lines[invocationIndex - 1]).toBe(verification);
+      expect(lines[invocationIndex + 1]).toBe(verification);
+    }
+    expect(lines).toContain('foreach ($kind in @("missing", "noassertion", "malformed")) {');
+
+    const lifecycleStart = wrapperSource.indexOf("function Set-FirewallLifecycleActive");
+    const lifecycleEnd = wrapperSource.indexOf(
+      "function Invoke-WindowsArm64Evidence",
+      lifecycleStart,
+    );
+    const lifecycleSource = wrapperSource.slice(lifecycleStart, lifecycleEnd);
+    expect(lifecycleSource).toContain(
+      "[void](Assert-ExactFirewallRule -RuleName $Rule.RuleName -NodePath $Runtime.Node)",
+    );
+    const exactRuleStart = wrapperSource.indexOf("function Assert-ExactFirewallRule");
+    const exactRuleEnd = wrapperSource.indexOf(
+      "function Remove-ExactTaskFirewallRule",
+      exactRuleStart,
+    );
+    const exactRuleSource = wrapperSource.slice(exactRuleStart, exactRuleEnd);
+    expect(exactRuleSource).toContain("Assert-AllFirewallProfilesEnabled");
+    expect(exactRuleSource).toContain("Assert-RuntimeCollisionAbsent -NodePath $NodePath");
+  });
+
   it("makes recovery and post-cleanup custody fail closed before any later phase", () => {
     const wrapperSource = source(wrapper);
     expect(wrapperSource).toContain("Assert-RecoveryRootContents");

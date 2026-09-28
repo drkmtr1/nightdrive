@@ -1785,6 +1785,7 @@ function Invoke-WindowsArm64Evidence {
       Set-FirewallLifecycleActive -Lifecycle $firewall.ruleA -Rule $ruleA -Runtime $runtime
       $source = Assert-MaterialCustody -Checkout $checkout -Commit $ReviewedCommit -Tree $ReviewedTree -Git $git -PrivateRoot $layout.Roles.git -Expected $source
       Mark-PhaseExecutionAttempt -Ledger $ledger -Phase "negative-audit"
+      Set-FirewallLifecycleActive -Lifecycle $firewall.ruleA -Rule $ruleA -Runtime $runtime
       $negative = Invoke-FreshNpmCommand -Runtime $runtime -Layout $layout -Host $host -Checkout $checkout -WorkingDirectory $checkout -NpmArguments @("audit", "--json", "--audit-level=high") -Label "negative-audit"
       Set-FirewallLifecycleActive -Lifecycle $firewall.ruleA -Rule $ruleA -Runtime $runtime
       if (-not (Test-NegativeAuditResult -Result $negative.Result)) { Fail-Procedure "negative audit did not prove network unavailability" }
@@ -1802,12 +1803,14 @@ function Invoke-WindowsArm64Evidence {
       Set-FirewallLifecycleActive -Lifecycle $firewall.ruleB -Rule $ruleB -Runtime $runtime
       $source = Assert-MaterialCustody -Checkout $checkout -Commit $ReviewedCommit -Tree $ReviewedTree -Git $git -PrivateRoot $layout.Roles.git -Expected $source
       Mark-PhaseExecutionAttempt -Ledger $ledger -Phase "sbom-first"
+      Set-FirewallLifecycleActive -Lifecycle $firewall.ruleB -Rule $ruleB -Runtime $runtime
       $first = Invoke-FreshNpmCommand -Runtime $runtime -Layout $layout -Host $host -Checkout $checkout -WorkingDirectory $checkout -NpmArguments @("sbom", "--package-lock-only", "--sbom-format=spdx") -Label "sbom-first"
       Set-FirewallLifecycleActive -Lifecycle $firewall.ruleB -Rule $ruleB -Runtime $runtime
       $firstSummary = Get-SbomSummary -Result $first.Result -ExpectedGraph $lockGraph
       Record-Phase -Ledger $ledger -Phase "sbom-first" -ExitClass $firstSummary.exitClass -FreshInvocationState $first.FreshInvocationState -FreshCacheEmpty $first.FreshCacheEmpty
       $source = Assert-MaterialCustody -Checkout $checkout -Commit $ReviewedCommit -Tree $ReviewedTree -Git $git -PrivateRoot $layout.Roles.git -Expected $source
       Mark-PhaseExecutionAttempt -Ledger $ledger -Phase "sbom-second"
+      Set-FirewallLifecycleActive -Lifecycle $firewall.ruleB -Rule $ruleB -Runtime $runtime
       $second = Invoke-FreshNpmCommand -Runtime $runtime -Layout $layout -Host $host -Checkout $checkout -WorkingDirectory $checkout -NpmArguments @("sbom", "--package-lock-only", "--sbom-format=spdx") -Label "sbom-second"
       Set-FirewallLifecycleActive -Lifecycle $firewall.ruleB -Rule $ruleB -Runtime $runtime
       $secondSummary = Get-SbomSummary -Result $second.Result -ExpectedGraph $lockGraph
@@ -1820,6 +1823,7 @@ function Invoke-WindowsArm64Evidence {
           Assert-FixtureMutation -Fixture $fixture -Checkout $checkout -Kind $kind
           $fixtureGraph = Get-LockfileGraph -Checkout $fixture
           Mark-PhaseExecutionAttempt -Ledger $ledger -Phase ("fixture-" + $kind)
+          Set-FirewallLifecycleActive -Lifecycle $firewall.ruleB -Rule $ruleB -Runtime $runtime
           $fixtureResult = Invoke-FreshNpmCommand -Runtime $runtime -Layout $layout -Host $host -Checkout $fixture -WorkingDirectory $fixture -NpmArguments @("sbom", "--package-lock-only", "--sbom-format=spdx") -Label ("fixture-" + $kind)
           Set-FirewallLifecycleActive -Lifecycle $firewall.ruleB -Rule $ruleB -Runtime $runtime
           $fixtureSummary = Get-SbomSummary -Result $fixtureResult.Result -ExpectedGraph $fixtureGraph
