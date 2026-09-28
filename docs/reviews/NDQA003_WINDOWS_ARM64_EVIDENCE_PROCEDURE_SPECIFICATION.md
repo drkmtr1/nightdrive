@@ -84,13 +84,17 @@ The wrapper may perform only this versioned read-only npm configuration-probe ve
 
 The wrapper must privately parse each configuration source needed to establish that no credential-bearing directive, unapproved registry/scope/proxy directive, or other disallowed input is present. It may not print a configuration value. npm config set, delete, edit, fix, install, update, and every configuration mutation are prohibited. The receipt retains one fixed probe-set vector identity, probe success/exit-class summary, and only the predicates below:
 
+For the `workspace` and `workspaces` probes, a raw probe token is stdout after removal of only its single terminal CRLF or LF; no trimming, coercion, case folding, JSON parsing, or other normalization is permitted. `workspaceSelectorAbsent` is true only when `npm config get workspace` yields the empty token. `workspacesUnsetDefault` is true only when `npm config get workspaces` yields the literal token `null`, the unconfigured npm default. `workspaceSelectionInactive` is true only when both preceding predicates are true and private source/argv inspection establishes that neither the tracked `.npmrc` nor the controlled empty configuration files supplies a `workspace` or `workspaces` directive and no non-probe command vector contains a workspace selector. The configuration probes themselves are observation keys, not workspace selectors.
+
+Raw `null` and raw `false` are distinct and must never be equated. For the current tracked `.npmrc`, whose sole directive is `save-exact=true`, raw `false`, `true`, `[]`, an empty `workspaces` token, a name/list/object, multiline output, source mismatch, or any other representation fails closed. A different raw state can become valid only through separately accepted tracked repository configuration that identifies its exact source and raw meaning as non-scope-reducing; user/global/environment/CLI configuration cannot establish it. The receipt retains only the derived predicates, never raw values.
+
 | Predicate | Required result |
 | --- | --- |
 | Project config | The tracked .npmrc hash equals its preflight identity. |
 | Controlled config | User/global config files are empty and match the empty-file identity. |
 | Registry | Effective registry is exactly https://registry.npmjs.org/. |
 | Proxy | Effective proxy and HTTPS-proxy are absent. |
-| Graph scope | Omit is empty; production is false; package-lock is enabled; workspace is absent; workspaces is false; no scope-reducing configuration is active. |
+| Graph scope | Omit is empty; production is false; package-lock is enabled; `workspaceSelectionInactive` is true under the exact raw-probe mapping above; no scope-reducing configuration is active. |
 | Network mode | Offline and prefer-offline are both false. |
 | Command form | No command includes omit, production, no-package-lock, offline, prefer-offline, workspace selection, install, update, fix, remediation, or another scope reduction. |
 | Credentials | The curated child environment and privately inspected config sources have no credential-bearing input category. |
