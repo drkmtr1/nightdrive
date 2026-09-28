@@ -61,17 +61,11 @@ No raw host inventory, user/machine identity, command line, environment value, c
 
 Every npm-related child must run in the exact checkout with its tracked .npmrc and only explicitly controlled empty user/global config files. It must use new task-local home, cache, log, TEMP, and TMP locations outside the checkout.
 
-The wrapper must construct every child environment from zero using one versioned, documented allowlist. The allowlist may contain only SystemRoot, ComSpec, PATHEXT, a constructed PATH limited to the isolated runtime and required Windows system directories, task-local HOME/USERPROFILE/APPDATA/LOCALAPPDATA/TEMP/TMP, and these exact controlled npm pointers and values:
+The wrapper must construct every child environment from zero using one versioned, documented allowlist. The allowlist may contain only SystemRoot, ComSpec, PATHEXT, a constructed PATH limited to the isolated runtime and required Windows system directories, task-local HOME/USERPROFILE/APPDATA/LOCALAPPDATA/TEMP/TMP, and these exact controlled npm path selectors:
 
 - NPM_CONFIG_USERCONFIG and NPM_CONFIG_GLOBALCONFIG point to the controlled empty files.
-- NPM_CONFIG_CACHE and NPM_CONFIG_LOGS point to fresh task-local locations.
-- NPM_CONFIG_REGISTRY is https://registry.npmjs.org/.
-- NPM_CONFIG_OMIT is empty.
-- NPM_CONFIG_PRODUCTION is false.
-- NPM_CONFIG_OFFLINE and NPM_CONFIG_PREFER_OFFLINE are false.
-- NPM_CONFIG_PACKAGE_LOCK is true.
-
-No other inherited key or NPM_CONFIG category is permitted. In particular, the child environment must exclude registry credentials, npm/GitHub tokens, proxy settings, NODE_ENV, generic npm configuration, shell-profile state, user/global npm configuration, ambient cache state, and unrelated environment values. An unknown key, value source, configuration source, or required launch value is a fail-closed preflight error. The receipt retains only the allowlist-version identity and predicate results, never values.
+- NPM_CONFIG_CACHE and NPM_CONFIG_LOGS_DIR point to fresh task-local locations.
+No other inherited key or NPM_CONFIG category is permitted. Only NPM_CONFIG_USERCONFIG, NPM_CONFIG_GLOBALCONFIG, NPM_CONFIG_CACHE, and NPM_CONFIG_LOGS_DIR may exist, case-insensitively. Policy-sensitive configuration must not be injected through NPM_CONFIG_* or extra CLI configuration flags. Other than the mandatory toolchain preflight cmd.exe /d /s /c npm.cmd --version, the only permitted npm argument vectors are the fixed read-only npm config get probes and the exact semantic commands enumerated below: npm audit --json --audit-level=high and npm sbom --package-lock-only --sbom-format=spdx. Those fixed command vectors do not replace the required configuration probes. No additional or substituted argv token may set or override registry, omit, production, offline, prefer-offline, package-lock, workspace/workspaces, include, proxy, TLS/auth, audit/audit-level, or another configuration value. Required policy predicates must derive only from the tracked .npmrc, controlled empty user/global configuration files, and verified npm built-in/default behavior; the read-only probes below must observe them. In particular, the child environment must exclude registry credentials, npm/GitHub tokens, proxy settings, NODE_ENV, generic npm configuration, shell-profile state, user/global npm configuration, ambient cache state, and unrelated environment values. An unknown key, value source, configuration source, required launch value, or observed policy value is a fail-closed preflight error. The receipt retains only the allowlist-version identity and predicate results, never values.
 
 The wrapper may perform only this versioned read-only npm configuration-probe vector set, through the isolated npm.cmd and sterile child environment:
 
@@ -86,6 +80,7 @@ The wrapper may perform only this versioned read-only npm configuration-probe ve
 - npm config get prefer-offline
 - npm config get package-lock
 - npm config get workspace
+- npm config get workspaces
 
 The wrapper must privately parse each configuration source needed to establish that no credential-bearing directive, unapproved registry/scope/proxy directive, or other disallowed input is present. It may not print a configuration value. npm config set, delete, edit, fix, install, update, and every configuration mutation are prohibited. The receipt retains one fixed probe-set vector identity, probe success/exit-class summary, and only the predicates below:
 
@@ -95,7 +90,7 @@ The wrapper must privately parse each configuration source needed to establish t
 | Controlled config | User/global config files are empty and match the empty-file identity. |
 | Registry | Effective registry is exactly https://registry.npmjs.org/. |
 | Proxy | Effective proxy and HTTPS-proxy are absent. |
-| Graph scope | Omit is empty; production is false; package-lock is enabled; no workspace selector or scope-reducing configuration is active. |
+| Graph scope | Omit is empty; production is false; package-lock is enabled; workspace is absent; workspaces is false; no scope-reducing configuration is active. |
 | Network mode | Offline and prefer-offline are both false. |
 | Command form | No command includes omit, production, no-package-lock, offline, prefer-offline, workspace selection, install, update, fix, remediation, or another scope reduction. |
 | Credentials | The curated child environment and privately inspected config sources have no credential-bearing input category. |
