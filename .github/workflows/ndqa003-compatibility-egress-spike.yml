@@ -1,0 +1,98 @@
+name: ND-QA-003 compatibility and egress spike
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Enter RUN_NDQA003_COMPATIBILITY_EGRESS_SPIKE to run the bounded spike
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  spike:
+    name: ND-QA-003 compatibility and egress spike
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the selected immutable commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up the exact Node runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+
+      - name: Run the bounded compatibility and egress harness
+        env:
+          NDQA003_CONFIRMATION: ${{ inputs.confirmation }}
+          NDQA003_OUTPUT_DIR: ${{ runner.temp }}/nightdrive-ndqa003-compatibility-egress-spike
+          NDQA003_TEMP_ROOT: ${{ runner.temp }}
+        run: node src/evaluation/ndqa003-compatibility-egress-spike-harness.mjs
+
+      - name: Write a sanitized bootstrap failure receipt when necessary
+        if: ${{ failure() }}
+        env:
+          NDQA003_CONFIRMATION: ${{ inputs.confirmation }}
+          NDQA003_OUTPUT_DIR: ${{ runner.temp }}/nightdrive-ndqa003-compatibility-egress-spike
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${RUNNER_TEMP:?GitHub Actions runner temporary root is required}"
+          expected_output="$RUNNER_TEMP/nightdrive-ndqa003-compatibility-egress-spike"
+          [ "$NDQA003_OUTPUT_DIR" = "$expected_output" ] || exit 1
+          receipt="$NDQA003_OUTPUT_DIR/receipt.json"
+          keep_existing_receipt=false
+          if [ -d "$NDQA003_OUTPUT_DIR" ] && [ ! -L "$NDQA003_OUTPUT_DIR" ] && [ -f "$receipt" ] && [ ! -L "$receipt" ] && [ "$(find "$NDQA003_OUTPUT_DIR" -mindepth 1 -maxdepth 1 -printf . | wc -c)" -eq 1 ]; then
+            if node --input-type=module --eval 'import { readFileSync } from "node:fs"; import { validatePreservableFailureReceiptBytes } from "./src/evaluation/ndqa003-compatibility-egress-spike-harness.mjs"; if (!validatePreservableFailureReceiptBytes(readFileSync(process.argv[1]))) process.exit(1);' "$receipt" >/dev/null 2>&1; then
+              keep_existing_receipt=true
+            fi
+          fi
+          if [ "$keep_existing_receipt" = true ]; then
+            exit 0
+          fi
+          rm -rf -- "$NDQA003_OUTPUT_DIR"
+          mkdir -p -- "$NDQA003_OUTPUT_DIR"
+          umask 077
+          timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          confirmation="REJECTED"
+          if [ "${NDQA003_CONFIRMATION:-}" = "RUN_NDQA003_COMPATIBILITY_EGRESS_SPIKE" ]; then
+            confirmation="ACCEPTED"
+          fi
+          github_fragment=""
+          if [[ "${GITHUB_RUN_ID:-}" =~ ^[1-9][0-9]*$ && "${GITHUB_RUN_ATTEMPT:-}" =~ ^[1-9][0-9]*$ && "${GITHUB_JOB:-}" =~ ^[A-Za-z0-9_.-]+$ && "${GITHUB_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            github_fragment=",\"github\":{\"attempt\":\"$GITHUB_RUN_ATTEMPT\",\"job\":\"$GITHUB_JOB\",\"runId\":\"$GITHUB_RUN_ID\",\"sha\":\"$GITHUB_SHA\"}"
+          fi
+          runner_fragment=""
+          host_architecture=""
+          if command -v uname >/dev/null 2>&1; then
+            if host_architecture="$(uname -m 2>/dev/null)"; then
+              :
+            else
+              host_architecture=""
+            fi
+          fi
+          node_identity=""
+          if node_identity="$(node --input-type=module --eval 'process.stdout.write(process.platform + " " + process.arch)' 2>/dev/null)"; then
+            :
+          else
+            node_identity=""
+          fi
+          if [[ "${RUNNER_OS:-}" = "Linux" && "${RUNNER_ARCH:-}" = "X64" && "$host_architecture" =~ ^(x86_64|amd64)$ && "$node_identity" = "linux x64" && "${ImageOS:-}" =~ ^[A-Za-z0-9._\ -]{1,128}$ && "${ImageVersion:-}" =~ ^[A-Za-z0-9._\ -]{1,128}$ ]]; then
+            runner_fragment=",\"runner\":{\"hostArchitecture\":\"$host_architecture\",\"image\":\"$ImageOS\",\"imageVersion\":\"$ImageVersion\",\"processArch\":\"x64\",\"processPlatform\":\"linux\",\"runnerArch\":\"X64\",\"runnerOs\":\"Linux\"}"
+          fi
+          printf '%s\n' "{\"schema\":\"nightdrive.ndqa003-compatibility-egress-spike-receipt.v1\",\"status\":\"FAIL\",\"policy\":\"nightdrive.supply-chain.ndqa003.v1\",\"startedAtUtc\":\"$timestamp\",\"finishedAtUtc\":\"$timestamp\",\"durationMilliseconds\":0,\"confirmation\":\"$confirmation\",\"toolchain\":{\"node\":\"UNVERIFIED\",\"npm\":\"UNVERIFIED\"},\"commands\":{\"audit\":[\"npm\",\"audit\",\"--json\",\"--audit-level=high\"],\"sbom\":[\"npm\",\"sbom\",\"--package-lock-only\",\"--sbom-format=spdx\"],\"networkNamespace\":[\"sudo\",\"-n\",\"unshare\",\"--net\",\"--fork\",\"--mount-proc\"]},\"custody\":{\"artifactRetention\":\"SANITIZED_RECEIPT_ONLY\",\"artifactTarget\":\"receipt.json\",\"artifactUploaderReceiptOnly\":true,\"cleanupFailure\":false,\"rawTemporaryFilesDeleted\":true},\"billing\":\"NOT AVAILABLE\",\"failures\":[{\"phase\":\"WORKFLOW-BOOTSTRAP\",\"code\":\"RUNNER_UNAVAILABLE\"}],\"checkout\":{\"verified\":false}$github_fragment$runner_fragment}" > "$receipt"
+          test "$(find "$NDQA003_OUTPUT_DIR" -mindepth 1 -maxdepth 1 -printf . | wc -c)" -eq 1
+
+      - name: Upload the sanitized receipt
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightdrive-ndqa003-compatibility-egress-spike-${{ github.sha }}
+          path: ${{ runner.temp }}/nightdrive-ndqa003-compatibility-egress-spike/receipt.json
+          if-no-files-found: error
