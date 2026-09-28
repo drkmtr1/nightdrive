@@ -264,7 +264,7 @@ Neither platform receipt, a successful spike, nor their combination closes ND-QA
 
 This candidate requires consequential external exact-head review. The review must verify no policy/harness/registry/graph/threshold/license/exception expansion; Windows-native reversible program-scoped firewall limits; strict sterile configuration and raw-data custody; crash-safe marker/recovery and persistent/active-store/active-profile proof; exact command/graph/fixture/determinism behavior; preserved platform distinction; and no firewall execution, registry egress, workflow/action/dependency/provider change, finding closure, Stage 8, or roadmap expansion.
 
-After external PASS, explicit Product Owner acceptance, protected integration, and mechanical reconciliation, repository truth may make the complete two-platform spike eligible. This specification itself dispatches no Linux run and executes no Windows evidence.
+After external PASS, explicit Product Owner acceptance, protected integration, and mechanical reconciliation, repository truth may make only a separately bounded Windows ARM64 wrapper IMPLEMENT candidate eligible under this procedure. That candidate requires its own exact-head review, CI, protected integration, and reconciliation. Only then may a separately bounded read-only two-platform spike be selected after clean-checkout/toolchain/firewall-recovery and Linux-harness eligibility preflight. This specification itself dispatches no Linux run and executes no Windows evidence.
 
 ## Candidate validation
 
