@@ -275,4 +275,4 @@ Before external review:
 4. verify no npm audit/SBOM, registry egress, Linux workflow dispatch, firewall inspection/change, runtime installation, or runtime/configuration change occurred; and
 5. report base/head/tree, full-index patch byte size/SHA-256, and clean worktree.
 
-**PENDING GOVERNANCE: Permanent Engineering Health cadence — execute immediately after the current Health Baseline reaches PASS and before Stage 8 qualification resumes.**
+**Supersession:** The Product Owner withdrew the former mandatory Permanent Engineering Health cadence. This procedure creates no cadence. During normal RECONCILE and task selection, the [AI engineering workflow](../AI_ENGINEERING_WORKFLOW.md) requires risk-triggered, evidence-based consideration of existing Playbook reviews; that consideration does not alter this procedure's evidence requirements, lifecycle gates, or finding status.
