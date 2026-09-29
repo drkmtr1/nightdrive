@@ -479,3 +479,70 @@ This addendum is a separately bounded, mechanical post-integration reconciliatio
 | Required CI | Documentation / validate passed in [run 36469510547](https://github.com/drkmtr1/nightdrive/actions/runs/36469510547) and Runtime foundation / validate passed in [run 36469510430](https://github.com/drkmtr1/nightdrive/actions/runs/36469510430) on the reviewed pull request. Documentation / validate passed again in [run 36470722516](https://github.com/drkmtr1/nightdrive/actions/runs/36470722516) and Runtime foundation / validate passed again in [run 36470722544](https://github.com/drkmtr1/nightdrive/actions/runs/36470722544) on the protected integration commit. |
 | Binding policy effect | At protected integration, the replacement became binding: during normal RECONCILE and SELECT ONE TASK, consider only the smallest existing read-only Playbook review proportionate to demonstrated risk; do not trigger a review solely because time elapsed, milestone count, or a recurring schedule. It does not create a Permanent Engineering Health cadence, expand review authority, or override current review, CI, protected-integration, or Product Owner boundaries. |
 | Next eligible task | The separately bounded consequential Engineering Review Proportionality Hardening documentation/governance SPECIFY candidate directed by the Product Owner. It remains separate from the actual ND-QA-003 compatibility/egress spike and must complete its own external exact-head review, explicit Product Owner acceptance, protected integration, and reconciliation before a fresh preflight can consider the spike. |
+
+
+## Post-assessment Product Owner ND-QA-003 risk treatment and roadmap materiality
+
+This addendum records the explicit Product Owner decision supplied on 2026-09-28, under the materiality and proportionality rules in the [Engineering Review Playbook](../ENGINEERING_REVIEW_PLAYBOOK.md). It preserves the original comprehensive assessment identity and REVISE result, the historical ND-QA-003 finding and accepted technical requirements, and all prior technical evidence. It supersedes earlier coordination statements in this report only where they say ND-QA-003 or the historical REVISE label bars ordinary already-in-scope application-roadmap work; it does not rewrite those earlier events or the original assessment. Its coordination effect becomes binding only after consequential external exact-head review PASS, explicit Product Owner acceptance of that reviewed tuple, protected integration, and mechanical reconciliation.
+
+### ND-QA-003 residual-risk acceptance
+
+| Field | Evidence |
+| --- | --- |
+| Historical finding | The original baseline identified the absence of recurring automated full-graph vulnerability/license review and vulnerability alerts. At assessment time it classified ND-QA-003 as MUST FIX BEFORE NEXT MILESTONE - OPEN. |
+| Remediation work completed | The bounded native-first [control](NDQA003_SUPPLY_CHAIN_SECURITY_CONTROL_SPECIFICATION.md) and [policy](NDQA003_SUPPLY_CHAIN_SECURITY_POLICY_SPECIFICATION.md), temporary manual [GitHub Actions harness](NDQA003_GITHUB_ACTIONS_SPIKE_HARNESS_SPECIFICATION.md), and [Windows ARM64 evidence procedure](NDQA003_WINDOWS_ARM64_EVIDENCE_PROCEDURE_SPECIFICATION.md) and wrapper were specified, reviewed, and integrated under the existing lifecycle. They remain available if the finding is explicitly revisited. |
+| Final experiment outcome | The accepted two-platform compatibility/egress spike was not completed. Two recorded Windows elevation attempts were canceled before the elevated tracked wrapper started. No valid Windows receipt was produced; no audit/SBOM phase, firewall-rule lifecycle, or registry request ran; the Linux workflow was not dispatched; and no cross-platform comparison exists. |
+| Technical disposition | ND-QA-003 remains OPEN. It is not technically PASS, experimentally verified, or fully qualified. No vulnerability/license result, successful control operation, or compliance claim is established. |
+| Product defect evidence | No Nightdrive product defect resulting from the incomplete spike has been demonstrated. This is not evidence that the unexecuted security controls passed or that the dependency graph has no vulnerability/license issue. |
+| Current treatment | ACCEPTABLE / DEFERRED, by explicit Product Owner acceptance of the residual engineering-assurance risk. Further ND-QA-003 investigation, spike work, UAC troubleshooting, firewall experimentation, dependency-security qualification, and alternative-remedy research are not authorized now. |
+| Roadmap effect | Once this exact record is binding, the OPEN finding no longer blocks ordinary in-scope application-roadmap progression. This is a risk treatment, not closure, technical qualification, a waiver of the accepted security requirement, permission to claim control compliance, or authorization to release. |
+| Revisit condition | Revisit only on explicit Product Owner request, or when new concrete evidence establishes materially greater product risk and repository governance requires reconsideration. Time passage, milestone count, or review cadence alone does not reopen it. |
+| Health result | The original Engineering Health Baseline disposition remains REVISE; this addendum does not convert the assessment to PASS or reassess the entire repository. |
+
+### Materiality of remaining OPEN findings
+
+The binding [forward-looking Stage 8 finding definitions](STAGE8_MOTIF_QUALIFICATION_FINDING_REPLACEMENTS.md) govern the three S8-QUAL entries below; their individual historical origins remain unrecoverable.
+
+#### ND-QA-004 — SHOULD FIX SOON / OPEN
+
+- **Affected components and authority:** [src/music-domain/motif-result.ts](../../src/music-domain/motif-result.ts) and [docs/ARCHITECTURE.md](../ARCHITECTURE.md); the accepted module-ownership direction places immutable Motif values/invariants in music-domain and policy resolution/projection in generators.
+- **Evidence and product impact:** The Motif result module imports generator-layer resolution/projection helpers. The baseline demonstrated no runtime defect or circular-oracle failure. The concrete impact is limited to Stage 8 Motif dependency direction and the clarity of independent-reference reasoning.
+- **Materiality:** It does not materially block unrelated, already-in-scope application work. It remains SHOULD FIX SOON and may matter before work that relies on or changes the affected Stage 8 boundary; the S8-QUAL findings already keep Stage 8 qualification gated.
+- **Smallest sufficient correction and complexity:** Obtain an architecture disposition between a lower shared primitive and a higher verifier boundary, then make only that bounded move and review its dependency direction. Complexity is moderate because it crosses an ownership boundary and is not mechanically determined.
+- **Product Owner judgment:** No decision is required to keep unrelated application work moving. An architecture authority decision is required before choosing the correction; any change to accepted scope or ownership remains subject to its existing Product Owner/architecture gate.
+
+#### ND-QA-005 — SHOULD FIX SOON / OPEN
+
+- **Affected components and authority:** [.github/workflows/documentation.yml](../../.github/workflows/documentation.yml), [.github/workflows/runtime.yml](../../.github/workflows/runtime.yml), and the accepted security supply-chain control intent.
+- **Evidence and product impact:** The workflows use mutable GitHub Action major tags (actions/checkout@v4, actions/setup-node@v4, and actions/upload-artifact@v4). A tag movement could change CI action code without a reviewed in-repository SHA change. No tag movement or compromise is evidenced; prior required CI has passed. The risk affects CI supply-chain integrity, not demonstrated Nightdrive runtime behavior.
+- **Materiality:** It does not currently materially block unrelated application development; required CI remains available and no compromise evidence was found. It remains visible SHOULD FIX SOON debt.
+- **Smallest sufficient correction and complexity:** Verify exact action provenance, pin only the existing actions to reviewed immutable commit SHAs, and pass protected CI. Complexity is low once provenance is verified.
+- **Product Owner judgment:** None is required for that bounded correction after provenance verification. If provenance cannot be verified or remediation expands beyond existing actions, stop for the applicable authority.
+
+#### S8-QUAL-001 — Independent semantic/reference evidence completeness — OPEN
+
+- **Affected scope and authority:** Stage 8 evaluation/reference implementation and semantic fixtures under the accepted Stage 8 evidence method, [docs/MOTIF_MODEL.md](../MOTIF_MODEL.md), and applicable ADR/profile contracts.
+- **Evidence and product impact:** The forward-looking finding requires a complete independent reference chain with no unresolved semantic gaps, production-derived oracle dependency, circular expectation path, or missing required branch/negative evidence. Closure evidence is not established. Without it, Stage 8 Motif semantics lack the accepted independent evidence needed for deterministic qualification.
+- **Materiality:** It materially blocks Stage 8 qualification and any product claim relying on qualified Stage 8 Motif behavior. It does not block unrelated in-scope application work that does not depend on that unqualified behavior.
+- **Smallest sufficient correction and complexity:** Complete and integrate only the remaining independent-reference obligations and required fixtures under the accepted method, then obtain the required independent review. Complexity is substantial because the chain spans multiple semantic boundaries.
+- **Product Owner judgment:** The technical closure criteria are already accepted; no new contract choice is identified. Product Owner selection of Stage 8 as the work to prioritize over other application tasks remains a roadmap decision.
+
+#### S8-QUAL-002 — Candidate evidence capture, custody, and freeze completeness — OPEN
+
+- **Affected scope and authority:** Stage 8 vectors/artifacts, reviewed capture tooling, provenance, pinned runtime/dependency evidence, independent digest recomputation, and the accepted evidence method.
+- **Evidence and product impact:** The finding requires a reviewed-tooling capture, complete custody, independent recomputation/inspection, and explicit acceptance/freeze. No real Stage 8 capture or freeze is established. Without accepted frozen evidence, production comparison cannot support qualification.
+- **Materiality:** It materially blocks Stage 8 qualification and any claim based on accepted frozen Motif expectations; it does not independently block unrelated application work.
+- **Smallest sufficient correction and complexity:** Run the already-integrated capture process only after Stage 8 work becomes eligible, then independently recompute and inspect custody and obtain the required freeze acceptance. Complexity is substantial because it requires a real pinned-platform evidence lifecycle.
+- **Product Owner judgment:** No new evidence-method choice is identified; existing evidence acceptance/freeze authority remains applicable. Whether Stage 8 should delay other application work is a roadmap decision.
+
+#### S8-QUAL-003 — Production comparison and supported-platform qualification completeness — OPEN
+
+- **Affected scope and authority:** Stage 8 production Motif output, frozen independent vectors, repeated fresh-process replay, Windows ARM64/Linux x64 evidence, canonical byte/digest equality, and the accepted Stage 8 evidence method.
+- **Evidence and product impact:** No production comparison, supported-platform Stage 8 qualification, or exact cross-platform equality evidence is established. The user-visible implication is that deterministic Stage 8 Motif output has not been qualified across the required paths.
+- **Materiality:** It materially blocks Stage 8 qualification and release/acceptance claims that depend on that qualification; it does not block unrelated application work.
+- **Smallest sufficient correction and complexity:** After valid independent evidence is frozen, compare production output, run the required repeated-process checks on Windows ARM64 and Linux x64, establish exact canonical equality, and obtain the required independent review/acceptance. Complexity is high because it depends on the prior reference and custody gates and two platform runs.
+- **Product Owner judgment:** The technical criteria are already accepted. Musical acceptance remains separately governed; no musical or release acceptance is implied here.
+
+### Current readiness boundary
+
+ND-QA-001 and ND-QA-002 remain RESOLVED; ND-QA-003 remains OPEN / ACCEPTABLE / DEFERRED; ND-QA-004 and ND-QA-005 remain OPEN / SHOULD FIX SOON; S8-QUAL-001/002/003 remain OPEN; MIA-003 remains ACCEPTABLE / DEFERRED. Once this risk treatment is binding, no remaining OPEN Engineering Health finding is assessed to materially block unrelated, already-in-scope application-roadmap work on current evidence; the S8-QUAL findings still block Stage 8 qualification specifically. The historical comprehensive assessment result remains REVISE, while its former blanket restriction on ordinary roadmap work is removed by this explicit risk treatment once binding. Stage 8 qualification remains blocked by its three OPEN findings. This candidate does not select a product feature, create new scope, authorize Stage 8, or change browser/audio, UI, persistence, release, or Stage 9 gates. The current roadmap identifies Stage 8 as the selected next product milestone; deciding whether to prioritize an already-authorized application task outside Stage 8, or to wait for Stage 8 evidence, remains for the Product Owner after review of this exact candidate.
