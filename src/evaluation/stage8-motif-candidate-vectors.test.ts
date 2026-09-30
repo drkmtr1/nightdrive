@@ -260,6 +260,52 @@ describe("Stage 8 Motif independent candidate vectors", () => {
     expect(vector.resultJson).not.toMatch(/[\n\r]/);
   });
 
+  it("carries an independently specified plan and pitch path into the canonical result", () => {
+    const input = STAGE8_MOTIF_QUALIFICATION_INPUTS[0];
+    if (input === undefined) throw new Error("Missing first qualification input.");
+    const result = JSON.parse(deriveStage8MotifCandidateVector(input).resultJson) as {
+      plan: unknown;
+      events: unknown;
+    };
+
+    // These literals are the accepted dark-synthwave low/low, seed-zero
+    // reference fixtures. They do not come from a production Motif result.
+    expect(result.plan).toEqual({
+      policyVersion: "nightdrive.motif-policy.v1",
+      profileVersion: "nightdrive.genre-profile.motif.v1",
+      rhythmTemplate: "steady-6",
+      registerBand: "upper",
+      tensionMode: "chordal",
+      phrase4Displacement: "none",
+      contourOffsets: [0, 1, 2, 1, 2, 0],
+      phraseRoles: [
+        "identity",
+        "motif-form-repetition",
+        "harmony-aware-transposition",
+        "contour-preserving-response",
+      ],
+    });
+    const pitches = [
+      75, 79, 79, 75, 79, 75, 74, 77, 77, 74, 77, 74, 80, 84, 84, 80, 84, 80, 79, 79, 79, 79, 79,
+      74,
+    ];
+    const starts = [
+      0, 960, 1920, 3360, 4800, 6720, 7680, 8640, 9600, 11040, 12480, 14400, 15360, 16320, 17280,
+      18720, 20160, 22080, 23040, 24000, 24960, 26400, 27840, 29760,
+    ];
+    const durations = [
+      960, 480, 960, 480, 960, 960, 960, 480, 960, 480, 960, 960, 960, 480, 960, 480, 960, 960, 960,
+      480, 960, 480, 960, 960,
+    ];
+    expect(result.events).toEqual(
+      pitches.map((pitch, index) => ({
+        pitch,
+        startTick: starts[index],
+        durationTicks: durations[index],
+      })),
+    );
+  });
+
   it("derives semantic plan/events, byte lengths, and digests without treating existing evidence as an oracle", () => {
     const artifact = buildStage8MotifCandidateArtifact();
     for (const vector of artifact.vectors) {
