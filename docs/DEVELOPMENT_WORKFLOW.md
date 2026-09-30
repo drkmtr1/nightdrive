@@ -9,7 +9,7 @@ flowchart LR
   B --> C[Implementation]
   C --> T[Tests]
   T --> A[Acceptance + UX/A11y]
-  A --> P[PR/review]
+  A --> R[Exact-head review] --> P[Publish material unit]
   P --> M[Merge]
   M --> D[Deploy if authorized]
   D --> V[Verify + observe + evaluate]
@@ -22,9 +22,17 @@ flowchart LR
 4. Make the smallest coherent change with documentation and tests.
 5. Run proportionate local/CI validation; do not weaken gates.
 6. Verify acceptance, failure states, UX, accessibility, security, data, and deployment impact.
-7. After exact-head review passes, publish and merge through the accepted Git workflow when the reviewed tuple remains valid and required checks pass. Deployment remains subject to its own accepted policy and any unresolved consequential decision.
+7. After exact-head review passes, publish only when the bounded change meets the publication threshold below; merge through the accepted Git workflow only when the reviewed tuple remains valid, the current-base assessment passes, and required checks and protections pass. A review PASS alone does not require publication. Deployment remains subject to its own accepted policy and any unresolved consequential decision.
 8. Verify the resulting environment and observability when deployment is in scope.
 9. Report the completed bounded task. During the active execution session, Codex may select the next separately bounded task when repository truth already makes it eligible and no task-specific stop boundary applies; a recommendation alone never establishes eligibility for another milestone or capability.
+
+## GitHub publication threshold
+
+Git is the engineering history; GitHub is the publication and integration boundary, not the task-by-task coordination system. Keep routine work local until one final exact-head candidate is ready. Do not push intermediate implementation or corrective commits for visibility. A correction after REVISE stays local until it is the next final candidate and has its required renewed review.
+
+Publish materially useful integration units: application/runtime source; substantive tests; qualification or acceptance evidence needed for a binding gate; governing product, architecture, contract, roadmap, or scope changes; dependencies, lockfiles, runtime or CI configuration; security, release, or deployment policy; and coordination changes that materially change the actual current gate.
+
+Do not create a GitHub PR for task or review packets, local investigations, unreviewed intermediate corrections, immaterial branch refreshes, or coordination bookkeeping that only records a PR number, merge SHA, already-binding fact, or other history. Do not publish repeated `PROJECT_STATE.md` edits unless leaving the current milestone, gate, blocker, or next eligible task unchanged would materially mislead. Defer useful but nonurgent coordination edits to a later substantive change only when doing so does not mix scopes or weaken exact-head review.
 
 ## Branches, commits, and reviews
 

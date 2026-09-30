@@ -223,7 +223,7 @@ Prioritize behavioral/invariant and branch-risk coverage over a single percentag
 
 ## Environments
 
-Fast deterministic checks run on every change. Database/browser suites run in CI with isolated data. Preview smoke tests run after deployment. Production gets non-destructive smoke checks. FL Studio verification remains a controlled human gate until automatable evidence is credible.
+Run fast deterministic checks appropriate to the changed surface on every applicable candidate. Clearly Markdown-only changes require documentation validation and applicable diff/format checks; runtime tests are not required solely because a documentation candidate exists. Runtime/source/test/evaluation changes receive the relevant fast deterministic runtime checks. Package, lockfile, script, workflow, runtime/configuration, mixed, or unknown changes take the conservative full runtime validation path. This classification does not remove any test or evidence required by a task-specific accepted qualification, release, or evidence contract. Database/browser suites run in CI with isolated data. Preview smoke tests run after deployment. Production gets non-destructive smoke checks. FL Studio verification remains a controlled human gate until automatable evidence is credible.
 
 ## First Playable canonical composition — accepted implementation and future evidence
 

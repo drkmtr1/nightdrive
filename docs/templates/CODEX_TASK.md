@@ -69,7 +69,7 @@ For publication-capable work, record reviewed base/head/scope/evidence and expec
 For mechanical post-merge reconciliation, record whether the current bounded task includes it:
 
 - `PUBLICATION ONLY` — stop after publication/merge verification required by existing repository mechanics.
-- `PUBLICATION + MECHANICAL POST-MERGE RECONCILIATION` — list the allowed coordination/status paths (normally `PROJECT_STATE.md` and/or `docs/ROADMAP.md`), exact stop conditions, and the separate reconciliation commit/review/PR/CI/merge path. Do not begin a new engineering capability in that operational flow.
+- `PUBLICATION + MECHANICAL POST-MERGE RECONCILIATION` — list the allowed coordination/status paths (normally `PROJECT_STATE.md` and/or `docs/ROADMAP.md`), exact stop conditions, and the reconciliation disposition. Use a separate reviewed PR/CI/merge path only when the coordination change independently meets the publication threshold; omit immaterial history/bookkeeping publication. Do not begin a new engineering capability in that operational flow.
 
 Mechanical reconciliation may follow under standing authority when repository truth and this task's scope determine the edit. It may not modify the reviewed implementation, and it must stop `BLOCKED` if any new engineering judgment or authoritative-document conflict is required.
 
