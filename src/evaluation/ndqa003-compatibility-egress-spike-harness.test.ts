@@ -69,6 +69,10 @@ const safeCommit = "a".repeat(40);
 const safeTree = "b".repeat(40);
 const safeHash = "c".repeat(64);
 
+function hasReadOnlyContentsWorkflowPermission(workflow: string): boolean {
+  return /^permissions:\n {2}contents: read$/mu.test(workflow.replace(/\r\n/g, "\n"));
+}
+
 function completeConfiguration() {
   return {
     credentialBearingInputAbsent: true,
@@ -523,6 +527,22 @@ describe("ND-QA-003 compatibility/egress spike harness", () => {
     ).toBe("FAIL");
   });
 
+  it.each([
+    ["LF", "\n"],
+    ["CRLF", "\r\n"],
+  ])(
+    "preserves the exact read-only permission assertion with %s line endings",
+    (_label, newline) => {
+      const permission = `permissions:${newline}  contents: read${newline}`;
+      const wrongValue = `permissions:${newline}  contents: write${newline}`;
+      const wrongIndentation = `permissions:${newline} contents: read${newline}`;
+
+      expect(hasReadOnlyContentsWorkflowPermission(permission)).toBe(true);
+      expect(hasReadOnlyContentsWorkflowPermission(wrongValue)).toBe(false);
+      expect(hasReadOnlyContentsWorkflowPermission(wrongIndentation)).toBe(false);
+    },
+  );
+
   it("keeps the workflow manual, temporary, receipt-only, and free of package installation", () => {
     const workflow = readFileSync(
       resolve(process.cwd(), ".github/workflows/ndqa003-compatibility-egress-spike.yml"),
@@ -537,7 +557,7 @@ describe("ND-QA-003 compatibility/egress spike harness", () => {
       "workflow_dispatch",
     ]);
     expect(workflow).toContain("confirmation:");
-    expect(workflow).toMatch(/^permissions:\n {2}contents: read$/mu);
+    expect(hasReadOnlyContentsWorkflowPermission(workflow)).toBe(true);
     expect(workflow).toContain("runs-on: ubuntu-latest");
     expect(actionReferences).toEqual([
       "actions/checkout@v4",
