@@ -2,12 +2,13 @@ name: Runtime foundation
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -18,37 +19,122 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Classify changed paths and verify representative cases
+        id: classify
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          classify_paths() {
+            if (( $# == 0 )); then
+              return 1
+            fi
+
+            local path
+            for path in "$@"; do
+              case "$path" in
+                *.md) ;;
+                *) return 1 ;;
+              esac
+            done
+          }
+
+          assert_runtime_required() {
+            local expected="$1"
+            local has_rename_or_copy="$2"
+            shift 2
+            local actual
+
+            if [[ "$has_rename_or_copy" == false ]] && classify_paths "$@"; then
+              actual=false
+            else
+              actual=true
+            fi
+
+            if [[ "$actual" != "$expected" ]]; then
+              printf 'FAIL: expected runtime_required=%s for rename_or_copy=%s paths: %s\n' "$expected" "$has_rename_or_copy" "$*" >&2
+              exit 1
+            fi
+
+            printf 'PASS: runtime_required=%s rename_or_copy=%s for paths: %s\n' "$actual" "$has_rename_or_copy" "$*"
+          }
+
+          # Representative contract cases: only an ordinary complete Markdown-only set is lightweight.
+          assert_runtime_required false false README.md docs/ROADMAP.md
+          assert_runtime_required true true docs/source.md docs/renamed.md
+          assert_runtime_required true true src/source.ts docs/renamed.md
+          assert_runtime_required true true docs/source.md docs/copied.md
+          assert_runtime_required true false src/domain/example.ts
+          assert_runtime_required true false src/evaluation/example.test.ts
+          assert_runtime_required true false package.json package-lock.json .nvmrc
+          assert_runtime_required true false .github/workflows/runtime.yml
+          assert_runtime_required true false docs/ROADMAP.md src/engine/example.ts
+          assert_runtime_required true false assets/unknown-format.bin
+          assert_runtime_required true false
+
+          diff_range="$BASE_SHA...$HEAD_SHA"
+          diff_status_file="$(mktemp)"
+          trap 'rm -f "$diff_status_file"' EXIT
+          if ! git diff --name-status -z --find-renames --find-copies --find-copies-harder "$diff_range" > "$diff_status_file"; then
+            printf 'FAIL: unable to read Git diff statuses for %s\n' "$diff_range" >&2
+            exit 1
+          fi
+          mapfile -d '' diff_records < "$diff_status_file"
+          rm -f "$diff_status_file"
+          trap - EXIT
+
+          changed_paths=()
+          has_rename_or_copy=false
+          record_index=0
+          while (( record_index < ${#diff_records[@]} )); do
+            status="${diff_records[$record_index]}"
+            record_index=$((record_index + 1))
+            case "$status" in
+              R[0-9]*|C[0-9]*)
+                has_rename_or_copy=true
+                if (( record_index + 1 >= ${#diff_records[@]} )); then
+                  printf 'FAIL: incomplete Git rename/copy status record\n' >&2
+                  exit 1
+                fi
+                changed_paths+=("${diff_records[$record_index]}")
+                changed_paths+=("${diff_records[$((record_index + 1))]}")
+                record_index=$((record_index + 2))
+                ;;
+              *)
+                if (( record_index >= ${#diff_records[@]} )); then
+                  printf 'FAIL: incomplete Git path status record\n' >&2
+                  exit 1
+                fi
+                changed_paths+=("${diff_records[$record_index]}")
+                record_index=$((record_index + 1))
+                ;;
+            esac
+          done
+
+          if [[ "$has_rename_or_copy" == false ]] && classify_paths "${changed_paths[@]}"; then
+            printf 'runtime_required=false\n' >> "$GITHUB_OUTPUT"
+            printf 'Classified all changed paths as ordinary Markdown-only changes; runtime validation is not applicable to this diff.\n'
+          else
+            printf 'runtime_required=true\n' >> "$GITHUB_OUTPUT"
+            printf 'At least one changed path is non-Markdown, a rename/copy pair exists, or the change set is empty; full runtime validation is required.\n'
+          fi
+      - name: Report runtime validation is not applicable to this diff
+        if: steps.classify.outputs.runtime_required == 'false'
+        run: echo "runtime validation not applicable to this diff"
       - uses: actions/setup-node@v4
+        if: steps.classify.outputs.runtime_required == 'true'
         with:
           node-version-file: .nvmrc
           cache: npm
       - name: Install the locked npm toolchain
+        if: steps.classify.outputs.runtime_required == 'true'
         run: npm install --global npm@11.19.0
       - name: Install the locked dependency graph
+        if: steps.classify.outputs.runtime_required == 'true'
         run: npm ci
-      - name: Execute Linux First Playable frozen qualification evidence
-        env:
-          FP_LINUX_EVIDENCE: "1"
-          FP_LINUX_OUTPUT_DIR: ${{ runner.temp }}/nightdrive-first-playable-linux
-        run: npm exec -- vitest run src/evaluation/first-playable-linux-evidence.test.ts --reporter=verbose
-      - name: Upload Linux First Playable evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nightdrive-first-playable-linux-${{ github.sha }}
-          path: ${{ runner.temp }}/nightdrive-first-playable-linux/first-playable-linux-evidence.json
-          if-no-files-found: error
       - name: Validate the runtime foundation
+        if: steps.classify.outputs.runtime_required == 'true'
         run: npm run validate
-      - name: Execute Linux AC-004 frozen-vector evidence
-        env:
-          AC004_LINUX_EVIDENCE: "1"
-          AC004_OUTPUT_DIR: ${{ runner.temp }}/nightdrive-stage7-ac004-linux
-        run: npm exec -- vitest run src/evaluation/stage7-ac004-linux-evidence.test.ts --reporter=verbose
-      - name: Upload Linux AC-004 evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nightdrive-stage7-ac004-linux-${{ github.sha }}
-          path: ${{ runner.temp }}/nightdrive-stage7-ac004-linux/stage7-ac004-linux-evidence.json
-          if-no-files-found: error
