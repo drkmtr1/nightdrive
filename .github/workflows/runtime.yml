@@ -44,40 +44,82 @@ jobs:
 
           assert_runtime_required() {
             local expected="$1"
-            shift
+            local has_rename_or_copy="$2"
+            shift 2
             local actual
 
-            if classify_paths "$@"; then
+            if [[ "$has_rename_or_copy" == false ]] && classify_paths "$@"; then
               actual=false
             else
               actual=true
             fi
 
             if [[ "$actual" != "$expected" ]]; then
-              printf 'FAIL: expected runtime_required=%s for paths: %s\n' "$expected" "$*" >&2
+              printf 'FAIL: expected runtime_required=%s for rename_or_copy=%s paths: %s\n' "$expected" "$has_rename_or_copy" "$*" >&2
               exit 1
             fi
 
-            printf 'PASS: runtime_required=%s for paths: %s\n' "$actual" "$*"
+            printf 'PASS: runtime_required=%s rename_or_copy=%s for paths: %s\n' "$actual" "$has_rename_or_copy" "$*"
           }
 
-          # Representative contract cases: only a complete Markdown-only set is lightweight.
-          assert_runtime_required false README.md docs/ROADMAP.md
-          assert_runtime_required true src/domain/example.ts
-          assert_runtime_required true src/evaluation/example.test.ts
-          assert_runtime_required true package.json package-lock.json .nvmrc
-          assert_runtime_required true .github/workflows/runtime.yml
-          assert_runtime_required true docs/ROADMAP.md src/engine/example.ts
-          assert_runtime_required true assets/unknown-format.bin
-          assert_runtime_required true
+          # Representative contract cases: only an ordinary complete Markdown-only set is lightweight.
+          assert_runtime_required false false README.md docs/ROADMAP.md
+          assert_runtime_required true true docs/source.md docs/renamed.md
+          assert_runtime_required true true src/source.ts docs/renamed.md
+          assert_runtime_required true true docs/source.md docs/copied.md
+          assert_runtime_required true false src/domain/example.ts
+          assert_runtime_required true false src/evaluation/example.test.ts
+          assert_runtime_required true false package.json package-lock.json .nvmrc
+          assert_runtime_required true false .github/workflows/runtime.yml
+          assert_runtime_required true false docs/ROADMAP.md src/engine/example.ts
+          assert_runtime_required true false assets/unknown-format.bin
+          assert_runtime_required true false
 
-          mapfile -d '' changed_paths < <(git diff --name-only -z --no-renames "$BASE_SHA...$HEAD_SHA")
-          if classify_paths "${changed_paths[@]}"; then
+          diff_range="$BASE_SHA...$HEAD_SHA"
+          diff_status_file="$(mktemp)"
+          trap 'rm -f "$diff_status_file"' EXIT
+          if ! git diff --name-status -z --find-renames --find-copies --find-copies-harder "$diff_range" > "$diff_status_file"; then
+            printf 'FAIL: unable to read Git diff statuses for %s\n' "$diff_range" >&2
+            exit 1
+          fi
+          mapfile -d '' diff_records < "$diff_status_file"
+          rm -f "$diff_status_file"
+          trap - EXIT
+
+          changed_paths=()
+          has_rename_or_copy=false
+          record_index=0
+          while (( record_index < ${#diff_records[@]} )); do
+            status="${diff_records[$record_index]}"
+            record_index=$((record_index + 1))
+            case "$status" in
+              R[0-9]*|C[0-9]*)
+                has_rename_or_copy=true
+                if (( record_index + 1 >= ${#diff_records[@]} )); then
+                  printf 'FAIL: incomplete Git rename/copy status record\n' >&2
+                  exit 1
+                fi
+                changed_paths+=("${diff_records[$record_index]}")
+                changed_paths+=("${diff_records[$((record_index + 1))]}")
+                record_index=$((record_index + 2))
+                ;;
+              *)
+                if (( record_index >= ${#diff_records[@]} )); then
+                  printf 'FAIL: incomplete Git path status record\n' >&2
+                  exit 1
+                fi
+                changed_paths+=("${diff_records[$record_index]}")
+                record_index=$((record_index + 1))
+                ;;
+            esac
+          done
+
+          if [[ "$has_rename_or_copy" == false ]] && classify_paths "${changed_paths[@]}"; then
             printf 'runtime_required=false\n' >> "$GITHUB_OUTPUT"
-            printf 'Classified all changed paths as Markdown-only; runtime validation is not applicable to this diff.\n'
+            printf 'Classified all changed paths as ordinary Markdown-only changes; runtime validation is not applicable to this diff.\n'
           else
             printf 'runtime_required=true\n' >> "$GITHUB_OUTPUT"
-            printf 'At least one changed path is non-Markdown or the change set is empty; full runtime validation is required.\n'
+            printf 'At least one changed path is non-Markdown, a rename/copy pair exists, or the change set is empty; full runtime validation is required.\n'
           fi
       - name: Report runtime validation is not applicable to this diff
         if: steps.classify.outputs.runtime_required == 'false'
