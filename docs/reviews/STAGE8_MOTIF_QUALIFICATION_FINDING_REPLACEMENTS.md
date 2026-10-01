@@ -75,7 +75,9 @@ reviewed, with no unresolved semantic/reference gaps, production-derived
 oracle dependency, circular expectation path, or missing required
 branch/negative evidence.
 
-**Closure evidence:** NOT ESTABLISHED; this replacement finding remains OPEN.
+**Closure evidence:** The complete independent reference chain is integrated: exact-head-reviewed source bindings, independent primitives, policy, plan resolution, projector, canonical reference/result construction, branch/negative/tie evidence, and the reviewed static result fixture. The independent 24-row coverage report was reviewed PASS at head `dee855c1ce8482657212297bb9be26f8d25e2177` and integrated through PR #270; the report remains at [STAGE8_MOTIF_24_ROW_COVERAGE_REPORT.md](STAGE8_MOTIF_24_ROW_COVERAGE_REPORT.md). The review confirmed all 24 unique accepted rows, required per-row invariants, production-independent derivation, and no capture/freeze/platform/product-acceptance overclaim. Existing component exact-head reviews and their merged implementations remain preserved in Git history.
+
+**Closure lifecycle:** This authority candidate records the closure without altering the finding's criteria or historical provenance. `S8-QUAL-001` remains OPEN until this exact consequential candidate receives external exact-head PASS, explicit Product Owner acceptance of that reviewed tuple, and protected integration. At that protected integration the closure record becomes binding and S8-QUAL-001 is RESOLVED on the evidence above. No additional implementation, reference, fixture, capture, or coverage task is required for this finding.
 
 ### S8-QUAL-002 — Candidate evidence capture, custody, and freeze completeness
 
@@ -144,16 +146,19 @@ final deterministic qualification record.
 
 ## Continuity and non-claims
 
-This record does not resolve any `S8-QUAL-*` finding. The separate
-post-integration reconciliation records `ND-QA-001` as RESOLVED because the
-Engineering Health Baseline's durable per-ID-record criterion is verified by
-this now-binding record; it does not convert the S8 findings into historical
-reconstructions or closure evidence. The three replacement findings remain
-OPEN until their individual closure criteria are independently evidenced,
-reviewed, and accepted.
+This record preserves the original individual historical provenance as NOT
+VERIFIED / unrecoverable. It does not reconstruct any historical meaning.
+S8-QUAL-001 remains OPEN until the closure lifecycle above completes; its
+resolution is based only on the integrated independent reference chain and the
+reviewed coverage report. S8-QUAL-002 and S8-QUAL-003 remain OPEN until their
+own unchanged individual closure criteria are independently evidenced,
+reviewed, and accepted. S8-QUAL-003 remains downstream of S8-QUAL-002.
 
 This record does not accept a real Stage 8 candidate capture, evidence freeze,
 production/reference comparison, supported-platform qualification, AC closure,
-Stage 8 exit, or musical output. It creates no production behavior, canonical
-contract, roadmap authorization, or exception to the current Health Baseline
+Stage 8 exit, or musical output. The Product Owner's separately reviewed
+roadmap authority allows internal Node-based product development and formative
+audition only after that authority integrates; it does not relax the finding
+criteria or formal qualification/release gates. The candidate creates no
+production behavior, canonical contract, or exception to the current Health Baseline
 REVISE gate.

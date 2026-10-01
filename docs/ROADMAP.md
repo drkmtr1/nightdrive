@@ -416,17 +416,73 @@ Accepted and merged through PR #68 (approved head `0878f77a5b6c5e31f142ab04771cc
 
 **Status:** Compatibility architecture and public V2 runtime are accepted; the exact R1 dataset and Product Owner override preserve their documented evidence limits. Stage 7 is complete. First Playable specification, runtime, frozen evidence, custody verification, and pinned Node `24.21.0` Windows ARM64/Linux x64 representation/replay qualification are complete. The Stage 8 contract is accepted through PR #217, Stage 8 candidate-capture custody tooling is integrated through PR #240, and the [Engineering Health Baseline](reviews/NIGHTDRIVE_ENGINEERING_HEALTH_BASELINE.md) has completed with REVISE.
 
-### Post-Stage-7 Product Integration / First Playable integration gate
+### Post-Stage-7 product-integration context
 
-Nightdrive has accumulated substantial deterministic engine capability while its integrated user-facing product experience remains comparatively immature. This is a sequencing concern, not a relaxation of engineering rigor: deterministic generation, canonical state, replayability, explicit contracts, structured errors, provenance/integrity, testing, and exact-head review remain required. After all existing Stage 7 exit requirements are satisfied, stop before Stage 8. The completed assessment selected a local in-memory one-8-bar Harmony+Bass+Arpeggiator generation boundary as the smallest deterministic product integration. Product Owner ADR-023 selects a new versioned canonical result for that boundary; the specification and deterministic runtime are accepted and merged through PR #173 and PR #175 respectively. Accepted/frozen source, reference, and oracle evidence plus the reviewed harness support the completed pinned Node `24.21.0` Windows ARM64/Linux x64 representation/replay qualification and exact cross-platform equality recorded in the [qualification record](reviews/FIRST_PLAYABLE_PLATFORM_QUALIFICATION.md). The guiding principle remains that every reasonable sequence of engineering milestones should periodically produce something the Product Owner can run, hear, see, or meaningfully evaluate.
+Nightdrive has accumulated substantial deterministic engine capability while its integrated user-facing product experience remains comparatively immature. The Product Owner's accepted re-baseline direction prioritizes a seven-milestone producer-value sequence; evidence and process work blocks a product milestone only when existing authority and material technical risk justify that ordering. This does not relax deterministic generation, canonical state, replayability, explicit contracts, structured errors, provenance/integrity, testing, review, CI, or protected merge. The local in-memory eight-bar Harmony+Bass+Arpeggiator boundary remains accepted through ADR-023 and PRs #173/#175. Its pinned Node `24.21.0` Windows ARM64/Linux x64 representation/replay qualification and exact equality remain recorded in the [qualification record](reviews/FIRST_PLAYABLE_PLATFORM_QUALIFICATION.md). The guiding principle is what new thing the producer can do after the milestone.
 
-The assessment compared sequencing options and established that accepted Harmony, Bass, and Arpeggiator can support a local in-memory eight-bar Harmony+Bass+Arpeggiator generation boundary, while browser audition remains downstream. The Product Owner selected a separately versioned canonical result/coordinator specification in ADR-023; its implementation is accepted and merged through PR #175. The accepted/frozen source, reference, and oracle evidence remain binding. The supported local Windows ARM64 and Linux x64 members passed pinned Node `24.21.0` representation/replay qualification with exact cross-platform equality. The Product Owner subsequently selected Stage 8 deterministic melody and motif as the next product milestone, with contract definition first. Stage 9 and later product work remain separately gated.
+ADR-023 and PR #175 establish the accepted H+B+A coordinator; the supported local Windows ARM64 and Linux x64 members passed pinned Node `24.21.0` representation/replay qualification with exact equality. The Product Owner first selected Stage 8 Motif as the next product milestone. Upon its required review, exact-tuple acceptance, and integration, this candidate supersedes only that future product ordering with Milestone 1, Audible complete section. The selected result extends the existing composition boundary with Lead without changing First Playable V1 or Motif V1.
 
-The accepted coordinator/result implementation remains bounded to the local deterministic runtime. Its source, reference, and oracle evidence are accepted/frozen; Windows ARM64/Linux x64 representation/replay qualification and exact cross-platform comparison are complete. This evidence does not establish independent musical correctness. Stage 7 exit requirements remain unchanged and Stage 7 is complete. Stage 8 qualification and additional Stage 8 implementation remain subject to the OPEN S8-QUAL findings and their accepted evidence requirements. The Product Owner risk treatment became binding through PR #265 and its reconciliation; it does not prohibit unrelated already-in-scope application-roadmap work. Browser audition, playback/audio, UI, persistence, Stage 9, and later roadmap work remain separately gated.
+The accepted coordinator/result implementation remains bounded to the local deterministic runtime; its evidence does not establish independent musical correctness. Stage 7 remains complete. The prior Stage 8 qualification gates continue to govern formal qualification, supported-platform and release claims, while the Product Owner's proposed milestone sequence permits bounded internal development and formative audition after this exact authority tuple is reviewed, accepted, and integrated. The Product Owner risk treatment became binding through PR #265 and its reconciliation; it does not prohibit unrelated in-scope application work. Persistence, broader UI, AI, and later capabilities remain at their mapped product/release gates below.
 
-## Stage 8 — Melody and motif engine
+## Product-first milestone sequence
 
-**Status:** The complete Stage 8 V1 contract, profile data, evidence contract, architecture, and ADR-025 are accepted and integrated through PR #217. The catalog, profile data, resolver, projector, canonical result/provenance boundary, public Motif operation, 24-row source-binding foundation, and candidate-capture custody tooling are integrated through PRs #219, #220, #222, #224, #226, #228, #231, and #240. The Engineering Health Baseline retains its historical REVISE result. The Product Owner risk-treatment record became binding through PR #265 and its reconciliation; ND-QA-003 remains technically OPEN / ACCEPTABLE / DEFERRED, without a security-control result or closure, and no longer blocks ordinary in-scope application-roadmap progression. ND-QA-004/005 remain SHOULD FIX SOON and do not independently block unrelated application work on current evidence. Stage 8 qualification remains blocked by [OPEN S8-QUAL-001/002/003](reviews/STAGE8_MOTIF_QUALIFICATION_FINDING_REPLACEMENTS.md) and their accepted closure criteria. Do not begin Stage 8 candidate capture, evidence freeze, production/reference comparison, or supported-platform qualification while those gates remain open. Further Stage 8 implementation remains subject to existing eligibility and evidence rules. Structured musical acceptance remains later. All work remains subject to required tests, dedicated review, CI, protected merge, and existing scope gates.
+**Lifecycle:** This sequence is the consequential Product Owner-directed authority candidate prepared against main `58fc9ae57ce394610658b7261414810d381e6eda`. Until this exact candidate receives consequential external exact-head PASS, explicit Product Owner acceptance of its reviewed tuple, and protected integration, the previously integrated roadmap remains binding. At that integration, the sequence below becomes the current product order. The selected next product milestone is Milestone 1.
+
+The product-value test for every milestone is: **What can the producer do after this work that they cannot do today?** Internal engineering slices are not separate Product Owner milestones. Existing deterministic contracts, validation, independent review, protected CI, and merge rules continue to apply.
+
+### Milestone 1 — Audible complete section
+
+Generate and hear one coherent eight-bar Harmony + Bass + Arpeggiator + Lead section inside Nightdrive. The first engineering result is one validated, separately versioned complete-section result/coordinator from one request and one authoritative Harmony realization shared with all four generators. Preserve First Playable V1 and Motif V1 behavior and interfaces; do not cast or mutate the First Playable result. Generate canonical content in pinned Node `24.21.0` / npm `11.19.0` initially; the browser consumes validated derived events through the smallest application adapter.
+
+The functional path has minimal profile/key/tempo/intent/seed controls, Generate, user-initiated Play, Stop, Loop, and role mute/solo or equivalent isolation. Lead must be audible with Harmony, Bass, and Arpeggiator, and the producer can isolate it. Use no persistence, authentication, database, or newly invented authenticated project-generation API for this milestone. Simple MIDI download may be considered only in a separate bounded task if repository evidence shows it is small and does not distract from audible delivery; the complete FL Studio handoff remains Milestone 5.
+
+### Milestone 2 — Inspect and edit
+
+Provide a readable timeline/piano roll, bounded note editing, exact undo/redo, and audition of edited revisions. The producer can correct a note or rhythm, hear the correction, and undo it exactly.
+
+### Milestone 3 — Locks and useful variations
+
+Lock components, regenerate only selected components, retain useful alternatives, preserve parent/child revision integrity, and return to an earlier version. Locked canonical values remain unchanged during unrelated regeneration.
+
+### Milestone 4 — Save and return
+
+Persist projects, revisions, locks, and history with proper ownership and recovery. The producer can close Nightdrive, reopen a project, and recover the work unchanged. Existing authentication, authorization, persistence, and security prerequisites remain applicable here.
+
+### Milestone 5 — Practical FL Studio handoff
+
+Use the existing MIDI foundation to export the current edited section in a useful FL Studio package/handoff. The producer can continue in FL Studio with aligned roles and timing. MIDI-004 remains limited to the declared tested FL Studio environment; broader claims retain their existing evidence gates.
+
+### Milestone 6 — Bounded AI intent
+
+Offer schema-validated AI proposals that require explicit user confirmation and then drive deterministic tools. The producer can inspect a proposed intent change and apply it without affecting locked material. AI never authors canonical notes or directly mutates persistence.
+
+### Milestone 7 — Producer Coach and synth guidance
+
+Provide grounded analysis, evidence-linked production suggestions, and reproducible synth guidance. Recommendations remain distinguished from deterministic facts and are grounded in the actual section.
+
+### Development confidence and release qualification
+
+Development confidence is the evidence needed to continue building and internally evaluating the selected product capability: accepted deterministic contracts; implementation and tests appropriate to the changed boundary; replay, immutability, negative and regression evidence as applicable; pinned development-runtime evidence; protected CI and review; and fail-closed behavior. It does not imply supported-platform or release qualification.
+
+Release qualification is the evidence for formal qualification closure, supported-platform claims, external beta, release, and formal product-quality claims. Applicable requirements remain unchanged and include frozen independent candidate evidence, complete provenance/custody, independent recomputation, production/reference comparison, supported-platform equality, structured formal musical disposition, browser/device/performance qualification, security/release hardening, full accessibility evidence, and release/export compatibility matrices. Moving evidence to this gate changes when it blocks continued product development; it does not waive or weaken its criteria.
+
+S8-QUAL-001 closure is recorded conditionally in the [accepted finding definitions](reviews/STAGE8_MOTIF_QUALIFICATION_FINDING_REPLACEMENTS.md): it remains OPEN until this exact authority candidate completes external PASS, Product Owner acceptance, and protected integration, at which point the reviewed existing reference-chain evidence makes it RESOLVED. No new reference implementation, semantic fixture, capture tool, or coverage task is authorized by that closure record. S8-QUAL-002 and S8-QUAL-003 remain OPEN with their existing definitions and closure criteria unchanged. They are not prerequisites for explicitly authorized internal Node-based development or formative audition. They remain mandatory for formal Stage 8 deterministic qualification closure, supported-platform Motif claims, external beta, and any applicable release gate; S8-QUAL-003 remains downstream of S8-QUAL-002. Preserve versions, seeds, Harmony inputs, and canonical outputs, and make no unsupported-platform or formal-qualification claim.
+
+Formative internal listening is allowed before final Stage 8 qualification so producers can assess whether Motif V1 and the complete section are useful. It is not formal musical acceptance, completion of the four-profile structured evaluation, supported-platform qualification, or evidence that browser timbre/scheduling equals production quality. Do not silently tune V1: a meaningful weakness requires an explicitly versioned successor and accepted authority. Formal structured musical disposition remains required before external beta/release and before claiming Stage 8 musical acceptance.
+
+### Functional visual direction and deferred reference gate
+
+For Milestone 1, use a functional dark studio-tool interface with restrained synthwave character: deep charcoal/near-black foundation, legible text and controls, restrained cyan/violet accents, distinct Harmony/Bass/Arpeggiator/Lead roles, compact transport, clear Generate and parameter controls, obvious Play/Stop/Loop state, role mute/solo/isolation, useful loading/error/empty/degraded-audio states, keyboard-accessible controls, and minimal motion. Avoid decorative cyberpunk clutter. This is functional direction for the audition surface, not final brand or design-system acceptance.
+
+The comprehensive visual-reference package is not a prerequisite for this bounded surface. Retain the deferred visual-reference/design-system gate and return to it before substantial visual-brand refinement or broader UI styling, at the smallest sensible later product boundary. That later gate still requires its existing interface inventory, interaction architecture, reference package, and acceptance sequence.
+
+### Product-milestone crosswalk for retained stage records
+
+Stage-numbered engineering and evidence sections below preserve accepted contract identities and historical findings; their technical requirements remain authoritative, but their former product-sequence ordering is superseded by the milestones above. Read them with this crosswalk: Stage 8 Motif implementation is part of Milestone 1, while its formal deterministic qualification remains a Release Qualification gate; Stages 9 and the transport portion of Stage 11 map to Milestone 1; Stage 10 maps to Milestone 2; the variation portion of Stage 11 maps to Milestone 3; Stage 12 maps to Milestone 4; Stage 16 maps to Milestone 5; Stage 13 maps to Milestone 6; Stages 14–15 map to Milestone 7; and Stages 17–20 are release-qualification gates, not product milestones. Stages 1–7 remain completed engineering foundations. Existing requirement and acceptance IDs are not renumbered.
+
+## Stage 8 — Melody and motif engine (retained technical and qualification record)
+
+**Status:** The complete Stage 8 V1 contract, profile data, evidence contract, architecture, and ADR-025 are accepted and integrated through PR #217. The catalog, profile data, resolver, projector, canonical result/provenance boundary, public Motif operation, 24-row source-binding foundation, and candidate-capture custody tooling are integrated through PRs #219, #220, #222, #224, #226, #228, #231, and #240. The Engineering Health Baseline retains its historical REVISE result. ND-QA-003 remains technically OPEN / ACCEPTABLE / DEFERRED, without a security-control result or closure; ND-QA-004/005 remain SHOULD FIX SOON. Their status and the historical baseline do not independently block the selected Milestone 1 work. The earlier Stage 8-next product sequence is superseded by the Product-milestone crosswalk above. S8-QUAL-001/002/003 govern formal qualification; S8-QUAL-001's closure is conditional on the exact candidate lifecycle stated above, while 002/003 remain OPEN. Do not start capture, freeze, production/reference comparison, or supported-platform qualification as part of internal product development. All implementation remains subject to accepted tests, dedicated review, CI, protected merge, and existing scope gates.
 **Objective:** Produce coherent, inspectable lead motifs and variations.
 **Capabilities:** Two-bar motif identity across four two-bar phrases; exact motif-form repetition, harmony-aware transposition, contour-preserving response, bounded nonstructural displacement, target/passing/tension/resolution notes, one global lead range, leap/recovery constraints, four profile-owned policy slots, component-isolated seeding, canonical plan/events, and structured failures.
 **Dependencies:** Accepted Stage 3 deterministic primitives, supplied accepted Harmony realization, shared Energy/Complexity domains, component-seed derivation, Mulberry32, weighted choice, profile evaluation baseline, and accepted consequential contract. No new dependency is required.
@@ -434,24 +490,24 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Exact catalogs/tables and four-draw schedule; phrase transformation/invariant, Harmony target, pitch vocabulary, range/leap/recovery, projection, error and property fixtures; canonical serialization and deterministic replay; component isolation; cross-platform evidence as applicable; unchanged First Playable regressions; structured human review of the immutable V1 hypothesis.
 **Exit:** AC-012/004/013 and agreed human-review disposition pass.
 
-## Deferred UI Visual Reference Gate
+## Deferred UI Visual Reference Gate (retained; trigger revised above)
 
-**Status:** Deferred checkpoint; not reached or authorized.
-**Trigger:** Reach this gate only when accepted Version 1 capabilities and primary workflows are sufficiently defined to enumerate the required screens, panels, controls, interaction states, information hierarchy, user-facing feedback, and important empty/loading/error states. The trigger is based on project state, not a date or milestone number.
-**Required sequence:** Before substantial UI implementation, define the UI/UX requirements and interface inventory, establish the interaction architecture, obtain the product owner's visual-direction decision, translate that decision into a visual design brief, create a comprehensive ChatGPT Image reference package, obtain product-owner review/acceptance, and record accepted design-system decisions. Only then may bounded UI implementation become repository-eligible under the accepted scope, architecture, and roadmap.
-**Visual authority:** Cyberpunk is only a current provisional direction until the product owner confirms, refines, combines, or replaces it. Visual references are design references, not functional specifications; accepted product requirements, architecture, contracts, and UI/UX requirements remain authoritative. Codex must not independently select or formalize the final visual identity.
-**Scope protection:** This checkpoint does not authorize UI/UX definition, visual-reference generation, visual styling, frontend infrastructure, or any current milestone work.
+**Status:** Deferred; the Product Owner has accepted the bounded functional Milestone 1 direction above. This does not accept a final brand or design system.
+**Trigger:** Return before substantial visual-brand refinement or broader UI styling, after enough product UI exists to enumerate screens, controls, states, hierarchy, and feedback. It does not block the bounded functional Milestone 1 audition surface.
+**Required sequence:** At that trigger, define the UI/UX requirements and interface inventory, establish interaction architecture, prepare the comprehensive visual-reference package, obtain Product Owner review/acceptance, and record accepted design-system decisions before that later refinement proceeds.
+**Visual authority:** The accepted functional Milestone 1 direction is not final identity. Visual references remain design references, not functional specifications; Codex must not independently select a later final visual identity.
+**Scope protection:** This gate does not expand Milestone 1 or authorize broader styling, frontend infrastructure, or unrelated UI work.
 
-## Stage 9 — Browser audition
+## Stage 9 — Browser audition (technical notes mapped to Milestone 1)
 
 **Objective:** Synchronously preview canonical tracks with simple role voices.
 **Capabilities:** Play/stop/loop/playhead, mute/solo, user-initiated audio, scheduler/degraded states.
-**Dependencies:** Stages 3–8; ADR-011 timing spike.
+**Dependencies:** Accepted component contracts; the bounded ADR-011 timing decision is completed only as needed for safe Milestone 1 Play/Stop/Loop preview.
 **Non-goals:** Production synthesis, rendering, mixing/mastering.
 **Tests:** Clock/scheduling/drift, tempo/loop, tab suspension, device/browser, accessibility and latency.
-**Exit:** AC-014 passes within a measured documented tolerance.
+**Exit:** AC-014 functional behavior and its documented preview tolerance remain required for the product flow; comprehensive browser/device/performance qualification remains a Release Qualification gate.
 
-## Stage 10 — Lightweight piano roll
+## Stage 10 — Lightweight piano roll (mapped to Milestone 2)
 
 **Objective:** Let users make bounded corrections without recreating a DAW.
 **Capabilities:** Select/add/delete/drag/resize/velocity/transpose/snap, undo/redo, keyboard-accessible alternative.
@@ -460,7 +516,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Command/undo exactness, invalid edits, rendering/performance, keyboard/screen-reader/responsive.
 **Exit:** AC-015 and relevant accessibility evidence pass.
 
-## Stage 11 — Locking and variations
+## Stage 11 — Locking and variations (variation work maps to Milestone 3)
 
 **Objective:** Make independent, non-destructive iteration trustworthy.
 **Capabilities:** Track locks/hashes, targeted generation, compare/retain parent/child, manual-edit lineage.
@@ -469,7 +525,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Lock hash invariants, stale/conflict/error recovery, lineage/replay.
 **Exit:** AC-005/006 pass for every target component.
 
-## Stage 12 — Supabase persistence
+## Stage 12 — Supabase persistence (mapped to Milestone 4)
 
 **Objective:** Persist owned projects, revisions, runs, profiles, recipes, and export records securely.
 **Capabilities:** Auth, migrations, repository layer, RLS, save/open/delete/history, optimistic concurrency.
@@ -478,7 +534,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Migration, constraints, transaction/idempotency, RLS cross-user, deletion/retention, E2E.
 **Exit:** AC-016/020/022 persistence evidence passes with no service-role client exposure.
 
-## Stage 13 — AI intent layer
+## Stage 13 — AI intent layer (mapped to Milestone 6)
 
 **Objective:** Translate natural language into inspectable bounded parameter proposals.
 **Capabilities:** Provider adapter, prompt/schema versions, proposal review/confirm, safe failure, usage/cost telemetry.
@@ -487,7 +543,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Schema/domain, injection/adversarial, grounding, timeout/refusal/cost/rate limit, regression dataset.
 **Exit:** AC-017/019/023/024 pass and deterministic flows work without AI.
 
-## Stage 14 — Producer Coach
+## Stage 14 — Producer Coach (mapped to Milestone 7)
 
 **Objective:** Offer actionable, evidence-linked advice from structured state.
 **Capabilities:** Computed density/range/tension/role/motif/overlap/contrast observations and labeled suggestions.
@@ -496,7 +552,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Observation correctness, reference grounding, subjective-label, usefulness/safety human review.
 **Exit:** AC-018 passes with acceptable evaluation disposition.
 
-## Stage 15 — Synth recipe system
+## Stage 15 — Synth recipe system (mapped to Milestone 7)
 
 **Objective:** Provide validated structured recipes for supported synths.
 **Capabilities:** Profile/version store, recipe validator, role-specific structured recipes and narratives, generic fallback.
@@ -505,7 +561,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Vocabulary/range/capability schema, human reproduction and role-fit review.
 **Exit:** AC-021 passes for declared instrument versions.
 
-## Stage 16 — Complete FL Studio MIDI package
+## Stage 16 — Complete FL Studio MIDI package (mapped to Milestone 5)
 
 **Objective:** Deliver a polished portable handoff.
 **Capabilities:** Component and combined MIDI, canonical JSON manifest, production notes, instructions, safe ZIP naming/download/history.
@@ -514,7 +570,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Manifest/hash/ZIP security, content, retry/expiry, FL Studio import matrix.
 **Exit:** Full AC-009 and FR-013 evidence passes.
 
-## Stage 17 — Evaluation maturity
+## Stage 17 — Evaluation maturity (Release Qualification gate)
 
 **Objective:** Establish credible release thresholds and regression history.
 **Capabilities:** Versioned golden dataset, automated result reports, structured producer review, performance budgets.
@@ -523,7 +579,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Dataset integrity, evaluator reproducibility, all deterministic and human protocols.
 **Exit:** All profiles covered; thresholds/disagreements/issues documented; AC-028 supported by evidence.
 
-## Stage 18 — Security hardening
+## Stage 18 — Security hardening (Release Qualification gate)
 
 **Objective:** Validate production threat controls and operational readiness.
 **Capabilities:** Abuse/rate limits, headers/CSP, secret/dependency controls, privacy/retention, incident/restore runbooks, security telemetry.
@@ -532,7 +588,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Threat-model cases, auth/RLS, injection, resource abuse, build artifact/secrets, backup/restore, dependency review.
 **Exit:** SEC requirements and AC-022/023/024 pass; high-severity findings resolved.
 
-## Stage 19 — UX and accessibility verification
+## Stage 19 — UX and accessibility verification (Release Qualification gate)
 
 **Objective:** Verify the complete workflow for first-time and assistive-technology users.
 **Capabilities:** Refined hierarchy/copy/states/responsiveness/keyboard/AT support based on evidence.
@@ -541,7 +597,7 @@ The accepted coordinator/result implementation remains bounded to the local dete
 **Tests:** Moderated primary-flow usability, keyboard, screen readers, zoom/reflow, contrast, touch targets, reduced motion, device matrix.
 **Exit:** AC-001/025/026/027 and UX/A11Y requirements pass or have approved non-release-blocking disposition.
 
-## Stage 20 — Version 1 production release
+## Stage 20 — Version 1 production release (Release Qualification gate)
 
 **Objective:** Release and verify the bounded Version 1 safely.
 **Capabilities:** Production configuration/migration/deploy, release record, monitoring, support/runbooks, rollback.

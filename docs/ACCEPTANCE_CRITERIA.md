@@ -31,7 +31,7 @@ Each criterion maps to requirements in [REQUIREMENTS.md](REQUIREMENTS.md). Evide
 | AC-025 | UX-002 | Empty, loading, invalid, generation failure, save conflict, offline, and export failure states each provide a clear next action and retain recoverable work. |
 | AC-026 | UX-004 | Defined desktop widths support full authoring; defined small-screen widths support inspection/audition/basic configuration without clipped critical actions. |
 | AC-027 | A11Y-001, A11Y-002, A11Y-003, A11Y-004 | Automated WCAG checks plus manual keyboard, focus, zoom, contrast, semantics, screen-reader, target-size, motion, and audio checks pass the release checklist. |
-| AC-028 | NFR-003 | Representative deterministic generation meets the release performance budget established and approved in Stage 17, with regression thresholds stored in CI. |
+| AC-028 | NFR-003 | Representative deterministic generation meets the release performance budget established and approved for the Release Qualification gate, with regression thresholds stored in CI. |
 | AC-029 | NFR-005 | Required CI jobs and human evaluation gates in `TESTING_STRATEGY.md` pass on the release commit; no skipped release-blocking test is unexplained. |
 | AC-030 | NFR-006 | A fixture from each supported prior canonical schema version migrates deterministically or produces an explicit supported-version error without data loss. |
 | AC-031 | NFR-007 | Given a clean checkout and the selected Node/npm policy, `npm ci` and every required validation command complete successfully using the committed lockfile; direct versions and dependencies match the authoritative register. |
@@ -62,4 +62,4 @@ Each criterion maps to requirements in [REQUIREMENTS.md](REQUIREMENTS.md). Evide
 
 ## Release interpretation
 
-Automated musical validity is necessary but does not prove quality. Version 1 additionally requires structured human review of representative golden cases and the FL Studio import workflow. A criterion may be “not yet implemented” until its roadmap stage is authorized; documentation alone does not satisfy product behavior.
+Automated musical validity is necessary but does not prove quality. Version 1 additionally requires structured human review of representative golden cases and the FL Studio import workflow. A criterion may be “not yet implemented” until its product milestone or Release Qualification gate is authorized; documentation alone does not satisfy product behavior. Formative internal audition is not the formal structured review or release evidence.
