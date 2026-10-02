@@ -4,23 +4,23 @@
 
 Stages 1–7 deterministic foundations and the First Playable Harmony+Bass+Arpeggiator boundary are accepted and complete. The Stage 8 Motif V1 contract, implementation foundations, independent reference chain, and reviewed 24-row coverage report are integrated. Formal Stage 8 qualification and musical acceptance are distinct from product development.
 
-The Product Owner selected Milestone 1, Audible complete section, as the next product milestone and authorized one consequential authority-candidate preparation. The exact candidate is based on assessment main `58fc9ae57ce394610658b7261414810d381e6eda` (tree `c8995d10cd752772ec792591e6ee8a7ddf5ce0ad`). Its roadmap, qualification-effect, architecture, and visual-gate changes are not binding until the exact tuple receives consequential external PASS, explicit Product Owner acceptance, and protected integration. The preceding integrated Stage 8-first roadmap remains binding until then.
+The Product Owner-directed product-first roadmap authority is binding. Milestone 1, Audible complete section, is the selected product milestone. The authority preserves the accepted deterministic engine, First Playable V1, Motif V1, and formal release-evidence criteria while moving the product sequence toward usable producer-facing capability.
 
 ## Current Milestone
 
-Milestone 1 is the selected next product milestone, subject to the authority lifecycle above. Its first engineering objective is one validated, separately versioned H+B+A+Lead complete-section result/coordinator, generated from one request and one authoritative Harmony realization shared with every dependent generator. Preserve First Playable V1 and Motif V1 behavior; do not cast or mutate the existing First Playable result. The next action before implementation is consequential exact-head review of the SPECIFY candidate, not product code.
+Milestone 1's first engineering objective is one validated, separately versioned H+B+A+Lead complete-section result/coordinator, generated from one request and one authoritative Harmony realization shared with every dependent generator. Preserve First Playable V1 and Motif V1 behavior; do not cast or mutate the existing First Playable result.
 
 ## Current Gate
 
 The Engineering Health Baseline retains its historical REVISE assessment; the integrated Product Owner risk treatment makes that historical label non-blocking to ordinary in-scope application work. `ND-QA-003` remains OPEN / ACCEPTABLE / DEFERRED without a security-control result or closure. `ND-QA-004` and `ND-QA-005` remain OPEN / SHOULD FIX SOON. They do not independently block this unrelated product task.
 
-`S8-QUAL-001`, `S8-QUAL-002`, and `S8-QUAL-003` remain OPEN under the currently integrated authority. This SPECIFY candidate records the reviewed existing evidence as the S8-QUAL-001 closure basis; that finding becomes RESOLVED only when this exact consequential tuple has external PASS, Product Owner acceptance, and protected integration. S8-QUAL-002/003 definitions and closure criteria remain unchanged and OPEN. They remain required for formal Stage 8 deterministic qualification, supported-platform Motif claims, external beta, and release, but do not block explicitly authorized internal pinned-Node development or formative audition. S8-QUAL-003 remains downstream of S8-QUAL-002.
+S8-QUAL-001 is RESOLVED under the reviewed independent reference-chain and 24-row coverage evidence recorded in the accepted finding definitions. S8-QUAL-002 and S8-QUAL-003 remain OPEN with unchanged definitions and closure criteria. They remain required for formal Stage 8 deterministic qualification, supported-platform Motif claims, external beta, and release, but do not block authorized internal pinned-Node development or formative audition. S8-QUAL-003 remains downstream of S8-QUAL-002.
 
 Do not treat product-development validation or formative listening as candidate capture, evidence freeze, production/reference comparison, supported-platform qualification, formal musical disposition, or Stage 8 closure. Preserve all versions, seeds, Harmony inputs, and canonical outputs; make no unsupported-platform or formal-qualification claim.
 
 ## Repository State
 
-Git refs establish current repository state. This snapshot is coordination only and does not predict the commit that may contain its own update. The SPECIFY candidate is local and unpublished; no PR, CI integration run, or merge has been started. After its accepted protected integration, the next product task is the smallest bounded implementation of the Milestone 1 complete-section result.
+Git refs establish current repository state. This snapshot is coordination only and does not predict the commit that may contain its own update. The product-first authority is integrated. No candidate-review or publication bookkeeping is the current product gate.
 
 ## Preserved Decisions and Deferred Work
 
@@ -33,7 +33,7 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Complete and validate the consequential exact-head review packet for the single SPECIFY candidate, then stop for external consequential review. Do not implement Milestone 1 code before the candidate passes review, receives exact-tuple Product Owner acceptance, and is protected-integrated.
+Implement the smallest bounded Milestone 1 complete-section H+B+A+Lead result/coordinator under the accepted [composition contract](docs/COMPOSITION_ENGINE.md). Begin with the one validated request and one authoritative Harmony realization, preserving First Playable V1 and Motif V1 behavior. Do not begin browser styling before this deterministic result boundary is implemented and reviewed.
 
 ## Maintenance
 

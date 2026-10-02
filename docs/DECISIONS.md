@@ -386,7 +386,7 @@ Generated evidence artifacts, including source records, manifests, oracle files,
 
 **Date:** 2026-09-30
 
-**Status:** Consequential SPECIFY candidate. This decision becomes binding only after consequential external exact-head PASS, explicit Product Owner acceptance of the reviewed tuple, and protected integration. Until then the previously integrated roadmap and gates remain binding.
+**Status:** Binding at protected integration after consequential external exact-head PASS and explicit Product Owner acceptance of this exact tuple.
 
 **Context:** The accepted deterministic engine already supports Harmony, Bass, Arpeggiator, and Motif V1, while the producer-facing application remains limited. The Product Owner selected a shorter product-value sequence and explicitly separated internal development confidence from formal release qualification. This decision records the exact Product Owner direction without changing the accepted First Playable or Motif contracts.
 
@@ -406,6 +406,6 @@ This decision supersedes only the future product ordering and eligibility effect
 
 **Rationale:** The seven milestones prioritize visible producer value while leaving accepted deterministic boundaries and formal claims evidence-governed. A new complete result avoids changing replay identity for First Playable V1 or Motif V1, and one Harmony realization prevents cross-role divergence.
 
-**Consequences:** The current product sequence and S8-QUAL-001 closure effect remain conditional until this exact candidate completes the lifecycle above. This SPECIFY candidate adds no product implementation. After integration, the first implementation task is the smallest contract-conformant complete-section result, before browser styling. S8-QUAL-002/003 and the remaining named release evidence return at their qualification gates or earlier only if product work demonstrates a material risk. No new dependency, persistence, auth, AI, deployment, or visual-reference generation is authorized for Milestone 1.
+**Consequences:** The product sequence and S8-QUAL-001 closure record take effect together at protected integration under the lifecycle above. This SPECIFY candidate adds no product implementation. The first implementation task is the smallest contract-conformant complete-section result, before browser styling. S8-QUAL-002/003 and the remaining named release evidence return at their qualification gates or earlier only if product work demonstrates a material risk. No new dependency, persistence, auth, AI, deployment, or visual-reference generation is authorized for Milestone 1.
 
 **Revisit:** Revisit ordering only with concrete product evidence or a material technical risk; preserve all historical component behavior and evidence when specifying any successor.

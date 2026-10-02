@@ -233,7 +233,7 @@ The accepted implementation evidence covers exact request validation/default nor
 
 ## Complete-section Harmony + Bass + Arpeggiator + Lead boundary
 
-**Status:** Product Owner direction is recorded in [ADR-026](DECISIONS.md#adr-026--product-first-milestones-and-complete-section-audition-path). This section is part of the consequential SPECIFY candidate based on main `58fc9ae57ce394610658b7261414810d381e6eda`; it becomes implementation authority only when that exact tuple completes external PASS, explicit Product Owner acceptance, and protected integration. It authorizes no code before that lifecycle.
+**Authority lifecycle:** This specification becomes implementation authority when this exact candidate completes consequential external exact-head PASS, explicit Product Owner acceptance, and protected integration. Before that event, the previously integrated roadmap remains binding; after it, this section governs the bounded complete-section implementation.
 
 ### Ownership and request
 

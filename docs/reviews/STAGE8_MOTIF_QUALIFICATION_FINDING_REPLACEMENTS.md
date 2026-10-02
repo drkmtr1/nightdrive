@@ -47,7 +47,7 @@ three findings remained OPEN.
 
 ### S8-QUAL-001 — Independent semantic/reference evidence completeness
 
-**Replacement status:** OPEN
+**Replacement status:** RESOLVED
 **Historical individual provenance:** NOT VERIFIED / unrecoverable
 **Replacement authority:** Product Owner-authorized forward-looking definition
 from this record's binding point.
@@ -77,7 +77,7 @@ branch/negative evidence.
 
 **Closure evidence:** The complete independent reference chain is integrated: exact-head-reviewed source bindings, independent primitives, policy, plan resolution, projector, canonical reference/result construction, branch/negative/tie evidence, and the reviewed static result fixture. The independent 24-row coverage report was reviewed PASS at head `dee855c1ce8482657212297bb9be26f8d25e2177` and integrated through PR #270; the report remains at [STAGE8_MOTIF_24_ROW_COVERAGE_REPORT.md](STAGE8_MOTIF_24_ROW_COVERAGE_REPORT.md). The review confirmed all 24 unique accepted rows, required per-row invariants, production-independent derivation, and no capture/freeze/platform/product-acceptance overclaim. Existing component exact-head reviews and their merged implementations remain preserved in Git history.
 
-**Closure lifecycle:** This authority candidate records the closure without altering the finding's criteria or historical provenance. `S8-QUAL-001` remains OPEN until this exact consequential candidate receives external exact-head PASS, explicit Product Owner acceptance of that reviewed tuple, and protected integration. At that protected integration the closure record becomes binding and S8-QUAL-001 is RESOLVED on the evidence above. No additional implementation, reference, fixture, capture, or coverage task is required for this finding.
+**Closure lifecycle:** This status becomes binding when this exact authority candidate receives consequential external exact-head PASS, explicit Product Owner acceptance, and protected integration. After that event, `S8-QUAL-001` is RESOLVED on the evidence above; this record does not alter its replacement criteria or historical provenance. No additional implementation, reference, fixture, capture, or coverage task is required for this finding.
 
 ### S8-QUAL-002 — Candidate evidence capture, custody, and freeze completeness
 
@@ -148,8 +148,7 @@ final deterministic qualification record.
 
 This record preserves the original individual historical provenance as NOT
 VERIFIED / unrecoverable. It does not reconstruct any historical meaning.
-S8-QUAL-001 remains OPEN until the closure lifecycle above completes; its
-resolution is based only on the integrated independent reference chain and the
+S8-QUAL-001 is RESOLVED on the integrated independent reference chain and the
 reviewed coverage report. S8-QUAL-002 and S8-QUAL-003 remain OPEN until their
 own unchanged individual closure criteria are independently evidenced,
 reviewed, and accepted. S8-QUAL-003 remains downstream of S8-QUAL-002.
