@@ -13,6 +13,7 @@ import {
   BrowserAudition,
   type BrowserAuditionDependencies,
 } from "./browser-audition";
+import { SectionTimeline } from "./section-timeline";
 
 export type GenerationChoice = Readonly<{
   profile: HarmonyProfileId;
@@ -371,6 +372,7 @@ export function GenerateSection({ choices, generateAction }: Props) {
               {transport?.message ?? "Press Play to audition the generated section."}
             </p>
           </section>
+          <SectionTimeline preview={preview} />
           <div className="previewRoles">
             {preview.tracks.map((track) => (
               <article key={track.role} aria-labelledby={`role-${track.role}`}>
