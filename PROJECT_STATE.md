@@ -8,7 +8,7 @@ The Product Owner-directed product-first roadmap authority is binding. Milestone
 
 ## Current Milestone
 
-Milestone 1's validated, separately versioned H+B+A+Lead complete-section result/coordinator is integrated. It generates from one request and one authoritative Harmony realization shared with every dependent generator, preserving First Playable V1 and Motif V1 behavior. The next engineering objective is the small Node application adapter that invokes this operation once and exposes only validated immutable output toward the browser preview boundary.
+Milestone 1's validated H+B+A+Lead complete-section result/coordinator and verified Node application adapter are integrated. They preserve one authoritative Harmony realization, First Playable V1 and Motif V1 behavior, and immutable canonical output. The current engineering objective is the smallest derived four-role preview slice for browser consumption, preserving selected pitches and canonical tick timing. Browser controls and audio transport remain downstream.
 
 ## Current Gate
 
@@ -33,7 +33,7 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Implement and review the smallest bounded Node application-adapter slice under the accepted [composition contract](docs/COMPOSITION_ENGINE.md). Invoke the integrated complete-section operation once and expose only its validated immutable result. Derived browser preview and Generate → Play → Stop → Loop → role isolation remain downstream slices; no persistence, authenticated project-generation endpoint, database, AI, or formal Stage 8 qualification is part of this task.
+Implement and review the smallest derived-preview slice under the accepted [composition contract](docs/COMPOSITION_ENGINE.md): consume the integrated verified Node output, expand its selected Harmony voicings, and copy Bass, Arpeggiator and Lead events into detached immutable role tracks. Generate → Play → Stop → Loop → role isolation remain downstream slices. This task introduces no audio-clock policy, persistence, authenticated project-generation endpoint, database, AI, or formal Stage 8 qualification.
 
 ## Maintenance
 
