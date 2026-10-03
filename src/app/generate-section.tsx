@@ -8,7 +8,11 @@ import { createTempoFromBpm } from "../music-domain/musical-time";
 import { createPitchClass } from "../music-domain/pitch";
 import type { ScaleType } from "../music-domain/scale";
 import type { CompleteSectionPreview } from "../web/complete-section-preview-node";
-import { type AuditionSnapshot, BrowserAudition } from "./browser-audition";
+import {
+  type AuditionSnapshot,
+  BrowserAudition,
+  type BrowserAuditionDependencies,
+} from "./browser-audition";
 
 export type GenerationChoice = Readonly<{
   profile: HarmonyProfileId;
@@ -19,6 +23,18 @@ type Props = Readonly<{
   generateAction: (request: CompleteSectionRequestV1) => Promise<CompleteSectionPreview>;
 }>;
 const ROLE_LABELS = { harmony: "Harmony", bass: "Bass", arpeggiator: "Arpeggiator", lead: "Lead" };
+
+export function createBrowserAuditionDependencies(): BrowserAuditionDependencies {
+  return {
+    createContext: () => {
+      if (!window.AudioContext) throw new Error("Web Audio unavailable");
+      return new window.AudioContext();
+    },
+    setInterval: (callback, milliseconds) =>
+      window.setInterval(callback, milliseconds) as unknown as ReturnType<typeof setInterval>,
+    clearInterval: (handle) => window.clearInterval(handle as unknown as number),
+  };
+}
 
 export function GenerateSection({ choices, generateAction }: Props) {
   const [profile, setProfile] = useState("");
@@ -52,17 +68,7 @@ export function GenerateSection({ choices, generateAction }: Props) {
   }, []);
   function ensureAudition() {
     if (audition.current) return audition.current;
-    audition.current = new BrowserAudition(
-      {
-        createContext: () => {
-          if (!window.AudioContext) throw new Error("Web Audio unavailable");
-          return new window.AudioContext();
-        },
-        setInterval: window.setInterval,
-        clearInterval: window.clearInterval,
-      },
-      setTransport,
-    );
+    audition.current = new BrowserAudition(createBrowserAuditionDependencies(), setTransport);
     return audition.current;
   }
   function invalidatePlayback() {
