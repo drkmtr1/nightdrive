@@ -4,7 +4,7 @@
 
 Stages 1–7 deterministic foundations and the First Playable Harmony+Bass+Arpeggiator boundary are accepted and complete. The Stage 8 Motif V1 contract, implementation foundations, independent reference chain, and reviewed 24-row coverage report are integrated. Formal Stage 8 qualification and musical acceptance are distinct from product development.
 
-The Product Owner-directed product-first roadmap authority is binding. Milestone 1, Audible complete section, is the selected product milestone. The authority preserves the accepted deterministic engine, First Playable V1, Motif V1, and formal release-evidence criteria while moving the product sequence toward usable producer-facing capability.
+The Product Owner-directed product-first roadmap authority is binding. Milestone 1's functional Audible complete section objective is integrated and verified through formative normal-desktop-Chrome audition. Milestone 2 — Inspect and edit — is selected for the next bounded product-development work. Stage 9/AC-014 exit is not claimed; quantitative AC-014 timing evidence remains OPEN. The authority preserves the accepted deterministic engine, First Playable V1, Motif V1, and formal release-evidence criteria.
 
 ## Current Milestone
 
