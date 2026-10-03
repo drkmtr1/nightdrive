@@ -6,14 +6,15 @@ export const SCHEDULING_PUMP_MILLISECONDS = 25;
 const ROLES: readonly PreviewRole[] = ["harmony", "bass", "arpeggiator", "lead"];
 
 export type AuditionState = "stopped" | "starting" | "playing" | "error";
-export type AudioContextLike = Readonly<{
+export type AudioContextLike = {
   currentTime: number;
   state: string;
+  onstatechange: ((event: Event) => void) | null;
   resume(): Promise<void>;
   createOscillator(): OscillatorNode;
   createGain(): GainNode;
   destination: AudioNode;
-}>;
+};
 export type BrowserAuditionDependencies = Readonly<{
   createContext(): AudioContextLike;
   setInterval(callback: () => void, milliseconds: number): ReturnType<typeof setInterval>;
@@ -129,6 +130,7 @@ export class BrowserAudition {
     this.publish("starting", "Starting playback…");
     try {
       this.context ??= this.dependencies.createContext();
+      this.observeContext();
       await this.context.resume();
       if (epoch !== this.epoch || this.context.state !== "running")
         throw new Error("Audio context unavailable");
@@ -137,9 +139,9 @@ export class BrowserAudition {
       this.nextCycle = 0;
       this.nextNote = 0;
       this.publish("playing", "Playing all four roles.");
-      this.pump(epoch);
+      this.pumpSafely(epoch);
       this.timer = this.dependencies.setInterval(
-        () => this.pump(epoch),
+        () => this.pumpSafely(epoch),
         SCHEDULING_PUMP_MILLISECONDS,
       );
     } catch {
@@ -211,7 +213,7 @@ export class BrowserAudition {
     }
     this.stopAfterCycle = Number.POSITIVE_INFINITY;
     this.publish("playing", "Loop enabled.");
-    this.pump(this.epoch);
+    this.pumpSafely(this.epoch);
   }
 
   setMute(role: PreviewRole, mute: boolean) {
@@ -254,6 +256,32 @@ export class BrowserAudition {
     this.graph = graph;
     this.updateRoleBuses();
     return graph;
+  }
+
+  private observeContext() {
+    if (!this.context) return;
+    const context = this.context;
+    context.onstatechange = () => {
+      if (this.context !== context) return;
+      if (this.snapshot.state !== "starting" && this.snapshot.state !== "playing") return;
+      if (context.state === "running") return;
+      this.interrupt("Audio playback was interrupted. Press Play to start again.");
+      if (context.state === "closed" && this.context === context) this.context = null;
+    };
+  }
+
+  private interrupt(message: string) {
+    this.stop();
+    this.publish("error", message);
+  }
+
+  private pumpSafely(epoch: number) {
+    try {
+      this.pump(epoch);
+    } catch {
+      if (epoch === this.epoch)
+        this.interrupt("Playback interrupted because audio scheduling failed.");
+    }
   }
 
   private pump(epoch: number) {
@@ -300,21 +328,37 @@ export class BrowserAudition {
 
   private schedule(role: PreviewRole, pitch: number, start: number, end: number) {
     if (!this.context || !this.graph) return;
-    const source = this.context.createOscillator();
-    const envelope = this.context.createGain();
-    const maximum = this.maximumSimultaneous(role);
-    const ramp = Math.min(0.005, (end - start) / 4);
-    source.type = waves[role];
-    source.frequency.setValueAtTime(440 * 2 ** ((pitch - 69) / 12), start);
-    envelope.gain.setValueAtTime(0, start);
-    envelope.gain.linearRampToValueAtTime(1 / maximum, start + ramp);
-    envelope.gain.setValueAtTime(1 / maximum, end - ramp);
-    envelope.gain.linearRampToValueAtTime(0, end);
-    source.connect(envelope);
-    envelope.connect(this.graph.roles[role]);
-    source.start(start);
-    source.stop(end);
-    this.owned.push({ role, start, end, source, envelope });
+    let source: OscillatorNode | null = null;
+    let envelope: GainNode | null = null;
+    try {
+      source = this.context.createOscillator();
+      envelope = this.context.createGain();
+      const maximum = this.maximumSimultaneous(role);
+      const ramp = Math.min(0.005, (end - start) / 4);
+      source.type = waves[role];
+      source.frequency.setValueAtTime(440 * 2 ** ((pitch - 69) / 12), start);
+      envelope.gain.setValueAtTime(0, start);
+      envelope.gain.linearRampToValueAtTime(1 / maximum, start + ramp);
+      envelope.gain.setValueAtTime(1 / maximum, end - ramp);
+      envelope.gain.linearRampToValueAtTime(0, end);
+      source.connect(envelope);
+      envelope.connect(this.graph.roles[role]);
+      source.start(start);
+      source.stop(end);
+      this.owned.push({ role, start, end, source, envelope });
+    } catch (error) {
+      const now = this.context.currentTime;
+      try {
+        envelope?.gain.cancelScheduledValues(now);
+        envelope?.gain.setValueAtTime(0, now);
+        source?.stop();
+        source?.disconnect();
+        envelope?.disconnect();
+      } catch {
+        /* partial scheduling cleanup must not mask the failure */
+      }
+      throw error;
+    }
   }
 
   private orderedNotes() {

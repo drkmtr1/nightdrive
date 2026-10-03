@@ -54,6 +54,7 @@ function source() {
 }
 function fakeContext() {
   let time = 0;
+  let failNextStart = false;
   const sources: Source[] = [];
   const gains: Gain[] = [];
   let callback: (() => void) | undefined;
@@ -65,9 +66,15 @@ function fakeContext() {
       time = value;
     },
     state: "running",
+    onstatechange: null as ((event: Event) => void) | null,
     resume: vi.fn().mockResolvedValue(undefined),
     createOscillator: vi.fn(() => {
       const next = source();
+      next.start.mockImplementation(() => {
+        if (!failNextStart) return;
+        failNextStart = false;
+        throw new Error("scheduled start failed");
+      });
       sources.push(next);
       return next;
     }),
@@ -83,6 +90,13 @@ function fakeContext() {
     gains,
     sources,
     trigger: () => callback?.(),
+    failNextStart: () => {
+      failNextStart = true;
+    },
+    transition(state: string) {
+      mutable.state = state;
+      mutable.onstatechange?.(new Event("statechange"));
+    },
     dependencies: {
       createContext: () => mutable as unknown as AudioContextLike,
       setInterval: vi.fn((next: () => void) => {
@@ -206,6 +220,10 @@ describe("BrowserAudition", () => {
     const count = fake.sources.length;
     audition.setMute("lead", true);
     audition.setSolo("bass");
+    expect(bassBus.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.25, 0.505);
+    expect(leadBus.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.505);
+    expect(harmonyBus.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.505);
+    expect(arpeggiatorBus.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.505);
     audition.setSolo(null);
     expect(fake.sources).toHaveLength(count);
     expect(leadBus.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.505);
@@ -215,6 +233,12 @@ describe("BrowserAudition", () => {
     );
     audition.setVolume(0.75);
     expect(master.gain.setValueAtTime).toHaveBeenCalledWith(0.75, 0.5);
+    for (const role of roles) audition.setMute(role, true);
+    expect(
+      fake.gains
+        .slice(1, 5)
+        .every((bus) => bus.gain.linearRampToValueAtTime.mock.calls.some(([value]) => value === 0)),
+    ).toBe(true);
   });
 
   it("makes Stop win over pending loop work and ignores stale resume/scheduler work", async () => {
@@ -251,6 +275,68 @@ describe("BrowserAudition", () => {
     audition.invalidate();
     expect(audition.current().state).toBe("stopped");
     expect(fake.sources.every((item) => item.stop.mock.calls.length > 0)).toBe(true);
+  });
+
+  it("reports a rejected resume without scheduling audio", async () => {
+    const fake = fakeContext();
+    fake.context.resume = vi.fn().mockRejectedValue(new Error("permission denied"));
+    const audition = transport(fake);
+
+    await audition.play(preview());
+
+    expect(audition.current().state).toBe("error");
+    expect(audition.current().message).toMatch(/Audio is unavailable/);
+    expect(fake.sources).toHaveLength(0);
+  });
+
+  it.each(["suspended", "interrupted", "closed"])(
+    "stops the current session when the owned context becomes %s",
+    async (state) => {
+      const fake = fakeContext();
+      const audition = transport(fake);
+      await audition.play(preview());
+      const before = fake.sources.length;
+
+      fake.transition(state);
+      fake.trigger();
+
+      expect(audition.current().state).toBe("error");
+      expect(audition.current().message).toMatch(/interrupted/i);
+      expect(fake.dependencies.clearInterval).toHaveBeenCalledOnce();
+      expect(fake.sources.every((item) => item.stop.mock.calls.length > 0)).toBe(true);
+      expect(fake.sources).toHaveLength(before);
+    },
+  );
+
+  it("fails closed and cleans partial nodes when later scheduling throws", async () => {
+    const fake = fakeContext();
+    const audition = transport(fake);
+    await audition.play(
+      preview([
+        { pitch: 60, startTick: 0, durationTicks: 960 },
+        { pitch: 62, startTick: 3000, durationTicks: 480 },
+      ]),
+    );
+    fake.context.currentTime = 0.5;
+    fake.trigger();
+    const ownedBeforeFailure = fake.sources.length;
+    fake.failNextStart();
+
+    fake.context.currentTime = 1.55;
+    fake.trigger();
+    fake.trigger();
+
+    expect(audition.current().state).toBe("error");
+    expect(audition.current().message).toMatch(/scheduling failed/i);
+    expect(fake.dependencies.clearInterval).toHaveBeenCalledOnce();
+    expect(fake.sources).toHaveLength(ownedBeforeFailure + 1);
+    const partial = fake.sources.at(-1);
+    expect(partial?.stop).toHaveBeenCalled();
+    expect(partial?.disconnect).toHaveBeenCalled();
+    expect(fake.gains.at(-1)?.disconnect).toHaveBeenCalled();
+    expect(
+      fake.sources.slice(0, ownedBeforeFailure).every((item) => item.stop.mock.calls.length > 0),
+    ).toBe(true);
   });
 
   it("keeps the accepted initial lead constant", () => {
