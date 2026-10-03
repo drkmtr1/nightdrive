@@ -8,13 +8,13 @@ The Product Owner-directed product-first roadmap authority is binding. Milestone
 
 ## Current Milestone
 
-Milestone 1's complete-section coordinator, verified Node adapter, derived four-role preview, and functional browser Generate consumer are integrated. Canonical generation remains on pinned Node with one authoritative Harmony realization. Producers can explicitly Generate and inspect all four roles, with stale request results excluded. The next bounded candidate implements the accepted derived-preview transport: Play, Stop, Loop and role isolation. No audible milestone completion is claimed until it is independently reviewed, protected-integrated and receives its required formative evidence.
+Milestone 1's complete-section coordinator, verified Node adapter, derived four-role preview, browser Generate consumer, and audition transport are integrated. The Product Owner reports formative normal-desktop-Chrome observations: all four roles play together; Solo Lead plays Lead alone; Stop returns transport to stopped; Loop continues playback and Loop Off stops at the following section boundary; switching tabs stops playback without automatic resume; explicit Play works after returning; and Chrome reports no audition errors. These observations satisfy Milestone 1's functional producer objective. They do not establish quantitative AC-014 timing: the proposed <=20 ms foreground synchronization and ten-cycle no-drift evidence remain OPEN because no verified measurement path maps captured Chrome/system output to the scheduled AudioContext clock.
 
 ## Current Gate
 
 The Engineering Health Baseline retains its historical REVISE assessment; the integrated Product Owner risk treatment makes that historical label non-blocking to ordinary in-scope application work. `ND-QA-003` remains OPEN / ACCEPTABLE / DEFERRED without a security-control result or closure. `ND-QA-004` and `ND-QA-005` remain OPEN / SHOULD FIX SOON. They do not independently block this unrelated product task.
 
-S8-QUAL-001 is RESOLVED under the reviewed independent reference-chain and 24-row coverage evidence recorded in the accepted finding definitions. S8-QUAL-002 and S8-QUAL-003 remain OPEN with unchanged definitions and closure criteria. They remain required for formal Stage 8 deterministic qualification, supported-platform Motif claims, external beta, and release, but do not block authorized internal pinned-Node development or formative audition. S8-QUAL-003 remains downstream of S8-QUAL-002.
+S8-QUAL-001 is RESOLVED under the reviewed independent reference-chain and 24-row coverage evidence recorded in the accepted finding definitions. S8-QUAL-002 and S8-QUAL-003 remain OPEN with unchanged definitions and closure criteria. They remain required for formal Stage 8 deterministic qualification, supported-platform Motif claims, external beta, and release, but do not block authorized internal pinned-Node development or formative audition. S8-QUAL-003 remains downstream of S8-QUAL-002. AC-014's quantitative real-browser timing evidence remains OPEN; the observed functional audition does not claim the documented timing tolerance or ten-cycle drift result.
 
 Do not treat product-development validation or formative listening as candidate capture, evidence freeze, production/reference comparison, supported-platform qualification, formal musical disposition, or Stage 8 closure. Preserve all versions, seeds, Harmony inputs, and canonical outputs; make no unsupported-platform or formal-qualification claim.
 
@@ -33,7 +33,7 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Implement and independently review the accepted bounded ADR-011 derived-preview transport. Reuse the existing preview and native Web Audio only; verify fake-context scheduling, state, Loop, Stop and role-isolation behavior before real-browser formative evidence. No persistence, authenticated project-generation API, database, AI or formal Stage 8 qualification is part of this task.
+Milestone 2 — Inspect and edit — is next. The first bounded product slice is a read-only eight-bar piano-roll/timeline projection of the existing validated `CompleteSectionPreview`, showing role, MIDI pitch, and tick-derived note position/duration. Keep the view derived-only; do not add canonical editing, revision mutation, save/persistence, or undo/redo in that slice. The accepted roadmap makes canonical domain/time and audition the M2 dependencies; the functional audition is available, while AC-014's quantitative timing gate remains open and must not be claimed. No persistence, authenticated project-generation API, database, AI, or formal Stage 8 qualification is part of this task.
 
 ## Maintenance
 
