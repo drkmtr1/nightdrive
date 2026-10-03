@@ -14,16 +14,17 @@ function renderShell() {
 }
 
 describe("HomePage", () => {
-  it("identifies the workspace without implying composition features exist", () => {
+  it("identifies the workspace and offers Generate without claiming playback", () => {
     renderShell();
 
     expect(screen.getByRole("heading", { level: 1, name: "Nightdrive workspace" })).toBeVisible();
-    expect(screen.getByText(/composition tools have not been implemented yet/i)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Generate" })).toBeVisible();
+    expect(screen.getByText(/no playback is claimed here/i)).toBeVisible();
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute(
       "href",
       "#main-content",
     );
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Play" })).not.toBeInTheDocument();
   });
 
   it("has no detectable baseline accessibility violations", async () => {
