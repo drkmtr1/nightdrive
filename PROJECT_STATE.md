@@ -8,7 +8,7 @@ The Product Owner-directed product-first roadmap authority is binding. Milestone
 
 ## Current Milestone
 
-Milestone 1's first engineering objective is one validated, separately versioned H+B+A+Lead complete-section result/coordinator, generated from one request and one authoritative Harmony realization shared with every dependent generator. Preserve First Playable V1 and Motif V1 behavior; do not cast or mutate the existing First Playable result.
+Milestone 1's validated, separately versioned H+B+A+Lead complete-section result/coordinator is integrated. It generates from one request and one authoritative Harmony realization shared with every dependent generator, preserving First Playable V1 and Motif V1 behavior. The next engineering objective is the small Node application adapter that invokes this operation once and exposes only validated immutable output toward the browser preview boundary.
 
 ## Current Gate
 
@@ -33,7 +33,7 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Implement the smallest bounded Milestone 1 complete-section H+B+A+Lead result/coordinator under the accepted [composition contract](docs/COMPOSITION_ENGINE.md). Begin with the one validated request and one authoritative Harmony realization, preserving First Playable V1 and Motif V1 behavior. Do not begin browser styling before this deterministic result boundary is implemented and reviewed.
+Implement and review the smallest bounded Node application-adapter slice under the accepted [composition contract](docs/COMPOSITION_ENGINE.md). Invoke the integrated complete-section operation once and expose only its validated immutable result. Derived browser preview and Generate → Play → Stop → Loop → role isolation remain downstream slices; no persistence, authenticated project-generation endpoint, database, AI, or formal Stage 8 qualification is part of this task.
 
 ## Maintenance
 
