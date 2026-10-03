@@ -34,6 +34,14 @@ import {
   realizeHarmonyTemplate,
 } from "../music-domain/harmony";
 import { createKey, type Key, serializeKey } from "../music-domain/key";
+import {
+  getMotifRhythmTemplateV1,
+  MOTIF_PHRASE_ROLES_V1,
+  MOTIF_PHRASE4_DISPLACEMENTS_V1,
+  MOTIF_REGISTER_BANDS_V1,
+  MOTIF_RHYTHM_TEMPLATE_IDS_V1,
+  MOTIF_TENSION_MODES_V1,
+} from "../music-domain/motif-catalog";
 import type { MotifEventV1 } from "../music-domain/motif-event";
 import type { ResolvedMotifPlanV1 } from "../music-domain/motif-policy";
 import { MOTIF_POLICY_VERSION_V1 } from "../music-domain/motif-policy";
@@ -796,20 +804,108 @@ function deepFreeze<T>(value: T): T {
   return Object.freeze(value);
 }
 
-function cloneCanonical<T>(value: T): T {
-  return deepFreeze(JSON.parse(JSON.stringify(value)) as T);
+function copyLeadPlan(value: unknown): ResolvedMotifPlanV1 {
+  const path = "components.lead.plan";
+  const fields = [
+    "policyVersion",
+    "profileVersion",
+    "rhythmTemplate",
+    "registerBand",
+    "tensionMode",
+    "phrase4Displacement",
+    "contourOffsets",
+    "phraseRoles",
+  ] as const;
+  // Inspect descriptors before observing values. JSON cloning would execute
+  // caller conversion hooks and silently omit extra undefined/function fields.
+  const record = requireRecord(value, path, fields, [], "result");
+  const names = Object.getOwnPropertyNames(record);
+  if (
+    Object.getPrototypeOf(record) !== Object.prototype ||
+    names.some((name, index) => name !== fields[index]) ||
+    fields.some((name) => !Object.getOwnPropertyDescriptor(record, name)?.enumerable)
+  )
+    return invalidResult(path, "Lead plan fields must have exact canonical order and visibility.");
+  const policyVersion = readData(record, "policyVersion");
+  const profileVersion = readData(record, "profileVersion");
+  const rhythmTemplate = readData(
+    record,
+    "rhythmTemplate",
+  ) as ResolvedMotifPlanV1["rhythmTemplate"];
+  const registerBand = readData(record, "registerBand") as ResolvedMotifPlanV1["registerBand"];
+  const tensionMode = readData(record, "tensionMode") as ResolvedMotifPlanV1["tensionMode"];
+  const phrase4Displacement = readData(
+    record,
+    "phrase4Displacement",
+  ) as ResolvedMotifPlanV1["phrase4Displacement"];
+  if (
+    policyVersion !== MOTIF_POLICY_VERSION_V1 ||
+    profileVersion !== MOTIF_PROFILE_DATA_VERSION_V1 ||
+    !MOTIF_RHYTHM_TEMPLATE_IDS_V1.includes(rhythmTemplate) ||
+    !MOTIF_REGISTER_BANDS_V1.includes(registerBand) ||
+    !MOTIF_TENSION_MODES_V1.includes(tensionMode) ||
+    !MOTIF_PHRASE4_DISPLACEMENTS_V1.includes(phrase4Displacement)
+  )
+    return invalidResult(path, "Lead plan values must belong to the accepted Motif V1 catalog.");
+  const template = getMotifRhythmTemplateV1(rhythmTemplate);
+  const offsets = requireDenseArray(
+    readData(record, "contourOffsets"),
+    `${path}.contourOffsets`,
+    template.contourOffsets.length,
+  );
+  const roles = requireDenseArray(
+    readData(record, "phraseRoles"),
+    `${path}.phraseRoles`,
+    MOTIF_PHRASE_ROLES_V1.length,
+  );
+  for (const array of [offsets, roles])
+    if (
+      Object.getPrototypeOf(array) !== Array.prototype ||
+      Object.getOwnPropertyNames(array).length !== array.length + 1 ||
+      Array.from({ length: array.length }, (_, index) => index).some(
+        (index) => !Object.getOwnPropertyDescriptor(array, index)?.enumerable,
+      )
+    )
+      return invalidResult(path, "Lead plan arrays must have exact canonical data descriptors.");
+  // Read only verified data descriptors; do not invoke caller array methods.
+  for (let index = 0; index < offsets.length; index += 1)
+    if (
+      !Object.is(
+        Object.getOwnPropertyDescriptor(offsets, index)?.value,
+        template.contourOffsets[index],
+      )
+    )
+      return invalidResult(
+        `${path}.contourOffsets`,
+        "Contour must equal its accepted catalog value.",
+      );
+  for (let index = 0; index < roles.length; index += 1)
+    if (Object.getOwnPropertyDescriptor(roles, index)?.value !== MOTIF_PHRASE_ROLES_V1[index])
+      return invalidResult(
+        `${path}.phraseRoles`,
+        "Phrase roles must equal their accepted catalog values.",
+      );
+  return Object.freeze({
+    policyVersion,
+    profileVersion,
+    rhythmTemplate,
+    registerBand,
+    tensionMode,
+    phrase4Displacement,
+    contourOffsets: Object.freeze([...template.contourOffsets]),
+    phraseRoles: Object.freeze([...MOTIF_PHRASE_ROLES_V1] as const),
+  });
 }
 
 function copyLead(value: unknown): CompleteSectionResultV1["components"]["lead"] {
   const record = requireRecord(value, "components.lead", LEAD_FIELDS, [], "result");
-  const plan = readData(record, "plan");
-  if (!isPlainRecord(plan)) return invalidResult("components.lead.plan", "lead plan must be data.");
+  const plan = copyLeadPlan(readData(record, "plan"));
   const events = copyEvents(
     readData(record, "events"),
     "components.lead.events",
     "result",
   ) as readonly MotifEventV1[];
-  return Object.freeze({ plan: cloneCanonical(plan) as ResolvedMotifPlanV1, events });
+  return Object.freeze({ plan, events });
 }
 
 function copyMotifProvenance(value: unknown): CompleteSectionResultV1["provenance"]["motif"] {
@@ -1289,10 +1385,7 @@ export function buildCompleteSectionV1(
   // This call is intentionally retained as the semantic boundary: the lead is
   // accepted only from Motif V1's frozen canonical result, never regenerated here.
   serializeMotifGenerationResultV1(input.motif);
-  const lead = Object.freeze({
-    plan: cloneCanonical(input.motif.plan),
-    events: cloneCanonical(input.motif.events),
-  });
+  const lead = copyLead({ plan: input.motif.plan, events: input.motif.events });
   const provenance = Object.freeze({
     profile: Object.freeze({ id: input.profile }),
     harmonyTemplate: Object.freeze({ id: input.templateId, version: input.templateVersion }),
