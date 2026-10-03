@@ -168,11 +168,18 @@ describe("Generate section consumer", () => {
   it("calls browser timers with window as their receiver", () => {
     const originalSetInterval = Object.getOwnPropertyDescriptor(window, "setInterval");
     const originalClearInterval = Object.getOwnPropertyDescriptor(window, "clearInterval");
-    const timer = vi.fn(function (this: typeof window, _callback: TimerHandler, _milliseconds?: number) {
+    const timer = vi.fn(function (
+      this: typeof window,
+      _callback: TimerHandler,
+      _milliseconds?: number,
+    ) {
       if (this !== window) throw new TypeError("Illegal invocation");
       return 1 as unknown as ReturnType<typeof window.setInterval>;
     });
-    const clearTimer = vi.fn(function (this: typeof window, _handle: ReturnType<typeof window.setInterval>) {
+    const clearTimer = vi.fn(function (
+      this: typeof window,
+      _handle: ReturnType<typeof window.setInterval>,
+    ) {
       if (this !== window) throw new TypeError("Illegal invocation");
     });
     Object.defineProperty(window, "setInterval", { configurable: true, value: timer });
@@ -186,7 +193,8 @@ describe("Generate section consumer", () => {
     } finally {
       if (originalSetInterval) Object.defineProperty(window, "setInterval", originalSetInterval);
       else Reflect.deleteProperty(window, "setInterval");
-      if (originalClearInterval) Object.defineProperty(window, "clearInterval", originalClearInterval);
+      if (originalClearInterval)
+        Object.defineProperty(window, "clearInterval", originalClearInterval);
       else Reflect.deleteProperty(window, "clearInterval");
     }
   });

@@ -68,10 +68,7 @@ export function GenerateSection({ choices, generateAction }: Props) {
   }, []);
   function ensureAudition() {
     if (audition.current) return audition.current;
-    audition.current = new BrowserAudition(
-      createBrowserAuditionDependencies(),
-      setTransport,
-    );
+    audition.current = new BrowserAudition(createBrowserAuditionDependencies(), setTransport);
     return audition.current;
   }
   function invalidatePlayback() {
