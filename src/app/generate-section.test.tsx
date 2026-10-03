@@ -39,7 +39,7 @@ function submit() {
 }
 
 describe("Generate section consumer", () => {
-  it("starts empty with explicit profile/template selection and no playback claim", () => {
+  it("starts empty with explicit profile/template selection", () => {
     const generate = vi.fn();
     render(<GenerateSection choices={CHOICES} generateAction={generate} />);
     expect(screen.getByLabelText("Profile")).toHaveValue("");
@@ -96,7 +96,8 @@ describe("Generate section consumer", () => {
     for (const role of ["Harmony", "Bass", "Arpeggiator", "Lead"])
       expect(screen.getByRole("heading", { name: role })).toBeVisible();
     expect(screen.getAllByText("1 notes")).toHaveLength(4);
-    expect(screen.getByText(/Playback and role isolation are not implemented/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Play" })).toBeVisible();
+    expect(screen.getByText(/internal composition preview/i)).toBeVisible();
   });
   it("prevents duplicate submissions and clears stale output on control changes", async () => {
     let resolve: ((value: CompleteSectionPreview) => void) | undefined;
