@@ -51,7 +51,9 @@ flowchart TB
 
 ## Content and visual language
 
-Use strong contrast and restrained genre atmosphere. Dark styling must not crush text, grid lines, selected notes, focus rings, or error states. Use plain music terminology with short contextual definitions for inversions, voicing width, gate, tension, and PPQ.
+For the bounded Milestone 1 audition surface, use the Product Owner-approved functional dark studio-tool direction with restrained synthwave character: deep charcoal/near-black foundation; high legibility; restrained cyan/violet accents; clear Harmony, Bass, Arpeggiator, and Lead role identity; compact transport; a clear Generate action and parameter controls; obvious Play/Stop/Loop states; role mute/solo or equivalent isolation; useful empty/loading/error/degraded-audio states; keyboard-accessible controls; and minimal motion. Do not add decorative cyberpunk clutter. This is functional direction, not final brand or design-system acceptance.
+
+Maintain strong contrast: dark styling must not crush text, grid lines, selected notes, focus rings, or error states. Use plain music terminology with short contextual definitions for inversions, voicing width, gate, tension, and PPQ. The comprehensive visual-reference package is deferred until before substantial visual-brand refinement or broader UI styling; it is not required for the functional Milestone 1 audition surface. Accessibility controls remain required from the start, while full accessibility qualification remains a release gate.
 
 ## Usability verification
 

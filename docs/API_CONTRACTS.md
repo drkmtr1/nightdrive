@@ -38,3 +38,5 @@ Default limits are design placeholders requiring load/security evidence: JSON bo
 ## Client/server split
 
 Transport scheduling, provisional editing validation, and potentially deterministic previews may execute locally. Persistence, ownership, export authorization, AI/provider access, download signing, and audit events remain server-side. If canonical generation is client-side, the server recomputes or validates it before persistence.
+
+The Product Owner-selected Milestone 1 complete-section path is an internal Node application-adapter call to the separately versioned H+B+A+Lead coordinator. It returns the validated immutable generated result to the browser for preview; the browser consumes derived events and does not originate canonical generation. This is not an endpoint in the authenticated `/api/v1` table above and does not require a new project-generation API, persistence, auth, or database. Existing authenticated project APIs remain future work at their roadmap milestone.

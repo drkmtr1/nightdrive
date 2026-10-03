@@ -1,6 +1,6 @@
 # Version 1 requirements
 
-Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Acceptance mappings refer to [Acceptance criteria](ACCEPTANCE_CRITERIA.md); milestones refer to [Roadmap](ROADMAP.md).
+Priorities: **P0** release-blocking, **P1** important, **P2** desirable. Acceptance mappings refer to [Acceptance criteria](ACCEPTANCE_CRITERIA.md); roadmap eligibility refers to [Roadmap](ROADMAP.md). Existing numbered Stage values are retained traceability labels for accepted engineering contracts and evidence; the Roadmap crosswalk maps future product work into Milestones 1–7 and maps comprehensive qualification work into the Release Qualification gate. Stage labels do not create additional product milestones or change any requirement.
 
 ## Functional
 
