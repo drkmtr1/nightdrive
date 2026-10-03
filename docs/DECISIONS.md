@@ -139,14 +139,14 @@ Statuses: **Accepted**, **Provisional**, **Superseded**, **Rejected**. Provision
 ## ADR-011 — Browser audition is a derived preview
 
 **Date:** 2026-09-09
-**Status:** Provisional
+**Status:** CANDIDATE — bounded Milestone 1 decision. This exact decision becomes Accepted only after consequential independent exact-head review PASS, explicit Product Owner acceptance of the reviewed tuple, and protected integration. Until then, the previously integrated Provisional decision remains binding; this candidate is not implementation authority.
 
 **Context:** Users need immediate feedback but browsers and devices do not reproduce production synths or clocks exactly.
-**Decision:** Use a lightweight Web Audio scheduling adapter with simple role voices; ticks remain canonical and audio seconds are derived. Select exact library/native approach at Stage 9 after a timing spike.
+**Decision:** Upon that acceptance and integration, native Web Audio is the accepted mechanism for bounded Milestone 1 internal foreground audition. AudioContext time owns audition scheduling; ticks remain canonical and audio seconds are derived. The [Milestone 1 transport specification](reviews/M1_BROWSER_AUDITION_TRANSPORT_SPECIFICATION.md) governs exact Play/Stop/Loop, voice and role-isolation behavior. Preserve ADR-026: canonical generation and verification remain at the pinned Node boundary, and the browser consumes only the existing derived preview. This decision does not establish broad browser/mobile/background qualification or production sound design.
 **Alternatives:** rendered server audio; embedded production synth; no preview.
 **Rationale:** Low-latency preview supports composition without pretending to be final sound design.
 **Consequences:** Resume policies, latency/drift, tab suspension, mobile limits, and accessibility require testing.
-**Revisit:** Stage 9 measurements fail synchronization/timing requirements.
+**Revisit:** Milestone 1 formative measurements or later Stage 9 qualification measurements fail the applicable synchronization/timing requirements. Preserve the specification's real-browser measurement gate; do not infer broad qualification from internal audition.
 
 ## ADR-015 — Triad-only ChordVoicing boundary
 
