@@ -1,35 +1,27 @@
+import { getHarmonyTemplatesForProfile, HARMONY_PROFILE_IDS } from "../music-domain/harmony";
+import { GenerateSection } from "./generate-section";
+import { generateSectionAction } from "./generate-section-action";
+
 export default function HomePage() {
+  const choices = Object.values(HARMONY_PROFILE_IDS).map((profile) => ({
+    profile,
+    templates: getHarmonyTemplatesForProfile(profile).map(({ id, scale }) => ({ id, scale })),
+  }));
   return (
     <main className="workspace" id="main-content">
       <section aria-labelledby="workspace-title" className="emptyState">
-        <p className="eyebrow">Local shell ready</p>
+        <p className="eyebrow">Audible complete section · in development</p>
         <h1 id="workspace-title">Nightdrive workspace</h1>
         <p className="lead">
-          The application foundation is available. Composition tools have not been implemented yet.
+          Generate Harmony, Bass, Arpeggiator and Lead from one eight-bar section request.
         </p>
         <p className="supportingCopy">
-          This stage validates the web, TypeScript, testing, and accessibility baseline without
-          simulating music features.
+          Inspect the four roles below. Audio transport is the next product slice; no playback is
+          claimed here.
         </p>
       </section>
 
-      <aside aria-labelledby="foundation-status-title" className="statusPanel">
-        <h2 id="foundation-status-title">Foundation status</h2>
-        <dl className="statusList">
-          <div>
-            <dt>Application shell</dt>
-            <dd>Available locally</dd>
-          </div>
-          <div>
-            <dt>Composition tools</dt>
-            <dd>Not implemented</dd>
-          </div>
-          <div>
-            <dt>Persistence and accounts</dt>
-            <dd>Not implemented</dd>
-          </div>
-        </dl>
-      </aside>
+      <GenerateSection choices={choices} generateAction={generateSectionAction} />
     </main>
   );
 }

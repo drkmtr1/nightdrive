@@ -8,7 +8,7 @@ The Product Owner-directed product-first roadmap authority is binding. Milestone
 
 ## Current Milestone
 
-Milestone 1's validated H+B+A+Lead complete-section result/coordinator and verified Node application adapter are integrated. They preserve one authoritative Harmony realization, First Playable V1 and Motif V1 behavior, and immutable canonical output. The current engineering objective is the smallest derived four-role preview slice for browser consumption, preserving selected pitches and canonical tick timing. Browser controls and audio transport remain downstream.
+Milestone 1's complete-section coordinator, verified Node adapter, and derived four-role preview are integrated. Canonical generation remains on pinned Node with one authoritative Harmony realization. The current engineering objective is the functional browser Generate consumer: explicit inputs and inspection of the existing derived role data. Audio transport and role isolation remain downstream; no audible milestone completion is claimed.
 
 ## Current Gate
 
@@ -33,7 +33,7 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Implement and review the smallest derived-preview slice under the accepted [composition contract](docs/COMPOSITION_ENGINE.md): consume the integrated verified Node output, expand its selected Harmony voicings, and copy Bass, Arpeggiator and Lead events into detached immutable role tracks. Generate → Play → Stop → Loop → role isolation remain downstream slices. This task introduces no audio-clock policy, persistence, authenticated project-generation endpoint, database, AI, or formal Stage 8 qualification.
+Implement and review the smallest functional browser Generate consumer of the accepted Node preview under the [composition contract](docs/COMPOSITION_ENGINE.md). Use explicit accepted profile/template/key/tempo/intent/seed inputs, accessible empty/loading/error/ready states and four-role inspection. Play → Stop → Loop → role isolation remain downstream; address only necessary ADR-011 timing decisions when transport becomes eligible. No persistence, authenticated project-generation API, database, AI or formal Stage 8 qualification is part of this task.
 
 ## Maintenance
 

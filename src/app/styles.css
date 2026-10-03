@@ -246,3 +246,69 @@ a {
       transform 120ms ease;
   }
 }
+
+.generatorFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+}
+.generatorFields label {
+  display: grid;
+  gap: var(--space-2);
+}
+.generatorFields input,
+.generatorFields select,
+.generatorFields button {
+  min-height: 2.75rem;
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font: inherit;
+}
+.generatorFields button {
+  align-self: end;
+  color: var(--color-accent-strong);
+  cursor: pointer;
+}
+.generatorFields :disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.previewRoles {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+.previewRoles article {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  min-width: 0;
+}
+.previewRoles h3 {
+  color: var(--color-accent-strong);
+}
+.previewRoles details {
+  overflow-x: auto;
+}
+.previewRoles summary {
+  cursor: pointer;
+  padding-block: var(--space-2);
+}
+.previewRoles table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.previewRoles th,
+.previewRoles td {
+  padding: var(--space-2);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
