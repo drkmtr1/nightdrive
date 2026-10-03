@@ -8,7 +8,7 @@ The Product Owner-directed product-first roadmap authority is binding. Milestone
 
 ## Current Milestone
 
-Milestone 1's complete-section coordinator, verified Node adapter, and derived four-role preview are integrated. Canonical generation remains on pinned Node with one authoritative Harmony realization. The current engineering objective is the functional browser Generate consumer: explicit inputs and inspection of the existing derived role data. Audio transport and role isolation remain downstream; no audible milestone completion is claimed.
+Milestone 1's complete-section coordinator, verified Node adapter, derived four-role preview, and functional browser Generate consumer are integrated. Canonical generation remains on pinned Node with one authoritative Harmony realization. Producers can explicitly Generate and inspect all four roles, with stale request results excluded. Audio transport and role isolation remain downstream; no audible milestone completion is claimed.
 
 ## Current Gate
 
@@ -33,7 +33,7 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Implement and review the smallest functional browser Generate consumer of the accepted Node preview under the [composition contract](docs/COMPOSITION_ENGINE.md). Use explicit accepted profile/template/key/tempo/intent/seed inputs, accessible empty/loading/error/ready states and four-role inspection. Play → Stop → Loop → role isolation remain downstream; address only necessary ADR-011 timing decisions when transport becomes eligible. No persistence, authenticated project-generation API, database, AI or formal Stage 8 qualification is part of this task.
+Specify and consequentially review only the necessary ADR-011 decisions for Milestone 1 Play → Stop → Loop → role isolation in the [transport candidate](docs/reviews/M1_BROWSER_AUDITION_TRANSPORT_SPECIFICATION.md). The candidate is not implementation authority before exact-head PASS, explicit Product Owner acceptance and protected integration. Reuse the existing derived preview; do not implement audio against provisional behavior. No persistence, authenticated project-generation API, database, AI or formal Stage 8 qualification is part of this task.
 
 ## Maintenance
 
