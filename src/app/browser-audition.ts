@@ -162,19 +162,13 @@ export class BrowserAudition {
     this.boundaryInterruption = false;
     const now = this.context?.currentTime ?? 0;
     for (const owned of this.owned) {
-      try {
-        owned.envelope.gain.cancelScheduledValues(now);
-        owned.envelope.gain.setValueAtTime(0, now);
-        owned.source.stop();
-        owned.source.disconnect();
-        owned.envelope.disconnect();
-      } catch {
-        /* owned cleanup must not throw */
-      }
+      this.cleanupNodes(owned.source, owned.envelope, now);
     }
     this.owned = [];
-    if (this.graph) for (const role of ROLES) this.graph.roles[role].disconnect();
-    this.graph?.master.disconnect();
+    if (this.graph) {
+      for (const role of ROLES) this.bestEffort(() => this.graph?.roles[role].disconnect());
+      this.bestEffort(() => this.graph?.master.disconnect());
+    }
     this.graph = null;
     this.publish("stopped", "Playback stopped.");
   }
@@ -219,18 +213,24 @@ export class BrowserAudition {
   setMute(role: PreviewRole, mute: boolean) {
     this.muted[role] = mute;
     this.updateRoleBuses();
-    this.publish(this.snapshot.state, "Role isolation updated.");
+    this.publish(
+      this.snapshot.state,
+      this.isAllMuted() ? "All roles are muted." : "Role isolation updated.",
+    );
   }
 
   setSolo(role: PreviewRole | null) {
     this.solo = role;
     this.updateRoleBuses();
-    this.publish(this.snapshot.state, "Role isolation updated.");
+    this.publish(
+      this.snapshot.state,
+      this.isAllMuted() ? "All roles are muted." : "Role isolation updated.",
+    );
   }
 
   setVolume(volume: number) {
     if (!Number.isFinite(volume) || volume < 0 || volume > 1) {
-      this.publish("error", "Volume must be between 0 and 1.");
+      this.publish(this.snapshot.state, "Volume must be between 0 and 1.");
       return;
     }
     this.volume = volume;
@@ -273,6 +273,22 @@ export class BrowserAudition {
   private interrupt(message: string) {
     this.stop();
     this.publish("error", message);
+  }
+
+  private bestEffort(operation: () => void) {
+    try {
+      operation();
+    } catch {
+      /* individual cleanup failures must not block later cleanup */
+    }
+  }
+
+  private cleanupNodes(source: OscillatorNode | null, envelope: GainNode | null, now: number) {
+    this.bestEffort(() => envelope?.gain.cancelScheduledValues(now));
+    this.bestEffort(() => envelope?.gain.setValueAtTime(0, now));
+    this.bestEffort(() => source?.stop());
+    this.bestEffort(() => source?.disconnect());
+    this.bestEffort(() => envelope?.disconnect());
   }
 
   private pumpSafely(epoch: number) {
@@ -347,16 +363,7 @@ export class BrowserAudition {
       source.stop(end);
       this.owned.push({ role, start, end, source, envelope });
     } catch (error) {
-      const now = this.context.currentTime;
-      try {
-        envelope?.gain.cancelScheduledValues(now);
-        envelope?.gain.setValueAtTime(0, now);
-        source?.stop();
-        source?.disconnect();
-        envelope?.disconnect();
-      } catch {
-        /* partial scheduling cleanup must not mask the failure */
-      }
+      this.cleanupNodes(source, envelope, this.context.currentTime);
       throw error;
     }
   }
@@ -417,6 +424,9 @@ export class BrowserAudition {
       gain.setValueAtTime(gain.value, now);
       gain.linearRampToValueAtTime(active ? 0.25 : 0, now + 0.005);
     }
+  }
+  private isAllMuted() {
+    return this.solo === null && ROLES.every((role) => this.muted[role]);
   }
   private requirePreview(): CompleteSectionPreview {
     if (!this.preview) throw new Error("Missing preview");

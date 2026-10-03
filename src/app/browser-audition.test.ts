@@ -241,6 +241,80 @@ describe("BrowserAudition", () => {
     ).toBe(true);
   });
 
+  it("gives Solo precedence over stored Mute and reports an all-muted silent configuration", async () => {
+    const fake = fakeContext();
+    const audition = transport(fake);
+    await audition.play(preview());
+    fake.context.currentTime = 0.5;
+    fake.trigger();
+    const [, harmonyBus, bassBus, arpeggiatorBus, leadBus] = fake.gains;
+    const lastRamp = (bus: Gain) => bus.gain.linearRampToValueAtTime.mock.calls.at(-1);
+
+    audition.setMute("lead", true);
+    audition.setSolo("lead");
+    expect(lastRamp(leadBus)).toEqual([0.25, 0.505]);
+    for (const bus of [harmonyBus, bassBus, arpeggiatorBus])
+      expect(lastRamp(bus)).toEqual([0, 0.505]);
+
+    audition.setSolo(null);
+    expect(lastRamp(leadBus)).toEqual([0, 0.505]);
+    for (const role of ["harmony", "bass", "arpeggiator"] as const) audition.setMute(role, true);
+    for (const bus of [harmonyBus, bassBus, arpeggiatorBus, leadBus])
+      expect(lastRamp(bus)).toEqual([0, 0.505]);
+    expect(audition.current().message).toBe("All roles are muted.");
+  });
+
+  it("attempts every owned-node and bus cleanup action after earlier cleanup failures", async () => {
+    const fake = fakeContext();
+    const audition = transport(fake);
+    await audition.play(preview());
+    fake.context.currentTime = 0.5;
+    fake.trigger();
+    const [master, harmonyBus, bassBus, arpeggiatorBus, leadBus, envelope] = fake.gains;
+    const scheduled = fake.sources[0];
+    envelope.gain.cancelScheduledValues.mockImplementationOnce(() => {
+      throw new Error("cancel failed");
+    });
+    harmonyBus.disconnect.mockImplementationOnce(() => {
+      throw new Error("bus disconnect failed");
+    });
+
+    audition.stop();
+
+    expect(envelope.gain.setValueAtTime).toHaveBeenCalledWith(0, 0.5);
+    expect(scheduled?.stop).toHaveBeenCalled();
+    expect(scheduled?.disconnect).toHaveBeenCalled();
+    expect(envelope.disconnect).toHaveBeenCalled();
+    expect(bassBus.disconnect).toHaveBeenCalled();
+    expect(arpeggiatorBus.disconnect).toHaveBeenCalled();
+    expect(leadBus.disconnect).toHaveBeenCalled();
+    expect(master.disconnect).toHaveBeenCalled();
+  });
+
+  it("keeps valid playback active when rejecting an invalid volume", async () => {
+    const stopped = transport(fakeContext());
+    stopped.setVolume(-1);
+    expect(stopped.current().state).toBe("stopped");
+    expect(stopped.current().message).toMatch(/between 0 and 1/);
+
+    const fake = fakeContext();
+    const audition = transport(fake);
+    await audition.play(preview());
+    fake.context.currentTime = 0.5;
+    fake.trigger();
+    const sources = fake.sources.length;
+    const [master] = fake.gains;
+    const masterCalls = master.gain.setValueAtTime.mock.calls.length;
+
+    audition.setVolume(2);
+
+    expect(audition.current().state).toBe("playing");
+    expect(audition.current().message).toMatch(/between 0 and 1/);
+    expect(fake.sources).toHaveLength(sources);
+    expect(master.gain.setValueAtTime.mock.calls).toHaveLength(masterCalls);
+    expect(fake.dependencies.clearInterval).not.toHaveBeenCalled();
+  });
+
   it("makes Stop win over pending loop work and ignores stale resume/scheduler work", async () => {
     const fake = fakeContext();
     let resolve!: () => void;
