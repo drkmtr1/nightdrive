@@ -114,7 +114,7 @@ describe("Generate section consumer", () => {
     fireEvent.submit(form);
     expect(generate).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: "Generating…" })).toBeDisabled();
-    expect(screen.getByLabelText("Seed")).toBeDisabled();
+    expect(screen.getByLabelText("Seed")).toBeEnabled();
     await act(async () => {
       if (!resolve) throw new Error("No pending invocation.");
       resolve(PREVIEW);
@@ -123,6 +123,66 @@ describe("Generate section consumer", () => {
     fireEvent.change(screen.getByLabelText("Profile"), { target: { value: "darkwave" } });
     expect(screen.getByLabelText("Harmony template")).toHaveValue("");
     expect(screen.queryByRole("heading", { name: "Generated section" })).not.toBeInTheDocument();
+  });
+  it("ignores a stale success after inputs change and waits for an explicit Generate", async () => {
+    let resolveFirst: ((value: CompleteSectionPreview) => void) | undefined;
+    const generate = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<CompleteSectionPreview>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(PREVIEW);
+    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+    choose();
+    submit();
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Generating…" })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "43" } });
+    expect(screen.getByLabelText("Seed")).toHaveValue(43);
+
+    await act(async () => {
+      if (!resolveFirst) throw new Error("No pending invocation.");
+      resolveFirst(PREVIEW);
+    });
+
+    expect(screen.getByLabelText("Seed")).toHaveValue(43);
+    expect(screen.queryByRole("heading", { name: "Generated section" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate" })).toBeEnabled();
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(generate.mock.calls[0]?.[0].composition.rootSeed).toBe(0);
+    expect(generate.mock.calls[1]?.[0].composition.rootSeed).toBe(43);
+  });
+  it("ignores a stale rejection after inputs change", async () => {
+    let rejectFirst: ((reason: Error) => void) | undefined;
+    const generate = vi.fn(
+      () =>
+        new Promise<CompleteSectionPreview>((_resolve, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+    choose();
+    submit();
+    fireEvent.change(screen.getByLabelText("Energy"), { target: { value: "high" } });
+
+    await act(async () => {
+      if (!rejectFirst) throw new Error("No pending invocation.");
+      rejectFirst(new Error("stale secret diagnostic"));
+    });
+
+    expect(screen.getByLabelText("Energy")).toHaveValue("high");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Generated section" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate" })).toBeEnabled();
+    expect(generate).toHaveBeenCalledTimes(1);
   });
   it("shows a safe error without stale data or automatic retries, then allows explicit recovery", async () => {
     const generate = vi

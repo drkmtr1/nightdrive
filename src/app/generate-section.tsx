@@ -26,6 +26,7 @@ export function GenerateSection({ choices, generateAction }: Props) {
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const inFlight = useRef(false);
+  const generationEpoch = useRef(0);
   const selected = choices.find((choice) => choice.profile === profile);
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -103,13 +104,16 @@ export function GenerateSection({ choices, generateAction }: Props) {
       return;
     }
     inFlight.current = true;
+    const invocationEpoch = generationEpoch.current;
     startTransition(async () => {
       try {
-        setPreview(await generateAction(request));
+        const result = await generateAction(request);
+        if (generationEpoch.current === invocationEpoch) setPreview(result);
       } catch {
-        setError(
-          "Generation could not complete. Check your inputs and the local Node runtime, then try again.",
-        );
+        if (generationEpoch.current === invocationEpoch)
+          setError(
+            "Generation could not complete. Check your inputs and the local Node runtime, then try again.",
+          );
       } finally {
         inFlight.current = false;
       }
@@ -123,12 +127,13 @@ export function GenerateSection({ choices, generateAction }: Props) {
         <form
           onSubmit={submit}
           onChange={() => {
+            generationEpoch.current += 1;
             setPreview(null);
             setError("");
           }}
           aria-busy={pending}
         >
-          <fieldset disabled={pending} className="generatorFields">
+          <fieldset className="generatorFields">
             <legend>Section inputs</legend>
             <label>
               Profile
@@ -209,7 +214,9 @@ export function GenerateSection({ choices, generateAction }: Props) {
                 ))}
               </select>
             </label>
-            <button type="submit">{pending ? "Generating…" : "Generate"}</button>
+            <button type="submit" disabled={pending}>
+              {pending ? "Generating…" : "Generate"}
+            </button>
           </fieldset>
         </form>
         <p id="tonic-help" className="supportingCopy">
