@@ -2,7 +2,11 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import axe from "axe-core";
 import { describe, expect, it, vi } from "vitest";
 import type { CompleteSectionPreview } from "../web/complete-section-preview-node";
-import { GenerateSection, type GenerationChoice } from "./generate-section";
+import {
+  createBrowserAuditionDependencies,
+  GenerateSection,
+  type GenerationChoice,
+} from "./generate-section";
 
 const CHOICES: readonly GenerationChoice[] = [
   {
@@ -160,6 +164,31 @@ describe("Generate section consumer", () => {
     for (const role of ["Harmony", "Bass", "Arpeggiator", "Lead"])
       expect(screen.getByRole("checkbox", { name: `Mute ${role}` })).toBeEnabled();
     expect(screen.getByRole("combobox", { name: "Solo" })).toBeEnabled();
+  });
+  it("calls browser timers with window as their receiver", () => {
+    const originalSetInterval = Object.getOwnPropertyDescriptor(window, "setInterval");
+    const originalClearInterval = Object.getOwnPropertyDescriptor(window, "clearInterval");
+    const timer = vi.fn(function (this: typeof window, _callback: TimerHandler, _milliseconds?: number) {
+      if (this !== window) throw new TypeError("Illegal invocation");
+      return 1 as unknown as ReturnType<typeof window.setInterval>;
+    });
+    const clearTimer = vi.fn(function (this: typeof window, _handle: ReturnType<typeof window.setInterval>) {
+      if (this !== window) throw new TypeError("Illegal invocation");
+    });
+    Object.defineProperty(window, "setInterval", { configurable: true, value: timer });
+    Object.defineProperty(window, "clearInterval", { configurable: true, value: clearTimer });
+    try {
+      const dependencies = createBrowserAuditionDependencies();
+      dependencies.setInterval(() => {}, 25);
+      dependencies.clearInterval(1 as unknown as ReturnType<typeof window.setInterval>);
+      expect(timer).toHaveBeenCalledWith(expect.any(Function), 25);
+      expect(clearTimer).toHaveBeenCalledWith(1);
+    } finally {
+      if (originalSetInterval) Object.defineProperty(window, "setInterval", originalSetInterval);
+      else Reflect.deleteProperty(window, "setInterval");
+      if (originalClearInterval) Object.defineProperty(window, "clearInterval", originalClearInterval);
+      else Reflect.deleteProperty(window, "clearInterval");
+    }
   });
   it("stops owned audio when hidden and when the preview consumer unmounts", async () => {
     const audio = installFakeAudioContext();
