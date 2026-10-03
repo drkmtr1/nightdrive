@@ -16,8 +16,7 @@ export default function HomePage() {
           Generate Harmony, Bass, Arpeggiator and Lead from one eight-bar section request.
         </p>
         <p className="supportingCopy">
-          Inspect the four roles below. Audio transport is the next product slice; no playback is
-          claimed here.
+          Inspect and audition the four roles below. Browser audio is a derived internal preview.
         </p>
       </section>
 

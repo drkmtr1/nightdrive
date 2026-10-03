@@ -26,6 +26,53 @@ const PREVIEW: CompleteSectionPreview = {
     notes: [{ pitch: 60, startTick: 0, durationTicks: 960 }],
   })),
 };
+function installFakeAudioContext() {
+  const sources: Array<{ stop: ReturnType<typeof vi.fn> }> = [];
+  const context = {
+    currentTime: 0,
+    state: "running",
+    onstatechange: null,
+    resume: vi.fn().mockResolvedValue(undefined),
+    createOscillator: vi.fn(() => {
+      const next = {
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        frequency: { setValueAtTime: vi.fn() },
+        start: vi.fn(),
+        stop: vi.fn(),
+        type: "sine",
+      };
+      sources.push(next);
+      return next;
+    }),
+    createGain: vi.fn(() => ({
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      gain: {
+        value: 0,
+        cancelScheduledValues: vi.fn(),
+        linearRampToValueAtTime: vi.fn(),
+        setValueAtTime: vi.fn(),
+      },
+    })),
+    destination: {},
+  };
+  const original = Object.getOwnPropertyDescriptor(window, "AudioContext");
+  function TestAudioContext() {
+    return context;
+  }
+  Object.defineProperty(window, "AudioContext", {
+    configurable: true,
+    value: TestAudioContext,
+  });
+  return {
+    sources,
+    restore() {
+      if (original) Object.defineProperty(window, "AudioContext", original);
+      else Reflect.deleteProperty(window, "AudioContext");
+    },
+  };
+}
 function choose() {
   fireEvent.change(screen.getByLabelText("Profile"), { target: { value: "dark-synthwave" } });
   fireEvent.change(screen.getByLabelText("Harmony template"), {
@@ -39,7 +86,7 @@ function submit() {
 }
 
 describe("Generate section consumer", () => {
-  it("starts empty with explicit profile/template selection and no playback claim", () => {
+  it("starts empty with explicit profile/template selection", () => {
     const generate = vi.fn();
     render(<GenerateSection choices={CHOICES} generateAction={generate} />);
     expect(screen.getByLabelText("Profile")).toHaveValue("");
@@ -96,7 +143,48 @@ describe("Generate section consumer", () => {
     for (const role of ["Harmony", "Bass", "Arpeggiator", "Lead"])
       expect(screen.getByRole("heading", { name: role })).toBeVisible();
     expect(screen.getAllByText("1 notes")).toHaveLength(4);
-    expect(screen.getByText(/Playback and role isolation are not implemented/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Play" })).toBeVisible();
+    expect(screen.getByText(/internal composition preview/i)).toBeVisible();
+  });
+  it("keeps native keyboard-operable transport and isolation controls available for a generated section", async () => {
+    render(
+      <GenerateSection choices={CHOICES} generateAction={vi.fn().mockResolvedValue(PREVIEW)} />,
+    );
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    expect(screen.getByRole("button", { name: "Play" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Stop" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "Loop" })).toBeEnabled();
+    for (const role of ["Harmony", "Bass", "Arpeggiator", "Lead"])
+      expect(screen.getByRole("checkbox", { name: `Mute ${role}` })).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: "Solo" })).toBeEnabled();
+  });
+  it("stops owned audio when hidden and when the preview consumer unmounts", async () => {
+    const audio = installFakeAudioContext();
+    const visibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
+    try {
+      const rendered = render(
+        <GenerateSection choices={CHOICES} generateAction={vi.fn().mockResolvedValue(PREVIEW)} />,
+      );
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(audio.sources.every((source) => source.stop.mock.calls.length > 0)).toBe(true);
+
+      rendered.unmount();
+      expect(audio.sources.every((source) => source.stop.mock.calls.length > 0)).toBe(true);
+    } finally {
+      if (visibility) Object.defineProperty(document, "visibilityState", visibility);
+      audio.restore();
+    }
   });
   it("prevents duplicate submissions and clears stale output on control changes", async () => {
     let resolve: ((value: CompleteSectionPreview) => void) | undefined;

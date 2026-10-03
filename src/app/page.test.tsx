@@ -14,12 +14,12 @@ function renderShell() {
 }
 
 describe("HomePage", () => {
-  it("identifies the workspace and offers Generate without claiming playback", () => {
+  it("identifies the workspace and offers Generate with bounded browser audition", () => {
     renderShell();
 
     expect(screen.getByRole("heading", { level: 1, name: "Nightdrive workspace" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Generate" })).toBeVisible();
-    expect(screen.getByText(/no playback is claimed here/i)).toBeVisible();
+    expect(screen.getByText(/browser audio is a derived internal preview/i)).toBeVisible();
     expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute(
       "href",
       "#main-content",

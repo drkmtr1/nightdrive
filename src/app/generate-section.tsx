@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useRef, useState, useTransition } from "react";
+import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type { HarmonyProfileId } from "../music-domain/harmony";
 import { createKey } from "../music-domain/key";
@@ -8,6 +8,7 @@ import { createTempoFromBpm } from "../music-domain/musical-time";
 import { createPitchClass } from "../music-domain/pitch";
 import type { ScaleType } from "../music-domain/scale";
 import type { CompleteSectionPreview } from "../web/complete-section-preview-node";
+import { type AuditionSnapshot, BrowserAudition } from "./browser-audition";
 
 export type GenerationChoice = Readonly<{
   profile: HarmonyProfileId;
@@ -27,11 +28,51 @@ export function GenerateSection({ choices, generateAction }: Props) {
   const [pending, startTransition] = useTransition();
   const inFlight = useRef(false);
   const generationEpoch = useRef(0);
+  const audition = useRef<BrowserAudition | null>(null);
+  const [transport, setTransport] = useState<AuditionSnapshot | null>(null);
+  const [muted, setMuted] = useState<Record<keyof typeof ROLE_LABELS, boolean>>({
+    harmony: false,
+    bass: false,
+    arpeggiator: false,
+    lead: false,
+  });
+  const [solo, setSolo] = useState<keyof typeof ROLE_LABELS | "">("");
+  const [volume, setVolume] = useState("0.5");
   const selected = choices.find((choice) => choice.profile === profile);
+
+  useEffect(() => {
+    const stopWhenHidden = () => {
+      if (document.visibilityState === "hidden") audition.current?.stop();
+    };
+    document.addEventListener("visibilitychange", stopWhenHidden);
+    return () => {
+      document.removeEventListener("visibilitychange", stopWhenHidden);
+      audition.current?.stop();
+    };
+  }, []);
+  function ensureAudition() {
+    if (audition.current) return audition.current;
+    audition.current = new BrowserAudition(
+      {
+        createContext: () => {
+          if (!window.AudioContext) throw new Error("Web Audio unavailable");
+          return new window.AudioContext();
+        },
+        setInterval: window.setInterval,
+        clearInterval: window.clearInterval,
+      },
+      setTransport,
+    );
+    return audition.current;
+  }
+  function invalidatePlayback() {
+    audition.current?.invalidate();
+  }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (inFlight.current) return;
+    invalidatePlayback();
     setPreview(null);
     setError("");
     const form = new FormData(event.currentTarget);
@@ -127,6 +168,7 @@ export function GenerateSection({ choices, generateAction }: Props) {
         <form
           onSubmit={submit}
           onChange={() => {
+            invalidatePlayback();
             generationEpoch.current += 1;
             setPreview(null);
             setError("");
@@ -243,6 +285,86 @@ export function GenerateSection({ choices, generateAction }: Props) {
             {preview.section.barCount} bars · {preview.section.ppq} PPQ · {preview.section.endTick}{" "}
             ticks
           </p>
+          <section className="transport" aria-labelledby="transport-title">
+            <h3 id="transport-title">Preview transport</h3>
+            <div className="transportControls">
+              <button
+                type="button"
+                onClick={() => void ensureAudition().play(preview)}
+                disabled={transport?.state === "starting" || transport?.state === "playing"}
+              >
+                Play
+              </button>
+              <button
+                type="button"
+                onClick={() => ensureAudition().stop()}
+                disabled={!transport || transport.state === "stopped"}
+              >
+                Stop
+              </button>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={transport?.loop ?? false}
+                  onChange={(event) => ensureAudition().setLoop(event.target.checked)}
+                />{" "}
+                Loop
+              </label>
+              <label>
+                Volume
+                <input
+                  aria-label="Preview volume"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume}
+                  onChange={(event) => {
+                    setVolume(event.target.value);
+                    ensureAudition().setVolume(Number(event.target.value));
+                  }}
+                />
+              </label>
+            </div>
+            <fieldset>
+              <legend>Role isolation</legend>
+              {Object.entries(ROLE_LABELS).map(([role, label]) => (
+                <label key={role}>
+                  <input
+                    type="checkbox"
+                    checked={muted[role as keyof typeof muted]}
+                    onChange={(event) => {
+                      const next = event.target.checked;
+                      setMuted((prior) => ({ ...prior, [role]: next }));
+                      ensureAudition().setMute(role as keyof typeof ROLE_LABELS, next);
+                    }}
+                  />{" "}
+                  Mute {label}
+                </label>
+              ))}
+              <label>
+                Solo{" "}
+                <select
+                  value={solo}
+                  onChange={(event) => {
+                    const next = event.target.value as keyof typeof ROLE_LABELS | "";
+                    setSolo(next);
+                    ensureAudition().setSolo(next || null);
+                  }}
+                >
+                  <option value="">None</option>
+                  {Object.entries(ROLE_LABELS).map(([role, label]) => (
+                    <option key={role} value={role}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </fieldset>
+            <p role="status">
+              {transport?.message ?? "Press Play to audition the generated section."}
+            </p>
+          </section>
           <div className="previewRoles">
             {preview.tracks.map((track) => (
               <article key={track.role} aria-labelledby={`role-${track.role}`}>
@@ -274,7 +396,8 @@ export function GenerateSection({ choices, generateAction }: Props) {
             ))}
           </div>
           <p className="supportingCopy">
-            This is derived preview data. Playback and role isolation are not implemented yet.
+            This is derived preview data. Browser audition is an internal composition preview, not
+            production sound design.
           </p>
         </section>
       ) : null}

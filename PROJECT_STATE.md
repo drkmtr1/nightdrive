@@ -8,7 +8,7 @@ The Product Owner-directed product-first roadmap authority is binding. Milestone
 
 ## Current Milestone
 
-Milestone 1's complete-section coordinator, verified Node adapter, derived four-role preview, and functional browser Generate consumer are integrated. Canonical generation remains on pinned Node with one authoritative Harmony realization. Producers can explicitly Generate and inspect all four roles, with stale request results excluded. Audio transport and role isolation remain downstream; no audible milestone completion is claimed.
+Milestone 1's complete-section coordinator, verified Node adapter, derived four-role preview, and functional browser Generate consumer are integrated. Canonical generation remains on pinned Node with one authoritative Harmony realization. Producers can explicitly Generate and inspect all four roles, with stale request results excluded. The next bounded candidate implements the accepted derived-preview transport: Play, Stop, Loop and role isolation. No audible milestone completion is claimed until it is independently reviewed, protected-integrated and receives its required formative evidence.
 
 ## Current Gate
 
@@ -33,7 +33,7 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Specify and consequentially review only the necessary ADR-011 decisions for Milestone 1 Play → Stop → Loop → role isolation in the [transport candidate](docs/reviews/M1_BROWSER_AUDITION_TRANSPORT_SPECIFICATION.md). The candidate is not implementation authority before exact-head PASS, explicit Product Owner acceptance and protected integration. Reuse the existing derived preview; do not implement audio against provisional behavior. No persistence, authenticated project-generation API, database, AI or formal Stage 8 qualification is part of this task.
+Implement and independently review the accepted bounded ADR-011 derived-preview transport. Reuse the existing preview and native Web Audio only; verify fake-context scheduling, state, Loop, Stop and role-isolation behavior before real-browser formative evidence. No persistence, authenticated project-generation API, database, AI or formal Stage 8 qualification is part of this task.
 
 ## Maintenance
 
