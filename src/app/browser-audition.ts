@@ -28,10 +28,15 @@ export type AuditionSnapshot = Readonly<{
 }>;
 
 type OwnedSource = Readonly<{
+  end: number;
+  envelope: GainNode;
   role: PreviewRole;
-  start: number;
   source: OscillatorNode;
-  gain: GainNode;
+  start: number;
+}>;
+type SessionGraph = Readonly<{
+  master: GainNode;
+  roles: Readonly<Record<PreviewRole, GainNode>>;
 }>;
 const waves: Readonly<Record<PreviewRole, OscillatorType>> = {
   harmony: "triangle",
@@ -77,21 +82,23 @@ function validPreview(preview: CompleteSectionPreview): boolean {
   );
 }
 
-/** A bounded, derived-preview-only Web Audio session. It never changes canonical data. */
+/** Derived-preview-only, bounded Web Audio transport. It never changes canonical state. */
 export class BrowserAudition {
+  private boundaryInterruption = false;
   private context: AudioContextLike | null = null;
-  private preview: CompleteSectionPreview | null = null;
-  private timer: ReturnType<typeof setInterval> | null = null;
-  private owned: OwnedSource[] = [];
-  private origin = 0;
   private epoch = 0;
-  private nextCycle = 0;
-  private nextNote = 0;
+  private graph: SessionGraph | null = null;
   private loop = false;
   private muted = blankMuted();
+  private nextCycle = 0;
+  private nextNote = 0;
+  private origin = 0;
+  private owned: OwnedSource[] = [];
+  private preview: CompleteSectionPreview | null = null;
   private solo: PreviewRole | null = null;
+  private stopAfterCycle = 0;
+  private timer: ReturnType<typeof setInterval> | null = null;
   private volume = 0.5;
-  private boundaryInterruption = false;
   private snapshot: AuditionSnapshot = {
     state: "stopped",
     message: "Playback stopped.",
@@ -104,19 +111,11 @@ export class BrowserAudition {
     private readonly dependencies: BrowserAuditionDependencies,
     private readonly changed: (snapshot: AuditionSnapshot) => void,
   ) {}
+
   current(): AuditionSnapshot {
     return this.snapshot;
   }
-  private publish(state: AuditionState, message: string) {
-    this.snapshot = Object.freeze({
-      state,
-      message,
-      loop: this.loop,
-      muted: Object.freeze({ ...this.muted }),
-      solo: this.solo,
-    });
-    this.changed(this.snapshot);
-  }
+
   async play(preview: CompleteSectionPreview) {
     if (this.snapshot.state === "starting" || this.snapshot.state === "playing") return;
     if (!validPreview(preview)) {
@@ -125,12 +124,15 @@ export class BrowserAudition {
     }
     const epoch = ++this.epoch;
     this.preview = preview;
+    this.stopAfterCycle = this.loop ? Number.POSITIVE_INFINITY : 0;
+    this.boundaryInterruption = false;
     this.publish("starting", "Starting playback…");
     try {
       this.context ??= this.dependencies.createContext();
       await this.context.resume();
       if (epoch !== this.epoch || this.context.state !== "running")
         throw new Error("Audio context unavailable");
+      this.graph = this.createGraph();
       this.origin = this.context.currentTime + INITIAL_LEAD_SECONDS;
       this.nextCycle = 0;
       this.nextNote = 0;
@@ -150,98 +152,136 @@ export class BrowserAudition {
       }
     }
   }
+
   stop() {
     ++this.epoch;
     if (this.timer) this.dependencies.clearInterval(this.timer);
     this.timer = null;
     this.boundaryInterruption = false;
-    for (const { source, gain } of this.owned) {
+    const now = this.context?.currentTime ?? 0;
+    for (const owned of this.owned) {
       try {
-        gain.gain.cancelScheduledValues(this.context?.currentTime ?? 0);
-        gain.gain.setValueAtTime(0, this.context?.currentTime ?? 0);
-        source.stop();
-        source.disconnect();
-        gain.disconnect();
+        owned.envelope.gain.cancelScheduledValues(now);
+        owned.envelope.gain.setValueAtTime(0, now);
+        owned.source.stop();
+        owned.source.disconnect();
+        owned.envelope.disconnect();
       } catch {
-        /* best-effort owned cleanup must not throw */
+        /* owned cleanup must not throw */
       }
     }
     this.owned = [];
+    if (this.graph) for (const role of ROLES) this.graph.roles[role].disconnect();
+    this.graph?.master.disconnect();
+    this.graph = null;
     this.publish("stopped", "Playback stopped.");
   }
+
+  invalidate() {
+    this.stop();
+  }
+
   setLoop(loop: boolean) {
     this.loop = loop;
-    if (!loop) {
-      this.cancelFutureCycle();
-      this.publish(this.snapshot.state, "Loop will stop at the current section boundary.");
-      return;
-    }
     if (this.snapshot.state !== "playing" || !this.context || !this.preview) {
-      this.publish(this.snapshot.state, "Loop enabled for the next Play.");
+      this.publish(
+        this.snapshot.state,
+        loop ? "Loop enabled for the next Play." : "Loop disabled.",
+      );
       return;
     }
-    const boundary =
-      this.origin + (this.nextCycle + 1) * seconds(this.preview, this.preview.section.endTick);
+    const currentCycle = this.audibleCycle(this.context.currentTime);
+    const boundary = this.boundaryAfter(currentCycle);
+    if (!loop) {
+      this.stopAfterCycle = currentCycle;
+      this.cancelFrom(boundary);
+      this.publish("playing", "Loop will stop at the current section boundary.");
+      return;
+    }
     if (boundary - this.context.currentTime < INITIAL_LEAD_SECONDS) {
       this.loop = false;
+      this.stopAfterCycle = currentCycle;
       this.boundaryInterruption = true;
+      this.cancelFrom(boundary);
       this.publish(
         "playing",
         "Playback will stop at the section boundary because Loop was enabled too late.",
       );
-    } else this.publish("playing", "Loop enabled.");
+      return;
+    }
+    this.stopAfterCycle = Number.POSITIVE_INFINITY;
+    this.publish("playing", "Loop enabled.");
+    this.pump(this.epoch);
   }
+
   setMute(role: PreviewRole, mute: boolean) {
     this.muted[role] = mute;
-    this.updateGains();
+    this.updateRoleBuses();
     this.publish(this.snapshot.state, "Role isolation updated.");
   }
+
   setSolo(role: PreviewRole | null) {
     this.solo = role;
-    this.updateGains();
+    this.updateRoleBuses();
     this.publish(this.snapshot.state, "Role isolation updated.");
   }
+
   setVolume(volume: number) {
     if (!Number.isFinite(volume) || volume < 0 || volume > 1) {
       this.publish("error", "Volume must be between 0 and 1.");
       return;
     }
     this.volume = volume;
-    this.updateGains();
+    if (this.context && this.graph) {
+      const now = this.context.currentTime;
+      this.graph.master.gain.cancelScheduledValues(now);
+      this.graph.master.gain.setValueAtTime(volume, now);
+    }
     this.publish(this.snapshot.state, "Preview volume updated.");
   }
-  invalidate() {
-    this.stop();
+
+  private createGraph(): SessionGraph {
+    if (!this.context) throw new Error("Missing context");
+    const master = this.context.createGain();
+    const roles = Object.fromEntries(
+      ROLES.map((role) => [role, this.context?.createGain()]),
+    ) as Record<PreviewRole, GainNode>;
+    const now = this.context.currentTime;
+    master.gain.setValueAtTime(this.volume, now);
+    master.connect(this.context.destination);
+    for (const role of ROLES) roles[role].connect(master);
+    const graph = Object.freeze({ master, roles: Object.freeze(roles) });
+    this.graph = graph;
+    this.updateRoleBuses();
+    return graph;
   }
+
   private pump(epoch: number) {
     if (epoch !== this.epoch || !this.context || !this.preview || this.snapshot.state !== "playing")
       return;
-    const cycleSeconds = seconds(this.preview, this.preview.section.endTick);
     const now = this.context.currentTime;
+    const currentCycle = this.audibleCycle(now);
+    if (
+      currentCycle > this.stopAfterCycle ||
+      (currentCycle === this.stopAfterCycle && now >= this.boundaryAfter(currentCycle))
+    ) {
+      const interrupted = this.boundaryInterruption;
+      this.stop();
+      if (interrupted)
+        this.publish("error", "Playback interrupted because Loop was enabled too late.");
+      return;
+    }
     const horizon = now + SCHEDULING_HORIZON_SECONDS;
-    const ordered = this.preview.tracks
-      .flatMap((track) => track.notes.map((note) => ({ ...note, role: track.role })))
-      .sort(
-        (a, b) => a.startTick - b.startTick || a.role.localeCompare(b.role) || a.pitch - b.pitch,
-      );
-    while (true) {
+    const ordered = this.orderedNotes();
+    while (this.nextCycle <= this.stopAfterCycle) {
       const note = ordered[this.nextNote];
       if (!note) {
-        if (!this.loop) {
-          if (now >= this.origin + (this.nextCycle + 1) * cycleSeconds) {
-            const interrupted = this.boundaryInterruption;
-            this.stop();
-            if (interrupted)
-              this.publish("error", "Playback interrupted because Loop was enabled too late.");
-          }
-          return;
-        }
         this.nextCycle += 1;
         this.nextNote = 0;
         continue;
       }
       const start =
-        this.origin + this.nextCycle * cycleSeconds + seconds(this.preview, note.startTick);
+        this.origin + this.nextCycle * this.cycleSeconds() + seconds(this.preview, note.startTick);
       if (start >= horizon) return;
       if (start < now) {
         this.stop();
@@ -252,71 +292,100 @@ export class BrowserAudition {
         note.role,
         note.pitch,
         start,
-        seconds(this.preview, note.startTick + note.durationTicks),
+        start + seconds(this.preview, note.durationTicks),
       );
       this.nextNote += 1;
     }
   }
+
   private schedule(role: PreviewRole, pitch: number, start: number, end: number) {
-    if (!this.context) return;
+    if (!this.context || !this.graph) return;
     const source = this.context.createOscillator();
-    const gain = this.context.createGain();
-    const duration = end - start;
+    const envelope = this.context.createGain();
+    const maximum = this.maximumSimultaneous(role);
+    const ramp = Math.min(0.005, (end - start) / 4);
     source.type = waves[role];
     source.frequency.setValueAtTime(440 * 2 ** ((pitch - 69) / 12), start);
-    const level = this.level(role);
-    const ramp = Math.min(0.005, duration / 4);
-    gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(level, start + ramp);
-    gain.gain.setValueAtTime(level, end - ramp);
-    gain.gain.linearRampToValueAtTime(0, end);
-    source.connect(gain);
-    gain.connect(this.context.destination);
+    envelope.gain.setValueAtTime(0, start);
+    envelope.gain.linearRampToValueAtTime(1 / maximum, start + ramp);
+    envelope.gain.setValueAtTime(1 / maximum, end - ramp);
+    envelope.gain.linearRampToValueAtTime(0, end);
+    source.connect(envelope);
+    envelope.connect(this.graph.roles[role]);
     source.start(start);
     source.stop(end);
-    this.owned.push({ role, start, source, gain });
+    this.owned.push({ role, start, end, source, envelope });
   }
-  private cancelFutureCycle() {
-    if (!this.context || !this.preview || this.snapshot.state !== "playing") return;
-    const boundary =
-      this.origin + (this.nextCycle + 1) * seconds(this.preview, this.preview.section.endTick);
+
+  private orderedNotes() {
+    return this.requirePreview()
+      .tracks.flatMap((track) => track.notes.map((note) => ({ ...note, role: track.role })))
+      .sort(
+        (a, b) => a.startTick - b.startTick || a.role.localeCompare(b.role) || a.pitch - b.pitch,
+      );
+  }
+  private cycleSeconds() {
+    const preview = this.requirePreview();
+    return seconds(preview, preview.section.endTick);
+  }
+  private audibleCycle(now: number) {
+    return Math.max(0, Math.floor((now - this.origin) / this.cycleSeconds()));
+  }
+  private boundaryAfter(cycle: number) {
+    return this.origin + (cycle + 1) * this.cycleSeconds();
+  }
+  private cancelFrom(boundary: number) {
     for (const owned of this.owned) {
       if (owned.start >= boundary) {
         try {
           owned.source.stop(boundary);
         } catch {
-          /* owned scheduled cleanup remains fail-safe */
+          /* scheduled owned source is already stopped */
         }
       }
     }
   }
   private maximumSimultaneous(role: PreviewRole): number {
-    const notes = this.preview?.tracks.find((track) => track.role === role)?.notes ?? [];
+    const track = this.requirePreview().tracks.find((item) => item.role === role);
+    if (!track) throw new Error("Missing preview role");
+    const notes = track.notes;
     const points = notes
       .flatMap((note) => [
         { tick: note.startTick, delta: 1 },
         { tick: note.startTick + note.durationTicks, delta: -1 },
       ])
       .sort((a, b) => a.tick - b.tick || a.delta - b.delta);
-    let current = 0;
+    let active = 0;
     let maximum = 0;
     for (const point of points) {
-      current += point.delta;
-      maximum = Math.max(maximum, current);
+      active += point.delta;
+      maximum = Math.max(maximum, active);
     }
     return maximum;
   }
-  private level(role: PreviewRole): number {
-    const active = this.solo ? this.solo === role : !this.muted[role];
-    return active ? (0.25 * this.volume) / this.maximumSimultaneous(role) : 0;
-  }
-  private updateGains() {
-    if (!this.context) return;
+  private updateRoleBuses() {
+    if (!this.context || !this.graph) return;
     const now = this.context.currentTime;
-    for (const owned of this.owned) {
-      owned.gain.gain.cancelScheduledValues(now);
-      owned.gain.gain.setValueAtTime(owned.gain.gain.value, now);
-      owned.gain.gain.linearRampToValueAtTime(this.level(owned.role), now + 0.005);
+    for (const role of ROLES) {
+      const active = this.solo ? this.solo === role : !this.muted[role];
+      const gain = this.graph.roles[role].gain;
+      gain.cancelScheduledValues(now);
+      gain.setValueAtTime(gain.value, now);
+      gain.linearRampToValueAtTime(active ? 0.25 : 0, now + 0.005);
     }
+  }
+  private requirePreview(): CompleteSectionPreview {
+    if (!this.preview) throw new Error("Missing preview");
+    return this.preview;
+  }
+  private publish(state: AuditionState, message: string) {
+    this.snapshot = Object.freeze({
+      state,
+      message,
+      loop: this.loop,
+      muted: Object.freeze({ ...this.muted }),
+      solo: this.solo,
+    });
+    this.changed(this.snapshot);
   }
 }
