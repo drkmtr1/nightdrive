@@ -1,7 +1,13 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import axe from "axe-core";
 import { describe, expect, it, vi } from "vitest";
+import type {
+  CompleteSectionRequestV1,
+  CompleteSectionResultV1,
+} from "../composition/complete-section";
+import type { EditorRevisionV1 } from "../composition/editor-revision";
 import type { CompleteSectionPreview } from "../web/complete-section-preview-node";
+import type { EditorApplicationV1 } from "../web/editor-application-node";
 import {
   createBrowserAuditionDependencies,
   GenerateSection,
@@ -30,6 +36,105 @@ const PREVIEW: CompleteSectionPreview = {
     notes: [{ pitch: 60, startTick: 0, durationTicks: 960 }],
   })),
 };
+const NOTE_ID = "note-" + "d".repeat(64);
+
+function makeEditorApplication(
+  leadPitch = 60,
+  includeChild = false,
+  selectedCursor?: number,
+): EditorApplicationV1 {
+  const roles = ["harmony", "bass", "arpeggiator", "lead"] as const;
+  const rootTracks = roles.map((role, index) => ({
+    role,
+    notes: [
+      {
+        id: "note-" + ["a", "b", "c", "d"][index]?.repeat(64),
+        pitch: 60,
+        startTick: 0,
+        durationTicks: 960,
+        velocity: 100,
+      },
+    ],
+  }));
+  const root = {
+    schema: "nightdrive.editor-revision.v1",
+    source: { schema: "nightdrive.complete-section-result.v1", resultHash: "a".repeat(64) },
+    section: {
+      ppq: PREVIEW.section.ppq,
+      barCount: PREVIEW.section.barCount,
+      timeSignature: PREVIEW.section.timeSignature,
+      tempo: PREVIEW.section.tempo,
+      endTick: PREVIEW.section.endTick,
+    },
+    tracks: rootTracks,
+    parent: null,
+    command: null,
+    revisionHash: "b".repeat(64),
+  } as unknown as EditorRevisionV1;
+  const child = {
+    ...root,
+    tracks: root.tracks.map((track) =>
+      track.role === "lead"
+        ? {
+            ...track,
+            notes: track.notes.map((note) => ({ ...note, pitch: leadPitch })),
+          }
+        : track,
+    ),
+    parent: { schema: root.schema, revisionHash: root.revisionHash },
+    command: {
+      schema: "nightdrive.editor-note-command.v1",
+      type: "set-note-pitch",
+      noteId: NOTE_ID,
+      expectedPitch: 60,
+      pitch: leadPitch,
+    },
+    revisionHash: "c".repeat(64),
+  } as unknown as EditorRevisionV1;
+  const revisions = includeChild ? [root, child] : [root];
+  const cursor = includeChild ? (selectedCursor ?? 1) : 0;
+  const selected = revisions[cursor];
+  const preview: CompleteSectionPreview = {
+    ...PREVIEW,
+    tracks: selected.tracks.map((track) => ({
+      role: track.role,
+      notes: track.notes.map(({ pitch, startTick, durationTicks }) => ({
+        pitch,
+        startTick,
+        durationTicks,
+      })),
+    })),
+  };
+  return {
+    history: {
+      source: {} as CompleteSectionResultV1,
+      revisions,
+      cursor,
+    },
+    selectedRevision: { schema: selected.schema, revisionHash: selected.revisionHash },
+    preview,
+  } as EditorApplicationV1;
+}
+
+const ROOT_APPLICATION = makeEditorApplication();
+const EDITED_APPLICATION = makeEditorApplication(64, true);
+const UNDONE_APPLICATION = makeEditorApplication(64, true, 0);
+
+function makeActions() {
+  return {
+    generateAction: vi.fn().mockResolvedValue(ROOT_APPLICATION),
+    setLeadPitchAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
+    undoSectionEditAction: vi.fn().mockResolvedValue(UNDONE_APPLICATION),
+    redoSectionEditAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
+  };
+}
+
+function renderConsumer(actions = makeActions()) {
+  return {
+    actions,
+    ...render(<GenerateSection choices={CHOICES} {...actions} />),
+  };
+}
 function installFakeAudioContext() {
   const sources: Array<{ stop: ReturnType<typeof vi.fn> }> = [];
   const context = {
@@ -91,19 +196,17 @@ function submit() {
 
 describe("Generate section consumer", () => {
   it("starts empty with explicit profile/template selection", () => {
-    const generate = vi.fn();
-    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+    const { actions } = renderConsumer();
     expect(screen.getByLabelText("Profile")).toHaveValue("");
     expect(screen.getByLabelText("Harmony template")).toHaveValue("");
     expect(screen.getByRole("status")).toHaveTextContent("No section is loaded");
     submit();
-    expect(generate).not.toHaveBeenCalled();
+    expect(actions.generateAction).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Play" })).not.toBeInTheDocument();
   });
   it("submits one explicit accepted request and displays existing four-role data", async () => {
-    const generate = vi.fn().mockResolvedValue(PREVIEW);
-    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+    const { actions } = renderConsumer();
     choose();
     fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "42" } });
     fireEvent.change(screen.getByLabelText("Key tonic"), { target: { value: "2" } });
@@ -111,8 +214,8 @@ describe("Generate section consumer", () => {
     fireEvent.change(screen.getByLabelText("Energy"), { target: { value: "high" } });
     submit();
     await screen.findByRole("heading", { name: "Generated section" });
-    expect(generate).toHaveBeenCalledTimes(1);
-    expect(generate.mock.calls[0]?.[0]).toEqual({
+    expect(actions.generateAction).toHaveBeenCalledTimes(1);
+    expect(actions.generateAction.mock.calls[0]?.[0]).toEqual({
       schema: "nightdrive.complete-section-request.v1",
       engineVersion: "nightdrive.engine.complete-section.v1",
       generatorVersion: "nightdrive.generator.complete-section.v1",
@@ -160,11 +263,86 @@ describe("Generate section consumer", () => {
     expect(screen.getAllByText("1 notes")).toHaveLength(4);
     expect(screen.getByRole("button", { name: "Play" })).toBeVisible();
     expect(screen.getByText(/internal composition preview/i)).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Lead note" })).toHaveValue(NOTE_ID);
+    expect(screen.getByLabelText("MIDI pitch (60–84)")).toHaveValue(60);
+    expect(screen.getByRole("button", { name: "Apply Lead pitch" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Redo" })).toBeDisabled();
+  });
+  it("sends one stable Lead pitch command and restores the exact selected preview through undo and redo", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.change(screen.getByLabelText("MIDI pitch (60–84)"), {
+      target: { value: "64" },
+    });
+    expect(screen.getByRole("button", { name: "Apply Lead pitch" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Apply Lead pitch" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 64, start tick 0, duration 960 ticks",
+    });
+
+    expect(actions.setLeadPitchAction).toHaveBeenCalledTimes(1);
+    expect(actions.setLeadPitchAction.mock.calls[0]).toEqual([
+      ROOT_APPLICATION,
+      ROOT_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v1",
+        type: "set-note-pitch",
+        noteId: NOTE_ID,
+        expectedPitch: 60,
+        pitch: 64,
+      },
+    ]);
+    expect(actions.generateAction).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Redo" })).toBeDisabled();
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+    });
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(EDITED_APPLICATION);
+    expect(screen.getByRole("button", { name: "Redo" })).toBeEnabled();
+    expect(screen.getByText("Editor revision 1 of 2.")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 64, start tick 0, duration 960 ticks",
+    });
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(UNDONE_APPLICATION);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+  });
+  it("stops the current audition when a validated Lead revision becomes selected", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const { actions } = renderConsumer();
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+
+      fireEvent.change(screen.getByLabelText("MIDI pitch (60–84)"), {
+        target: { value: "64" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Apply Lead pitch" }));
+      await screen.findByRole("listitem", {
+        name: "Lead note, MIDI pitch 64, start tick 0, duration 960 ticks",
+      });
+
+      expect(actions.setLeadPitchAction).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(audio.sources.every((source) => source.stop.mock.calls.length > 0)).toBe(true);
+    } finally {
+      audio.restore();
+    }
   });
   it("keeps native keyboard-operable transport and isolation controls available for a generated section", async () => {
-    render(
-      <GenerateSection choices={CHOICES} generateAction={vi.fn().mockResolvedValue(PREVIEW)} />,
-    );
+    renderConsumer();
     choose();
     submit();
     await screen.findByRole("heading", { name: "Generated section" });
@@ -213,9 +391,7 @@ describe("Generate section consumer", () => {
     const audio = installFakeAudioContext();
     const visibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
     try {
-      const rendered = render(
-        <GenerateSection choices={CHOICES} generateAction={vi.fn().mockResolvedValue(PREVIEW)} />,
-      );
+      const rendered = renderConsumer();
       choose();
       submit();
       await screen.findByRole("heading", { name: "Generated section" });
@@ -235,14 +411,16 @@ describe("Generate section consumer", () => {
     }
   });
   it("prevents duplicate submissions and clears stale output on control changes", async () => {
-    let resolve: ((value: CompleteSectionPreview) => void) | undefined;
-    const generate = vi.fn(
+    let resolve: ((value: EditorApplicationV1) => void) | undefined;
+    const generate = vi.fn<(request: CompleteSectionRequestV1) => Promise<EditorApplicationV1>>(
       () =>
-        new Promise<CompleteSectionPreview>((done) => {
+        new Promise<EditorApplicationV1>((done) => {
           resolve = done;
         }),
     );
-    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+    const actions = makeActions();
+    actions.generateAction = generate;
+    renderConsumer(actions);
     choose();
     const form = screen.getByRole("button", { name: "Generate" }).closest("form");
     if (!form) throw new Error("Missing form.");
@@ -253,7 +431,7 @@ describe("Generate section consumer", () => {
     expect(screen.getByLabelText("Seed")).toBeEnabled();
     await act(async () => {
       if (!resolve) throw new Error("No pending invocation.");
-      resolve(PREVIEW);
+      resolve(ROOT_APPLICATION);
     });
     await screen.findByRole("heading", { name: "Generated section" });
     fireEvent.change(screen.getByLabelText("Profile"), { target: { value: "darkwave" } });
@@ -261,17 +439,19 @@ describe("Generate section consumer", () => {
     expect(screen.queryByRole("heading", { name: "Generated section" })).not.toBeInTheDocument();
   });
   it("ignores a stale success after inputs change and waits for an explicit Generate", async () => {
-    let resolveFirst: ((value: CompleteSectionPreview) => void) | undefined;
+    let resolveFirst: ((value: EditorApplicationV1) => void) | undefined;
     const generate = vi
-      .fn()
+      .fn<(request: CompleteSectionRequestV1) => Promise<EditorApplicationV1>>()
       .mockImplementationOnce(
         () =>
-          new Promise<CompleteSectionPreview>((resolve) => {
+          new Promise<EditorApplicationV1>((resolve) => {
             resolveFirst = resolve;
           }),
       )
-      .mockResolvedValueOnce(PREVIEW);
-    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+      .mockResolvedValueOnce(ROOT_APPLICATION);
+    const actions = makeActions();
+    actions.generateAction = generate;
+    renderConsumer(actions);
     choose();
     submit();
     expect(generate).toHaveBeenCalledTimes(1);
@@ -282,7 +462,7 @@ describe("Generate section consumer", () => {
 
     await act(async () => {
       if (!resolveFirst) throw new Error("No pending invocation.");
-      resolveFirst(PREVIEW);
+      resolveFirst(ROOT_APPLICATION);
     });
 
     expect(screen.getByLabelText("Seed")).toHaveValue(43);
@@ -298,13 +478,15 @@ describe("Generate section consumer", () => {
   });
   it("ignores a stale rejection after inputs change", async () => {
     let rejectFirst: ((reason: Error) => void) | undefined;
-    const generate = vi.fn(
+    const generate = vi.fn<(request: CompleteSectionRequestV1) => Promise<EditorApplicationV1>>(
       () =>
-        new Promise<CompleteSectionPreview>((_resolve, reject) => {
+        new Promise<EditorApplicationV1>((_resolve, reject) => {
           rejectFirst = reject;
         }),
     );
-    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+    const actions = makeActions();
+    actions.generateAction = generate;
+    renderConsumer(actions);
     choose();
     submit();
     fireEvent.change(screen.getByLabelText("Energy"), { target: { value: "high" } });
@@ -320,13 +502,78 @@ describe("Generate section consumer", () => {
     expect(screen.getByRole("button", { name: "Generate" })).toBeEnabled();
     expect(generate).toHaveBeenCalledTimes(1);
   });
+  it("ignores a stale editor success after generation controls change", async () => {
+    let resolveEdit: ((application: EditorApplicationV1) => void) | undefined;
+    const actions = makeActions();
+    actions.setLeadPitchAction = vi.fn(
+      () =>
+        new Promise<EditorApplicationV1>((resolve) => {
+          resolveEdit = resolve;
+        }),
+    );
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.change(screen.getByLabelText("MIDI pitch (60–84)"), {
+      target: { value: "64" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Lead pitch" }));
+    expect(screen.getByRole("button", { name: "Apply Lead pitch" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "43" } });
+
+    await act(async () => {
+      if (!resolveEdit) throw new Error("No pending edit invocation.");
+      resolveEdit(EDITED_APPLICATION);
+    });
+
+    expect(screen.getByLabelText("Seed")).toHaveValue(43);
+    expect(screen.queryByRole("heading", { name: "Generated section" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate" })).toBeEnabled();
+    expect(actions.generateAction).toHaveBeenCalledTimes(1);
+    expect(actions.setLeadPitchAction).toHaveBeenCalledTimes(1);
+  });
+  it("ignores a stale editor rejection after generation controls change", async () => {
+    let rejectEdit: ((reason: Error) => void) | undefined;
+    const actions = makeActions();
+    actions.setLeadPitchAction = vi.fn(
+      () =>
+        new Promise<EditorApplicationV1>((_resolve, reject) => {
+          rejectEdit = reject;
+        }),
+    );
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.change(screen.getByLabelText("MIDI pitch (60–84)"), {
+      target: { value: "64" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Lead pitch" }));
+    fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "44" } });
+
+    await act(async () => {
+      if (!rejectEdit) throw new Error("No pending edit invocation.");
+      rejectEdit(new Error("stale private diagnostic"));
+    });
+
+    expect(screen.getByLabelText("Seed")).toHaveValue(44);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText(/stale private diagnostic/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Generated section" })).not.toBeInTheDocument();
+  });
   it("shows a safe error without stale data or automatic retries, then allows explicit recovery", async () => {
     const generate = vi
-      .fn()
-      .mockResolvedValueOnce(PREVIEW)
+      .fn<(request: CompleteSectionRequestV1) => Promise<EditorApplicationV1>>()
+      .mockResolvedValueOnce(ROOT_APPLICATION)
       .mockRejectedValueOnce(new Error("secret diagnostic"))
-      .mockResolvedValueOnce(PREVIEW);
-    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+      .mockResolvedValueOnce(ROOT_APPLICATION);
+    const actions = makeActions();
+    actions.generateAction = generate;
+    renderConsumer(actions);
     choose();
     submit();
     await screen.findByRole("heading", { name: "Generated section" });
@@ -343,18 +590,18 @@ describe("Generate section consumer", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
   it("rejects an out-of-domain seed before invoking Node", () => {
-    const generate = vi.fn();
-    render(<GenerateSection choices={CHOICES} generateAction={generate} />);
+    const { actions } = renderConsumer();
     choose();
     fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "4294967296" } });
     submit();
-    expect(generate).not.toHaveBeenCalled();
+    expect(actions.generateAction).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toBeVisible();
   });
   it("has no detectable empty/ready accessibility violations", async () => {
+    const actions = makeActions();
     const { container } = render(
       <main>
-        <GenerateSection choices={CHOICES} generateAction={vi.fn().mockResolvedValue(PREVIEW)} />
+        <GenerateSection choices={CHOICES} {...actions} />
       </main>,
     );
     expect(

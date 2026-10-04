@@ -1,6 +1,11 @@
 import { getHarmonyTemplatesForProfile, HARMONY_PROFILE_IDS } from "../music-domain/harmony";
 import { GenerateSection } from "./generate-section";
-import { generateSectionAction } from "./generate-section-action";
+import {
+  generateSectionAction,
+  redoSectionEditAction,
+  setLeadPitchAction,
+  undoSectionEditAction,
+} from "./generate-section-action";
 
 export default function HomePage() {
   const choices = Object.values(HARMONY_PROFILE_IDS).map((profile) => ({
@@ -20,7 +25,13 @@ export default function HomePage() {
         </p>
       </section>
 
-      <GenerateSection choices={choices} generateAction={generateSectionAction} />
+      <GenerateSection
+        choices={choices}
+        generateAction={generateSectionAction}
+        setLeadPitchAction={setLeadPitchAction}
+        undoSectionEditAction={undoSectionEditAction}
+        redoSectionEditAction={redoSectionEditAction}
+      />
     </main>
   );
 }
