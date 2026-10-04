@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   COMPLETE_SECTION_ENGINE_VERSION_V1,
@@ -5,10 +6,13 @@ import {
   COMPLETE_SECTION_REQUEST_SCHEMA_V1,
 } from "../composition/complete-section";
 import {
+  createChildEditorRevisionV1,
   EDITOR_COMMAND_SCHEMA_V1,
+  type EditorRevisionV1,
   type EditorValueError,
   importCompleteSectionAsEditorRootV1,
   serializeEditorRevisionV1,
+  verifyEditorRevisionV1,
 } from "../composition/editor-revision";
 import { generateCompleteSectionV1 } from "../generators/complete-section";
 import {
@@ -81,7 +85,7 @@ describe("M2 editor revisions", () => {
     );
     expect(Object.isFrozen(root.tracks[3]?.notes[0])).toBe(true);
     expect(importCompleteSectionAsEditorRootV1(source)).toEqual(root);
-    expect(serializeEditorRevisionV1(root)).toBe(JSON.stringify(root));
+    expect(serializeEditorRevisionV1(root, source, [])).toBe(JSON.stringify(root));
   });
 
   it("applies one Lead pitch command and preserves source, IDs, timing and other roles", async () => {
@@ -189,5 +193,74 @@ describe("M2 editor revisions", () => {
       } satisfies Partial<EditorValueError>),
     );
     expect(current.revisions).toHaveLength(1);
+  });
+});
+
+function rehash(revision: EditorRevisionV1): EditorRevisionV1 {
+  const { revisionHash: _old, ...content } = revision;
+  return {
+    ...content,
+    revisionHash: createHash("sha256")
+      .update(
+        JSON.stringify({ schema: "nightdrive.editor-revision-hash-input.v1", revision: content }),
+        "utf8",
+      )
+      .digest("hex"),
+  };
+}
+
+describe("authoritative source and lineage verification", () => {
+  it("rejects a self-consistent forged root at every canonical boundary", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = importCompleteSectionAsEditorRootV1(source);
+    const forged = structuredClone(root);
+    (forged.tracks[3]?.notes[0] as { pitch: number }).pitch = 76;
+    const recomputed = rehash(forged);
+    const command = {
+      schema: EDITOR_COMMAND_SCHEMA_V1,
+      type: "set-note-pitch" as const,
+      noteId: recomputed.tracks[3]?.notes[0]?.id as string,
+      expectedPitch: 76,
+      pitch: 77,
+    };
+    expect(() => verifyEditorRevisionV1(recomputed, source, [])).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_SOURCE_BINDING" }),
+    );
+    expect(() => serializeEditorRevisionV1(recomputed, source, [])).toThrow();
+    expect(() => createChildEditorRevisionV1(recomputed, command, source, [])).toThrow();
+    // Runtime callers cannot omit retained source despite a self-consistent digest.
+    expect(() => verifyEditorRevisionV1(recomputed, undefined as never, [])).toThrow();
+    expect(() => serializeEditorRevisionV1(recomputed, undefined as never, [])).toThrow();
+    expect(() =>
+      createChildEditorRevisionV1(recomputed, command, undefined as never, []),
+    ).toThrow();
+    expect(verifyEditorRevisionV1(root, source, [])).toEqual(root);
+  });
+
+  it("rejects a self-consistent child that differs from its recorded transition", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = importCompleteSectionAsEditorRootV1(source);
+    const target = root.tracks[3]?.notes[0];
+    if (!target) throw new Error("Missing Lead fixture.");
+    const command = {
+      schema: EDITOR_COMMAND_SCHEMA_V1,
+      type: "set-note-pitch" as const,
+      noteId: target.id,
+      expectedPitch: target.pitch,
+      pitch: 76,
+    };
+    const child = createChildEditorRevisionV1(root, command, source, []);
+    expect(verifyEditorRevisionV1(child, source, [root])).toEqual(child);
+    expect(serializeEditorRevisionV1(child, source, [root])).toBe(JSON.stringify(child));
+    const forged = structuredClone(child);
+    (forged.tracks[3]?.notes[1] as { pitch: number }).pitch = 78;
+    const recomputed = rehash(forged);
+    expect(() => verifyEditorRevisionV1(recomputed, source, [root])).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_LINEAGE" }),
+    );
+    expect(() => serializeEditorRevisionV1(recomputed, source, [root])).toThrow();
+    expect(() => createChildEditorRevisionV1(recomputed, command, source, [root])).toThrow();
+    expect(() => verifyEditorRevisionV1(child, source, [])).toThrow();
+    expect(() => verifyEditorRevisionV1(child, source, [root, root])).toThrow();
   });
 });

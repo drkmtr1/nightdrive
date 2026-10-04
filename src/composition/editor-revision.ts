@@ -263,7 +263,7 @@ export function validateSetNotePitchCommandV1(value: unknown): SetNotePitchComma
     pitch,
   });
 }
-export function verifyEditorRevisionV1(value: unknown): EditorRevisionV1 {
+function validateRevisionShapeV1(value: unknown): EditorRevisionV1 {
   const r = dataRecord(value, "revision", [
     "schema",
     "source",
@@ -413,14 +413,11 @@ export function verifyEditorRevisionV1(value: unknown): EditorRevisionV1 {
     fail("EDITOR_REVISION_HASH_MISMATCH", "revision.revisionHash", "Hash mismatch.");
   return deepFreeze({ ...base, revisionHash: revisionHashValue });
 }
-export function serializeEditorRevisionV1(revision: EditorRevisionV1): string {
-  return JSON.stringify(verifyEditorRevisionV1(revision));
-}
-export function createChildEditorRevisionV1(
+function transitionVerifiedRevisionV1(
   parent: EditorRevisionV1,
   command: SetNotePitchCommandV1,
 ): EditorRevisionV1 {
-  const p = verifyEditorRevisionV1(parent);
+  const p = parent;
   const c = validateSetNotePitchCommandV1(command);
   const lead = p.tracks[3];
   const index = lead.notes.findIndex((n) => n.id === c.noteId);
@@ -458,4 +455,78 @@ export function createChildEditorRevisionV1(
     parent: deepFreeze({ schema: EDITOR_REVISION_SCHEMA_V1, revisionHash: p.revisionHash }),
     command: c,
   });
+}
+
+/** Verifies source, root projection and every transition; shape/hash alone is never authority. */
+export function verifyEditorRevisionV1(
+  value: unknown,
+  source: CompleteSectionResultV1,
+  ancestry: readonly EditorRevisionV1[],
+): EditorRevisionV1 {
+  const verifiedSource = verifyCompleteSectionV1(source);
+  const ancestors = dense(ancestry, "revision.parent", "INVALID_EDITOR_LINEAGE");
+  const chain = [...ancestors, value].map(validateRevisionShapeV1);
+  const root = chain[0] as EditorRevisionV1;
+  const expectedRoot = importCompleteSectionAsEditorRootV1(verifiedSource);
+  if (root.source.resultHash !== verifiedSource.resultHash)
+    fail(
+      "INVALID_EDITOR_SOURCE_BINDING",
+      "revision.source",
+      "Source identity does not match retained source.",
+    );
+  if (root.parent !== null || root.command !== null)
+    fail("INVALID_EDITOR_LINEAGE", "revision.parent", "Complete root ancestry is required.");
+  if (JSON.stringify(root) !== JSON.stringify(expectedRoot))
+    fail(
+      "INVALID_EDITOR_SOURCE_BINDING",
+      "revision.source",
+      "Root does not match retained source projection.",
+    );
+  const identities = new Set([root.revisionHash]);
+  let parent = root;
+  for (const child of chain.slice(1)) {
+    if (child.source.resultHash !== verifiedSource.resultHash)
+      fail("INVALID_EDITOR_SOURCE_BINDING", "revision.source", "Ancestry source mismatch.");
+    if (
+      identities.has(child.revisionHash) ||
+      !child.parent ||
+      !child.command ||
+      child.parent.revisionHash !== parent.revisionHash
+    )
+      fail(
+        "INVALID_EDITOR_LINEAGE",
+        "revision.parent",
+        "Missing, repeated or mismatched ancestry.",
+      );
+    const expected = transitionVerifiedRevisionV1(
+      parent,
+      validateSetNotePitchCommandV1(child.command),
+    );
+    if (JSON.stringify(child) !== JSON.stringify(expected))
+      fail(
+        "INVALID_EDITOR_LINEAGE",
+        "revision.parent",
+        "Child is not its recorded parent/command transition.",
+      );
+    identities.add(child.revisionHash);
+    parent = child;
+  }
+  return parent;
+}
+
+export function serializeEditorRevisionV1(
+  revision: EditorRevisionV1,
+  source: CompleteSectionResultV1,
+  ancestry: readonly EditorRevisionV1[],
+): string {
+  return JSON.stringify(verifyEditorRevisionV1(revision, source, ancestry));
+}
+
+export function createChildEditorRevisionV1(
+  parent: EditorRevisionV1,
+  command: SetNotePitchCommandV1,
+  source: CompleteSectionResultV1,
+  ancestry: readonly EditorRevisionV1[],
+): EditorRevisionV1 {
+  return transitionVerifiedRevisionV1(verifyEditorRevisionV1(parent, source, ancestry), command);
 }

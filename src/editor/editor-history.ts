@@ -38,42 +38,9 @@ function verifyHistory(history: EditorHistoryV1): EditorHistoryV1 {
     history.cursor >= history.revisions.length
   )
     throw new EditorValueError("INVALID_EDITOR_REVISION", "history", "History is invalid.");
-  const revisions = history.revisions.map((revision) => verifyEditorRevisionV1(revision));
-  const root = revisions[0];
-  if (!root || root.parent !== null || root.source.resultHash !== source.resultHash)
-    throw new EditorValueError(
-      "INVALID_EDITOR_SOURCE_BINDING",
-      "history.revisions[0]",
-      "History root does not bind the source.",
-    );
-  const expectedRoot = importCompleteSectionAsEditorRootV1(source);
-  if (JSON.stringify(root) !== JSON.stringify(expectedRoot))
-    throw new EditorValueError(
-      "INVALID_EDITOR_SOURCE_BINDING",
-      "history.revisions[0]",
-      "History root does not match the verified source projection.",
-    );
-  for (let i = 1; i < revisions.length; i += 1) {
-    const child = revisions[i] as EditorRevisionV1;
-    const parent = revisions[i - 1] as EditorRevisionV1;
-    if (
-      !child.parent ||
-      !child.command ||
-      !same(child.parent, { schema: parent.schema, revisionHash: parent.revisionHash })
-    )
-      throw new EditorValueError(
-        "INVALID_EDITOR_LINEAGE",
-        `history.revisions[${i}].parent`,
-        "History parent is invalid.",
-      );
-    const expectedChild = createChildEditorRevisionV1(parent, child.command);
-    if (JSON.stringify(child) !== JSON.stringify(expectedChild))
-      throw new EditorValueError(
-        "INVALID_EDITOR_LINEAGE",
-        `history.revisions[${i}]`,
-        "History child does not match its accepted command transition.",
-      );
-  }
+  const revisions = history.revisions.map((revision, index) =>
+    verifyEditorRevisionV1(revision, source, history.revisions.slice(0, index)),
+  );
   return freeze({ source, revisions: freeze(revisions), cursor: history.cursor });
 }
 export function createEditorHistoryV1(source: CompleteSectionResultV1): EditorHistoryV1 {
@@ -116,7 +83,12 @@ export function applyEditorCommandV1(
       "expectedParent.revisionHash",
       "Expected parent is stale.",
     );
-  const child = createChildEditorRevisionV1(parent, command);
+  const child = createChildEditorRevisionV1(
+    parent,
+    command,
+    checked.source,
+    checked.revisions.slice(0, checked.cursor),
+  );
   return freeze({
     source: checked.source,
     revisions: freeze([...checked.revisions.slice(0, checked.cursor + 1), child]),
