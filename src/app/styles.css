@@ -363,12 +363,17 @@ a {
 .timelineLane {
   position: relative;
   margin: 0;
-  padding: 0;
   min-width: 36rem;
   height: 3rem;
   overflow: hidden;
-  list-style: none;
   background: rgb(255 255 255 / 2%);
+}
+.timelineNotes {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .timelineBarLine {
   position: absolute;

@@ -33,8 +33,22 @@ describe("SectionTimeline", () => {
     expect(within(timeline).getByText("Bar 1")).toBeVisible();
     expect(within(timeline).getByText("Bar 8")).toBeVisible();
 
-    for (const role of ["Harmony", "Bass", "Arpeggiator", "Lead"])
+    const roles = ["Harmony", "Bass", "Arpeggiator", "Lead"];
+    for (const role of roles) {
       expect(within(timeline).getByRole("rowheader", { name: new RegExp(role) })).toBeVisible();
+      const noteList = within(timeline).getByRole("list", { name: `${role} note positions` });
+      expect(noteList.children).toHaveLength(1);
+      expect(Array.from(noteList.children).every((child) => child.tagName === "LI")).toBe(true);
+    }
+
+    const gridLayers = timeline.querySelectorAll(".timelineGrid");
+    expect(gridLayers).toHaveLength(4);
+    for (const grid of gridLayers) {
+      expect(grid).toHaveAttribute("aria-hidden", "true");
+      expect(grid.querySelectorAll(".timelineBarLine")).toHaveLength(9);
+      expect(grid.closest("ul")).toBeNull();
+      expect(grid.parentElement?.querySelector("ul.timelineNotes")).not.toBeNull();
+    }
 
     const harmonyNote = within(timeline).getByRole("listitem", {
       name: "Harmony note, MIDI pitch 64, start tick 3840, duration 1920 ticks",
