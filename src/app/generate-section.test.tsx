@@ -42,6 +42,7 @@ function makeEditorApplication(
   leadPitch = 60,
   includeChild = false,
   selectedCursor?: number,
+  leadStartTick?: number,
 ): EditorApplicationV1 {
   const roles = ["harmony", "bass", "arpeggiator", "lead"] as const;
   const rootTracks = roles.map((role, index) => ({
@@ -77,18 +78,31 @@ function makeEditorApplication(
       track.role === "lead"
         ? {
             ...track,
-            notes: track.notes.map((note) => ({ ...note, pitch: leadPitch })),
+            notes: track.notes.map((note) => ({
+              ...note,
+              pitch: leadPitch,
+              ...(leadStartTick === undefined ? {} : { startTick: leadStartTick }),
+            })),
           }
         : track,
     ),
     parent: { schema: root.schema, revisionHash: root.revisionHash },
-    command: {
-      schema: "nightdrive.editor-note-command.v1",
-      type: "set-note-pitch",
-      noteId: NOTE_ID,
-      expectedPitch: 60,
-      pitch: leadPitch,
-    },
+    command:
+      leadStartTick === undefined
+        ? {
+            schema: "nightdrive.editor-note-command.v1",
+            type: "set-note-pitch",
+            noteId: NOTE_ID,
+            expectedPitch: 60,
+            pitch: leadPitch,
+          }
+        : {
+            schema: "nightdrive.editor-note-command.v2",
+            type: "set-note-start-tick",
+            noteId: NOTE_ID,
+            expectedStartTick: 0,
+            startTick: leadStartTick,
+          },
     revisionHash: "c".repeat(64),
   } as unknown as EditorRevisionV1;
   const revisions = includeChild ? [root, child] : [root];
@@ -119,11 +133,14 @@ function makeEditorApplication(
 const ROOT_APPLICATION = makeEditorApplication();
 const EDITED_APPLICATION = makeEditorApplication(64, true);
 const UNDONE_APPLICATION = makeEditorApplication(64, true, 0);
+const MOVED_APPLICATION = makeEditorApplication(60, true, 1, 480);
+const MOVED_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, 480);
 
 function makeActions() {
   return {
     generateAction: vi.fn().mockResolvedValue(ROOT_APPLICATION),
     setLeadPitchAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
+    setLeadStartTickAction: vi.fn().mockResolvedValue(MOVED_APPLICATION),
     undoSectionEditAction: vi.fn().mockResolvedValue(UNDONE_APPLICATION),
     redoSectionEditAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
   };
@@ -315,6 +332,78 @@ describe("Generate section consumer", () => {
     });
     expect(actions.redoSectionEditAction).toHaveBeenCalledWith(UNDONE_APPLICATION);
     expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+  });
+  it("submits one absolute Lead start-tick command and restores the derived preview through undo and redo", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    const startTick = screen.getByLabelText("Absolute start tick");
+    expect(startTick).toHaveValue(0);
+    expect(screen.getByRole("button", { name: "Move Lead note" })).toBeDisabled();
+    fireEvent.change(startTick, { target: { value: "480" } });
+    expect(screen.getByRole("button", { name: "Move Lead note" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Move Lead note" }));
+
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 60, start tick 480, duration 960 ticks",
+    });
+    expect(actions.setLeadStartTickAction).toHaveBeenCalledTimes(1);
+    expect(actions.setLeadStartTickAction.mock.calls[0]).toEqual([
+      ROOT_APPLICATION,
+      ROOT_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v2",
+        type: "set-note-start-tick",
+        noteId: NOTE_ID,
+        expectedStartTick: 0,
+        startTick: 480,
+      },
+    ]);
+    expect(actions.generateAction).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Absolute start tick")).toHaveValue(480);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+
+    actions.undoSectionEditAction.mockResolvedValue(MOVED_UNDONE_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+    });
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(MOVED_APPLICATION);
+    expect(screen.getByRole("button", { name: "Redo" })).toBeEnabled();
+
+    actions.redoSectionEditAction.mockResolvedValue(MOVED_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 60, start tick 480, duration 960 ticks",
+    });
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(MOVED_UNDONE_APPLICATION);
+  });
+
+  it("stops the current audition when a validated start-tick revision becomes selected", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      renderConsumer();
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+
+      fireEvent.change(screen.getByLabelText("Absolute start tick"), {
+        target: { value: "480" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Move Lead note" }));
+      await screen.findByRole("listitem", {
+        name: "Lead note, MIDI pitch 60, start tick 480, duration 960 ticks",
+      });
+
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(audio.sources.every((source) => source.stop.mock.calls.length > 0)).toBe(true);
+    } finally {
+      audio.restore();
+    }
   });
   it("stops the current audition when a validated Lead revision becomes selected", async () => {
     const audio = installFakeAudioContext();

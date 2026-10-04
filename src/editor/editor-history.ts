@@ -4,11 +4,11 @@ import {
 } from "../composition/complete-section";
 import {
   createChildEditorRevisionV1,
+  type EditorNoteCommand,
   type EditorRevisionIdentityV1,
   type EditorRevisionV1,
   EditorValueError,
   importCompleteSectionAsEditorRootV1,
-  type SetNotePitchCommandV1,
   verifyEditorRevisionV1,
 } from "../composition/editor-revision";
 
@@ -67,7 +67,7 @@ export function redoEditorHistoryV1(history: EditorHistoryV1): EditorHistoryV1 |
 export function applyEditorCommandV1(
   history: EditorHistoryV1,
   expectedParent: EditorRevisionIdentityV1,
-  command: SetNotePitchCommandV1,
+  command: EditorNoteCommand,
 ): EditorHistoryV1 {
   const checked = verifyHistory(history);
   const parent = selected(checked);

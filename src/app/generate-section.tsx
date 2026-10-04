@@ -5,6 +5,7 @@ import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type {
   EditorRevisionIdentityV1,
   SetNotePitchCommandV1,
+  SetNoteStartTickCommandV2,
 } from "../composition/editor-revision";
 import type { HarmonyProfileId } from "../music-domain/harmony";
 import { createKey } from "../music-domain/key";
@@ -31,6 +32,11 @@ type Props = Readonly<{
     expectedParent: EditorRevisionIdentityV1,
     command: SetNotePitchCommandV1,
   ) => Promise<EditorApplicationV1>;
+  setLeadStartTickAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: SetNoteStartTickCommandV2,
+  ) => Promise<EditorApplicationV1>;
   undoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
   redoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
 }>;
@@ -52,6 +58,7 @@ export function GenerateSection({
   choices,
   generateAction,
   setLeadPitchAction,
+  setLeadStartTickAction,
   undoSectionEditAction,
   redoSectionEditAction,
 }: Props) {
@@ -60,6 +67,7 @@ export function GenerateSection({
   const [application, setApplication] = useState<EditorApplicationV1 | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [pitchValue, setPitchValue] = useState("");
+  const [startTickValue, setStartTickValue] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const [editorPending, setEditorPending] = useState(false);
@@ -113,6 +121,7 @@ export function GenerateSection({
     setApplication(next);
     setSelectedNoteId(selectedNote?.id ?? "");
     setPitchValue(selectedNote ? String(selectedNote.pitch) : "");
+    setStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -123,6 +132,7 @@ export function GenerateSection({
     setApplication(null);
     setSelectedNoteId("");
     setPitchValue("");
+    setStartTickValue("");
     setError("");
     const form = new FormData(event.currentTarget);
     const template = selected?.templates.find((item) => item.id === templateId);
@@ -258,6 +268,30 @@ export function GenerateSection({
     );
   }
 
+  function submitLeadStartTick(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    if (!/^\d+$/.test(startTickValue)) {
+      setError("Choose a whole start tick from 0 to 30719.");
+      return;
+    }
+    const startTick = Number(startTickValue);
+    if (!Number.isSafeInteger(startTick) || startTick < 0 || startTick >= 30720) {
+      setError("Choose a whole start tick from 0 to 30719.");
+      return;
+    }
+    const command: SetNoteStartTickCommandV2 = {
+      schema: "nightdrive.editor-note-command.v2",
+      type: "set-note-start-tick",
+      noteId: selectedLeadNote.id,
+      expectedStartTick: selectedLeadNote.startTick,
+      startTick,
+    };
+    void runEditorOperation((current) =>
+      setLeadStartTickAction(current, current.selectedRevision, command),
+    );
+  }
+
   return (
     <>
       <section className="statusPanel" aria-labelledby="generate-title">
@@ -271,6 +305,7 @@ export function GenerateSection({
             setApplication(null);
             setSelectedNoteId("");
             setPitchValue("");
+            setStartTickValue("");
             setError("");
           }}
           aria-busy={pending}
@@ -468,11 +503,8 @@ export function GenerateSection({
             </p>
           </section>
           <section aria-labelledby="lead-edit-title" className="editorControls">
-            <h3 id="lead-edit-title">Lead pitch correction</h3>
-            <p>
-              Choose one existing Lead note and set its MIDI pitch. This changes only that note;
-              timing and the other roles stay fixed.
-            </p>
+            <h3 id="lead-edit-title">Lead note correction</h3>
+            <p>Choose one existing Lead note to change its pitch or absolute start tick.</p>
             <form onSubmit={submitLeadPitch}>
               <label htmlFor="lead-note-choice">Lead note</label>
               <select
@@ -483,6 +515,7 @@ export function GenerateSection({
                   const note = leadNotes.find((item) => item.id === event.target.value);
                   setSelectedNoteId(event.target.value);
                   setPitchValue(note ? String(note.pitch) : "");
+                  setStartTickValue(note ? String(note.startTick) : "");
                   setError("");
                 }}
               >
@@ -520,6 +553,36 @@ export function GenerateSection({
                 }
               >
                 Apply Lead pitch
+              </button>
+            </form>
+            <form onSubmit={submitLeadStartTick}>
+              <label htmlFor="lead-note-start-tick">Absolute start tick</label>
+              <input
+                id="lead-note-start-tick"
+                type="number"
+                min="0"
+                max="30719"
+                step="1"
+                required
+                value={startTickValue}
+                disabled={!selectedLeadNote || editorPending}
+                onChange={(event) => {
+                  setStartTickValue(event.target.value);
+                  setError("");
+                }}
+              />
+              <button
+                type="submit"
+                disabled={
+                  !selectedLeadNote ||
+                  editorPending ||
+                  !/^\d+$/.test(startTickValue) ||
+                  Number(startTickValue) < 0 ||
+                  Number(startTickValue) >= 30720 ||
+                  Number(startTickValue) === selectedLeadNote?.startTick
+                }
+              >
+                Move Lead note
               </button>
             </form>
             <div className="editorHistoryControls">

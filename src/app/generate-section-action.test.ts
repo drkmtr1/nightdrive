@@ -6,6 +6,7 @@ import {
   generateSectionAction,
   redoSectionEditAction,
   setLeadPitchAction,
+  setLeadStartTickAction,
   undoSectionEditAction,
 } from "./generate-section-action";
 
@@ -78,6 +79,23 @@ describe("editor application server functions", () => {
     expect(undo).toHaveBeenCalledWith(current);
     expect(redo).toHaveBeenCalledTimes(1);
     expect(redo).toHaveBeenCalledWith(current);
+  });
+
+  it("passes the versioned start-tick command through the pinned Node boundary", async () => {
+    const current = { sentinel: "current" } as never;
+    const parent = { schema: "parent" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v2",
+      type: "set-note-start-tick",
+    } as never;
+    const next = { sentinel: "next" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationStartTickV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(setLeadStartTickAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });
 
   it("propagates edit failures without returning fallback state", async () => {

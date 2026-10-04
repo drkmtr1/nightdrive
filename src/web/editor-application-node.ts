@@ -4,6 +4,7 @@ import type {
   EditorRevisionIdentityV1,
   EditorRevisionV1,
   SetNotePitchCommandV1,
+  SetNoteStartTickCommandV2,
 } from "../composition/editor-revision";
 import {
   applyEditorCommandV1,
@@ -94,6 +95,16 @@ export function editEditorApplicationPitchV1(
   current: EditorApplicationV1,
   expectedParent: EditorRevisionIdentityV1,
   command: SetNotePitchCommandV1,
+): EditorApplicationV1 {
+  requirePinnedNode();
+  return application(applyEditorCommandV1(current.history, expectedParent, command));
+}
+
+/** Applies one validated Lead start-tick command and returns its derived audition view. */
+export function editEditorApplicationStartTickV1(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: SetNoteStartTickCommandV2,
 ): EditorApplicationV1 {
   requirePinnedNode();
   return application(applyEditorCommandV1(current.history, expectedParent, command));
