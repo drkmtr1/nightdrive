@@ -22,6 +22,7 @@ import { PRNG_ALGORITHM_ID } from "../music-domain/prng";
 import {
   createEditorApplicationV1,
   editEditorApplicationPitchV1,
+  editEditorApplicationStartTickV1,
   redoEditorApplicationV1,
   undoEditorApplicationV1,
 } from "./editor-application-node";
@@ -76,6 +77,9 @@ describe("M2 editor application boundary", () => {
     expect(() => createEditorApplicationV1(undefined as never)).toThrow("require Node");
     expect(() =>
       editEditorApplicationPitchV1(undefined as never, undefined as never, undefined as never),
+    ).toThrow("require Node");
+    expect(() =>
+      editEditorApplicationStartTickV1(undefined as never, undefined as never, undefined as never),
     ).toThrow("require Node");
     expect(() => undoEditorApplicationV1(undefined as never)).toThrow("require Node");
     expect(() => redoEditorApplicationV1(undefined as never)).toThrow("require Node");
@@ -188,6 +192,55 @@ describe("M2 editor application boundary", () => {
     expect(edited.selectedRevision.revisionHash).toBe(editedRevision.revisionHash);
   });
 
+  it("projects an edited absolute start tick from the verified revision while preserving source identity", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = createEditorApplicationV1(source);
+    const rootRevision = root.history.revisions[0];
+    const target = rootRevision?.tracks[3]?.notes[0];
+    if (!rootRevision || !target) throw new Error("Missing canonical Lead fixture.");
+    const movedStartTick = target.startTick + 1;
+
+    const moved = editEditorApplicationStartTickV1(root, root.selectedRevision, {
+      schema: "nightdrive.editor-note-command.v2",
+      type: "set-note-start-tick",
+      noteId: target.id,
+      expectedStartTick: target.startTick,
+      startTick: movedStartTick,
+    });
+    const movedRevision = moved.history.revisions[1];
+    const movedNote = movedRevision?.tracks[3]?.notes[0];
+    if (!movedRevision || !movedNote) throw new Error("Missing moved revision.");
+
+    expect(movedRevision.command).toEqual({
+      schema: "nightdrive.editor-note-command.v2",
+      type: "set-note-start-tick",
+      noteId: target.id,
+      expectedStartTick: target.startTick,
+      startTick: movedStartTick,
+    });
+    expect(movedNote).toEqual({ ...target, startTick: movedStartTick });
+    expect(moved.preview.tracks[3]?.notes[0]).toEqual({
+      pitch: target.pitch,
+      startTick: movedStartTick,
+      durationTicks: target.durationTicks,
+    });
+    expect(moved.preview.sourceResultHash).toBe(source.resultHash);
+    expect(moved.selectedRevision.revisionHash).toBe(movedRevision.revisionHash);
+    expect(moved.preview).not.toHaveProperty("revisionHash");
+    expect(deepFrozen(moved)).toBe(true);
+    expect(root.history.revisions[0]).toEqual(rootRevision);
+    expect(root.preview.tracks[3]?.notes[0]?.startTick).toBe(target.startTick);
+
+    const undone = undoEditorApplicationV1(moved);
+    if (!undone) throw new Error("Undo should restore the imported root.");
+    expect(undone.selectedRevision).toEqual(root.selectedRevision);
+    expect(undone.preview).toEqual(root.preview);
+    const redone = redoEditorApplicationV1(undone);
+    if (!redone) throw new Error("Redo should restore the moved revision.");
+    expect(redone.selectedRevision).toEqual(moved.selectedRevision);
+    expect(redone.preview).toEqual(moved.preview);
+  });
+
   it("reverifies retained history and ignores caller-supplied derived preview authority", async () => {
     const source = await generateCompleteSectionV1(request as never);
     const current = createEditorApplicationV1(source);
@@ -205,6 +258,15 @@ describe("M2 editor application boundary", () => {
       pitch: target.pitch === 84 ? 83 : 84,
     };
     expect(() => editEditorApplicationPitchV1(forged, current.selectedRevision, command)).toThrow();
+    expect(() =>
+      editEditorApplicationStartTickV1(forged, current.selectedRevision, {
+        schema: "nightdrive.editor-note-command.v2",
+        type: "set-note-start-tick",
+        noteId: target.id,
+        expectedStartTick: target.startTick,
+        startTick: target.startTick + 1,
+      }),
+    ).toThrow();
     const alteredView = structuredClone(current);
     (alteredView.preview.tracks[0]?.notes[0] as { pitch: number }).pitch = 0;
     const edited = editEditorApplicationPitchV1(alteredView, current.selectedRevision, command);
