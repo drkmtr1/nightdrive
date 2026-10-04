@@ -81,7 +81,7 @@ The command has exactly these ordered own-data fields:
 {"schema":"nightdrive.editor-note-command.v1","type":"set-note-pitch","noteId":"note-<64 lowercase hex>","expectedPitch":60,"pitch":61}
 ```
 
-Pitch numbers are illustrative; actual replacement must be in `60..84`. A command occurrence is identified by its exact schema/payload and the exact parent revision identity in the resulting child. No extra operation UUID or redundant command hash is stored.
+Pitch numbers are illustrative. Both `expectedPitch` and `pitch` must first be safe-integer MIDI values in `0..127`; replacement then passes the contextual global Lead check `60..84`. `noteId` must be exactly `note-` followed by 64 lowercase hexadecimal characters. The expected-parent envelope has exactly ordered fields `schema, revisionHash`, using the revision schema and 64 lowercase hexadecimal digest. A command occurrence is identified by its exact schema/payload and the exact parent revision identity in the resulting child. No extra operation UUID or redundant command hash is stored.
 
 The domain operation receives the retained full source result, a verified parent revision with its root/command ancestry available, an explicit expected parent `{schema, revisionHash}`, and one command. The expected parent must equal the currently selected verified revision identity. The application must reject a result that no longer owns the current selection; no stale asynchronous result can replace newer generation/history selection.
 
@@ -103,7 +103,7 @@ Codes/fields are: `UNSUPPORTED_EDITOR_REVISION_SCHEMA` / `revision.schema`; `INV
 
 Canonical paths use dot fields and zero-based `[index]` arrays. Within exact-shape/value verification use the canonical traversal order specified above. A syntactically valid command with an existing target in another role uses NOT_EDITABLE, not NOT_FOUND. Structural numeric failures precede contextual range checks. For revision roots/children, parent/command nullability must agree before traversing a child envelope.
 
-Reject unknown/missing fields, symbols, functions, accessors, custom prototypes, `toJSON` hooks, malformed arrays/identities and unsupported versions without executing caller code or silently omitting properties. Snapshot descriptors/own data before asynchronous verification/digest work. Canonical records require the declared own-property order; do not JSON-round-trip untrusted input. Rejections yield no revision, hash, partial tracks, history movement or source mutation. Boundary failures of the existing digest adapter reject without converting evidence unavailability into success.
+Reject unknown/missing fields, symbols, functions, accessors, custom prototypes, `toJSON` hooks, malformed arrays/identities and unsupported versions without executing caller code or silently omitting properties. Arrays must be dense ordinary arrays with own data at every index and no extra own keys besides indices and length; indexed accessors and sparse entries fail. Snapshot descriptors/own data before asynchronous verification/digest work. Canonical records require the declared own-property order; do not JSON-round-trip untrusted input. Rejections yield no revision, hash, partial tracks, history movement or source mutation. Boundary failures of the existing digest adapter reject without converting evidence unavailability into success.
 
 ## Canonical bytes and digest domains
 
