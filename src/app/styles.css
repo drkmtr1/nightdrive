@@ -312,3 +312,83 @@ a {
   text-align: left;
   border-bottom: 1px solid var(--color-border);
 }
+.sectionTimeline {
+  margin-block: var(--space-6);
+}
+.sectionTimeline h3 {
+  margin-bottom: var(--space-2);
+}
+.timelineViewport {
+  max-width: 100%;
+  margin-top: var(--space-4);
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+}
+.timelineTable {
+  width: 100%;
+  min-width: 46rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.timelineTable caption {
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+  text-align: left;
+}
+.timelineTable th,
+.timelineTable td {
+  padding: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  text-align: left;
+}
+.timelineTable thead th {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+.timelineTable tbody th {
+  width: 8rem;
+  color: var(--color-accent-strong);
+  vertical-align: middle;
+}
+.timelineBars {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  text-align: center;
+}
+.timelineBars span + span {
+  border-left: 1px solid var(--color-border);
+}
+.timelineLane {
+  position: relative;
+  margin: 0;
+  min-width: 36rem;
+  height: 3rem;
+  overflow: hidden;
+  background: rgb(255 255 255 / 2%);
+}
+.timelineNotes {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.timelineBarLine {
+  position: absolute;
+  z-index: 1;
+  inset-block: 0;
+  border-left: 1px solid var(--color-border);
+  pointer-events: none;
+}
+.timelineNote {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0.7rem;
+  border: 1px solid var(--color-accent-strong);
+  border-radius: 0.2rem;
+  background: var(--color-accent);
+  opacity: 0.82;
+  pointer-events: none;
+}

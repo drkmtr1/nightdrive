@@ -146,6 +146,17 @@ describe("Generate section consumer", () => {
     });
     for (const role of ["Harmony", "Bass", "Arpeggiator", "Lead"])
       expect(screen.getByRole("heading", { name: role })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Eight-bar note timeline" })).toBeVisible();
+    expect(
+      screen.getByRole("table", {
+        name: /four-role notes positioned across the generated eight-bar section/i,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("listitem", {
+        name: /Lead note, MIDI pitch 60, start tick 0, duration 960 ticks/i,
+      }),
+    ).toBeVisible();
     expect(screen.getAllByText("1 notes")).toHaveLength(4);
     expect(screen.getByRole("button", { name: "Play" })).toBeVisible();
     expect(screen.getByText(/internal composition preview/i)).toBeVisible();
