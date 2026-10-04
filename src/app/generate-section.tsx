@@ -2,12 +2,16 @@
 
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
+import type {
+  EditorRevisionIdentityV1,
+  SetNotePitchCommandV1,
+} from "../composition/editor-revision";
 import type { HarmonyProfileId } from "../music-domain/harmony";
 import { createKey } from "../music-domain/key";
 import { createTempoFromBpm } from "../music-domain/musical-time";
 import { createPitchClass } from "../music-domain/pitch";
 import type { ScaleType } from "../music-domain/scale";
-import type { CompleteSectionPreview } from "../web/complete-section-preview-node";
+import type { EditorApplicationV1 } from "../web/editor-application-node";
 import {
   type AuditionSnapshot,
   BrowserAudition,
@@ -21,7 +25,14 @@ export type GenerationChoice = Readonly<{
 }>;
 type Props = Readonly<{
   choices: readonly GenerationChoice[];
-  generateAction: (request: CompleteSectionRequestV1) => Promise<CompleteSectionPreview>;
+  generateAction: (request: CompleteSectionRequestV1) => Promise<EditorApplicationV1>;
+  setLeadPitchAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: SetNotePitchCommandV1,
+  ) => Promise<EditorApplicationV1>;
+  undoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
+  redoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
 }>;
 const ROLE_LABELS = { harmony: "Harmony", bass: "Bass", arpeggiator: "Arpeggiator", lead: "Lead" };
 
@@ -37,14 +48,25 @@ export function createBrowserAuditionDependencies(): BrowserAuditionDependencies
   };
 }
 
-export function GenerateSection({ choices, generateAction }: Props) {
+export function GenerateSection({
+  choices,
+  generateAction,
+  setLeadPitchAction,
+  undoSectionEditAction,
+  redoSectionEditAction,
+}: Props) {
   const [profile, setProfile] = useState("");
   const [templateId, setTemplateId] = useState("");
-  const [preview, setPreview] = useState<CompleteSectionPreview | null>(null);
+  const [application, setApplication] = useState<EditorApplicationV1 | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState("");
+  const [pitchValue, setPitchValue] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
+  const [editorPending, setEditorPending] = useState(false);
   const inFlight = useRef(false);
+  const editorInFlight = useRef(false);
   const generationEpoch = useRef(0);
+  const editorEpoch = useRef(0);
   const audition = useRef<BrowserAudition | null>(null);
   const [transport, setTransport] = useState<AuditionSnapshot | null>(null);
   const [muted, setMuted] = useState<Record<keyof typeof ROLE_LABELS, boolean>>({
@@ -56,6 +78,14 @@ export function GenerateSection({ choices, generateAction }: Props) {
   const [solo, setSolo] = useState<keyof typeof ROLE_LABELS | "">("");
   const [volume, setVolume] = useState("0.5");
   const selected = choices.find((choice) => choice.profile === profile);
+  const preview = application?.preview ?? null;
+  const selectedRevision = application?.history.revisions[application.history.cursor];
+  const leadNotes = selectedRevision?.tracks.find((track) => track.role === "lead")?.notes ?? [];
+  const selectedLeadNote =
+    leadNotes.find((note) => note.id === selectedNoteId) ?? leadNotes[0] ?? null;
+  const canUndo = application !== null && application.history.cursor > 0;
+  const canRedo =
+    application !== null && application.history.cursor < application.history.revisions.length - 1;
 
   useEffect(() => {
     const stopWhenHidden = () => {
@@ -76,11 +106,23 @@ export function GenerateSection({ choices, generateAction }: Props) {
     audition.current?.invalidate();
   }
 
+  function installApplication(next: EditorApplicationV1) {
+    const revision = next.history.revisions[next.history.cursor];
+    const notes = revision?.tracks.find((track) => track.role === "lead")?.notes ?? [];
+    const selectedNote = notes.find((note) => note.id === selectedNoteId) ?? notes[0];
+    setApplication(next);
+    setSelectedNoteId(selectedNote?.id ?? "");
+    setPitchValue(selectedNote ? String(selectedNote.pitch) : "");
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inFlight.current) return;
+    if (inFlight.current || editorInFlight.current) return;
     invalidatePlayback();
-    setPreview(null);
+    editorEpoch.current += 1;
+    setApplication(null);
+    setSelectedNoteId("");
+    setPitchValue("");
     setError("");
     const form = new FormData(event.currentTarget);
     const template = selected?.templates.find((item) => item.id === templateId);
@@ -156,7 +198,7 @@ export function GenerateSection({ choices, generateAction }: Props) {
     startTransition(async () => {
       try {
         const result = await generateAction(request);
-        if (generationEpoch.current === invocationEpoch) setPreview(result);
+        if (generationEpoch.current === invocationEpoch) installApplication(result);
       } catch {
         if (generationEpoch.current === invocationEpoch)
           setError(
@@ -168,6 +210,54 @@ export function GenerateSection({ choices, generateAction }: Props) {
     });
   }
 
+  async function runEditorOperation(
+    operation: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>,
+  ) {
+    if (!application || editorInFlight.current) return;
+    editorInFlight.current = true;
+    setEditorPending(true);
+    setError("");
+    const invocationEpoch = ++editorEpoch.current;
+    try {
+      const result = await operation(application);
+      if (editorEpoch.current !== invocationEpoch || result === null) return;
+      invalidatePlayback();
+      installApplication(result);
+    } catch {
+      if (editorEpoch.current === invocationEpoch)
+        setError(
+          "The Lead edit history could not be updated. The generated section remains unchanged.",
+        );
+    } finally {
+      editorInFlight.current = false;
+      setEditorPending(false);
+    }
+  }
+
+  function submitLeadPitch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    if (!/^\d+$/.test(pitchValue)) {
+      setError("Choose a whole MIDI pitch from 60 to 84.");
+      return;
+    }
+    const pitch = Number(pitchValue);
+    if (!Number.isSafeInteger(pitch) || pitch < 60 || pitch > 84) {
+      setError("Choose a whole MIDI pitch from 60 to 84.");
+      return;
+    }
+    const command: SetNotePitchCommandV1 = {
+      schema: "nightdrive.editor-note-command.v1",
+      type: "set-note-pitch",
+      noteId: selectedLeadNote.id,
+      expectedPitch: selectedLeadNote.pitch,
+      pitch,
+    };
+    void runEditorOperation((current) =>
+      setLeadPitchAction(current, current.selectedRevision, command),
+    );
+  }
+
   return (
     <>
       <section className="statusPanel" aria-labelledby="generate-title">
@@ -177,7 +267,10 @@ export function GenerateSection({ choices, generateAction }: Props) {
           onChange={() => {
             invalidatePlayback();
             generationEpoch.current += 1;
-            setPreview(null);
+            editorEpoch.current += 1;
+            setApplication(null);
+            setSelectedNoteId("");
+            setPitchValue("");
             setError("");
           }}
           aria-busy={pending}
@@ -263,7 +356,7 @@ export function GenerateSection({ choices, generateAction }: Props) {
                 ))}
               </select>
             </label>
-            <button type="submit" disabled={pending}>
+            <button type="submit" disabled={pending || editorPending}>
               {pending ? "Generating…" : "Generate"}
             </button>
           </fieldset>
@@ -278,11 +371,13 @@ export function GenerateSection({ choices, generateAction }: Props) {
         </p>
         {error ? <p role="alert">{error}</p> : null}
         <p role="status">
-          {pending
-            ? "Generating all four roles on Node…"
-            : preview
-              ? "Section generated. Four roles are ready to inspect."
-              : "Choose your inputs and Generate. No section is loaded."}
+          {editorPending
+            ? "Updating the Lead edit history on Node…"
+            : pending
+              ? "Generating all four roles on Node…"
+              : preview
+                ? "Section generated. Four roles are ready to inspect."
+                : "Choose your inputs and Generate. No section is loaded."}
         </p>
       </section>
       {preview ? (
@@ -370,6 +465,82 @@ export function GenerateSection({ choices, generateAction }: Props) {
             </fieldset>
             <p role="status">
               {transport?.message ?? "Press Play to audition the generated section."}
+            </p>
+          </section>
+          <section aria-labelledby="lead-edit-title" className="editorControls">
+            <h3 id="lead-edit-title">Lead pitch correction</h3>
+            <p>
+              Choose one existing Lead note and set its MIDI pitch. This changes only that note;
+              timing and the other roles stay fixed.
+            </p>
+            <form onSubmit={submitLeadPitch}>
+              <label htmlFor="lead-note-choice">Lead note</label>
+              <select
+                id="lead-note-choice"
+                value={selectedLeadNote?.id ?? ""}
+                disabled={leadNotes.length === 0 || editorPending}
+                onChange={(event) => {
+                  const note = leadNotes.find((item) => item.id === event.target.value);
+                  setSelectedNoteId(event.target.value);
+                  setPitchValue(note ? String(note.pitch) : "");
+                  setError("");
+                }}
+              >
+                {leadNotes.map((note, index) => (
+                  <option key={note.id} value={note.id}>
+                    Lead note {index + 1} · MIDI {note.pitch} · tick {note.startTick} · duration{" "}
+                    {note.durationTicks}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="lead-note-pitch">MIDI pitch (60–84)</label>
+              <input
+                id="lead-note-pitch"
+                type="number"
+                min="60"
+                max="84"
+                step="1"
+                required
+                value={pitchValue}
+                disabled={!selectedLeadNote || editorPending}
+                onChange={(event) => {
+                  setPitchValue(event.target.value);
+                  setError("");
+                }}
+              />
+              <button
+                type="submit"
+                disabled={
+                  !selectedLeadNote ||
+                  editorPending ||
+                  !/^\d+$/.test(pitchValue) ||
+                  Number(pitchValue) < 60 ||
+                  Number(pitchValue) > 84 ||
+                  Number(pitchValue) === selectedLeadNote?.pitch
+                }
+              >
+                Apply Lead pitch
+              </button>
+            </form>
+            <div className="editorHistoryControls">
+              <button
+                type="button"
+                disabled={!canUndo || editorPending}
+                onClick={() => void runEditorOperation(undoSectionEditAction)}
+              >
+                Undo
+              </button>
+              <button
+                type="button"
+                disabled={!canRedo || editorPending}
+                onClick={() => void runEditorOperation(redoSectionEditAction)}
+              >
+                Redo
+              </button>
+            </div>
+            <p role="status">
+              Editor revision {application ? application.history.cursor + 1 : 0} of{" "}
+              {application?.history.revisions.length ?? 0}.
             </p>
           </section>
           <SectionTimeline preview={preview} />

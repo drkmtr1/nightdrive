@@ -1,10 +1,48 @@
 "use server";
 
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
-import { generateCompleteSectionPreviewForAuditionV1 } from "../web/complete-section-preview-node";
+import type {
+  EditorRevisionIdentityV1,
+  SetNotePitchCommandV1,
+} from "../composition/editor-revision";
+import { generateCompleteSectionForAuditionV1 } from "../web/complete-section-node";
+import {
+  createEditorApplicationV1,
+  type EditorApplicationV1,
+  editEditorApplicationPitchV1,
+  redoEditorApplicationV1,
+  undoEditorApplicationV1,
+} from "../web/editor-application-node";
 
 // Browser arguments remain untrusted. The integrated Node operation performs
 // complete request/result validation; no browser validation is authoritative.
-export async function generateSectionAction(request: CompleteSectionRequestV1) {
-  return generateCompleteSectionPreviewForAuditionV1(request);
+// The same verified result becomes the retained editor source and derived view.
+export async function generateSectionAction(
+  request: CompleteSectionRequestV1,
+): Promise<EditorApplicationV1> {
+  const source = await generateCompleteSectionForAuditionV1(request);
+  return createEditorApplicationV1(source);
+}
+
+// These internal Server Actions carry validated plain data only. The Node
+// application boundary re-verifies the retained source and complete history
+// on every operation; browser-provided revision fields are not authority.
+export async function setLeadPitchAction(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: SetNotePitchCommandV1,
+): Promise<EditorApplicationV1> {
+  return editEditorApplicationPitchV1(current, expectedParent, command);
+}
+
+export async function undoSectionEditAction(
+  current: EditorApplicationV1,
+): Promise<EditorApplicationV1 | null> {
+  return undoEditorApplicationV1(current);
+}
+
+export async function redoSectionEditAction(
+  current: EditorApplicationV1,
+): Promise<EditorApplicationV1 | null> {
+  return redoEditorApplicationV1(current);
 }
