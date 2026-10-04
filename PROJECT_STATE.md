@@ -8,6 +8,8 @@ The Product Owner-directed product-first roadmap authority is binding. Milestone
 
 ## Current Milestone
 
+Milestone 2's read-only eight-bar timeline is integrated: all four roles, MIDI pitch, accessible note labels, and exact tick-derived position/duration are inspectable without changing canonical state. Note editing and undo/redo are not implemented or accepted by this inspection slice.
+
 Milestone 1's complete-section coordinator, verified Node adapter, derived four-role preview, browser Generate consumer, and audition transport are integrated. The Product Owner reports formative normal-desktop-Chrome observations: all four roles play together; Solo Lead plays Lead alone; Stop returns transport to stopped; Loop continues playback and Loop Off stops at the following section boundary; switching tabs stops playback without automatic resume; explicit Play works after returning; and Chrome reports no audition errors. These observations satisfy Milestone 1's functional producer objective. They do not establish quantitative AC-014 timing: the proposed <=20 ms foreground synchronization and ten-cycle no-drift evidence remain OPEN because no verified measurement path maps captured Chrome/system output to the scheduled AudioContext clock.
 
 ## Current Gate
@@ -33,7 +35,11 @@ Git refs establish current repository state. This snapshot is coordination only 
 
 ## Next Eligible Task
 
-Milestone 2 — Inspect and edit — is next. The first bounded product slice is a read-only eight-bar piano-roll/timeline projection of the existing validated `CompleteSectionPreview`, showing role, MIDI pitch, and tick-derived note position/duration. Keep the view derived-only; do not add canonical editing, revision mutation, save/persistence, or undo/redo in that slice. The accepted roadmap makes canonical domain/time and audition the M2 dependencies; the functional audition is available, while AC-014's quantitative timing gate remains open and must not be claimed. No persistence, authenticated project-generation API, database, AI, or formal Stage 8 qualification is part of this task.
+Milestone 2 — Inspect and edit — remains selected. Its read-only timeline slice is integrated. The next smallest bounded task is SPECIFY the canonical editor revision and note-command boundary needed for one explicit note correction and exact undo/redo, before editing implementation. Reuse the accepted musical primitives, complete-section source result, derived preview, and transport; preserve original generation results and provenance.
+
+The existing `CompleteSectionPreview` is explicitly noncanonical and its notes have no stable IDs, velocity, or command lineage. AC-015 requires exact prior/next canonical editor revisions, while `MUSIC_DOMAIN_MODEL.md` assigns stable event identity and provenance and `COMPOSITION_ENGINE.md` requires manual edits to create new revisions. ADR-022/023 preserve the Node-owned canonical boundary and require separately authorized review for editing/non-root lineage; browser audition grants no canonical-generation authority. These are specification prerequisites, not permission to mutate the preview or relax generated-result validation. Confirm the smallest revision schema, source/parent identity, command target identity, validation/error semantics, canonical ordering/hash ownership, and undo/redo behavior through applicable consequential review and acceptance before implementation.
+
+Do not add note editing, undo/redo runtime, persistence, authentication, database, AI, dependencies, formal Stage 8 qualification, or AC-014 timing infrastructure in this prerequisite task. AC-014 quantitative timing and S8-QUAL-002/003 remain OPEN with unchanged gates.
 
 ## Maintenance
 
