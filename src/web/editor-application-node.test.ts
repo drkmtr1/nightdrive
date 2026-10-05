@@ -21,6 +21,7 @@ import { MOTIF_GENERATOR_VERSION_V1 } from "../music-domain/motif-result";
 import { PRNG_ALGORITHM_ID } from "../music-domain/prng";
 import {
   createEditorApplicationV1,
+  editEditorApplicationDurationV1,
   editEditorApplicationPitchV1,
   editEditorApplicationStartTickV1,
   redoEditorApplicationV1,
@@ -80,6 +81,9 @@ describe("M2 editor application boundary", () => {
     ).toThrow("require Node");
     expect(() =>
       editEditorApplicationStartTickV1(undefined as never, undefined as never, undefined as never),
+    ).toThrow("require Node");
+    expect(() =>
+      editEditorApplicationDurationV1(undefined as never, undefined as never, undefined as never),
     ).toThrow("require Node");
     expect(() => undoEditorApplicationV1(undefined as never)).toThrow("require Node");
     expect(() => redoEditorApplicationV1(undefined as never)).toThrow("require Node");
@@ -241,6 +245,53 @@ describe("M2 editor application boundary", () => {
     expect(redone.preview).toEqual(moved.preview);
   });
 
+  it("projects an edited absolute duration and restores exact revisions through undo and redo", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = createEditorApplicationV1(source);
+    const rootRevision = root.history.revisions[0];
+    const target = rootRevision?.tracks[3]?.notes[0];
+    if (!rootRevision || !target) throw new Error("Missing canonical Lead fixture.");
+
+    const edited = editEditorApplicationDurationV1(root, root.selectedRevision, {
+      schema: "nightdrive.editor-note-command.v3",
+      type: "set-note-duration",
+      noteId: target.id,
+      expectedDurationTicks: target.durationTicks,
+      durationTicks: target.durationTicks + 480,
+    });
+    const child = edited.history.revisions[1];
+    const changed = child?.tracks[3]?.notes[0];
+    if (!child || !changed) throw new Error("Missing duration revision.");
+    expect(child.command).toEqual({
+      schema: "nightdrive.editor-note-command.v3",
+      type: "set-note-duration",
+      noteId: target.id,
+      expectedDurationTicks: target.durationTicks,
+      durationTicks: target.durationTicks + 480,
+    });
+    expect(changed).toEqual({ ...target, durationTicks: target.durationTicks + 480 });
+    expect(edited.preview.tracks[3]?.notes[0]).toEqual({
+      pitch: target.pitch,
+      startTick: target.startTick,
+      durationTicks: target.durationTicks + 480,
+    });
+    expect(edited.preview.sourceResultHash).toBe(source.resultHash);
+    expect(edited.selectedRevision.revisionHash).toBe(child.revisionHash);
+    expect(edited.preview).not.toHaveProperty("revisionHash");
+    expect(edited.preview.tracks.slice(0, 3)).toEqual(root.preview.tracks.slice(0, 3));
+    expect(root.preview.tracks[3]?.notes[0]?.durationTicks).toBe(target.durationTicks);
+    expect(deepFrozen(edited)).toBe(true);
+
+    const undone = undoEditorApplicationV1(edited);
+    if (!undone) throw new Error("Undo should restore the imported root.");
+    expect(undone.selectedRevision).toEqual(root.selectedRevision);
+    expect(undone.preview).toEqual(root.preview);
+    const redone = redoEditorApplicationV1(undone);
+    if (!redone) throw new Error("Redo should restore the duration revision.");
+    expect(redone.selectedRevision).toEqual(edited.selectedRevision);
+    expect(redone.preview).toEqual(edited.preview);
+  });
+
   it("reverifies retained history and ignores caller-supplied derived preview authority", async () => {
     const source = await generateCompleteSectionV1(request as never);
     const current = createEditorApplicationV1(source);
@@ -265,6 +316,15 @@ describe("M2 editor application boundary", () => {
         noteId: target.id,
         expectedStartTick: target.startTick,
         startTick: target.startTick + 1,
+      }),
+    ).toThrow();
+    expect(() =>
+      editEditorApplicationDurationV1(forged, current.selectedRevision, {
+        schema: "nightdrive.editor-note-command.v3",
+        type: "set-note-duration",
+        noteId: target.id,
+        expectedDurationTicks: target.durationTicks,
+        durationTicks: target.durationTicks + 120,
       }),
     ).toThrow();
     const alteredView = structuredClone(current);

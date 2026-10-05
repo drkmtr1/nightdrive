@@ -11,8 +11,10 @@ export const EDITOR_REVISION_HASH_INPUT_SCHEMA_V1 =
 export const EDITOR_NOTE_ID_INPUT_SCHEMA_V1 = "nightdrive.editor-note-id-input.v1" as const;
 export const EDITOR_COMMAND_SCHEMA_V1 = "nightdrive.editor-note-command.v1" as const;
 export const EDITOR_COMMAND_SCHEMA_V2 = "nightdrive.editor-note-command.v2" as const;
+export const EDITOR_COMMAND_SCHEMA_V3 = "nightdrive.editor-note-command.v3" as const;
 export const SET_NOTE_PITCH_COMMAND_V1 = "set-note-pitch" as const;
 export const SET_NOTE_START_TICK_COMMAND_V2 = "set-note-start-tick" as const;
+export const SET_NOTE_DURATION_COMMAND_V3 = "set-note-duration" as const;
 const ROLES = ["harmony", "bass", "arpeggiator", "lead"] as const;
 type EditorRole = (typeof ROLES)[number];
 const HASH = /^[0-9a-f]{64}$/u;
@@ -43,7 +45,17 @@ export type SetNoteStartTickCommandV2 = Readonly<{
   expectedStartTick: number;
   startTick: number;
 }>;
-export type EditorNoteCommand = SetNotePitchCommandV1 | SetNoteStartTickCommandV2;
+export type SetNoteDurationCommandV3 = Readonly<{
+  schema: typeof EDITOR_COMMAND_SCHEMA_V3;
+  type: typeof SET_NOTE_DURATION_COMMAND_V3;
+  noteId: string;
+  expectedDurationTicks: number;
+  durationTicks: number;
+}>;
+export type EditorNoteCommand =
+  | SetNotePitchCommandV1
+  | SetNoteStartTickCommandV2
+  | SetNoteDurationCommandV3;
 export type EditorRevisionV1 = Readonly<{
   schema: typeof EDITOR_REVISION_SCHEMA_V1;
   source: Readonly<{ schema: typeof COMPLETE_SECTION_RESULT_SCHEMA_V1; resultHash: string }>;
@@ -76,6 +88,7 @@ export type EditorErrorCode =
   | "EDITOR_LEAD_PITCH_OUT_OF_RANGE"
   | "EDITOR_NOTE_START_OUT_OF_RANGE"
   | "EDITOR_NOTE_START_ORDER_INVALID"
+  | "EDITOR_NOTE_DURATION_OUT_OF_RANGE"
   | "NO_OP_EDITOR_COMMAND";
 export class EditorValueError extends RangeError {
   constructor(
@@ -303,6 +316,44 @@ export function validateSetNoteStartTickCommandV2(value: unknown): SetNoteStartT
     startTick,
   });
 }
+export function validateSetNoteDurationCommandV3(value: unknown): SetNoteDurationCommandV3 {
+  const c = dataRecord(
+    value,
+    "command",
+    ["schema", "type", "noteId", "expectedDurationTicks", "durationTicks"],
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (read(c, "schema") !== EDITOR_COMMAND_SCHEMA_V3)
+    fail("UNSUPPORTED_EDITOR_COMMAND_SCHEMA", "command.schema", "Unsupported command schema.");
+  if (read(c, "type") !== SET_NOTE_DURATION_COMMAND_V3)
+    fail("UNSUPPORTED_EDITOR_COMMAND_TYPE", "command.type", "Unsupported command type.");
+  const noteId = read(c, "noteId");
+  if (typeof noteId !== "string" || !NOTE_ID.test(noteId))
+    fail("INVALID_EDITOR_COMMAND", "command.noteId", "Invalid note ID.");
+  const expectedDurationTicks = int(
+    read(c, "expectedDurationTicks"),
+    "command.expectedDurationTicks",
+    "INVALID_EDITOR_COMMAND",
+  );
+  const durationTicks = int(
+    read(c, "durationTicks"),
+    "command.durationTicks",
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (expectedDurationTicks < 1)
+    fail(
+      "INVALID_EDITOR_COMMAND",
+      "command.expectedDurationTicks",
+      "Expected duration must be positive.",
+    );
+  return deepFreeze({
+    schema: EDITOR_COMMAND_SCHEMA_V3,
+    type: SET_NOTE_DURATION_COMMAND_V3,
+    noteId: noteId as string,
+    expectedDurationTicks,
+    durationTicks,
+  });
+}
 function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
   if (
     typeof value !== "object" ||
@@ -329,6 +380,7 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
     );
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V1) return validateSetNotePitchCommandV1(value);
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V2) return validateSetNoteStartTickCommandV2(value);
+  if (schemaValue === EDITOR_COMMAND_SCHEMA_V3) return validateSetNoteDurationCommandV3(value);
   const names = Object.getOwnPropertyNames(value);
   if (
     names.length === 5 &&
@@ -348,6 +400,15 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
     names[4] === "startTick"
   )
     return validateSetNoteStartTickCommandV2(value);
+  if (
+    names.length === 5 &&
+    names[0] === "schema" &&
+    names[1] === "type" &&
+    names[2] === "noteId" &&
+    names[3] === "expectedDurationTicks" &&
+    names[4] === "durationTicks"
+  )
+    return validateSetNoteDurationCommandV3(value);
   return fail("INVALID_EDITOR_COMMAND", "command", "Invalid command fields or field order.");
 }
 function validateRevisionShapeV1(value: unknown): EditorRevisionV1 {
@@ -523,7 +584,7 @@ function transitionVerifiedRevisionV1(
     if (c.pitch < 60 || c.pitch > 84)
       fail("EDITOR_LEAD_PITCH_OUT_OF_RANGE", "command.pitch", "Lead pitch must be 60..84.");
     if (c.pitch === old.pitch) fail("NO_OP_EDITOR_COMMAND", "command.pitch", "No-op command.");
-  } else {
+  } else if (c.type === SET_NOTE_START_TICK_COMMAND_V2) {
     if (old.startTick !== c.expectedStartTick)
       fail("STALE_EDITOR_NOTE_VALUE", "command.expectedStartTick", "Stale start tick.");
     if (
@@ -549,6 +610,17 @@ function transitionVerifiedRevisionV1(
       );
     if (c.startTick === old.startTick)
       fail("NO_OP_EDITOR_COMMAND", "command.startTick", "No-op command.");
+  } else {
+    if (old.durationTicks !== c.expectedDurationTicks)
+      fail("STALE_EDITOR_NOTE_VALUE", "command.expectedDurationTicks", "Stale duration.");
+    if (c.durationTicks < 1 || c.durationTicks > p.section.endTick - old.startTick)
+      fail(
+        "EDITOR_NOTE_DURATION_OUT_OF_RANGE",
+        "command.durationTicks",
+        "Lead note duration must remain positive and within the section.",
+      );
+    if (c.durationTicks === old.durationTicks)
+      fail("NO_OP_EDITOR_COMMAND", "command.durationTicks", "No-op command.");
   }
   const tracks = deepFreeze(
     p.tracks.map((t) =>
@@ -563,7 +635,9 @@ function transitionVerifiedRevisionV1(
                   : deepFreeze(
                       c.type === SET_NOTE_PITCH_COMMAND_V1
                         ? { ...n, pitch: c.pitch }
-                        : { ...n, startTick: c.startTick },
+                        : c.type === SET_NOTE_START_TICK_COMMAND_V2
+                          ? { ...n, startTick: c.startTick }
+                          : { ...n, durationTicks: c.durationTicks },
                     ),
               ),
             ),

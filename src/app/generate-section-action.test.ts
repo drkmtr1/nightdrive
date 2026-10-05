@@ -5,6 +5,7 @@ import * as editorApplication from "../web/editor-application-node";
 import {
   generateSectionAction,
   redoSectionEditAction,
+  setLeadDurationAction,
   setLeadPitchAction,
   setLeadStartTickAction,
   undoSectionEditAction,
@@ -94,6 +95,23 @@ describe("editor application server functions", () => {
       .mockReturnValueOnce(next as never);
 
     await expect(setLeadStartTickAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
+  it("passes the versioned duration command through the pinned Node boundary", async () => {
+    const current = { sentinel: "current" } as never;
+    const parent = { schema: "parent" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v3",
+      type: "set-note-duration",
+    } as never;
+    const next = { sentinel: "next" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationDurationV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(setLeadDurationAction(current, parent, command)).resolves.toBe(next);
     expect(edit).toHaveBeenCalledTimes(1);
     expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });
