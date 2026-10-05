@@ -5,6 +5,7 @@ import {
   generateSectionAction,
   redoSectionEditAction,
   setLeadDurationAction,
+  setLeadPositionAction,
   setLeadPitchAction,
   setLeadStartTickAction,
   undoSectionEditAction,
@@ -33,6 +34,7 @@ export default function HomePage() {
         generateAction={generateSectionAction}
         deleteLeadNoteAction={deleteLeadNoteAction}
         setLeadPitchAction={setLeadPitchAction}
+        setLeadPositionAction={setLeadPositionAction}
         setLeadDurationAction={setLeadDurationAction}
         setLeadStartTickAction={setLeadStartTickAction}
         undoSectionEditAction={undoSectionEditAction}

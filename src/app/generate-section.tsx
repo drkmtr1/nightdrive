@@ -7,6 +7,7 @@ import type {
   EditorRevisionIdentityV1,
   SetNoteDurationCommandV3,
   SetNotePitchCommandV1,
+  SetNotePositionCommandV5,
   SetNoteStartTickCommandV2,
 } from "../composition/editor-revision";
 import type { HarmonyProfileId } from "../music-domain/harmony";
@@ -20,6 +21,7 @@ import {
   BrowserAudition,
   type BrowserAuditionDependencies,
 } from "./browser-audition";
+import { LeadNotePianoRoll } from "./lead-note-piano-roll";
 import { SectionTimeline } from "./section-timeline";
 
 export type GenerationChoice = Readonly<{
@@ -38,6 +40,11 @@ type Props = Readonly<{
     current: EditorApplicationV1,
     expectedParent: EditorRevisionIdentityV1,
     command: SetNoteStartTickCommandV2,
+  ) => Promise<EditorApplicationV1>;
+  setLeadPositionAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: SetNotePositionCommandV5,
   ) => Promise<EditorApplicationV1>;
   setLeadDurationAction: (
     current: EditorApplicationV1,
@@ -71,6 +78,7 @@ export function GenerateSection({
   generateAction,
   setLeadPitchAction,
   setLeadStartTickAction,
+  setLeadPositionAction,
   setLeadDurationAction,
   deleteLeadNoteAction,
   undoSectionEditAction,
@@ -82,6 +90,8 @@ export function GenerateSection({
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [pitchValue, setPitchValue] = useState("");
   const [startTickValue, setStartTickValue] = useState("");
+  const [positionPitchValue, setPositionPitchValue] = useState("");
+  const [positionStartTickValue, setPositionStartTickValue] = useState("");
   const [durationTicksValue, setDurationTicksValue] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
@@ -137,6 +147,8 @@ export function GenerateSection({
     setSelectedNoteId(selectedNote?.id ?? "");
     setPitchValue(selectedNote ? String(selectedNote.pitch) : "");
     setStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
+    setPositionPitchValue(selectedNote ? String(selectedNote.pitch) : "");
+    setPositionStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
     setDurationTicksValue(selectedNote ? String(selectedNote.durationTicks) : "");
   }
 
@@ -149,6 +161,8 @@ export function GenerateSection({
     setSelectedNoteId("");
     setPitchValue("");
     setStartTickValue("");
+    setPositionPitchValue("");
+    setPositionStartTickValue("");
     setDurationTicksValue("");
     setError("");
     const form = new FormData(event.currentTarget);
@@ -238,7 +252,9 @@ export function GenerateSection({
   }
 
   async function runEditorOperation(
-    operation: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>,
+    operation: (
+      current: EditorApplicationV1,
+    ) => EditorApplicationV1 | null | Promise<EditorApplicationV1 | null>,
   ) {
     if (!application || editorInFlight.current) return;
     editorInFlight.current = true;
@@ -309,6 +325,75 @@ export function GenerateSection({
     );
   }
 
+  function submitLeadPosition(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    if (!/^\d+$/.test(positionPitchValue)) {
+      setError("Choose a whole MIDI pitch from 60 to 84.");
+      return;
+    }
+    const pitch = Number(positionPitchValue);
+    if (!Number.isSafeInteger(pitch) || pitch < 60 || pitch > 84) {
+      setError("Choose a whole MIDI pitch from 60 to 84.");
+      return;
+    }
+    if (!/^\d+$/.test(positionStartTickValue)) {
+      setError("Choose a whole start tick from 0 to 30719.");
+      return;
+    }
+    const startTick = Number(positionStartTickValue);
+    if (!Number.isSafeInteger(startTick) || startTick < 0 || startTick >= 30_720) {
+      setError("Choose a whole start tick from 0 to 30719.");
+      return;
+    }
+    if (pitch === selectedLeadNote.pitch && startTick === selectedLeadNote.startTick) return;
+
+    const expectedParent = application.selectedRevision;
+    const command: SetNotePositionCommandV5 = {
+      schema: "nightdrive.editor-note-command.v5",
+      type: "set-note-position",
+      noteId: selectedLeadNote.id,
+      expectedPitch: selectedLeadNote.pitch,
+      expectedStartTick: selectedLeadNote.startTick,
+      pitch,
+      startTick,
+    };
+    void runEditorOperation((current) => {
+      if (
+        current.preview.sourceResultHash !== application.preview.sourceResultHash ||
+        current.selectedRevision.schema !== expectedParent.schema ||
+        current.selectedRevision.revisionHash !== expectedParent.revisionHash
+      )
+        return null;
+      return setLeadPositionAction(current, expectedParent, command);
+    });
+  }
+
+  function commitLeadPosition(request: {
+    sourceResultHash: string;
+    expectedParent: EditorRevisionIdentityV1;
+    command: SetNotePositionCommandV5;
+  }) {
+    if (
+      !application ||
+      editorInFlight.current ||
+      application.preview.sourceResultHash !== request.sourceResultHash ||
+      application.selectedRevision.schema !== request.expectedParent.schema ||
+      application.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+    )
+      return;
+
+    void runEditorOperation((current) => {
+      if (
+        current.preview.sourceResultHash !== request.sourceResultHash ||
+        current.selectedRevision.schema !== request.expectedParent.schema ||
+        current.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+      )
+        return null;
+      return setLeadPositionAction(current, request.expectedParent, request.command);
+    });
+  }
+
   function submitLeadDuration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!application || !selectedLeadNote || editorInFlight.current) return;
@@ -360,6 +445,8 @@ export function GenerateSection({
             setSelectedNoteId("");
             setPitchValue("");
             setStartTickValue("");
+            setPositionPitchValue("");
+            setPositionStartTickValue("");
             setDurationTicksValue("");
             setError("");
           }}
@@ -574,6 +661,8 @@ export function GenerateSection({
                   setSelectedNoteId(event.target.value);
                   setPitchValue(note ? String(note.pitch) : "");
                   setStartTickValue(note ? String(note.startTick) : "");
+                  setPositionPitchValue(note ? String(note.pitch) : "");
+                  setPositionStartTickValue(note ? String(note.startTick) : "");
                   setDurationTicksValue(note ? String(note.durationTicks) : "");
                   setError("");
                 }}
@@ -644,6 +733,60 @@ export function GenerateSection({
                 Move Lead note
               </button>
             </form>
+            <form onSubmit={submitLeadPosition}>
+              <fieldset disabled={!selectedLeadNote || editorPending}>
+                <legend>Move and pitch Lead note together</legend>
+                <label htmlFor="lead-note-position-pitch">Position MIDI pitch (60–84)</label>
+                <input
+                  id="lead-note-position-pitch"
+                  type="number"
+                  min="60"
+                  max="84"
+                  step="1"
+                  required
+                  value={positionPitchValue}
+                  disabled={!selectedLeadNote || editorPending}
+                  onChange={(event) => {
+                    setPositionPitchValue(event.target.value);
+                    setError("");
+                  }}
+                />
+                <label htmlFor="lead-note-position-start-tick">Position absolute start tick</label>
+                <input
+                  id="lead-note-position-start-tick"
+                  type="number"
+                  min="0"
+                  max="30719"
+                  step="1"
+                  required
+                  value={positionStartTickValue}
+                  disabled={!selectedLeadNote || editorPending}
+                  onChange={(event) => {
+                    setPositionStartTickValue(event.target.value);
+                    setError("");
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={
+                    !selectedLeadNote ||
+                    editorPending ||
+                    !/^\d+$/.test(positionPitchValue) ||
+                    !Number.isSafeInteger(Number(positionPitchValue)) ||
+                    Number(positionPitchValue) < 60 ||
+                    Number(positionPitchValue) > 84 ||
+                    !/^\d+$/.test(positionStartTickValue) ||
+                    !Number.isSafeInteger(Number(positionStartTickValue)) ||
+                    Number(positionStartTickValue) < 0 ||
+                    Number(positionStartTickValue) >= 30720 ||
+                    (Number(positionPitchValue) === selectedLeadNote?.pitch &&
+                      Number(positionStartTickValue) === selectedLeadNote?.startTick)
+                  }
+                >
+                  Apply Lead position
+                </button>
+              </fieldset>
+            </form>
             <form onSubmit={submitLeadDuration}>
               <label htmlFor="lead-note-duration">Absolute duration ticks</label>
               <input
@@ -704,6 +847,26 @@ export function GenerateSection({
             </p>
           </section>
           <SectionTimeline preview={preview} />
+          {application ? (
+            <LeadNotePianoRoll
+              sectionEndTick={preview.section.endTick}
+              notes={leadNotes}
+              selectedNoteId={selectedLeadNote?.id ?? ""}
+              sourceResultHash={preview.sourceResultHash}
+              parent={application.selectedRevision}
+              onSelectNote={(noteId) => {
+                const note = leadNotes.find((item) => item.id === noteId);
+                setSelectedNoteId(noteId);
+                setPitchValue(note ? String(note.pitch) : "");
+                setStartTickValue(note ? String(note.startTick) : "");
+                setPositionPitchValue(note ? String(note.pitch) : "");
+                setPositionStartTickValue(note ? String(note.startTick) : "");
+                setDurationTicksValue(note ? String(note.durationTicks) : "");
+                setError("");
+              }}
+              onCommitPosition={commitLeadPosition}
+            />
+          ) : null}
           <div className="previewRoles">
             {preview.tracks.map((track) => (
               <article key={track.role} aria-labelledby={`role-${track.role}`}>

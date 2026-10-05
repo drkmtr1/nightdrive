@@ -98,29 +98,39 @@ function makeEditorApplication(
           type: "delete-note",
           noteId: NOTE_ID,
         }
-      : leadStartTick !== undefined
+      : leadStartTick !== undefined && leadPitch !== 60
         ? {
-            schema: "nightdrive.editor-note-command.v2",
-            type: "set-note-start-tick",
+            schema: "nightdrive.editor-note-command.v5",
+            type: "set-note-position",
             noteId: NOTE_ID,
+            expectedPitch: 60,
             expectedStartTick: 0,
+            pitch: leadPitch,
             startTick: leadStartTick,
           }
-        : leadDurationTicks !== undefined
+        : leadStartTick !== undefined
           ? {
-              schema: "nightdrive.editor-note-command.v3",
-              type: "set-note-duration",
+              schema: "nightdrive.editor-note-command.v2",
+              type: "set-note-start-tick",
               noteId: NOTE_ID,
-              expectedDurationTicks: 960,
-              durationTicks: leadDurationTicks,
+              expectedStartTick: 0,
+              startTick: leadStartTick,
             }
-          : {
-              schema: "nightdrive.editor-note-command.v1",
-              type: "set-note-pitch",
-              noteId: NOTE_ID,
-              expectedPitch: 60,
-              pitch: leadPitch,
-            },
+          : leadDurationTicks !== undefined
+            ? {
+                schema: "nightdrive.editor-note-command.v3",
+                type: "set-note-duration",
+                noteId: NOTE_ID,
+                expectedDurationTicks: 960,
+                durationTicks: leadDurationTicks,
+              }
+            : {
+                schema: "nightdrive.editor-note-command.v1",
+                type: "set-note-pitch",
+                noteId: NOTE_ID,
+                expectedPitch: 60,
+                pitch: leadPitch,
+              },
     revisionHash: "c".repeat(64),
   } as unknown as EditorRevisionV1;
   const revisions = includeChild ? [root, child] : [root];
@@ -153,16 +163,57 @@ const EDITED_APPLICATION = makeEditorApplication(64, true);
 const UNDONE_APPLICATION = makeEditorApplication(64, true, 0);
 const MOVED_APPLICATION = makeEditorApplication(60, true, 1, 480);
 const MOVED_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, 480);
+const POSITION_APPLICATION = makeEditorApplication(64, true, 1, 480);
+const POSITION_UNDONE_APPLICATION = makeEditorApplication(64, true, 0, 480);
+const PITCH_POSITION_APPLICATION = makeEditorApplication(64, true, 1, 0);
 const DURATION_APPLICATION = makeEditorApplication(60, true, 1, undefined, 1440);
 const DURATION_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, 1440);
 const DELETED_APPLICATION = makeEditorApplication(60, true, 1, undefined, undefined, true);
 const DELETED_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, undefined, true);
+const OVERLAPPING_NOTE_ID = `note-${"f".repeat(64)}`;
+
+function makeOverlappingLeadApplication(): EditorApplicationV1 {
+  const existingRoot = ROOT_APPLICATION.history.revisions[0];
+  if (!existingRoot) throw new Error("Missing editor root fixture.");
+  const leadTrack = existingRoot.tracks.find((track) => track.role === "lead");
+  const existingNote = leadTrack?.notes[0];
+  if (!leadTrack || !existingNote) throw new Error("Missing Lead note fixture.");
+  const overlappingNote = { ...existingNote, id: OVERLAPPING_NOTE_ID };
+  const root = {
+    ...existingRoot,
+    revisionHash: "f".repeat(64),
+    tracks: existingRoot.tracks.map((track) =>
+      track.role === "lead" ? { ...track, notes: [...track.notes, overlappingNote] } : track,
+    ),
+  };
+  const previewTracks = ROOT_APPLICATION.preview.tracks.map((track) =>
+    track.role === "lead"
+      ? {
+          ...track,
+          notes: [
+            ...track.notes,
+            {
+              pitch: overlappingNote.pitch,
+              startTick: overlappingNote.startTick,
+              durationTicks: overlappingNote.durationTicks,
+            },
+          ],
+        }
+      : track,
+  );
+  return {
+    history: { ...ROOT_APPLICATION.history, revisions: [root], cursor: 0 },
+    selectedRevision: { schema: root.schema, revisionHash: root.revisionHash },
+    preview: { ...ROOT_APPLICATION.preview, tracks: previewTracks },
+  };
+}
 
 function makeActions() {
   return {
     generateAction: vi.fn().mockResolvedValue(ROOT_APPLICATION),
     setLeadPitchAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
     setLeadStartTickAction: vi.fn().mockResolvedValue(MOVED_APPLICATION),
+    setLeadPositionAction: vi.fn().mockResolvedValue(POSITION_APPLICATION),
     setLeadDurationAction: vi.fn().mockResolvedValue(DURATION_APPLICATION),
     deleteLeadNoteAction: vi.fn().mockResolvedValue(DELETED_APPLICATION),
     undoSectionEditAction: vi.fn().mockResolvedValue(UNDONE_APPLICATION),
@@ -291,11 +342,14 @@ describe("Generate section consumer", () => {
     for (const role of ["Harmony", "Bass", "Arpeggiator", "Lead"])
       expect(screen.getByRole("heading", { name: role })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Eight-bar note timeline" })).toBeVisible();
+    const timeline = screen.getByRole("table", {
+      name: /four-role notes positioned across the generated eight-bar section/i,
+    });
+    expect(timeline).toBeVisible();
+    const pianoRollHeading = screen.getByRole("heading", { name: "Lead piano roll" });
     expect(
-      screen.getByRole("table", {
-        name: /four-role notes positioned across the generated eight-bar section/i,
-      }),
-    ).toBeVisible();
+      timeline.compareDocumentPosition(pianoRollHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       screen.getByRole("listitem", {
         name: /Lead note, MIDI pitch 60, start tick 0, duration 960 ticks/i,
@@ -403,6 +457,192 @@ describe("Generate section consumer", () => {
       name: "Lead note, MIDI pitch 60, start tick 480, duration 960 ticks",
     });
     expect(actions.redoSectionEditAction).toHaveBeenCalledWith(MOVED_UNDONE_APPLICATION);
+  });
+
+  it("applies paired Lead position fields with one v5 command and restores the exact revision through undo and redo", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.change(screen.getByLabelText("Position MIDI pitch (60–84)"), {
+      target: { value: "64" },
+    });
+    fireEvent.change(screen.getByLabelText("Position absolute start tick"), {
+      target: { value: "480" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Lead position" }));
+
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 64, start tick 480, duration 960 ticks",
+    });
+    expect(actions.setLeadPositionAction).toHaveBeenCalledTimes(1);
+    expect(actions.setLeadPositionAction.mock.calls[0]).toEqual([
+      ROOT_APPLICATION,
+      ROOT_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v5",
+        type: "set-note-position",
+        noteId: NOTE_ID,
+        expectedPitch: 60,
+        expectedStartTick: 0,
+        pitch: 64,
+        startTick: 480,
+      },
+    ]);
+    expect(actions.setLeadPitchAction).not.toHaveBeenCalled();
+    expect(actions.setLeadStartTickAction).not.toHaveBeenCalled();
+    expect(POSITION_APPLICATION.preview.sourceResultHash).toBe(PREVIEW.sourceResultHash);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+
+    actions.undoSectionEditAction.mockResolvedValueOnce(POSITION_UNDONE_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+    });
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(POSITION_APPLICATION);
+
+    actions.redoSectionEditAction.mockResolvedValueOnce(POSITION_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 64, start tick 480, duration 960 ticks",
+    });
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(POSITION_UNDONE_APPLICATION);
+  });
+
+  it("carries an unchanged paired position field and leaves the single-field controls independent", async () => {
+    const { actions } = renderConsumer();
+    actions.setLeadPositionAction.mockResolvedValueOnce(PITCH_POSITION_APPLICATION);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.change(screen.getByLabelText("Position MIDI pitch (60–84)"), {
+      target: { value: "64" },
+    });
+    expect(screen.getByRole("button", { name: "Apply Lead position" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Apply Lead position" }));
+
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.setLeadPositionAction.mock.calls[0]?.[2]).toEqual({
+      schema: "nightdrive.editor-note-command.v5",
+      type: "set-note-position",
+      noteId: NOTE_ID,
+      expectedPitch: 60,
+      expectedStartTick: 0,
+      pitch: 64,
+      startTick: 0,
+    });
+    expect(actions.setLeadPitchAction).not.toHaveBeenCalled();
+    expect(actions.setLeadStartTickAction).not.toHaveBeenCalled();
+  });
+
+  it("does not submit an unchanged paired position and preserves canonical state when v5 rejects", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    expect(screen.getByRole("button", { name: "Apply Lead position" })).toBeDisabled();
+    expect(actions.setLeadPositionAction).not.toHaveBeenCalled();
+
+    actions.setLeadPositionAction.mockRejectedValueOnce(new Error("private v5 failure"));
+    fireEvent.change(screen.getByLabelText("Position absolute start tick"), {
+      target: { value: "480" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Lead position" }));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(
+      "The Lead edit history could not be updated. The generated section remains unchanged.",
+    );
+    expect(alert).not.toHaveTextContent("private v5 failure");
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+    expect(actions.setLeadPositionAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps overlapping Lead notes individually reachable through the existing selector", async () => {
+    const actions = makeActions();
+    actions.generateAction.mockResolvedValueOnce(makeOverlappingLeadApplication());
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Lead piano roll" });
+
+    const selector = screen.getByRole("combobox", { name: "Lead note" });
+    expect(selector.querySelectorAll("option")).toHaveLength(2);
+    expect(
+      screen.getAllByRole("button", { name: /Lead note [12], MIDI pitch 60, start tick 0/ }),
+    ).toHaveLength(2);
+
+    fireEvent.change(selector, { target: { value: OVERLAPPING_NOTE_ID } });
+    expect(selector).toHaveValue(OVERLAPPING_NOTE_ID);
+    expect(screen.getByLabelText("Position MIDI pitch (60–84)")).toHaveValue(60);
+    expect(screen.getByLabelText("Position absolute start tick")).toHaveValue(0);
+    expect(actions.setLeadPositionAction).not.toHaveBeenCalled();
+  });
+
+  it("submits one v5 command from an activated piano-roll drag only when the pointer is released", async () => {
+    const positionApplication = makeEditorApplication(65, true, 1, 1_267);
+    const actions = makeActions();
+    actions.setLeadPositionAction.mockResolvedValueOnce(positionApplication);
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Lead piano roll" });
+
+    const plot = screen.getByTestId("lead-piano-roll-plot");
+    Object.defineProperty(plot, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        width: 1_000,
+        height: 500,
+        top: 0,
+        right: 1_000,
+        bottom: 500,
+        left: 0,
+        toJSON: () => ({}),
+      }),
+    });
+    const note = screen.getByRole("button", {
+      name: "Lead note 1, MIDI pitch 60, start tick 0, duration 960 ticks",
+    });
+    fireEvent.pointerDown(note, {
+      pointerId: 2,
+      isPrimary: true,
+      button: 0,
+      clientX: 120,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(note, {
+      pointerId: 2,
+      isPrimary: true,
+      clientX: 130,
+      clientY: 80,
+    });
+    expect(actions.setLeadPositionAction).not.toHaveBeenCalled();
+    fireEvent.pointerUp(note, {
+      pointerId: 2,
+      isPrimary: true,
+      button: 0,
+      clientX: 130,
+      clientY: 80,
+    });
+
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.setLeadPositionAction).toHaveBeenCalledTimes(1);
+    expect(actions.setLeadPositionAction.mock.calls[0]?.[2]).toEqual({
+      schema: "nightdrive.editor-note-command.v5",
+      type: "set-note-position",
+      noteId: NOTE_ID,
+      expectedPitch: 60,
+      expectedStartTick: 0,
+      pitch: 61,
+      startTick: 307,
+    });
+    expect(actions.setLeadPitchAction).not.toHaveBeenCalled();
+    expect(actions.setLeadStartTickAction).not.toHaveBeenCalled();
   });
 
   it("submits one absolute Lead duration command, updates the derived preview, and restores revisions", async () => {

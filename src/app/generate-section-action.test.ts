@@ -8,6 +8,7 @@ import {
   redoSectionEditAction,
   setLeadDurationAction,
   setLeadPitchAction,
+  setLeadPositionAction,
   setLeadStartTickAction,
   undoSectionEditAction,
 } from "./generate-section-action";
@@ -96,6 +97,28 @@ describe("editor application server functions", () => {
       .mockReturnValueOnce(next as never);
 
     await expect(setLeadStartTickAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
+  it("passes the atomic v5 position command through the pinned Node boundary", async () => {
+    const current = { sentinel: "current" } as never;
+    const parent = { schema: "parent", revisionHash: "parent-hash" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v5",
+      type: "set-note-position",
+      noteId: "stable-note-id",
+      expectedPitch: 60,
+      expectedStartTick: 0,
+      pitch: 64,
+      startTick: 480,
+    } as never;
+    const next = { sentinel: "next" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationPositionV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(setLeadPositionAction(current, parent, command)).resolves.toBe(next);
     expect(edit).toHaveBeenCalledTimes(1);
     expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });
