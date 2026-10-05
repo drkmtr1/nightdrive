@@ -13,10 +13,12 @@ export const EDITOR_COMMAND_SCHEMA_V1 = "nightdrive.editor-note-command.v1" as c
 export const EDITOR_COMMAND_SCHEMA_V2 = "nightdrive.editor-note-command.v2" as const;
 export const EDITOR_COMMAND_SCHEMA_V3 = "nightdrive.editor-note-command.v3" as const;
 export const EDITOR_COMMAND_SCHEMA_V4 = "nightdrive.editor-note-command.v4" as const;
+export const EDITOR_COMMAND_SCHEMA_V5 = "nightdrive.editor-note-command.v5" as const;
 export const SET_NOTE_PITCH_COMMAND_V1 = "set-note-pitch" as const;
 export const SET_NOTE_START_TICK_COMMAND_V2 = "set-note-start-tick" as const;
 export const SET_NOTE_DURATION_COMMAND_V3 = "set-note-duration" as const;
 export const DELETE_NOTE_COMMAND_V4 = "delete-note" as const;
+export const SET_NOTE_POSITION_COMMAND_V5 = "set-note-position" as const;
 const ROLES = ["harmony", "bass", "arpeggiator", "lead"] as const;
 type EditorRole = (typeof ROLES)[number];
 const HASH = /^[0-9a-f]{64}$/u;
@@ -59,11 +61,21 @@ export type DeleteNoteCommandV4 = Readonly<{
   type: typeof DELETE_NOTE_COMMAND_V4;
   noteId: string;
 }>;
+export type SetNotePositionCommandV5 = Readonly<{
+  schema: typeof EDITOR_COMMAND_SCHEMA_V5;
+  type: typeof SET_NOTE_POSITION_COMMAND_V5;
+  noteId: string;
+  expectedPitch: number;
+  expectedStartTick: number;
+  pitch: number;
+  startTick: number;
+}>;
 export type EditorNoteCommand =
   | SetNotePitchCommandV1
   | SetNoteStartTickCommandV2
   | SetNoteDurationCommandV3
-  | DeleteNoteCommandV4;
+  | DeleteNoteCommandV4
+  | SetNotePositionCommandV5;
 export type EditorRevisionV1 = Readonly<{
   schema: typeof EDITOR_REVISION_SCHEMA_V1;
   source: Readonly<{ schema: typeof COMPLETE_SECTION_RESULT_SCHEMA_V1; resultHash: string }>;
@@ -386,6 +398,46 @@ export function validateSetNoteDurationCommandV3(value: unknown): SetNoteDuratio
     durationTicks,
   });
 }
+export function validateSetNotePositionCommandV5(value: unknown): SetNotePositionCommandV5 {
+  const c = dataRecord(
+    value,
+    "command",
+    ["schema", "type", "noteId", "expectedPitch", "expectedStartTick", "pitch", "startTick"],
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (read(c, "schema") !== EDITOR_COMMAND_SCHEMA_V5)
+    fail("UNSUPPORTED_EDITOR_COMMAND_SCHEMA", "command.schema", "Unsupported command schema.");
+  if (read(c, "type") !== SET_NOTE_POSITION_COMMAND_V5)
+    fail("UNSUPPORTED_EDITOR_COMMAND_TYPE", "command.type", "Unsupported command type.");
+  const noteId = read(c, "noteId");
+  if (typeof noteId !== "string" || !NOTE_ID.test(noteId))
+    fail("INVALID_EDITOR_COMMAND", "command.noteId", "Invalid note ID.");
+  const expectedPitch = int(
+    read(c, "expectedPitch"),
+    "command.expectedPitch",
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (expectedPitch < 0 || expectedPitch > 127)
+    fail("INVALID_EDITOR_COMMAND", "command.expectedPitch", "Pitch must be 0..127.");
+  const expectedStartTick = int(
+    read(c, "expectedStartTick"),
+    "command.expectedStartTick",
+    "INVALID_EDITOR_COMMAND",
+  );
+  const pitch = int(read(c, "pitch"), "command.pitch", "INVALID_EDITOR_COMMAND");
+  if (pitch < 0 || pitch > 127)
+    fail("INVALID_EDITOR_COMMAND", "command.pitch", "Pitch must be 0..127.");
+  const startTick = int(read(c, "startTick"), "command.startTick", "INVALID_EDITOR_COMMAND");
+  return deepFreeze({
+    schema: EDITOR_COMMAND_SCHEMA_V5,
+    type: SET_NOTE_POSITION_COMMAND_V5,
+    noteId: noteId as string,
+    expectedPitch,
+    expectedStartTick,
+    pitch,
+    startTick,
+  });
+}
 function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
   if (
     typeof value !== "object" ||
@@ -413,6 +465,7 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V1) return validateSetNotePitchCommandV1(value);
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V2) return validateSetNoteStartTickCommandV2(value);
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V3) return validateSetNoteDurationCommandV3(value);
+  if (schemaValue === EDITOR_COMMAND_SCHEMA_V5) return validateSetNotePositionCommandV5(value);
   const names = Object.getOwnPropertyNames(value);
   if (
     schemaValue === EDITOR_COMMAND_SCHEMA_V4 &&
@@ -449,6 +502,17 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
     names[4] === "durationTicks"
   )
     return validateSetNoteDurationCommandV3(value);
+  if (
+    names.length === 7 &&
+    names[0] === "schema" &&
+    names[1] === "type" &&
+    names[2] === "noteId" &&
+    names[3] === "expectedPitch" &&
+    names[4] === "expectedStartTick" &&
+    names[5] === "pitch" &&
+    names[6] === "startTick"
+  )
+    return validateSetNotePositionCommandV5(value);
   if (names.length === 3 && names[0] === "schema" && names[1] === "type" && names[2] === "noteId")
     return validateDeleteNoteCommandV4(value);
   return fail("INVALID_EDITOR_COMMAND", "command", "Invalid command fields or field order.");
@@ -630,6 +694,36 @@ function transitionVerifiedRevisionV1(
   const old = lead.notes[index] as EditorNoteV1;
   if (c.type === DELETE_NOTE_COMMAND_V4) {
     // Deletion has no old value or replacement; the verified target is its precondition.
+  } else if (c.type === SET_NOTE_POSITION_COMMAND_V5) {
+    if (old.pitch !== c.expectedPitch)
+      fail("STALE_EDITOR_NOTE_VALUE", "command.expectedPitch", "Stale pitch.");
+    if (old.startTick !== c.expectedStartTick)
+      fail("STALE_EDITOR_NOTE_VALUE", "command.expectedStartTick", "Stale start tick.");
+    if (c.pitch < 60 || c.pitch > 84)
+      fail("EDITOR_LEAD_PITCH_OUT_OF_RANGE", "command.pitch", "Lead pitch must be 60..84.");
+    if (
+      c.startTick < 0 ||
+      c.startTick >= p.section.endTick ||
+      c.startTick + old.durationTicks > p.section.endTick
+    )
+      fail(
+        "EDITOR_NOTE_START_OUT_OF_RANGE",
+        "command.startTick",
+        "Lead note start must remain within the section.",
+      );
+    const previous = lead.notes[index - 1];
+    const next = lead.notes[index + 1];
+    if (
+      (previous !== undefined && previous.startTick > c.startTick) ||
+      (next !== undefined && c.startTick > next.startTick)
+    )
+      fail(
+        "EDITOR_NOTE_START_ORDER_INVALID",
+        "command.startTick",
+        "Lead note order must remain unchanged.",
+      );
+    if (c.pitch === old.pitch && c.startTick === old.startTick)
+      fail("NO_OP_EDITOR_COMMAND", "command", "No-op command.");
   } else if (c.type === SET_NOTE_PITCH_COMMAND_V1) {
     if (old.pitch !== c.expectedPitch)
       fail("STALE_EDITOR_NOTE_VALUE", "command.expectedPitch", "Stale pitch.");
@@ -689,9 +783,11 @@ function transitionVerifiedRevisionV1(
                       : deepFreeze(
                           c.type === SET_NOTE_PITCH_COMMAND_V1
                             ? { ...n, pitch: c.pitch }
-                            : c.type === SET_NOTE_START_TICK_COMMAND_V2
-                              ? { ...n, startTick: c.startTick }
-                              : { ...n, durationTicks: c.durationTicks },
+                            : c.type === SET_NOTE_POSITION_COMMAND_V5
+                              ? { ...n, pitch: c.pitch, startTick: c.startTick }
+                              : c.type === SET_NOTE_START_TICK_COMMAND_V2
+                                ? { ...n, startTick: c.startTick }
+                                : { ...n, durationTicks: c.durationTicks },
                         ),
                   ),
             ),

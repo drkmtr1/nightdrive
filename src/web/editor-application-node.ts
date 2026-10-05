@@ -6,6 +6,7 @@ import type {
   EditorRevisionV1,
   SetNoteDurationCommandV3,
   SetNotePitchCommandV1,
+  SetNotePositionCommandV5,
   SetNoteStartTickCommandV2,
 } from "../composition/editor-revision";
 import {
@@ -127,6 +128,16 @@ export function editEditorApplicationDeleteNoteV1(
   current: EditorApplicationV1,
   expectedParent: EditorRevisionIdentityV1,
   command: DeleteNoteCommandV4,
+): EditorApplicationV1 {
+  requirePinnedNode();
+  return application(applyEditorCommandV1(current.history, expectedParent, command));
+}
+
+/** Applies one validated atomic Lead position command and returns its derived audition view. */
+export function editEditorApplicationPositionV1(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: SetNotePositionCommandV5,
 ): EditorApplicationV1 {
   requirePinnedNode();
   return application(applyEditorCommandV1(current.history, expectedParent, command));

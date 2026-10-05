@@ -8,11 +8,13 @@ import {
 import {
   createChildEditorRevisionV1,
   EDITOR_COMMAND_SCHEMA_V1,
+  EDITOR_COMMAND_SCHEMA_V5,
   type EditorRevisionV1,
   type EditorTrackV1,
   type EditorValueError,
   importCompleteSectionAsEditorRootV1,
   serializeEditorRevisionV1,
+  type SetNotePositionCommandV5,
   verifyEditorRevisionV1,
 } from "../composition/editor-revision";
 import { generateCompleteSectionV1 } from "../generators/complete-section";
@@ -212,6 +214,24 @@ function durationCommand(revision: EditorRevisionV1, noteIndex: number, duration
     durationTicks,
   };
 }
+function positionCommand(
+  revision: EditorRevisionV1,
+  noteIndex: number,
+  pitch: number,
+  startTick: number,
+): SetNotePositionCommandV5 {
+  const note = revision.tracks[3]?.notes[noteIndex];
+  if (!note) throw new Error("Missing Lead note fixture.");
+  return {
+    schema: EDITOR_COMMAND_SCHEMA_V5,
+    type: "set-note-position",
+    noteId: note.id,
+    expectedPitch: note.pitch,
+    expectedStartTick: note.startTick,
+    pitch,
+    startTick,
+  };
+}
 function sha256Utf8(value: string): string {
   return createHash("sha256").update(Buffer.from(value, "utf8")).digest("hex");
 }
@@ -403,6 +423,42 @@ function independentDurationChild(root: EditorRevisionV1): EditorRevisionV1 {
       noteId: target.id,
       expectedDurationTicks: 960,
       durationTicks: 1440,
+    },
+  };
+  return independentlyHashedRevision(content);
+}
+
+function independentPositionChild(
+  root: EditorRevisionV1,
+  targetIndex: number,
+  pitch: number,
+  startTick: number,
+): EditorRevisionV1 {
+  const target = root.tracks[3]?.notes[targetIndex];
+  if (!target) throw new Error("Missing independent Lead position fixture.");
+  const content: Omit<EditorRevisionV1, "revisionHash"> = {
+    schema: root.schema,
+    source: root.source,
+    section: root.section,
+    tracks: root.tracks.map((track) =>
+      track.role !== "lead"
+        ? track
+        : {
+            role: "lead",
+            notes: track.notes.map((note, index) =>
+              index === targetIndex ? { ...note, pitch, startTick } : note,
+            ),
+          },
+    ),
+    parent: { schema: root.schema, revisionHash: root.revisionHash },
+    command: {
+      schema: "nightdrive.editor-note-command.v5",
+      type: "set-note-position",
+      noteId: target.id,
+      expectedPitch: target.pitch,
+      expectedStartTick: target.startTick,
+      pitch,
+      startTick,
     },
   };
   return independentlyHashedRevision(content);
@@ -1697,3 +1753,452 @@ describe("M2 delete-note v4 canonical transition", () => {
     );
   });
 });
+
+describe("M2 set-note-position v5 canonical transition", () => {
+  const expectedCommandJson =
+    '{"schema":"nightdrive.editor-note-command.v5","type":"set-note-position","noteId":"note-853ab61d8567f96e2baeaeb213560536422465a0742b27bb4775fd65cfafad12","expectedPitch":75,"expectedStartTick":0,"pitch":76,"startTick":480}';
+
+  it("matches an independent root projection, exact command bytes, child bytes, and test-side SHA-256", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const original = await history();
+    const actualRoot = selectedEditorRevisionV1(original);
+    const expectedRoot = independentRootRevision();
+    const command = positionCommand(expectedRoot, 0, 76, 480);
+    const expectedChild = independentPositionChild(expectedRoot, 0, 76, 480);
+    const expectedChildJson = JSON.stringify(expectedChild);
+    const hashInput = independentRevisionHashInput(expectedChildJson);
+    const changed = applyEditorCommandV1(
+      original,
+      { schema: actualRoot.schema, revisionHash: actualRoot.revisionHash },
+      command,
+    );
+    const actualChild = selectedEditorRevisionV1(changed);
+    const actualChildJson = serializeEditorRevisionV1(
+      actualChild,
+      changed.source,
+      changed.revisions.slice(0, -1),
+    );
+
+    expect(source.resultHash).toBe(EXPECTED_START_TICK_SOURCE_HASH);
+    expect(actualRoot).toEqual(expectedRoot);
+    expect(JSON.stringify(command)).toBe(expectedCommandJson);
+    expect(Buffer.from(JSON.stringify(command), "utf8")).toEqual(
+      Buffer.from(expectedCommandJson, "utf8"),
+    );
+    expect(expectedChild.revisionHash).toBe(
+      "07c545d345f98532e7d85f73c392739691613081eb55792dade3d09c9feed695",
+    );
+    expect(sha256Utf8(hashInput)).toBe(
+      "07c545d345f98532e7d85f73c392739691613081eb55792dade3d09c9feed695",
+    );
+    expect(Buffer.byteLength(hashInput, "utf8")).toBe(12289);
+    expect(actualChild).toEqual(expectedChild);
+    expect(actualChildJson).toBe(expectedChildJson);
+    expect(Buffer.from(actualChildJson, "utf8")).toEqual(Buffer.from(expectedChildJson, "utf8"));
+    expect(verifyEditorRevisionV1(actualChild, source, [actualRoot])).toEqual(expectedChild);
+    expect(changed.revisions).toHaveLength(2);
+    expect(changed.cursor).toBe(1);
+  });
+
+  it("changes only the requested fields, preserves identity/order/state, and carries either unchanged axis", async () => {
+    const original = await history();
+    const root = selectedEditorRevisionV1(original);
+    const target = root.tracks[3]?.notes[0];
+    if (!target) throw new Error("Missing Lead position fixture.");
+    const scenarios = [
+      { pitch: target.pitch + 1, startTick: target.startTick },
+      { pitch: target.pitch, startTick: target.startTick + 480 },
+      { pitch: target.pitch + 1, startTick: target.startTick + 480 },
+    ];
+
+    for (const replacement of scenarios) {
+      const changed = applyEditorCommandV1(
+        original,
+        { schema: root.schema, revisionHash: root.revisionHash },
+        positionCommand(root, 0, replacement.pitch, replacement.startTick),
+      );
+      const child = selectedEditorRevisionV1(changed);
+      const nextLead = child.tracks[3]?.notes;
+      if (!nextLead) throw new Error("Missing changed Lead track.");
+      expect(changed.revisions).toHaveLength(2);
+      expect(child.command?.type).toBe("set-note-position");
+      expect(nextLead).toHaveLength(root.tracks[3]?.notes.length);
+      expect(nextLead.map((note) => note.id)).toEqual(root.tracks[3]?.notes.map((note) => note.id));
+      expect(nextLead[0]).toEqual({ ...target, ...replacement });
+      expect(nextLead.slice(1)).toEqual(root.tracks[3]?.notes.slice(1));
+      expect(child.tracks.slice(0, 3)).toEqual(root.tracks.slice(0, 3));
+      expect(child.source).toEqual(root.source);
+      expect(child.section).toEqual(root.section);
+      expect(recursivelyFrozen(child)).toBe(true);
+      expect(recursivelyFrozen(changed)).toBe(true);
+    }
+    expect(root.tracks[3]?.notes[0]).toEqual(target);
+    expect(original.revisions).toHaveLength(1);
+  });
+
+  it("restores the exact one-step parent/child and truncates redo only after a successful branch edit", async () => {
+    const original = await history();
+    const root = selectedEditorRevisionV1(original);
+    const target = root.tracks[3]?.notes[0];
+    if (!target) throw new Error("Missing history fixture.");
+    const first = applyEditorCommandV1(
+      original,
+      { schema: root.schema, revisionHash: root.revisionHash },
+      {
+        schema: "nightdrive.editor-note-command.v1",
+        type: "set-note-pitch",
+        noteId: target.id,
+        expectedPitch: target.pitch,
+        pitch: target.pitch - 1,
+      },
+    );
+    const firstRevision = selectedEditorRevisionV1(first);
+    const oldFuture = applyEditorCommandV1(
+      first,
+      { schema: firstRevision.schema, revisionHash: firstRevision.revisionHash },
+      {
+        schema: "nightdrive.editor-note-command.v2",
+        type: "set-note-start-tick",
+        noteId: target.id,
+        expectedStartTick: target.startTick,
+        startTick: 480,
+      },
+    );
+    const oldFutureRevision = selectedEditorRevisionV1(oldFuture);
+    const undone = undoEditorHistoryV1(oldFuture);
+    if (!undone) throw new Error("Undo should select the v1 parent.");
+    const selected = selectedEditorRevisionV1(undone);
+    const selectedTarget = selected.tracks[3]?.notes[0];
+    if (!selectedTarget) throw new Error("Missing selected Lead note.");
+    const noOp = positionCommand(selected, 0, selectedTarget.pitch, selectedTarget.startTick);
+    const beforeRejected = structuredClone(undone);
+
+    expect(() =>
+      applyEditorCommandV1(
+        undone,
+        { schema: selected.schema, revisionHash: selected.revisionHash },
+        noOp,
+      ),
+    ).toThrow(expect.objectContaining({ code: "NO_OP_EDITOR_COMMAND", field: "command" }));
+    expect(undone).toEqual(beforeRejected);
+    expect(redoEditorHistoryV1(undone)).toEqual(oldFuture);
+    expect(() =>
+      applyEditorCommandV1(
+        undone,
+        { schema: selected.schema, revisionHash: selected.revisionHash },
+        { ...noOp, expectedPitch: selectedTarget.pitch - 1 },
+      ),
+    ).toThrow(
+      expect.objectContaining({ code: "STALE_EDITOR_NOTE_VALUE", field: "command.expectedPitch" }),
+    );
+    expect(undone).toEqual(beforeRejected);
+    expect(redoEditorHistoryV1(undone)).toEqual(oldFuture);
+
+    const branch = applyEditorCommandV1(
+      undone,
+      { schema: selected.schema, revisionHash: selected.revisionHash },
+      positionCommand(selected, 0, (selected.tracks[3]?.notes[0]?.pitch ?? 0) + 1, 480),
+    );
+    const branchRevision = selectedEditorRevisionV1(branch);
+    expect(branch.revisions).toHaveLength(3);
+    expect(branch.cursor).toBe(2);
+    expect(branchRevision.parent?.revisionHash).toBe(selected.revisionHash);
+    expect(redoEditorHistoryV1(branch)).toBeNull();
+    const branchUndone = undoEditorHistoryV1(branch);
+    if (!branchUndone) throw new Error("Undo should return to the branch parent.");
+    expect(branchUndone.revisions[1]).toEqual(firstRevision);
+    const branchRedone = redoEditorHistoryV1(branchUndone);
+    if (!branchRedone) throw new Error("Redo should restore the position child.");
+    expect(branchRedone.revisions[2]).toEqual(branchRevision);
+    expect(oldFuture.revisions[2]).toEqual(oldFutureRevision);
+  });
+
+  it("replays deterministically and rejects unverified source roots or forged child transitions", async () => {
+    const original = await history();
+    const root = selectedEditorRevisionV1(original);
+    const target = root.tracks[3]?.notes[0];
+    if (!target) throw new Error("Missing lineage fixture.");
+    const command = positionCommand(root, 0, target.pitch + 1, target.startTick + 480);
+    const parentIdentity = { schema: root.schema, revisionHash: root.revisionHash };
+    const first = applyEditorCommandV1(original, parentIdentity, command);
+    const replay = applyEditorCommandV1(original, parentIdentity, command);
+    expect(selectedEditorRevisionV1(first)).toEqual(selectedEditorRevisionV1(replay));
+    expect(
+      serializeEditorRevisionV1(
+        selectedEditorRevisionV1(first),
+        first.source,
+        first.revisions.slice(0, -1),
+      ),
+    ).toBe(
+      serializeEditorRevisionV1(
+        selectedEditorRevisionV1(replay),
+        replay.source,
+        replay.revisions.slice(0, -1),
+      ),
+    );
+
+    const forgedRootContent = {
+      ...root,
+      tracks: root.tracks.map((track, index) =>
+        index !== 3
+          ? track
+          : {
+              ...track,
+              notes: track.notes.map((note, index) =>
+                index === 1 ? { ...note, pitch: note.pitch - 1 } : note,
+              ),
+            },
+      ),
+    };
+    const { revisionHash: _rootHash, ...forgedRootBase } = forgedRootContent;
+    const forgedRoot = independentlyHashedRevision(forgedRootBase);
+    const forgedRootHistory = { source: original.source, revisions: [forgedRoot], cursor: 0 };
+    const forgedTarget = forgedRoot.tracks[3]?.notes[0];
+    if (!forgedTarget) throw new Error("Missing forged root target.");
+    expect(() =>
+      applyEditorCommandV1(
+        forgedRootHistory,
+        { schema: forgedRoot.schema, revisionHash: forgedRoot.revisionHash },
+        positionCommand(forgedRoot, 0, forgedTarget.pitch + 1, forgedTarget.startTick + 480),
+      ),
+    ).toThrow(expect.objectContaining({ code: "INVALID_EDITOR_SOURCE_BINDING" }));
+
+    const validChild = selectedEditorRevisionV1(first);
+    const forgedChildContent = {
+      ...validChild,
+      tracks: validChild.tracks.map((track, index) =>
+        index !== 3
+          ? track
+          : {
+              ...track,
+              notes: track.notes.map((note, index) =>
+                index === 1 ? { ...note, pitch: note.pitch - 1 } : note,
+              ),
+            },
+      ),
+    };
+    const { revisionHash: _childHash, ...forgedChildBase } = forgedChildContent;
+    const forgedChild = independentlyHashedRevision(forgedChildBase);
+    const forgedChildHistory = {
+      source: first.source,
+      revisions: [root, forgedChild],
+      cursor: 1,
+    };
+    expect(() => selectedEditorRevisionV1(forgedChildHistory)).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_LINEAGE" }),
+    );
+  });
+
+  it("enforces stale-value and mixed-validation precedence without mutating history", async () => {
+    const original = await history();
+    const root = selectedEditorRevisionV1(original);
+    const target = root.tracks[3]?.notes[0];
+    if (!target) throw new Error("Missing validation fixture.");
+    const apply = (command: unknown) =>
+      applyEditorCommandV1(
+        original,
+        { schema: root.schema, revisionHash: root.revisionHash },
+        command as never,
+      );
+    const command = positionCommand(root, 0, target.pitch + 1, target.startTick + 480);
+    const before = structuredClone(original);
+
+    expect(() => apply({ ...command, expectedPitch: target.pitch - 1 })).toThrow(
+      expect.objectContaining({ code: "STALE_EDITOR_NOTE_VALUE", field: "command.expectedPitch" }),
+    );
+    expect(() => apply({ ...command, expectedStartTick: target.startTick + 1 })).toThrow(
+      expect.objectContaining({
+        code: "STALE_EDITOR_NOTE_VALUE",
+        field: "command.expectedStartTick",
+      }),
+    );
+    expect(() =>
+      apply({
+        ...command,
+        expectedPitch: target.pitch - 1,
+        expectedStartTick: target.startTick + 1,
+      }),
+    ).toThrow(
+      expect.objectContaining({ code: "STALE_EDITOR_NOTE_VALUE", field: "command.expectedPitch" }),
+    );
+    expect(() => apply({ ...command, pitch: 85, startTick: -1 })).toThrow(
+      expect.objectContaining({ code: "EDITOR_LEAD_PITCH_OUT_OF_RANGE", field: "command.pitch" }),
+    );
+    expect(() => apply({ ...command, startTick: -1 })).toThrow(
+      expect.objectContaining({
+        code: "EDITOR_NOTE_START_OUT_OF_RANGE",
+        field: "command.startTick",
+      }),
+    );
+    expect(() => apply({ ...command, schema: "nightdrive.editor-note-command.v9" })).toThrow(
+      expect.objectContaining({
+        code: "UNSUPPORTED_EDITOR_COMMAND_SCHEMA",
+        field: "command.schema",
+      }),
+    );
+    expect(() => apply({ ...command, type: "other" })).toThrow(
+      expect.objectContaining({ code: "UNSUPPORTED_EDITOR_COMMAND_TYPE", field: "command.type" }),
+    );
+    expect(() => apply({ ...command, pitch: 59 })).toThrow(
+      expect.objectContaining({ code: "EDITOR_LEAD_PITCH_OUT_OF_RANGE", field: "command.pitch" }),
+    );
+    expect(() => apply({ ...command, pitch: 85 })).toThrow(
+      expect.objectContaining({ code: "EDITOR_LEAD_PITCH_OUT_OF_RANGE", field: "command.pitch" }),
+    );
+    expect(() => apply({ ...command, startTick: 30720 })).toThrow(
+      expect.objectContaining({
+        code: "EDITOR_NOTE_START_OUT_OF_RANGE",
+        field: "command.startTick",
+      }),
+    );
+    expect(() => apply({ ...command, noteId: `note-${"0".repeat(64)}` })).toThrow(
+      expect.objectContaining({ code: "EDITOR_NOTE_NOT_FOUND", field: "command.noteId" }),
+    );
+    const nonLead = root.tracks[0]?.notes[0];
+    if (!nonLead) throw new Error("Missing non-Lead fixture.");
+    expect(() => apply({ ...command, noteId: nonLead.id })).toThrow(
+      expect.objectContaining({ code: "EDITOR_NOTE_NOT_EDITABLE", field: "command.noteId" }),
+    );
+    expect(original).toEqual(before);
+  });
+
+  it("validates descriptor-safe ordered fields and final-state timing, order, and overlap rules", async () => {
+    const original = await history();
+    const root = selectedEditorRevisionV1(original);
+    const target = root.tracks[3]?.notes[0];
+    const finalTarget = root.tracks[3]?.notes.at(-1);
+    const middleTarget = root.tracks[3]?.notes[2];
+    if (!target || !finalTarget || !middleTarget) throw new Error("Missing boundary fixtures.");
+    const apply = (command: unknown) =>
+      applyEditorCommandV1(
+        original,
+        { schema: root.schema, revisionHash: root.revisionHash },
+        command as never,
+      );
+    let getterCalls = 0;
+    const accessor = positionCommand(root, 0, target.pitch + 1, target.startTick + 480);
+    Object.defineProperty(accessor, "expectedPitch", {
+      enumerable: true,
+      get() {
+        getterCalls += 1;
+        return target.pitch;
+      },
+    });
+    const symbolExtra = { ...positionCommand(root, 0, target.pitch + 1, target.startTick + 480) };
+    Object.defineProperty(symbolExtra, Symbol("extra"), { value: true, enumerable: true });
+    const withToJSON = {
+      ...positionCommand(root, 0, target.pitch + 1, target.startTick + 480),
+      toJSON() {
+        getterCalls += 1;
+        return {};
+      },
+    };
+    const reordered = JSON.parse(JSON.stringify(positionCommand(root, 0, target.pitch + 1, 480)));
+    const reorderedCommand = {
+      schema: reordered.schema,
+      type: reordered.type,
+      noteId: reordered.noteId,
+      expectedStartTick: reordered.expectedStartTick,
+      expectedPitch: reordered.expectedPitch,
+      pitch: reordered.pitch,
+      startTick: reordered.startTick,
+    };
+    const malformed: readonly unknown[] = [
+      accessor,
+      symbolExtra,
+      withToJSON,
+      { ...positionCommand(root, 0, target.pitch + 1, 480), extra: true },
+      {
+        schema: EDITOR_COMMAND_SCHEMA_V5,
+        type: "set-note-position",
+        noteId: target.id,
+        expectedPitch: target.pitch,
+        expectedStartTick: target.startTick,
+        pitch: target.pitch + 1,
+      },
+      reorderedCommand,
+      { ...positionCommand(root, 0, target.pitch + 1, 480), expectedPitch: 1.5 },
+      { ...positionCommand(root, 0, target.pitch + 1, 480), expectedPitch: 128 },
+      { ...positionCommand(root, 0, target.pitch + 1, 480), expectedStartTick: Number.NaN },
+      { ...positionCommand(root, 0, target.pitch + 1, 480), expectedStartTick: 1.5 },
+      { ...positionCommand(root, 0, target.pitch + 1, 480), pitch: "76" },
+      { ...positionCommand(root, 0, target.pitch + 1, 480), startTick: Number.POSITIVE_INFINITY },
+      Object.assign(
+        Object.create({ inherited: true }),
+        positionCommand(root, 0, target.pitch + 1, 480),
+      ),
+    ];
+    for (const candidate of malformed)
+      expect(() => apply(candidate)).toThrow(
+        expect.objectContaining({ code: "INVALID_EDITOR_COMMAND" }),
+      );
+    expect(getterCalls).toBe(0);
+    expect(() =>
+      apply({
+        schema: "nightdrive.editor-note-command.v5",
+        type: "set-note-position",
+        noteId: target.id,
+        expectedPitch: target.pitch,
+        expectedStartTick: target.startTick,
+        pitch: 128,
+        startTick: 480,
+      }),
+    ).toThrow(expect.objectContaining({ code: "INVALID_EDITOR_COMMAND", field: "command.pitch" }));
+
+    const leftInclusive = applyEditorCommandV1(
+      original,
+      { schema: root.schema, revisionHash: root.revisionHash },
+      positionCommand(root, 2, middleTarget.pitch + 1, root.tracks[3]?.notes[1]?.startTick ?? 0),
+    );
+    const rightInclusive = applyEditorCommandV1(
+      original,
+      { schema: root.schema, revisionHash: root.revisionHash },
+      positionCommand(root, 2, middleTarget.pitch + 1, root.tracks[3]?.notes[3]?.startTick ?? 0),
+    );
+    expect(selectedEditorRevisionV1(leftInclusive).tracks[3]?.notes[2]?.startTick).toBe(1920);
+    expect(selectedEditorRevisionV1(rightInclusive).tracks[3]?.notes[2]?.startTick).toBe(5760);
+    expect(() => apply(positionCommand(root, 2, middleTarget.pitch + 1, 1919))).toThrow(
+      expect.objectContaining({
+        code: "EDITOR_NOTE_START_ORDER_INVALID",
+        field: "command.startTick",
+      }),
+    );
+    expect(() => apply(positionCommand(root, 2, middleTarget.pitch + 1, 5761))).toThrow(
+      expect.objectContaining({
+        code: "EDITOR_NOTE_START_ORDER_INVALID",
+        field: "command.startTick",
+      }),
+    );
+    for (const pitch of [60, 84]) {
+      const pitchBoundary = applyEditorCommandV1(
+        original,
+        { schema: root.schema, revisionHash: root.revisionHash },
+        positionCommand(root, 0, pitch, target.startTick),
+      );
+      expect(selectedEditorRevisionV1(pitchBoundary).tracks[3]?.notes[0]?.pitch).toBe(pitch);
+    }
+    const finalBoundary = applyEditorCommandV1(
+      original,
+      { schema: root.schema, revisionHash: root.revisionHash },
+      positionCommand(root, 15, finalTarget.pitch + 1, 29760),
+    );
+    expect(selectedEditorRevisionV1(finalBoundary).tracks[3]?.notes[15]?.startTick).toBe(29760);
+    expect(() => apply(positionCommand(root, 15, finalTarget.pitch + 1, 29761))).toThrow(
+      expect.objectContaining({
+        code: "EDITOR_NOTE_START_OUT_OF_RANGE",
+        field: "command.startTick",
+      }),
+    );
+    const overlap = applyEditorCommandV1(
+      original,
+      { schema: root.schema, revisionHash: root.revisionHash },
+      positionCommand(root, 0, target.pitch + 1, 1500),
+    );
+    expect(selectedEditorRevisionV1(overlap).tracks[3]?.notes[0]?.startTick).toBe(1500);
+  });
+});
+
+function recursivelyFrozen(value: unknown): boolean {
+  if (!value || typeof value !== "object") return true;
+  return Object.isFrozen(value) && Object.values(value).every(recursivelyFrozen);
+}

@@ -11,6 +11,7 @@ import {
   createChildEditorRevisionV1,
   EDITOR_COMMAND_SCHEMA_V1,
   EDITOR_COMMAND_SCHEMA_V4,
+  EDITOR_COMMAND_SCHEMA_V5,
 } from "../composition/editor-revision";
 import { generateCompleteSectionV1 } from "../generators/complete-section";
 import {
@@ -28,6 +29,7 @@ import {
   editEditorApplicationDeleteNoteV1,
   editEditorApplicationDurationV1,
   editEditorApplicationPitchV1,
+  editEditorApplicationPositionV1,
   editEditorApplicationStartTickV1,
   redoEditorApplicationV1,
   undoEditorApplicationV1,
@@ -92,6 +94,9 @@ describe("M2 editor application boundary", () => {
     ).toThrow("require Node");
     expect(() =>
       editEditorApplicationDeleteNoteV1(undefined as never, undefined as never, undefined as never),
+    ).toThrow("require Node");
+    expect(() =>
+      editEditorApplicationPositionV1(undefined as never, undefined as never, undefined as never),
     ).toThrow("require Node");
     expect(() => undoEditorApplicationV1(undefined as never)).toThrow("require Node");
     expect(() => redoEditorApplicationV1(undefined as never)).toThrow("require Node");
@@ -426,5 +431,59 @@ describe("M2 editor application boundary", () => {
     expect(emptied.preview.tracks[3]?.notes).toEqual([]);
     expect(emptied.preview.sourceResultHash).toBe(source.resultHash);
     expect(deepFrozen(emptied)).toBe(true);
+  });
+
+  it("applies one v5 atomic position command at the Node boundary and projects the selected revision", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = createEditorApplicationV1(source);
+    const rootRevision = root.history.revisions[0];
+    const target = rootRevision?.tracks[3]?.notes[0];
+    if (!rootRevision || !target) throw new Error("Missing atomic position application fixture.");
+    const command = {
+      schema: EDITOR_COMMAND_SCHEMA_V5,
+      type: "set-note-position",
+      noteId: target.id,
+      expectedPitch: target.pitch,
+      expectedStartTick: target.startTick,
+      pitch: target.pitch + 1,
+      startTick: target.startTick + 480,
+    } as const;
+
+    const edited = editEditorApplicationPositionV1(root, root.selectedRevision, command);
+    const child = edited.history.revisions[1];
+    if (!child) throw new Error("Missing one-step position revision.");
+    expect(edited.history.revisions).toHaveLength(2);
+    expect(edited.history.cursor).toBe(1);
+    expect(child.command).toEqual(command);
+    expect(child.parent?.revisionHash).toBe(rootRevision.revisionHash);
+    expect(child.tracks[3]?.notes[0]).toEqual({
+      ...target,
+      pitch: target.pitch + 1,
+      startTick: target.startTick + 480,
+    });
+    expect(edited.preview.tracks[3]?.notes[0]).toEqual({
+      pitch: target.pitch + 1,
+      startTick: target.startTick + 480,
+      durationTicks: target.durationTicks,
+    });
+    expect(edited.preview.sourceResultHash).toBe(source.resultHash);
+    expect(edited.selectedRevision.revisionHash).toBe(child.revisionHash);
+    expect(edited.preview).not.toHaveProperty("revisionHash");
+    expect(deepFrozen(edited)).toBe(true);
+    expect(root.history.revisions[0]).toEqual(rootRevision);
+    expect(root.preview.tracks[3]?.notes[0]).toEqual({
+      pitch: target.pitch,
+      startTick: target.startTick,
+      durationTicks: target.durationTicks,
+    });
+
+    const undone = undoEditorApplicationV1(edited);
+    if (!undone) throw new Error("Undo should restore the exact parent revision.");
+    expect(undone.selectedRevision).toEqual(root.selectedRevision);
+    expect(undone.preview).toEqual(root.preview);
+    const redone = redoEditorApplicationV1(undone);
+    if (!redone) throw new Error("Redo should restore the exact child revision.");
+    expect(redone.selectedRevision).toEqual(edited.selectedRevision);
+    expect(redone.preview).toEqual(edited.preview);
   });
 });
