@@ -15,6 +15,7 @@ This is a supplement/superset of the [AGENTS.md delivery-report requirements](..
 - Base: exact starting SHA/ref and precheck result.
 - Branch:
 - Commit: exact resulting SHA, or `NONE`; include final working-tree/index state.
+- Under activated ADR-031, remote integration baseline and current local base are separate fields. Record immutable checkpoint/contract tuples, ancestry, review/acceptance receipts, intended integration boundary and local versus integrated capability status. Identify the state: unreviewed local candidate; independently PASSed local checkpoint; exact-tuple Product Owner-accepted local specification; final integration candidate; or protected integration. Never label failed/unavailable required local checks complete or remote CI executed.
 - For publication-capable work: reviewed target base; reviewed implementation head; live target base immediately before publication/merge; remote PR head and branch; base-match/base-movement disposition; merge commit; final target-branch SHA; and ancestry/integration verification. If the base moved, record bounded assessment/refreshed evidence or `BLOCKED`; never imply automatic repair or unchanged approval.
 
 ## FILES / IMPLEMENTATION
@@ -38,6 +39,8 @@ For implementation review, report:
 - Changed-file scope covered:
 - Completeness: `COMPLETE | PARTIAL | N/A`:
 - Unavailable/partial evidence and resulting review limitations:
+- For a local specification, exact consequential review and explicit Product Owner acceptance tuple/scope establishing limited local-development authority, or PENDING. It is not final-candidate acceptance, CI success or integration. Existing explicitly integration-gated authority remains unchanged.
+- For final integration review, actual target-base-to-head complete cumulative scope/interactions, prior checkpoint evidence reused with provenance, all applicable findings and final acceptance; checkpoint PASS results alone do not approve it.
 
 For a read-only exact-head review, add the [contract-first playbook](../ENGINEERING_REVIEW_PLAYBOOK.md#contract-first-exact-head-review) result: `PASS | REVISE | BLOCKED`; reviewer identity/invocation and verifiable effective settings/sandbox; base/head/tree and exact scope; accepted contracts consulted; materially complete obligation ledger with `SATISFIED | VIOLATED | NOT APPLICABLE | NOT VERIFIED`; permissive-path audit; findings with severity/evidence/impact; applicable OPEN finding dispositions with blob/behavior comparison and closure evidence; validation/evidence limits; and candidate-unmodified confirmation. Missing required fields, material `VIOLATED` or `NOT VERIFIED` obligations, or unresolved blocking findings preclude PASS. Reviewer output is evidence, not an automatic grant of required independent acceptance authority.
 
@@ -63,6 +66,8 @@ State applicability/classification, dependency changes, governing decision, sele
 
 State exact push/PR/check/merge status, whether the reviewed head remains unchanged, and—when applicable—the reviewed-base/implementation-head/PR-head/merge-commit/final-target relationship, ancestry, and whether merged scope matches review. Exact-head PASS may progress through publication and merge under standing execution authority only when repository eligibility, required checks, and Product Owner-set Git policy permit it.
 
+After [ADR-031](../DECISIONS.md#adr-031--local-reviewed-checkpoints-and-milestone-level-integration) activation, local checkpoint completion does not automatically require publication. At the selected milestone/sub-milestone boundary report complete cumulative review/acceptance and full-diff CI classification. Preserve checkpoint identities and reviewed-head ancestry. Include necessary coordination before final review; do not create a standalone PR solely for post-merge history/awaiting-review wording. The proposed policy cannot activate itself.
+
 ## DEVIATIONS / ASSUMPTIONS / RISKS / QUESTIONS
 
 - Scope deviation: `NONE` or exact details, including any stop and authorization needed.
@@ -73,6 +78,8 @@ State exact push/PR/check/merge status, whether the reviewed head remains unchan
 For `BLOCKED`, clearly state the blocker, verified repository state, work/evidence completed, unsafe or unauthorized next action, and decision/authorization required. ASSESS and SPECIFY results report evidence appropriate to their type rather than fabricated implementation evidence.
 
 For a resumable checkpoint, record the current bounded task, actual base/head and worktree state, completed checks, unresolved findings, review disposition, and next safe action. A resumed session rechecks refs, working state, authority, and review validity before acting; it does not assume that this result restarted or contacted another session.
+
+For an unpublished local batch also record remote baseline, exact local chain/ancestry and accepted contract receipts, pending/failed validation and intended integration boundary. State recovery/backup limits honestly: local commits are not verified remote backups. No automatic unreviewed push or forced end-of-session PR is authorized.
 
 ## NEXT SMALLEST BACKLOG TASK
 
