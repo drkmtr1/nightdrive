@@ -44,6 +44,7 @@ function makeEditorApplication(
   selectedCursor?: number,
   leadStartTick?: number,
   leadDurationTicks?: number,
+  deleteLeadNote = false,
 ): EditorApplicationV1 {
   const roles = ["harmony", "bass", "arpeggiator", "lead"] as const;
   const rootTracks = roles.map((role, index) => ({
@@ -79,18 +80,25 @@ function makeEditorApplication(
       track.role === "lead"
         ? {
             ...track,
-            notes: track.notes.map((note) => ({
-              ...note,
-              pitch: leadPitch,
-              ...(leadStartTick === undefined ? {} : { startTick: leadStartTick }),
-              ...(leadDurationTicks === undefined ? {} : { durationTicks: leadDurationTicks }),
-            })),
+            notes: deleteLeadNote
+              ? track.notes.filter((note) => note.id !== NOTE_ID)
+              : track.notes.map((note) => ({
+                  ...note,
+                  pitch: leadPitch,
+                  ...(leadStartTick === undefined ? {} : { startTick: leadStartTick }),
+                  ...(leadDurationTicks === undefined ? {} : { durationTicks: leadDurationTicks }),
+                })),
           }
         : track,
     ),
     parent: { schema: root.schema, revisionHash: root.revisionHash },
-    command:
-      leadStartTick !== undefined
+    command: deleteLeadNote
+      ? {
+          schema: "nightdrive.editor-note-command.v4",
+          type: "delete-note",
+          noteId: NOTE_ID,
+        }
+      : leadStartTick !== undefined
         ? {
             schema: "nightdrive.editor-note-command.v2",
             type: "set-note-start-tick",
@@ -147,6 +155,8 @@ const MOVED_APPLICATION = makeEditorApplication(60, true, 1, 480);
 const MOVED_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, 480);
 const DURATION_APPLICATION = makeEditorApplication(60, true, 1, undefined, 1440);
 const DURATION_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, 1440);
+const DELETED_APPLICATION = makeEditorApplication(60, true, 1, undefined, undefined, true);
+const DELETED_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, undefined, true);
 
 function makeActions() {
   return {
@@ -154,6 +164,7 @@ function makeActions() {
     setLeadPitchAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
     setLeadStartTickAction: vi.fn().mockResolvedValue(MOVED_APPLICATION),
     setLeadDurationAction: vi.fn().mockResolvedValue(DURATION_APPLICATION),
+    deleteLeadNoteAction: vi.fn().mockResolvedValue(DELETED_APPLICATION),
     undoSectionEditAction: vi.fn().mockResolvedValue(UNDONE_APPLICATION),
     redoSectionEditAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
   };
@@ -442,6 +453,72 @@ describe("Generate section consumer", () => {
     expect(actions.redoSectionEditAction).toHaveBeenCalledWith(DURATION_UNDONE_APPLICATION);
   });
 
+  it("deletes only the selected Lead note through the v4 action and restores its exact preview with undo/redo", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    const deletion = screen.getByRole("button", { name: "Delete selected Lead note" });
+    expect(deletion).toBeEnabled();
+    fireEvent.click(deletion);
+    await screen.findByText("0 notes");
+
+    expect(actions.deleteLeadNoteAction).toHaveBeenCalledTimes(1);
+    expect(actions.deleteLeadNoteAction.mock.calls[0]).toEqual([
+      ROOT_APPLICATION,
+      ROOT_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v4",
+        type: "delete-note",
+        noteId: NOTE_ID,
+      },
+    ]);
+    expect(actions.generateAction).toHaveBeenCalledTimes(1);
+    expect(DELETED_APPLICATION.preview.sourceResultHash).toBe(PREVIEW.sourceResultHash);
+    expect(screen.getByRole("button", { name: "Delete selected Lead note" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+
+    actions.undoSectionEditAction.mockResolvedValueOnce(DELETED_UNDONE_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+    });
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(DELETED_APPLICATION);
+    expect(screen.getByRole("button", { name: "Redo" })).toBeEnabled();
+
+    actions.redoSectionEditAction.mockResolvedValueOnce(DELETED_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByText("0 notes");
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(DELETED_UNDONE_APPLICATION);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+  });
+
+  it("keeps the current preview and reports only the safe diagnostic if deletion fails", async () => {
+    const actions = makeActions();
+    actions.deleteLeadNoteAction.mockRejectedValueOnce(new Error("private delete failure"));
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete selected Lead note" }));
+    const alert = await screen.findByRole("alert");
+
+    expect(alert).toHaveTextContent(
+      "The Lead edit history could not be updated. The generated section remains unchanged.",
+    );
+    expect(alert).not.toHaveTextContent("private delete failure");
+    expect(
+      screen.getByRole("listitem", {
+        name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+      }),
+    ).toBeVisible();
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Delete selected Lead note" })).toBeEnabled();
+  });
+
   it("rejects a Lead duration beyond the remaining section span in the browser proposal", async () => {
     const { actions } = renderConsumer();
     choose();
@@ -496,6 +573,26 @@ describe("Generate section consumer", () => {
         name: "Lead note, MIDI pitch 60, start tick 0, duration 1440 ticks",
       });
 
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(audio.sources.every((source) => source.stop.mock.calls.length > 0)).toBe(true);
+    } finally {
+      audio.restore();
+    }
+  });
+  it("invalidates the current audition when a validated deletion becomes selected", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const { actions } = renderConsumer();
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+
+      fireEvent.click(screen.getByRole("button", { name: "Delete selected Lead note" }));
+      await screen.findByText("0 notes");
+
+      expect(actions.deleteLeadNoteAction).toHaveBeenCalledTimes(1);
       expect(screen.getByText("Playback stopped.")).toBeVisible();
       expect(audio.sources.every((source) => source.stop.mock.calls.length > 0)).toBe(true);
     } finally {

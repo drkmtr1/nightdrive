@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import * as completeSection from "../web/complete-section-node";
 import * as editorApplication from "../web/editor-application-node";
 import {
+  deleteLeadNoteAction,
   generateSectionAction,
   redoSectionEditAction,
   setLeadDurationAction,
@@ -112,6 +113,24 @@ describe("editor application server functions", () => {
       .mockReturnValueOnce(next as never);
 
     await expect(setLeadDurationAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
+  it("passes the v4 delete-note command through the Node application boundary", async () => {
+    const current = { sentinel: "current" } as never;
+    const parent = { schema: "parent" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v4",
+      type: "delete-note",
+      noteId: "stable-note-id",
+    } as never;
+    const next = { sentinel: "next" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationDeleteNoteV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(deleteLeadNoteAction(current, parent, command)).resolves.toBe(next);
     expect(edit).toHaveBeenCalledTimes(1);
     expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });

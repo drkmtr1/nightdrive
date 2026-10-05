@@ -1,6 +1,7 @@
 import { getHarmonyTemplatesForProfile, HARMONY_PROFILE_IDS } from "../music-domain/harmony";
 import { GenerateSection } from "./generate-section";
 import {
+  deleteLeadNoteAction,
   generateSectionAction,
   redoSectionEditAction,
   setLeadDurationAction,
@@ -30,6 +31,7 @@ export default function HomePage() {
       <GenerateSection
         choices={choices}
         generateAction={generateSectionAction}
+        deleteLeadNoteAction={deleteLeadNoteAction}
         setLeadPitchAction={setLeadPitchAction}
         setLeadDurationAction={setLeadDurationAction}
         setLeadStartTickAction={setLeadStartTickAction}

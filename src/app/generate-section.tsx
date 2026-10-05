@@ -3,6 +3,7 @@
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type {
+  DeleteNoteCommandV4,
   EditorRevisionIdentityV1,
   SetNoteDurationCommandV3,
   SetNotePitchCommandV1,
@@ -43,6 +44,11 @@ type Props = Readonly<{
     expectedParent: EditorRevisionIdentityV1,
     command: SetNoteDurationCommandV3,
   ) => Promise<EditorApplicationV1>;
+  deleteLeadNoteAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: DeleteNoteCommandV4,
+  ) => Promise<EditorApplicationV1>;
   undoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
   redoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
 }>;
@@ -66,6 +72,7 @@ export function GenerateSection({
   setLeadPitchAction,
   setLeadStartTickAction,
   setLeadDurationAction,
+  deleteLeadNoteAction,
   undoSectionEditAction,
   redoSectionEditAction,
 }: Props) {
@@ -327,6 +334,18 @@ export function GenerateSection({
     );
   }
 
+  function deleteSelectedLeadNote() {
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    const command: DeleteNoteCommandV4 = {
+      schema: "nightdrive.editor-note-command.v4",
+      type: "delete-note",
+      noteId: selectedLeadNote.id,
+    };
+    void runEditorOperation((current) =>
+      deleteLeadNoteAction(current, current.selectedRevision, command),
+    );
+  }
+
   return (
     <>
       <section className="statusPanel" aria-labelledby="generate-title">
@@ -541,8 +560,8 @@ export function GenerateSection({
           <section aria-labelledby="lead-edit-title" className="editorControls">
             <h3 id="lead-edit-title">Lead note correction</h3>
             <p>
-              Choose one existing Lead note to change its pitch, absolute start tick, or absolute
-              duration.
+              Edit the selected Lead note&apos;s pitch, absolute start tick, or duration, or delete
+              that note.
             </p>
             <form onSubmit={submitLeadPitch}>
               <label htmlFor="lead-note-choice">Lead note</label>
@@ -656,6 +675,13 @@ export function GenerateSection({
                 Apply Lead duration
               </button>
             </form>
+            <button
+              type="button"
+              disabled={!selectedLeadNote || editorPending}
+              onClick={deleteSelectedLeadNote}
+            >
+              Delete selected Lead note
+            </button>
             <div className="editorHistoryControls">
               <button
                 type="button"
