@@ -7,7 +7,11 @@ import {
   COMPLETE_SECTION_GENERATOR_VERSION_V1,
   COMPLETE_SECTION_REQUEST_SCHEMA_V1,
 } from "../composition/complete-section";
-import { EDITOR_COMMAND_SCHEMA_V1 } from "../composition/editor-revision";
+import {
+  createChildEditorRevisionV1,
+  EDITOR_COMMAND_SCHEMA_V1,
+  EDITOR_COMMAND_SCHEMA_V4,
+} from "../composition/editor-revision";
 import { generateCompleteSectionV1 } from "../generators/complete-section";
 import {
   ARP_POLICY_VERSION_V2,
@@ -21,6 +25,7 @@ import { MOTIF_GENERATOR_VERSION_V1 } from "../music-domain/motif-result";
 import { PRNG_ALGORITHM_ID } from "../music-domain/prng";
 import {
   createEditorApplicationV1,
+  editEditorApplicationDeleteNoteV1,
   editEditorApplicationDurationV1,
   editEditorApplicationPitchV1,
   editEditorApplicationStartTickV1,
@@ -84,6 +89,9 @@ describe("M2 editor application boundary", () => {
     ).toThrow("require Node");
     expect(() =>
       editEditorApplicationDurationV1(undefined as never, undefined as never, undefined as never),
+    ).toThrow("require Node");
+    expect(() =>
+      editEditorApplicationDeleteNoteV1(undefined as never, undefined as never, undefined as never),
     ).toThrow("require Node");
     expect(() => undoEditorApplicationV1(undefined as never)).toThrow("require Node");
     expect(() => redoEditorApplicationV1(undefined as never)).toThrow("require Node");
@@ -332,5 +340,91 @@ describe("M2 editor application boundary", () => {
     const edited = editEditorApplicationPitchV1(alteredView, current.selectedRevision, command);
     expect(edited.preview.tracks[0]).toEqual(current.preview.tracks[0]);
     expect(edited.history.source).toEqual(source);
+  });
+  it("projects a verified v4 deletion and restores exact revisions through undo/redo", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = createEditorApplicationV1(source);
+    const rootRevision = root.history.revisions[0];
+    const rootLead = rootRevision?.tracks[3]?.notes;
+    const targetIndex = 7;
+    const target = rootLead?.[targetIndex];
+    if (!rootRevision || !rootLead || !target)
+      throw new Error("Missing delete application fixture.");
+    const command = {
+      schema: EDITOR_COMMAND_SCHEMA_V4,
+      type: "delete-note",
+      noteId: target.id,
+    } as const;
+    const deleted = editEditorApplicationDeleteNoteV1(root, root.selectedRevision, command);
+    const deletedRevision = deleted.history.revisions[1];
+    if (!deletedRevision) throw new Error("Missing deleted revision.");
+
+    expect(deletedRevision.command).toEqual(command);
+    expect(deleted.selectedRevision.revisionHash).toBe(deletedRevision.revisionHash);
+    expect(deleted.preview.sourceResultHash).toBe(source.resultHash);
+    expect(deleted.preview.tracks[3]?.notes).toEqual(
+      root.preview.tracks[3]?.notes.filter((_, index) => index !== targetIndex),
+    );
+    expect(deleted.preview.tracks.slice(0, 3)).toEqual(root.preview.tracks.slice(0, 3));
+    expect(deleted.preview).not.toHaveProperty("revisionHash");
+    expect(root.preview.tracks[3]?.notes).toHaveLength(rootLead.length);
+    expect(deleted.preview.tracks[3]?.notes[7]).toEqual(root.preview.tracks[3]?.notes[8]);
+    expect(deepFrozen(deleted)).toBe(true);
+
+    const undone = undoEditorApplicationV1(deleted);
+    if (!undone) throw new Error("Undo should restore the root revision.");
+    expect(undone.selectedRevision).toEqual(root.selectedRevision);
+    expect(undone.preview).toEqual(root.preview);
+    const redone = redoEditorApplicationV1(undone);
+    if (!redone) throw new Error("Redo should restore the deletion.");
+    expect(redone.selectedRevision).toEqual(deleted.selectedRevision);
+    expect(redone.preview).toEqual(deleted.preview);
+
+    const deleteRevisions = [rootRevision];
+    let deleteParent = rootRevision;
+    while ((deleteParent.tracks[3]?.notes.length ?? 0) > 1) {
+      const nextTarget = deleteParent.tracks[3]?.notes[0];
+      if (!nextTarget) throw new Error("Missing delete-chain target.");
+      const child = createChildEditorRevisionV1(
+        deleteParent,
+        {
+          schema: EDITOR_COMMAND_SCHEMA_V4,
+          type: "delete-note",
+          noteId: nextTarget.id,
+        },
+        source,
+        deleteRevisions.slice(0, -1),
+      );
+      deleteRevisions.push(child);
+      deleteParent = child;
+    }
+    const finalTarget = deleteParent.tracks[3]?.notes[0];
+    if (!finalTarget) throw new Error("Missing final Lead note.");
+    const almostEmpty = {
+      history: {
+        source,
+        revisions: deleteRevisions,
+        cursor: deleteRevisions.length - 1,
+      },
+      selectedRevision: {
+        schema: deleteParent.schema,
+        revisionHash: deleteParent.revisionHash,
+      },
+      preview: root.preview,
+    };
+    const emptied = editEditorApplicationDeleteNoteV1(almostEmpty, almostEmpty.selectedRevision, {
+      schema: EDITOR_COMMAND_SCHEMA_V4,
+      type: "delete-note",
+      noteId: finalTarget.id,
+    });
+    expect(emptied.preview.tracks.map((track) => track.role)).toEqual([
+      "harmony",
+      "bass",
+      "arpeggiator",
+      "lead",
+    ]);
+    expect(emptied.preview.tracks[3]?.notes).toEqual([]);
+    expect(emptied.preview.sourceResultHash).toBe(source.resultHash);
+    expect(deepFrozen(emptied)).toBe(true);
   });
 });

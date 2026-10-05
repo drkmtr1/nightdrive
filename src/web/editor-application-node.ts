@@ -1,6 +1,7 @@
 import process from "node:process";
 import type { CompleteSectionResultV1 } from "../composition/complete-section";
 import type {
+  DeleteNoteCommandV4,
   EditorRevisionIdentityV1,
   EditorRevisionV1,
   SetNoteDurationCommandV3,
@@ -116,6 +117,16 @@ export function editEditorApplicationDurationV1(
   current: EditorApplicationV1,
   expectedParent: EditorRevisionIdentityV1,
   command: SetNoteDurationCommandV3,
+): EditorApplicationV1 {
+  requirePinnedNode();
+  return application(applyEditorCommandV1(current.history, expectedParent, command));
+}
+
+/** Applies one validated Lead deletion command and returns its derived audition view. */
+export function editEditorApplicationDeleteNoteV1(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: DeleteNoteCommandV4,
 ): EditorApplicationV1 {
   requirePinnedNode();
   return application(applyEditorCommandV1(current.history, expectedParent, command));
