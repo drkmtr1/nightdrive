@@ -3,6 +3,7 @@
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type {
   EditorRevisionIdentityV1,
+  SetNoteDurationCommandV3,
   SetNotePitchCommandV1,
   SetNoteStartTickCommandV2,
 } from "../composition/editor-revision";
@@ -10,6 +11,7 @@ import { generateCompleteSectionForAuditionV1 } from "../web/complete-section-no
 import {
   createEditorApplicationV1,
   type EditorApplicationV1,
+  editEditorApplicationDurationV1,
   editEditorApplicationPitchV1,
   editEditorApplicationStartTickV1,
   redoEditorApplicationV1,
@@ -43,6 +45,14 @@ export async function setLeadStartTickAction(
   command: SetNoteStartTickCommandV2,
 ): Promise<EditorApplicationV1> {
   return editEditorApplicationStartTickV1(current, expectedParent, command);
+}
+
+export async function setLeadDurationAction(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: SetNoteDurationCommandV3,
+): Promise<EditorApplicationV1> {
+  return editEditorApplicationDurationV1(current, expectedParent, command);
 }
 
 export async function undoSectionEditAction(

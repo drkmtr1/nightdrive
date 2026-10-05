@@ -3,6 +3,7 @@ import { GenerateSection } from "./generate-section";
 import {
   generateSectionAction,
   redoSectionEditAction,
+  setLeadDurationAction,
   setLeadPitchAction,
   setLeadStartTickAction,
   undoSectionEditAction,
@@ -30,6 +31,7 @@ export default function HomePage() {
         choices={choices}
         generateAction={generateSectionAction}
         setLeadPitchAction={setLeadPitchAction}
+        setLeadDurationAction={setLeadDurationAction}
         setLeadStartTickAction={setLeadStartTickAction}
         undoSectionEditAction={undoSectionEditAction}
         redoSectionEditAction={redoSectionEditAction}

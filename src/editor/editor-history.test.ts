@@ -201,6 +201,17 @@ function startTickCommand(revision: EditorRevisionV1, noteIndex: number, startTi
     startTick,
   };
 }
+function durationCommand(revision: EditorRevisionV1, noteIndex: number, durationTicks: number) {
+  const note = revision.tracks[3]?.notes[noteIndex];
+  if (!note) throw new Error("Missing Lead note fixture.");
+  return {
+    schema: "nightdrive.editor-note-command.v3" as const,
+    type: "set-note-duration" as const,
+    noteId: note.id,
+    expectedDurationTicks: note.durationTicks,
+    durationTicks,
+  };
+}
 function sha256Utf8(value: string): string {
   return createHash("sha256").update(Buffer.from(value, "utf8")).digest("hex");
 }
@@ -345,6 +356,40 @@ function independentStartTickChild(root: EditorRevisionV1): EditorRevisionV1 {
   };
   return independentlyHashedRevision(content);
 }
+
+function independentDurationChild(root: EditorRevisionV1): EditorRevisionV1 {
+  const target = root.tracks[3]?.notes[0];
+  if (!target) throw new Error("Missing independent Lead fixture.");
+  const content: Omit<EditorRevisionV1, "revisionHash"> = {
+    schema: root.schema,
+    source: root.source,
+    section: root.section,
+    tracks: root.tracks.map((track) =>
+      track.role !== "lead"
+        ? track
+        : {
+            role: "lead",
+            notes: track.notes.map((note, index) =>
+              index === 0 ? { ...note, durationTicks: 1440 } : note,
+            ),
+          },
+    ),
+    parent: { schema: root.schema, revisionHash: root.revisionHash },
+    command: {
+      schema: "nightdrive.editor-note-command.v3",
+      type: "set-note-duration",
+      noteId: target.id,
+      expectedDurationTicks: 960,
+      durationTicks: 1440,
+    },
+  };
+  return independentlyHashedRevision(content);
+}
+
+const EXPECTED_DURATION_COMMAND_JSON =
+  '{"schema":"nightdrive.editor-note-command.v3","type":"set-note-duration","noteId":"note-853ab61d8567f96e2baeaeb213560536422465a0742b27bb4775fd65cfafad12","expectedDurationTicks":960,"durationTicks":1440}';
+const EXPECTED_DURATION_CHILD_HASH =
+  "274f66a023e76d9d33403c34b203a03f0c50d492ba7680f6685dbc9a348a2dbd";
 describe("M2 editor revisions", () => {
   it("matches literal canonical root/child bytes against independent tracks and test-side SHA-256", async () => {
     const source = await generateCompleteSectionV1(request as never);
@@ -395,6 +440,54 @@ describe("M2 editor revisions", () => {
     );
     expect(child.revisionHash).toBe(EXPECTED_START_TICK_CHILD_HASH);
     expect(verifyEditorRevisionV1(child, source, [root])).toEqual(child);
+  });
+
+  it("matches the independent v3 duration command, canonical child bytes, and standard SHA-256", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = importCompleteSectionAsEditorRootV1(source);
+    const independentRoot = independentRootRevision();
+    const expectedChild = independentDurationChild(independentRoot);
+    const target = independentRoot.tracks[3]?.notes[0];
+    if (!target) throw new Error("Missing independent Lead fixture.");
+    const command = {
+      schema: "nightdrive.editor-note-command.v3",
+      type: "set-note-duration",
+      noteId: target.id,
+      expectedDurationTicks: target.durationTicks,
+      durationTicks: 1440,
+    } as const;
+    const child = createChildEditorRevisionV1(root, command, source, []);
+    const expectedChildJson = JSON.stringify(expectedChild);
+    const actualChildJson = serializeEditorRevisionV1(child, source, [root]);
+    const hashInput = independentRevisionHashInput(expectedChildJson);
+
+    expect(JSON.stringify(command)).toBe(EXPECTED_DURATION_COMMAND_JSON);
+    expect(source.resultHash).toBe(EXPECTED_START_TICK_SOURCE_HASH);
+    expect(expectedChild.revisionHash).toBe(EXPECTED_DURATION_CHILD_HASH);
+    expect(sha256Utf8(hashInput)).toBe(EXPECTED_DURATION_CHILD_HASH);
+    expect(child.revisionHash).toBe(EXPECTED_DURATION_CHILD_HASH);
+    expect(actualChildJson).toBe(expectedChildJson);
+    expect(Buffer.from(actualChildJson, "utf8")).toEqual(Buffer.from(expectedChildJson, "utf8"));
+    expect(child).toEqual(expectedChild);
+    expect(child.parent?.revisionHash).toBe(root.revisionHash);
+    expect(child.tracks.map((track) => track.role)).toEqual(root.tracks.map((track) => track.role));
+    expect(child.tracks[3]?.notes.map((note) => note.id)).toEqual(
+      root.tracks[3]?.notes.map((note) => note.id),
+    );
+    for (const [trackIndex, track] of root.tracks.entries()) {
+      for (const [noteIndex, note] of track.notes.entries()) {
+        const actual = child.tracks[trackIndex]?.notes[noteIndex];
+        expect(actual).toEqual(
+          track.role === "lead" && noteIndex === 0 ? { ...note, durationTicks: 1440 } : note,
+        );
+      }
+    }
+    expect(verifyEditorRevisionV1(child, source, [root])).toEqual(child);
+    const replay = createChildEditorRevisionV1(root, command, source, []);
+    expect(JSON.stringify(replay)).toBe(actualChildJson);
+    expect(replay.revisionHash).toBe(child.revisionHash);
+    expect(Object.isFrozen(child)).toBe(true);
+    expect(Object.isFrozen(child.tracks[3]?.notes[0])).toBe(true);
   });
   it("imports a frozen four-role root with deterministic IDs and velocity 100", async () => {
     const source = await generateCompleteSectionV1(request as never);
@@ -571,6 +664,179 @@ describe("M2 editor revisions", () => {
     expect(lastAfterMove.startTick + lastAfterMove.durationTicks).toBe(30720);
   });
 
+  it("changes only one absolute Lead duration and permits overlap through the exact section boundary", async () => {
+    const current = await history();
+    const root = selectedEditorRevisionV1(current);
+    const lead = root.tracks[3]?.notes;
+    const target = lead?.[0];
+    if (!lead || !target || lead.length < 2) throw new Error("Missing ordered Lead fixture.");
+    const apply = (durationTicks: number) =>
+      applyEditorCommandV1(
+        current,
+        { schema: root.schema, revisionHash: root.revisionHash },
+        durationCommand(root, 0, durationTicks),
+      );
+
+    const overlaps = apply(2400);
+    const overlappingRevision = selectedEditorRevisionV1(overlaps);
+    expect(overlappingRevision.command).toEqual({
+      schema: "nightdrive.editor-note-command.v3",
+      type: "set-note-duration",
+      noteId: target.id,
+      expectedDurationTicks: target.durationTicks,
+      durationTicks: 2400,
+    });
+    expect(overlappingRevision.tracks[3]?.notes[0]).toEqual({ ...target, durationTicks: 2400 });
+    expect(overlappingRevision.tracks[3]?.notes.map((note) => note.id)).toEqual(
+      lead.map((note) => note.id),
+    );
+    expect(overlappingRevision.tracks[3]?.notes.map((note) => note.startTick)).toEqual(
+      lead.map((note) => note.startTick),
+    );
+    expect(overlappingRevision.tracks.slice(0, 3)).toEqual(root.tracks.slice(0, 3));
+    expect(overlappingRevision.tracks[3]?.notes[0]?.startTick).toBe(0);
+    const firstOverlappingNote = overlappingRevision.tracks[3]?.notes[0];
+    expect((firstOverlappingNote?.startTick ?? 0) + 2400).toBeGreaterThan(lead[1]?.startTick ?? 0);
+
+    const endingAtSectionBoundary = apply(30720);
+    const last = endingAtSectionBoundary.revisions[1]?.tracks[3]?.notes[0];
+    if (!last) throw new Error("Missing boundary duration revision.");
+    expect(last.durationTicks).toBe(30720);
+    expect(last.startTick + last.durationTicks).toBe(30720);
+    expect(Object.isFrozen(last)).toBe(true);
+    expect(current.cursor).toBe(0);
+    expect(current.revisions).toEqual([root]);
+  });
+
+  it("rejects stale, no-op, malformed, and out-of-section duration commands without changing history", async () => {
+    const current = await history();
+    const root = selectedEditorRevisionV1(current);
+    const lead = root.tracks[3]?.notes;
+    const target = lead?.[0];
+    const bass = root.tracks[1]?.notes[0];
+    if (!target || !bass) throw new Error("Missing editor fixtures.");
+    const apply = (command: unknown) =>
+      applyEditorCommandV1(
+        current,
+        { schema: root.schema, revisionHash: root.revisionHash },
+        command as never,
+      );
+    const valid = durationCommand(root, 0, 1440);
+
+    expect(() => apply(durationCommand(root, 0, target.durationTicks))).toThrow(
+      expect.objectContaining({ code: "NO_OP_EDITOR_COMMAND", field: "command.durationTicks" }),
+    );
+    expect(() => apply({ ...valid, expectedDurationTicks: target.durationTicks - 1 })).toThrow(
+      expect.objectContaining({
+        code: "STALE_EDITOR_NOTE_VALUE",
+        field: "command.expectedDurationTicks",
+      }),
+    );
+    expect(() =>
+      apply({
+        ...valid,
+        expectedDurationTicks: target.durationTicks - 1,
+        durationTicks: 30721,
+      }),
+    ).toThrow(expect.objectContaining({ code: "STALE_EDITOR_NOTE_VALUE" }));
+    for (const durationTicks of [0, -1, 30721])
+      expect(() => apply(durationCommand(root, 0, durationTicks))).toThrow(
+        expect.objectContaining({
+          code: "EDITOR_NOTE_DURATION_OUT_OF_RANGE",
+          field: "command.durationTicks",
+        }),
+      );
+    for (const durationTicks of [1.5, Number.MAX_SAFE_INTEGER + 1, "960"])
+      expect(() => apply({ ...valid, durationTicks })).toThrow(
+        expect.objectContaining({
+          code: "INVALID_EDITOR_COMMAND",
+          field: "command.durationTicks",
+        }),
+      );
+    expect(() => apply({ ...valid, expectedDurationTicks: 0 })).toThrow(
+      expect.objectContaining({
+        code: "INVALID_EDITOR_COMMAND",
+        field: "command.expectedDurationTicks",
+      }),
+    );
+    expect(() => apply({ ...valid, noteId: bass.id })).toThrow(
+      expect.objectContaining({ code: "EDITOR_NOTE_NOT_EDITABLE", field: "command.noteId" }),
+    );
+    expect(() =>
+      apply({
+        ...valid,
+        noteId: "note-0000000000000000000000000000000000000000000000000000000000000000",
+      }),
+    ).toThrow(expect.objectContaining({ code: "EDITOR_NOTE_NOT_FOUND", field: "command.noteId" }));
+    let getterRan = false;
+    const accessor = { ...valid };
+    Object.defineProperty(accessor, "durationTicks", {
+      enumerable: true,
+      get() {
+        getterRan = true;
+        return 1440;
+      },
+    });
+    expect(() => apply(accessor)).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_COMMAND" }),
+    );
+    expect(getterRan).toBe(false);
+    const withFunction = { ...valid, extension: () => (getterRan = true) };
+    const withToJSON = { ...valid, toJSON: () => (getterRan = true) };
+    const withSymbol = { ...valid, [Symbol("extra")]: true };
+    const wrongOrder = {
+      type: valid.type,
+      schema: valid.schema,
+      noteId: valid.noteId,
+      expectedDurationTicks: valid.expectedDurationTicks,
+      durationTicks: valid.durationTicks,
+    };
+    for (const malformed of [withFunction, withToJSON, withSymbol, wrongOrder])
+      expect(() => apply(malformed)).toThrow(
+        expect.objectContaining({ code: "INVALID_EDITOR_COMMAND" }),
+      );
+    expect(getterRan).toBe(false);
+    expect(() => apply({ ...valid, extra: true })).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_COMMAND" }),
+    );
+    expect(() => apply({ ...valid, type: "set-note-pitch" })).toThrow(
+      expect.objectContaining({ code: "UNSUPPORTED_EDITOR_COMMAND_TYPE" }),
+    );
+    expect(current.cursor).toBe(0);
+    expect(current.revisions).toEqual([root]);
+  });
+
+  it("truncates redo only after a valid duration edit from an undone revision", async () => {
+    const initial = await history();
+    const root = selectedEditorRevisionV1(initial);
+    const edited = applyEditorCommandV1(
+      initial,
+      { schema: root.schema, revisionHash: root.revisionHash },
+      durationCommand(root, 1, 1200),
+    );
+    const undone = undoEditorHistoryV1(edited);
+    if (!undone) throw new Error("Undo should restore the root revision.");
+    expect(redoEditorHistoryV1(undone)).toEqual(edited);
+    const undoneRoot = selectedEditorRevisionV1(undone);
+    expect(() =>
+      applyEditorCommandV1(
+        undone,
+        { schema: undoneRoot.schema, revisionHash: undoneRoot.revisionHash },
+        durationCommand(undoneRoot, 1, 960),
+      ),
+    ).toThrow(expect.objectContaining({ code: "NO_OP_EDITOR_COMMAND" }));
+    expect(redoEditorHistoryV1(undone)).toEqual(edited);
+    const branched = applyEditorCommandV1(
+      undone,
+      { schema: undoneRoot.schema, revisionHash: undoneRoot.revisionHash },
+      durationCommand(undoneRoot, 1, 1440),
+    );
+    expect(redoEditorHistoryV1(branched)).toBeNull();
+    expect(branched.revisions).toHaveLength(2);
+    expect(selectedEditorRevisionV1(edited).tracks[3]?.notes[1]?.durationTicks).toBe(1200);
+    expect(selectedEditorRevisionV1(branched).tracks[3]?.notes[1]?.durationTicks).toBe(1440);
+  });
+
   it("rejects stale, no-op, out-of-section, and out-of-order start ticks without changing history", async () => {
     const current = await history();
     const root = selectedEditorRevisionV1(current);
@@ -694,7 +960,7 @@ describe("M2 editor revisions", () => {
       expectedStartTick: valid.expectedStartTick,
       startTick: valid.startTick,
     };
-    const unsupportedExactShape = { ...valid, schema: "nightdrive.editor-note-command.v3" };
+    const unsupportedExactShape = { ...valid, schema: "nightdrive.editor-note-command.v4" };
     const unsupportedMalformedShape = { ...unsupportedExactShape, extra: true };
     const attempt = (command: unknown) =>
       applyEditorCommandV1(

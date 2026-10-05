@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useRef, useState, useTransition } from "reac
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type {
   EditorRevisionIdentityV1,
+  SetNoteDurationCommandV3,
   SetNotePitchCommandV1,
   SetNoteStartTickCommandV2,
 } from "../composition/editor-revision";
@@ -37,6 +38,11 @@ type Props = Readonly<{
     expectedParent: EditorRevisionIdentityV1,
     command: SetNoteStartTickCommandV2,
   ) => Promise<EditorApplicationV1>;
+  setLeadDurationAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: SetNoteDurationCommandV3,
+  ) => Promise<EditorApplicationV1>;
   undoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
   redoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
 }>;
@@ -59,6 +65,7 @@ export function GenerateSection({
   generateAction,
   setLeadPitchAction,
   setLeadStartTickAction,
+  setLeadDurationAction,
   undoSectionEditAction,
   redoSectionEditAction,
 }: Props) {
@@ -68,6 +75,7 @@ export function GenerateSection({
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [pitchValue, setPitchValue] = useState("");
   const [startTickValue, setStartTickValue] = useState("");
+  const [durationTicksValue, setDurationTicksValue] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const [editorPending, setEditorPending] = useState(false);
@@ -122,6 +130,7 @@ export function GenerateSection({
     setSelectedNoteId(selectedNote?.id ?? "");
     setPitchValue(selectedNote ? String(selectedNote.pitch) : "");
     setStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
+    setDurationTicksValue(selectedNote ? String(selectedNote.durationTicks) : "");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -133,6 +142,7 @@ export function GenerateSection({
     setSelectedNoteId("");
     setPitchValue("");
     setStartTickValue("");
+    setDurationTicksValue("");
     setError("");
     const form = new FormData(event.currentTarget);
     const template = selected?.templates.find((item) => item.id === templateId);
@@ -292,6 +302,31 @@ export function GenerateSection({
     );
   }
 
+  function submitLeadDuration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    const maximum = 30720 - selectedLeadNote.startTick;
+    if (!/^\d+$/.test(durationTicksValue)) {
+      setError(`Choose a whole duration from 1 to ${maximum} ticks that ends within the section.`);
+      return;
+    }
+    const durationTicks = Number(durationTicksValue);
+    if (!Number.isSafeInteger(durationTicks) || durationTicks < 1 || durationTicks > maximum) {
+      setError(`Choose a whole duration from 1 to ${maximum} ticks that ends within the section.`);
+      return;
+    }
+    const command: SetNoteDurationCommandV3 = {
+      schema: "nightdrive.editor-note-command.v3",
+      type: "set-note-duration",
+      noteId: selectedLeadNote.id,
+      expectedDurationTicks: selectedLeadNote.durationTicks,
+      durationTicks,
+    };
+    void runEditorOperation((current) =>
+      setLeadDurationAction(current, current.selectedRevision, command),
+    );
+  }
+
   return (
     <>
       <section className="statusPanel" aria-labelledby="generate-title">
@@ -306,6 +341,7 @@ export function GenerateSection({
             setSelectedNoteId("");
             setPitchValue("");
             setStartTickValue("");
+            setDurationTicksValue("");
             setError("");
           }}
           aria-busy={pending}
@@ -504,7 +540,10 @@ export function GenerateSection({
           </section>
           <section aria-labelledby="lead-edit-title" className="editorControls">
             <h3 id="lead-edit-title">Lead note correction</h3>
-            <p>Choose one existing Lead note to change its pitch or absolute start tick.</p>
+            <p>
+              Choose one existing Lead note to change its pitch, absolute start tick, or absolute
+              duration.
+            </p>
             <form onSubmit={submitLeadPitch}>
               <label htmlFor="lead-note-choice">Lead note</label>
               <select
@@ -516,6 +555,7 @@ export function GenerateSection({
                   setSelectedNoteId(event.target.value);
                   setPitchValue(note ? String(note.pitch) : "");
                   setStartTickValue(note ? String(note.startTick) : "");
+                  setDurationTicksValue(note ? String(note.durationTicks) : "");
                   setError("");
                 }}
               >
@@ -583,6 +623,37 @@ export function GenerateSection({
                 }
               >
                 Move Lead note
+              </button>
+            </form>
+            <form onSubmit={submitLeadDuration}>
+              <label htmlFor="lead-note-duration">Absolute duration ticks</label>
+              <input
+                id="lead-note-duration"
+                type="number"
+                min="1"
+                max={selectedLeadNote ? 30720 - selectedLeadNote.startTick : 30720}
+                step="1"
+                required
+                value={durationTicksValue}
+                disabled={!selectedLeadNote || editorPending}
+                onChange={(event) => {
+                  setDurationTicksValue(event.target.value);
+                  setError("");
+                }}
+              />
+              <button
+                type="submit"
+                disabled={
+                  !selectedLeadNote ||
+                  editorPending ||
+                  !/^\d+$/.test(durationTicksValue) ||
+                  !Number.isSafeInteger(Number(durationTicksValue)) ||
+                  Number(durationTicksValue) < 1 ||
+                  Number(durationTicksValue) > 30720 - (selectedLeadNote?.startTick ?? 30720) ||
+                  Number(durationTicksValue) === selectedLeadNote?.durationTicks
+                }
+              >
+                Apply Lead duration
               </button>
             </form>
             <div className="editorHistoryControls">
