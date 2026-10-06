@@ -1,6 +1,7 @@
 import process from "node:process";
 import type { CompleteSectionResultV1 } from "../composition/complete-section";
 import type {
+  AddNoteCommandV6,
   DeleteNoteCommandV4,
   EditorRevisionIdentityV1,
   EditorRevisionV1,
@@ -128,6 +129,16 @@ export function editEditorApplicationDeleteNoteV1(
   current: EditorApplicationV1,
   expectedParent: EditorRevisionIdentityV1,
   command: DeleteNoteCommandV4,
+): EditorApplicationV1 {
+  requirePinnedNode();
+  return application(applyEditorCommandV1(current.history, expectedParent, command));
+}
+
+/** Applies one validated Lead add command and returns its derived audition view. */
+export function editEditorApplicationAddNoteV1(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: AddNoteCommandV6,
 ): EditorApplicationV1 {
   requirePinnedNode();
   return application(applyEditorCommandV1(current.history, expectedParent, command));

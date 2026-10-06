@@ -14,6 +14,10 @@ export const EDITOR_COMMAND_SCHEMA_V2 = "nightdrive.editor-note-command.v2" as c
 export const EDITOR_COMMAND_SCHEMA_V3 = "nightdrive.editor-note-command.v3" as const;
 export const EDITOR_COMMAND_SCHEMA_V4 = "nightdrive.editor-note-command.v4" as const;
 export const EDITOR_COMMAND_SCHEMA_V5 = "nightdrive.editor-note-command.v5" as const;
+export const EDITOR_COMMAND_SCHEMA_V6 = "nightdrive.editor-note-command.v6" as const;
+export const EDITOR_ADDED_NOTE_ID_INPUT_SCHEMA_V1 =
+  "nightdrive.editor-added-note-id-input.v1" as const;
+export const ADD_NOTE_COMMAND_V6 = "add-note" as const;
 export const SET_NOTE_PITCH_COMMAND_V1 = "set-note-pitch" as const;
 export const SET_NOTE_START_TICK_COMMAND_V2 = "set-note-start-tick" as const;
 export const SET_NOTE_DURATION_COMMAND_V3 = "set-note-duration" as const;
@@ -70,7 +74,15 @@ export type SetNotePositionCommandV5 = Readonly<{
   pitch: number;
   startTick: number;
 }>;
+export type AddNoteCommandV6 = Readonly<{
+  schema: typeof EDITOR_COMMAND_SCHEMA_V6;
+  type: typeof ADD_NOTE_COMMAND_V6;
+  pitch: number;
+  startTick: number;
+  durationTicks: number;
+}>;
 export type EditorNoteCommand =
+  | AddNoteCommandV6
   | SetNotePitchCommandV1
   | SetNoteStartTickCommandV2
   | SetNoteDurationCommandV3
@@ -109,6 +121,7 @@ export type EditorErrorCode =
   | "EDITOR_NOTE_START_OUT_OF_RANGE"
   | "EDITOR_NOTE_START_ORDER_INVALID"
   | "EDITOR_NOTE_DURATION_OUT_OF_RANGE"
+  | "EDITOR_NOTE_ID_COLLISION"
   | "NO_OP_EDITOR_COMMAND";
 export class EditorValueError extends RangeError {
   constructor(
@@ -438,6 +451,34 @@ export function validateSetNotePositionCommandV5(value: unknown): SetNotePositio
     startTick,
   });
 }
+export function validateAddNoteCommandV6(value: unknown): AddNoteCommandV6 {
+  const c = dataRecord(
+    value,
+    "command",
+    ["schema", "type", "pitch", "startTick", "durationTicks"],
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (read(c, "schema") !== EDITOR_COMMAND_SCHEMA_V6)
+    fail("UNSUPPORTED_EDITOR_COMMAND_SCHEMA", "command.schema", "Unsupported command schema.");
+  if (read(c, "type") !== ADD_NOTE_COMMAND_V6)
+    fail("UNSUPPORTED_EDITOR_COMMAND_TYPE", "command.type", "Unsupported command type.");
+  const pitch = int(read(c, "pitch"), "command.pitch", "INVALID_EDITOR_COMMAND");
+  const startTick = int(read(c, "startTick"), "command.startTick", "INVALID_EDITOR_COMMAND");
+  const durationTicks = int(
+    read(c, "durationTicks"),
+    "command.durationTicks",
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (pitch < 0 || pitch > 127)
+    fail("INVALID_EDITOR_COMMAND", "command.pitch", "Pitch must be 0..127.");
+  return deepFreeze({
+    schema: EDITOR_COMMAND_SCHEMA_V6,
+    type: ADD_NOTE_COMMAND_V6,
+    pitch,
+    startTick,
+    durationTicks,
+  });
+}
 function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
   if (
     typeof value !== "object" ||
@@ -466,6 +507,7 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V2) return validateSetNoteStartTickCommandV2(value);
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V3) return validateSetNoteDurationCommandV3(value);
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V5) return validateSetNotePositionCommandV5(value);
+  if (schemaValue === EDITOR_COMMAND_SCHEMA_V6) return validateAddNoteCommandV6(value);
   const names = Object.getOwnPropertyNames(value);
   if (
     schemaValue === EDITOR_COMMAND_SCHEMA_V4 &&
@@ -513,6 +555,15 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
     names[6] === "startTick"
   )
     return validateSetNotePositionCommandV5(value);
+  if (
+    names.length === 5 &&
+    names[0] === "schema" &&
+    names[1] === "type" &&
+    names[2] === "pitch" &&
+    names[3] === "startTick" &&
+    names[4] === "durationTicks"
+  )
+    return validateAddNoteCommandV6(value);
   if (names.length === 3 && names[0] === "schema" && names[1] === "type" && names[2] === "noteId")
     return validateDeleteNoteCommandV4(value);
   return fail("INVALID_EDITOR_COMMAND", "command", "Invalid command fields or field order.");
@@ -681,6 +732,68 @@ function transitionVerifiedRevisionV1(
 ): EditorRevisionV1 {
   const p = parent;
   const c = validateEditorNoteCommand(command);
+  if (c.type === ADD_NOTE_COMMAND_V6) {
+    if (c.pitch < 60 || c.pitch > 84)
+      fail("EDITOR_LEAD_PITCH_OUT_OF_RANGE", "command.pitch", "Lead pitch must be 60..84.");
+    if (c.startTick < 0 || c.startTick >= p.section.endTick)
+      fail(
+        "EDITOR_NOTE_START_OUT_OF_RANGE",
+        "command.startTick",
+        "Lead note start is out of range.",
+      );
+    if (c.durationTicks < 1)
+      fail(
+        "EDITOR_NOTE_DURATION_OUT_OF_RANGE",
+        "command.durationTicks",
+        "Lead note duration must be positive.",
+      );
+    if (c.durationTicks > p.section.endTick - c.startTick)
+      fail(
+        "EDITOR_NOTE_DURATION_OUT_OF_RANGE",
+        "command.durationTicks",
+        "Lead note must end within the section.",
+      );
+    const identityInput = {
+      schema: EDITOR_ADDED_NOTE_ID_INPUT_SCHEMA_V1,
+      parent: { schema: EDITOR_REVISION_SCHEMA_V1, revisionHash: p.revisionHash },
+      command: c,
+    };
+    const id = `note-${digestStage7CanonicalUtf8(JSON.stringify(identityInput))}`;
+    if (p.tracks.some((track) => track.notes.some((event) => event.id === id)))
+      fail("EDITOR_NOTE_ID_COLLISION", "command", "Derived note ID already exists.");
+    const insertedNote = deepFreeze({
+      id,
+      pitch: c.pitch,
+      startTick: c.startTick,
+      durationTicks: c.durationTicks,
+      velocity: 100,
+    });
+    const notes: EditorNoteV1[] = [];
+    let inserted = false;
+    for (const existing of p.tracks[3].notes) {
+      if (!inserted && existing.startTick > c.startTick) {
+        notes.push(insertedNote);
+        inserted = true;
+      }
+      notes.push(existing);
+    }
+    if (!inserted) notes.push(insertedNote);
+    const tracks = deepFreeze(
+      p.tracks.map((track) =>
+        track.role === "lead"
+          ? deepFreeze({ role: "lead" as const, notes: deepFreeze(notes) })
+          : track,
+      ),
+    );
+    return build({
+      schema: EDITOR_REVISION_SCHEMA_V1,
+      source: p.source,
+      section: p.section,
+      tracks,
+      parent: deepFreeze({ schema: EDITOR_REVISION_SCHEMA_V1, revisionHash: p.revisionHash }),
+      command: c,
+    });
+  }
   const lead = p.tracks[3];
   const index = lead.notes.findIndex((n) => n.id === c.noteId);
   if (index < 0) {

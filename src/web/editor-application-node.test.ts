@@ -12,6 +12,7 @@ import {
   EDITOR_COMMAND_SCHEMA_V1,
   EDITOR_COMMAND_SCHEMA_V4,
   EDITOR_COMMAND_SCHEMA_V5,
+  EDITOR_COMMAND_SCHEMA_V6,
 } from "../composition/editor-revision";
 import { generateCompleteSectionV1 } from "../generators/complete-section";
 import {
@@ -26,6 +27,7 @@ import { MOTIF_GENERATOR_VERSION_V1 } from "../music-domain/motif-result";
 import { PRNG_ALGORITHM_ID } from "../music-domain/prng";
 import {
   createEditorApplicationV1,
+  editEditorApplicationAddNoteV1,
   editEditorApplicationDeleteNoteV1,
   editEditorApplicationDurationV1,
   editEditorApplicationPitchV1,
@@ -94,6 +96,9 @@ describe("M2 editor application boundary", () => {
     ).toThrow("require Node");
     expect(() =>
       editEditorApplicationDeleteNoteV1(undefined as never, undefined as never, undefined as never),
+    ).toThrow("require Node");
+    expect(() =>
+      editEditorApplicationAddNoteV1(undefined as never, undefined as never, undefined as never),
     ).toThrow("require Node");
     expect(() =>
       editEditorApplicationPositionV1(undefined as never, undefined as never, undefined as never),
@@ -485,5 +490,56 @@ describe("M2 editor application boundary", () => {
     if (!redone) throw new Error("Redo should restore the exact child revision.");
     expect(redone.selectedRevision).toEqual(edited.selectedRevision);
     expect(redone.preview).toEqual(edited.preview);
+  });
+
+  it("applies one canonical v6 Lead add command at the Node boundary and projects the immutable revision", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = createEditorApplicationV1(source);
+    const rootRevision = root.history.revisions[0];
+    const lead = rootRevision?.tracks[3]?.notes;
+    if (!rootRevision || !lead) throw new Error("Missing add-note application fixture.");
+    const command = {
+      schema: EDITOR_COMMAND_SCHEMA_V6,
+      type: "add-note",
+      pitch: 64,
+      startTick: 960,
+      durationTicks: 480,
+    } as const;
+
+    const added = editEditorApplicationAddNoteV1(root, root.selectedRevision, command);
+    const child = added.history.revisions[1];
+    const newNote = child?.tracks[3]?.notes[1];
+    if (!child || !newNote) throw new Error("Missing canonical added-note child.");
+    expect(added.history.revisions).toHaveLength(2);
+    expect(added.history.cursor).toBe(1);
+    expect(child.command).toEqual(command);
+    expect(child.parent?.revisionHash).toBe(rootRevision.revisionHash);
+    expect(child.tracks[3]?.notes).toHaveLength(lead.length + 1);
+    expect(newNote).toMatchObject({ pitch: 64, startTick: 960, durationTicks: 480, velocity: 100 });
+    expect(newNote.id).toMatch(/^note-[0-9a-f]{64}$/u);
+    expect(child.tracks[3]?.notes[0]).toEqual(lead[0]);
+    expect(child.tracks[3]?.notes[2]).toEqual(lead[1]);
+    expect(added.preview.tracks[3]?.notes[1]).toEqual({
+      pitch: 64,
+      startTick: 960,
+      durationTicks: 480,
+    });
+    expect(added.preview.tracks[3]?.notes[1]).not.toHaveProperty("id");
+    expect(added.preview.sourceResultHash).toBe(source.resultHash);
+    expect(added.preview.tracks.slice(0, 3)).toEqual(root.preview.tracks.slice(0, 3));
+    expect(root.history.revisions[0]).toEqual(rootRevision);
+    expect(root.preview.tracks[3]?.notes).toHaveLength(lead.length);
+    expect(added.preview).not.toHaveProperty("revisionHash");
+    expect(deepFrozen(added)).toBe(true);
+
+    const undone = undoEditorApplicationV1(added);
+    if (!undone) throw new Error("Undo should restore the exact pre-add revision.");
+    expect(undone.selectedRevision).toEqual(root.selectedRevision);
+    expect(undone.preview).toEqual(root.preview);
+    const redone = redoEditorApplicationV1(undone);
+    if (!redone) throw new Error("Redo should restore the exact added-note revision.");
+    expect(redone.selectedRevision).toEqual(added.selectedRevision);
+    expect(redone.preview).toEqual(added.preview);
+    expect(redone.history.revisions[1]?.tracks[3]?.notes[1]?.id).toBe(newNote.id);
   });
 });
