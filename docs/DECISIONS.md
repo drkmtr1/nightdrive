@@ -601,3 +601,19 @@ On success, create one child revision/Undo step, retain the source identity, kee
 **Consequences:** This is UI interaction authority only after its review/acceptance lifecycle. It does not change v7 canonical semantics, `CompleteSectionPreview`, BrowserAudition, gain mapping, normalization, master volume, or any v1-v6 behavior. AC-015 remains partial. No velocity lane/handle, multi-note or other-role editing, resize, transpose, snap, persistence, AC-014, or Stage 8 work is authorized.
 
 **Revisit:** Any change to the control, submission gesture, accessible behavior, canonical boundary, error/state preservation, audition limitation, version compatibility, or scope requires separately bounded authority and applicable review. Audible velocity remains a separate specification.
+
+## ADR-038 — M2 Lead-note right-edge resize interaction
+
+**Date:** 2026-10-07
+
+**Status:** CANDIDATE. Consequential independent exact-head PASS and explicit Product Owner acceptance establish local implementation authority under ADR-031 only. This task implements nothing and grants no descendant or cumulative integration PASS.
+
+**Context:** The canonical v3 duration command and keyboard duration editor already exist; Stage 10/AC-015 still require resizing. The Product Owner selects right-edge-only resizing and reuse of accepted drag conventions.
+
+**Decision:** Use the existing v3 duration boundary for one Lead-note right-edge gesture, with captured stable target/parent, preserved grab offset, 4 CSS-pixel activation, nearest integer-tick delta and half-away ties, noncanonical proposal and one release command. Preserve start/pitch/velocity/order, existing overlaps, exact history/source identity and audition invalidation. The existing Duration Ticks/Apply form is the keyboard alternative. Exact interaction, cancellation and evidence are in [the resize specification](reviews/M2_LEAD_NOTE_RESIZE_UI_SPECIFICATION.md).
+
+**Alternatives:** Both-edge resizing needs new atomic start/duration semantics; snapping/clamping or continuous commits alter accepted intent/history. The selected right-edge-only path reuses v3 without those changes.
+
+**Consequences:** A separately reviewed implementation may add the handle only after exact-tuple acceptance. Preserve v1-v7, body drag and preview/canonical boundaries. AC-015 remains partial; no transpose, snap, audible velocity, other-role editing or release qualification is authorized.
+
+**Revisit:** Changes to edge scope, mapping, activation, command submission, cancellation, accessibility or canonical semantics require separate consequential authority.
