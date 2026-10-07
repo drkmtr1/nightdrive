@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import * as completeSection from "../web/complete-section-node";
 import * as editorApplication from "../web/editor-application-node";
 import {
+  addLeadNoteAction,
   deleteLeadNoteAction,
   generateSectionAction,
   redoSectionEditAction,
@@ -82,6 +83,26 @@ describe("editor application server functions", () => {
     expect(undo).toHaveBeenCalledWith(current);
     expect(redo).toHaveBeenCalledTimes(1);
     expect(redo).toHaveBeenCalledWith(current);
+  });
+
+  it("passes the exact v6 Add Note command through the pinned Node boundary once", async () => {
+    const current = { sentinel: "current application" } as never;
+    const parent = { schema: "nightdrive.editor-revision.v1", revisionHash: "parent" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v6",
+      type: "add-note",
+      pitch: 64,
+      startTick: 960,
+      durationTicks: 480,
+    } as never;
+    const next = { sentinel: "next application" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationAddNoteV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(addLeadNoteAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });
 
   it("passes the versioned start-tick command through the pinned Node boundary", async () => {

@@ -170,6 +170,64 @@ const DURATION_APPLICATION = makeEditorApplication(60, true, 1, undefined, 1440)
 const DURATION_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, 1440);
 const DELETED_APPLICATION = makeEditorApplication(60, true, 1, undefined, undefined, true);
 const DELETED_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, undefined, true);
+const ADDED_NOTE_ID = `note-${"e".repeat(64)}`;
+
+function makeAddedLeadApplication(cursor = 1): EditorApplicationV1 {
+  const root = ROOT_APPLICATION.history.revisions[0];
+  if (!root) throw new Error("Missing editor root fixture.");
+  const child = {
+    ...root,
+    tracks: root.tracks.map((track) =>
+      track.role === "lead"
+        ? {
+            ...track,
+            notes: [
+              ...track.notes,
+              {
+                id: ADDED_NOTE_ID,
+                pitch: 64,
+                startTick: 960,
+                durationTicks: 480,
+                velocity: 100,
+              },
+            ],
+          }
+        : track,
+    ),
+    parent: { schema: root.schema, revisionHash: root.revisionHash },
+    command: {
+      schema: "nightdrive.editor-note-command.v6",
+      type: "add-note",
+      pitch: 64,
+      startTick: 960,
+      durationTicks: 480,
+    },
+    revisionHash: "e".repeat(64),
+  } as unknown as EditorRevisionV1;
+  const selected = cursor === 1 ? child : root;
+  return {
+    history: {
+      source: ROOT_APPLICATION.history.source,
+      revisions: [root, child],
+      cursor,
+    },
+    selectedRevision: { schema: selected.schema, revisionHash: selected.revisionHash },
+    preview: {
+      ...ROOT_APPLICATION.preview,
+      tracks: selected.tracks.map((track) => ({
+        role: track.role,
+        notes: track.notes.map(({ pitch, startTick, durationTicks }) => ({
+          pitch,
+          startTick,
+          durationTicks,
+        })),
+      })),
+    },
+  };
+}
+
+const ADDED_APPLICATION = makeAddedLeadApplication();
+const ADDED_UNDONE_APPLICATION = makeAddedLeadApplication(0);
 const OVERLAPPING_NOTE_ID = `note-${"f".repeat(64)}`;
 
 function makeOverlappingLeadApplication(): EditorApplicationV1 {
@@ -211,6 +269,7 @@ function makeOverlappingLeadApplication(): EditorApplicationV1 {
 function makeActions() {
   return {
     generateAction: vi.fn().mockResolvedValue(ROOT_APPLICATION),
+    addLeadNoteAction: vi.fn().mockResolvedValue(ADDED_APPLICATION),
     setLeadPitchAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
     setLeadStartTickAction: vi.fn().mockResolvedValue(MOVED_APPLICATION),
     setLeadPositionAction: vi.fn().mockResolvedValue(POSITION_APPLICATION),
@@ -359,11 +418,340 @@ describe("Generate section consumer", () => {
     expect(screen.getByRole("button", { name: "Play" })).toBeVisible();
     expect(screen.getByText(/internal composition preview/i)).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Lead note" })).toHaveValue(NOTE_ID);
+    const addForm = screen.getByRole("form", { name: "Add Lead note" });
+    expect(addForm.querySelectorAll("input")).toHaveLength(3);
+    expect(screen.getByLabelText("Pitch")).toHaveProperty("value", "");
+    expect(screen.getByLabelText("Start Tick")).toHaveProperty("value", "");
+    expect(screen.getByLabelText("Duration Ticks")).toHaveProperty("value", "");
+    expect(screen.getByRole("button", { name: "Add Note" })).toHaveAttribute("type", "submit");
     expect(screen.getByLabelText("MIDI pitch (60–84)")).toHaveValue(60);
     expect(screen.getByRole("button", { name: "Apply Lead pitch" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Redo" })).toBeDisabled();
   });
+  it("submits one absolute v6 Add Note command and restores the returned revision through undo and redo", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.change(screen.getByLabelText("Pitch"), { target: { value: "64" } });
+    fireEvent.change(screen.getByLabelText("Start Tick"), { target: { value: "960" } });
+    fireEvent.change(screen.getByLabelText("Duration Ticks"), { target: { value: "480" } });
+    const addForm = screen.getByRole("form", { name: "Add Lead note" });
+    fireEvent.submit(addForm);
+
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 64, start tick 960, duration 480 ticks",
+    });
+    expect(actions.addLeadNoteAction).toHaveBeenCalledTimes(1);
+    expect(actions.addLeadNoteAction.mock.calls[0]).toEqual([
+      ROOT_APPLICATION,
+      ROOT_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v6",
+        type: "add-note",
+        pitch: 64,
+        startTick: 960,
+        durationTicks: 480,
+      },
+    ]);
+    expect(actions.generateAction).toHaveBeenCalledTimes(1);
+    expect(ADDED_APPLICATION.preview.sourceResultHash).toBe(PREVIEW.sourceResultHash);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Redo" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Lead note" })).toHaveValue(NOTE_ID);
+    expect(
+      screen.getByRole("option", {
+        name: /Lead note 2 · MIDI 64 · tick 960 · duration 480/,
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Lead note" }), {
+      target: { value: ADDED_NOTE_ID },
+    });
+    expect(screen.getByLabelText("MIDI pitch (60–84)")).toHaveValue(64);
+    expect(screen.getByLabelText("Absolute start tick")).toHaveValue(960);
+    expect(screen.getByLabelText("Absolute duration ticks")).toHaveValue(480);
+
+    actions.undoSectionEditAction.mockResolvedValueOnce(ADDED_UNDONE_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await screen.findByText("Editor revision 1 of 2.");
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(ADDED_APPLICATION);
+    expect(screen.queryByRole("listitem", { name: /MIDI pitch 64, start tick 960/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Redo" })).toBeEnabled();
+
+    actions.redoSectionEditAction.mockResolvedValueOnce(ADDED_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 64, start tick 960, duration 480 ticks",
+    });
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(ADDED_UNDONE_APPLICATION);
+  });
+
+  it.each([
+    { field: "Pitch", pitch: "", startTick: "0", durationTicks: "480", message: "Pitch:" },
+    { field: "Pitch", pitch: "1e2", startTick: "0", durationTicks: "480", message: "Pitch:" },
+    {
+      field: "Pitch",
+      pitch: "9007199254740992",
+      startTick: "0",
+      durationTicks: "480",
+      message: "Pitch:",
+    },
+    { field: "Pitch", pitch: "85", startTick: "0", durationTicks: "480", message: "Pitch:" },
+    {
+      field: "Start Tick",
+      pitch: "64",
+      startTick: "",
+      durationTicks: "480",
+      message: "Start Tick:",
+    },
+    {
+      field: "Start Tick",
+      pitch: "64",
+      startTick: "1.5",
+      durationTicks: "480",
+      message: "Start Tick:",
+    },
+    {
+      field: "Start Tick",
+      pitch: "64",
+      startTick: "9007199254740992",
+      durationTicks: "480",
+      message: "Start Tick:",
+    },
+    {
+      field: "Start Tick",
+      pitch: "64",
+      startTick: "30720",
+      durationTicks: "1",
+      message: "Start Tick:",
+    },
+    {
+      field: "Duration Ticks",
+      pitch: "64",
+      startTick: "0",
+      durationTicks: "",
+      message: "Duration Ticks:",
+    },
+    {
+      field: "Duration Ticks",
+      pitch: "64",
+      startTick: "0",
+      durationTicks: "1.5",
+      message: "Duration Ticks:",
+    },
+    {
+      field: "Duration Ticks",
+      pitch: "64",
+      startTick: "0",
+      durationTicks: "9007199254740992",
+      message: "Duration Ticks:",
+    },
+    {
+      field: "Duration Ticks",
+      pitch: "64",
+      startTick: "0",
+      durationTicks: "0",
+      message: "Duration Ticks:",
+    },
+    {
+      field: "Duration Ticks",
+      pitch: "64",
+      startTick: "30719",
+      durationTicks: "2",
+      message: "Duration Ticks:",
+    },
+  ])("rejects invalid $field input without changing the editor application", async (testCase) => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.change(screen.getByLabelText("Pitch"), {
+      target: { value: testCase.pitch },
+    });
+    fireEvent.change(screen.getByLabelText("Start Tick"), {
+      target: { value: testCase.startTick },
+    });
+    fireEvent.change(screen.getByLabelText("Duration Ticks"), {
+      target: { value: testCase.durationTicks },
+    });
+    fireEvent.submit(screen.getByRole("form", { name: "Add Lead note" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(testCase.message);
+    const field = screen.getByLabelText(testCase.field);
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(field).toHaveAttribute("aria-describedby", "add-lead-note-error");
+    expect(screen.getByLabelText("Pitch")).toHaveProperty("value", testCase.pitch);
+    expect(screen.getByLabelText("Start Tick")).toHaveProperty("value", testCase.startTick);
+    expect(screen.getByLabelText("Duration Ticks")).toHaveProperty("value", testCase.durationTicks);
+    expect(actions.addLeadNoteAction).not.toHaveBeenCalled();
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+    expect(
+      screen.getByRole("listitem", {
+        name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+      }),
+    ).toBeVisible();
+  });
+
+  it("allows the explicit add form when the current Lead track has no selected note", async () => {
+    const actions = makeActions();
+    actions.generateAction.mockResolvedValueOnce(DELETED_APPLICATION);
+    actions.addLeadNoteAction.mockImplementationOnce(() => new Promise(() => {}));
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByText("0 notes");
+
+    expect(screen.getByRole("combobox", { name: "Lead note" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add Note" })).toBeEnabled();
+    fireEvent.change(screen.getByLabelText("Pitch"), { target: { value: "64" } });
+    fireEvent.change(screen.getByLabelText("Start Tick"), { target: { value: "960" } });
+    fireEvent.change(screen.getByLabelText("Duration Ticks"), { target: { value: "480" } });
+    fireEvent.submit(screen.getByRole("form", { name: "Add Lead note" }));
+
+    expect(actions.addLeadNoteAction).toHaveBeenCalledTimes(1);
+    expect(actions.addLeadNoteAction.mock.calls[0]).toEqual([
+      DELETED_APPLICATION,
+      DELETED_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v6",
+        type: "add-note",
+        pitch: 64,
+        startTick: 960,
+        durationTicks: 480,
+      },
+    ]);
+  });
+
+  it("does not create a note when the empty piano-roll grid is activated", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    fireEvent.click(screen.getByTestId("lead-piano-roll-plot"));
+    expect(actions.addLeadNoteAction).not.toHaveBeenCalled();
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+    expect(
+      screen.getByRole("listitem", {
+        name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+      }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Pitch")).toHaveProperty("value", "");
+    expect(screen.getByLabelText("Start Tick")).toHaveProperty("value", "");
+    expect(screen.getByLabelText("Duration Ticks")).toHaveProperty("value", "");
+  });
+
+  it("submits only one Add Note command while the Node operation is pending and installs no optimistic note", async () => {
+    const actions = makeActions();
+    let resolveAdd: ((value: EditorApplicationV1) => void) | undefined;
+    actions.addLeadNoteAction.mockImplementationOnce(
+      () =>
+        new Promise<EditorApplicationV1>((resolve) => {
+          resolveAdd = resolve;
+        }),
+    );
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    fireEvent.change(screen.getByLabelText("Pitch"), { target: { value: "64" } });
+    fireEvent.change(screen.getByLabelText("Start Tick"), { target: { value: "960" } });
+    fireEvent.change(screen.getByLabelText("Duration Ticks"), { target: { value: "480" } });
+    const addForm = screen.getByRole("form", { name: "Add Lead note" });
+
+    fireEvent.submit(addForm);
+    expect(actions.addLeadNoteAction).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Add Note" })).toBeDisabled();
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+    expect(
+      screen.queryByRole("listitem", {
+        name: "Lead note, MIDI pitch 64, start tick 960, duration 480 ticks",
+      }),
+    ).toBeNull();
+
+    fireEvent.submit(addForm);
+    expect(actions.addLeadNoteAction).toHaveBeenCalledTimes(1);
+    if (!resolveAdd) throw new Error("Add operation did not remain pending.");
+    await act(async () => resolveAdd?.(ADDED_APPLICATION));
+    await screen.findByRole("listitem", {
+      name: "Lead note, MIDI pitch 64, start tick 960, duration 480 ticks",
+    });
+  });
+
+  it("keeps the application and active audition after Add Note is rejected with a safe diagnostic", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const actions = makeActions();
+      actions.addLeadNoteAction.mockRejectedValueOnce(new Error("private v6 failure"));
+      renderConsumer(actions);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+      const sourceStopCallsBefore = audio.sources.map((source) => source.stop.mock.calls.length);
+
+      fireEvent.change(screen.getByLabelText("Pitch"), { target: { value: "64" } });
+      fireEvent.change(screen.getByLabelText("Start Tick"), { target: { value: "960" } });
+      fireEvent.change(screen.getByLabelText("Duration Ticks"), { target: { value: "480" } });
+      fireEvent.submit(screen.getByRole("form", { name: "Add Lead note" }));
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(
+        "The Lead edit history could not be updated. The generated section remains unchanged.",
+      );
+      expect(alert).not.toHaveTextContent("private v6 failure");
+      expect(screen.getByText("Playing all four roles.")).toBeVisible();
+      expect(audio.sources.map((source) => source.stop.mock.calls.length)).toEqual(
+        sourceStopCallsBefore,
+      );
+      expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+      expect(
+        screen.getByRole("listitem", {
+          name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+        }),
+      ).toBeVisible();
+      expect(screen.getByLabelText("Pitch")).toHaveValue(64);
+      expect(screen.getByLabelText("Start Tick")).toHaveValue(960);
+      expect(screen.getByLabelText("Duration Ticks")).toHaveValue(480);
+    } finally {
+      audio.restore();
+    }
+  });
+
+  it("invalidates playback after accepted Add Note without automatically resuming", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const { actions } = renderConsumer();
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+      const sourcesBeforeAdd = audio.sources.length;
+
+      fireEvent.change(screen.getByLabelText("Pitch"), { target: { value: "64" } });
+      fireEvent.change(screen.getByLabelText("Start Tick"), { target: { value: "960" } });
+      fireEvent.change(screen.getByLabelText("Duration Ticks"), { target: { value: "480" } });
+      fireEvent.submit(screen.getByRole("form", { name: "Add Lead note" }));
+
+      await screen.findByRole("listitem", {
+        name: "Lead note, MIDI pitch 64, start tick 960, duration 480 ticks",
+      });
+      expect(actions.addLeadNoteAction).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Play" })).toBeEnabled();
+      expect(audio.sources).toHaveLength(sourcesBeforeAdd);
+    } finally {
+      audio.restore();
+    }
+  });
+
   it("sends one stable Lead pitch command and restores the exact selected preview through undo and redo", async () => {
     const { actions } = renderConsumer();
     choose();

@@ -2,6 +2,7 @@
 
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type {
+  AddNoteCommandV6,
   DeleteNoteCommandV4,
   EditorRevisionIdentityV1,
   SetNoteDurationCommandV3,
@@ -13,6 +14,7 @@ import { generateCompleteSectionForAuditionV1 } from "../web/complete-section-no
 import {
   createEditorApplicationV1,
   type EditorApplicationV1,
+  editEditorApplicationAddNoteV1,
   editEditorApplicationDeleteNoteV1,
   editEditorApplicationDurationV1,
   editEditorApplicationPitchV1,
@@ -30,6 +32,15 @@ export async function generateSectionAction(
 ): Promise<EditorApplicationV1> {
   const source = await generateCompleteSectionForAuditionV1(request);
   return createEditorApplicationV1(source);
+}
+
+// This Server Action carries the v6 command unchanged to the pinned Node boundary.
+export async function addLeadNoteAction(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: AddNoteCommandV6,
+): Promise<EditorApplicationV1> {
+  return editEditorApplicationAddNoteV1(current, expectedParent, command);
 }
 
 // These internal Server Actions carry validated plain data only. The Node
