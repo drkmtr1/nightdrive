@@ -10,6 +10,7 @@ import type {
   SetNotePitchCommandV1,
   SetNotePositionCommandV5,
   SetNoteStartTickCommandV2,
+  SetNoteVelocityCommandV7,
 } from "../composition/editor-revision";
 import type { HarmonyProfileId } from "../music-domain/harmony";
 import { createKey } from "../music-domain/key";
@@ -57,6 +58,11 @@ type Props = Readonly<{
     expectedParent: EditorRevisionIdentityV1,
     command: SetNoteDurationCommandV3,
   ) => Promise<EditorApplicationV1>;
+  setLeadVelocityAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: SetNoteVelocityCommandV7,
+  ) => Promise<EditorApplicationV1>;
   deleteLeadNoteAction: (
     current: EditorApplicationV1,
     expectedParent: EditorRevisionIdentityV1,
@@ -89,6 +95,7 @@ export function GenerateSection({
   setLeadStartTickAction,
   setLeadPositionAction,
   setLeadDurationAction,
+  setLeadVelocityAction,
   deleteLeadNoteAction,
   undoSectionEditAction,
   redoSectionEditAction,
@@ -106,6 +113,8 @@ export function GenerateSection({
   const [positionPitchValue, setPositionPitchValue] = useState("");
   const [positionStartTickValue, setPositionStartTickValue] = useState("");
   const [durationTicksValue, setDurationTicksValue] = useState("");
+  const [velocityValue, setVelocityValue] = useState("");
+  const [velocityFieldError, setVelocityFieldError] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const [editorPending, setEditorPending] = useState(false);
@@ -163,6 +172,8 @@ export function GenerateSection({
     setPositionPitchValue(selectedNote ? String(selectedNote.pitch) : "");
     setPositionStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
     setDurationTicksValue(selectedNote ? String(selectedNote.durationTicks) : "");
+    setVelocityValue(selectedNote ? String(selectedNote.velocity) : "");
+    setVelocityFieldError("");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -177,6 +188,8 @@ export function GenerateSection({
     setPositionPitchValue("");
     setPositionStartTickValue("");
     setDurationTicksValue("");
+    setVelocityValue("");
+    setVelocityFieldError("");
     setAddPitchValue("");
     setAddStartTickValue("");
     setAddDurationTicksValue("");
@@ -272,6 +285,7 @@ export function GenerateSection({
     operation: (
       current: EditorApplicationV1,
     ) => EditorApplicationV1 | null | Promise<EditorApplicationV1 | null>,
+    onRejected?: (failure: unknown) => void,
   ) {
     if (!application || editorInFlight.current) return;
     editorInFlight.current = true;
@@ -283,11 +297,14 @@ export function GenerateSection({
       if (editorEpoch.current !== invocationEpoch || result === null) return;
       invalidatePlayback();
       installApplication(result);
-    } catch {
-      if (editorEpoch.current === invocationEpoch)
-        setError(
-          "The Lead edit history could not be updated. The generated section remains unchanged.",
-        );
+    } catch (failure) {
+      if (editorEpoch.current === invocationEpoch) {
+        if (onRejected) onRejected(failure);
+        else
+          setError(
+            "The Lead edit history could not be updated. The generated section remains unchanged.",
+          );
+      }
     } finally {
       editorInFlight.current = false;
       setEditorPending(false);
@@ -505,6 +522,63 @@ export function GenerateSection({
     );
   }
 
+  function submitLeadVelocity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    setError("");
+    setVelocityFieldError("");
+
+    if (!/^[0-9]+$/.test(velocityValue)) {
+      setVelocityFieldError("Velocity: enter a whole number from 1 to 127.");
+      return;
+    }
+    const velocity = Number(velocityValue);
+    if (!Number.isSafeInteger(velocity) || velocity < 1 || velocity > 127) {
+      setVelocityFieldError("Velocity: enter a whole number from 1 to 127.");
+      return;
+    }
+    if (velocity === selectedLeadNote.velocity) return;
+
+    const expectedParent = application.selectedRevision;
+    const command: SetNoteVelocityCommandV7 = {
+      schema: "nightdrive.editor-note-command.v7",
+      type: "set-note-velocity",
+      noteId: selectedLeadNote.id,
+      expectedVelocity: selectedLeadNote.velocity,
+      velocity,
+    };
+    void runEditorOperation(
+      (current) => setLeadVelocityAction(current, expectedParent, command),
+      (failure) => {
+        if (
+          failure &&
+          typeof failure === "object" &&
+          "code" in failure &&
+          "field" in failure &&
+          failure.code === "EDITOR_NOTE_VELOCITY_OUT_OF_RANGE" &&
+          failure.field === "command.velocity"
+        ) {
+          setVelocityFieldError("Velocity: enter a whole number from 1 to 127.");
+        } else if (
+          failure &&
+          typeof failure === "object" &&
+          "code" in failure &&
+          "field" in failure &&
+          failure.code === "STALE_EDITOR_NOTE_VALUE" &&
+          failure.field === "command.expectedVelocity"
+        ) {
+          setVelocityFieldError(
+            "Velocity changed since this value was loaded. Review the selected note and apply again.",
+          );
+        } else {
+          setError(
+            "The Lead edit history could not be updated. The generated section remains unchanged.",
+          );
+        }
+      },
+    );
+  }
+
   function deleteSelectedLeadNote() {
     if (!application || !selectedLeadNote || editorInFlight.current) return;
     const command: DeleteNoteCommandV4 = {
@@ -534,6 +608,8 @@ export function GenerateSection({
             setPositionPitchValue("");
             setPositionStartTickValue("");
             setDurationTicksValue("");
+            setVelocityValue("");
+            setVelocityFieldError("");
             setAddPitchValue("");
             setAddStartTickValue("");
             setAddDurationTicksValue("");
@@ -833,6 +909,8 @@ export function GenerateSection({
                   setPositionPitchValue(note ? String(note.pitch) : "");
                   setPositionStartTickValue(note ? String(note.startTick) : "");
                   setDurationTicksValue(note ? String(note.durationTicks) : "");
+                  setVelocityValue(note ? String(note.velocity) : "");
+                  setVelocityFieldError("");
                   setError("");
                 }}
               >
@@ -987,6 +1065,52 @@ export function GenerateSection({
                 Apply Lead duration
               </button>
             </form>
+            <form onSubmit={submitLeadVelocity} aria-busy={editorPending}>
+              <label htmlFor="lead-note-velocity">Velocity</label>
+              <input
+                id="lead-note-velocity"
+                type="number"
+                min="1"
+                max="127"
+                step="1"
+                required
+                value={velocityValue}
+                disabled={!selectedLeadNote || editorPending}
+                aria-invalid={velocityFieldError ? true : undefined}
+                aria-describedby={
+                  velocityFieldError
+                    ? "lead-note-velocity-info lead-note-velocity-error"
+                    : "lead-note-velocity-info"
+                }
+                onChange={(event) => {
+                  setVelocityValue(event.target.value);
+                  setVelocityFieldError("");
+                  setError("");
+                }}
+              />
+              <p id="lead-note-velocity-info">
+                Velocity is saved in the editor revision, but it does not change preview loudness
+                yet.
+              </p>
+              {velocityFieldError ? (
+                <p id="lead-note-velocity-error" role="alert">
+                  {velocityFieldError}
+                  {velocityValue ? ` Entered value: ${velocityValue}.` : ""}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={
+                  !selectedLeadNote ||
+                  editorPending ||
+                  (/^[0-9]+$/.test(velocityValue) &&
+                    Number.isSafeInteger(Number(velocityValue)) &&
+                    Number(velocityValue) === selectedLeadNote?.velocity)
+                }
+              >
+                Apply Velocity
+              </button>
+            </form>
             <button
               type="button"
               disabled={!selectedLeadNote || editorPending}
@@ -1031,6 +1155,8 @@ export function GenerateSection({
                 setPositionPitchValue(note ? String(note.pitch) : "");
                 setPositionStartTickValue(note ? String(note.startTick) : "");
                 setDurationTicksValue(note ? String(note.durationTicks) : "");
+                setVelocityValue(note ? String(note.velocity) : "");
+                setVelocityFieldError("");
                 setError("");
               }}
               onCommitPosition={commitLeadPosition}

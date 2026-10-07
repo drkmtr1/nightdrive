@@ -168,6 +168,41 @@ const POSITION_UNDONE_APPLICATION = makeEditorApplication(64, true, 0, 480);
 const PITCH_POSITION_APPLICATION = makeEditorApplication(64, true, 1, 0);
 const DURATION_APPLICATION = makeEditorApplication(60, true, 1, undefined, 1440);
 const DURATION_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, 1440);
+function makeVelocityApplication(velocity: number, cursor = 1): EditorApplicationV1 {
+  const root = ROOT_APPLICATION.history.revisions[0];
+  const rootLead = root?.tracks.find((track) => track.role === "lead");
+  if (!root || !rootLead) throw new Error("Missing editor root fixture.");
+  const child = {
+    ...root,
+    tracks: root.tracks.map((track) =>
+      track.role === "lead"
+        ? {
+            ...track,
+            notes: track.notes.map((note) => (note.id === NOTE_ID ? { ...note, velocity } : note)),
+          }
+        : track,
+    ),
+    parent: { schema: root.schema, revisionHash: root.revisionHash },
+    command: {
+      schema: "nightdrive.editor-note-command.v7",
+      type: "set-note-velocity",
+      noteId: NOTE_ID,
+      expectedVelocity: 100,
+      velocity,
+    },
+    revisionHash: "9".repeat(64),
+  } as unknown as EditorRevisionV1;
+  const revisions = [root, child];
+  const selected = revisions[cursor];
+  if (!selected) throw new Error("Invalid velocity revision cursor.");
+  return {
+    history: { ...ROOT_APPLICATION.history, revisions, cursor },
+    selectedRevision: { schema: selected.schema, revisionHash: selected.revisionHash },
+    preview: ROOT_APPLICATION.preview,
+  } as EditorApplicationV1;
+}
+const VELOCITY_APPLICATION = makeVelocityApplication(88);
+const VELOCITY_UNDONE_APPLICATION = makeVelocityApplication(88, 0);
 const DELETED_APPLICATION = makeEditorApplication(60, true, 1, undefined, undefined, true);
 const DELETED_UNDONE_APPLICATION = makeEditorApplication(60, true, 0, undefined, undefined, true);
 const ADDED_NOTE_ID = `note-${"e".repeat(64)}`;
@@ -266,6 +301,44 @@ function makeOverlappingLeadApplication(): EditorApplicationV1 {
   };
 }
 
+function makeVelocitySelectionApplication(): EditorApplicationV1 {
+  const application = makeOverlappingLeadApplication();
+  const original = application.history.revisions[0];
+  if (!original) throw new Error("Missing Lead selection fixture.");
+  const root = {
+    ...original,
+    tracks: original.tracks.map((track) =>
+      track.role === "lead"
+        ? {
+            ...track,
+            notes: track.notes.map((note) =>
+              note.id === OVERLAPPING_NOTE_ID
+                ? { ...note, pitch: 64, startTick: 960, velocity: 73 }
+                : note,
+            ),
+          }
+        : track,
+    ),
+  };
+  const preview = {
+    ...application.preview,
+    tracks: application.preview.tracks.map((track) =>
+      track.role === "lead"
+        ? {
+            ...track,
+            notes: [...track.notes, { pitch: 64, startTick: 960, durationTicks: 960 }],
+          }
+        : track,
+    ),
+  };
+  return {
+    ...application,
+    history: { ...application.history, revisions: [root] },
+    selectedRevision: { schema: root.schema, revisionHash: root.revisionHash },
+    preview,
+  } as EditorApplicationV1;
+}
+
 function makeActions() {
   return {
     generateAction: vi.fn().mockResolvedValue(ROOT_APPLICATION),
@@ -274,6 +347,7 @@ function makeActions() {
     setLeadStartTickAction: vi.fn().mockResolvedValue(MOVED_APPLICATION),
     setLeadPositionAction: vi.fn().mockResolvedValue(POSITION_APPLICATION),
     setLeadDurationAction: vi.fn().mockResolvedValue(DURATION_APPLICATION),
+    setLeadVelocityAction: vi.fn().mockResolvedValue(VELOCITY_APPLICATION),
     deleteLeadNoteAction: vi.fn().mockResolvedValue(DELETED_APPLICATION),
     undoSectionEditAction: vi.fn().mockResolvedValue(UNDONE_APPLICATION),
     redoSectionEditAction: vi.fn().mockResolvedValue(EDITED_APPLICATION),
@@ -1079,6 +1153,229 @@ describe("Generate section consumer", () => {
       name: "Lead note, MIDI pitch 60, start tick 0, duration 1440 ticks",
     });
     expect(actions.redoSectionEditAction).toHaveBeenCalledWith(DURATION_UNDONE_APPLICATION);
+  });
+
+  it("submits one explicit v7 velocity command and restores canonical velocity through undo and redo", async () => {
+    const { actions } = renderConsumer();
+    actions.setLeadVelocityAction.mockResolvedValueOnce(VELOCITY_APPLICATION);
+    actions.undoSectionEditAction.mockResolvedValueOnce(VELOCITY_UNDONE_APPLICATION);
+    actions.redoSectionEditAction.mockResolvedValueOnce(VELOCITY_APPLICATION);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    const velocity = screen.getByLabelText("Velocity");
+    expect(velocity).toHaveValue(100);
+    expect(
+      screen.getByText(
+        "Velocity is saved in the editor revision, but it does not change preview loudness yet.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Apply Velocity" })).toBeDisabled();
+    fireEvent.change(velocity, { target: { value: "88" } });
+    fireEvent.blur(velocity);
+    expect(screen.getByRole("button", { name: "Apply Velocity" })).toBeEnabled();
+    expect(actions.setLeadVelocityAction).not.toHaveBeenCalled();
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Apply Velocity" }));
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.setLeadVelocityAction).toHaveBeenCalledTimes(1);
+    expect(actions.setLeadVelocityAction.mock.calls[0]).toEqual([
+      ROOT_APPLICATION,
+      ROOT_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v7",
+        type: "set-note-velocity",
+        noteId: NOTE_ID,
+        expectedVelocity: 100,
+        velocity: 88,
+      },
+    ]);
+    expect(screen.getByLabelText("Velocity")).toHaveValue(88);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+    expect(VELOCITY_APPLICATION.preview.sourceResultHash).toBe(PREVIEW.sourceResultHash);
+    expect(
+      VELOCITY_APPLICATION.preview.tracks.every((track) =>
+        track.notes.every((note) => !Object.hasOwn(note, "velocity")),
+      ),
+    ).toBe(true);
+    expect(screen.getByRole("button", { name: "Play" })).toBeEnabled();
+    expect(screen.queryByText("Playing all four roles.")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() => expect(screen.getByLabelText("Velocity")).toHaveValue(100));
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(VELOCITY_APPLICATION);
+    expect(screen.getByText("Editor revision 1 of 2.")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await waitFor(() => expect(screen.getByLabelText("Velocity")).toHaveValue(88));
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(VELOCITY_UNDONE_APPLICATION);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+  });
+
+  it("invalidates active audition on successful velocity edit without auto-resume", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const { actions } = renderConsumer();
+      actions.setLeadVelocityAction.mockResolvedValueOnce(VELOCITY_APPLICATION);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+
+      fireEvent.change(screen.getByLabelText("Velocity"), { target: { value: "88" } });
+      fireEvent.click(screen.getByRole("button", { name: "Apply Velocity" }));
+      await screen.findByText("Editor revision 2 of 2.");
+
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Play" })).toBeEnabled();
+      expect(screen.queryByText("Playing all four roles.")).not.toBeInTheDocument();
+      expect(audio.sources.length).toBeGreaterThan(0);
+      expect(audio.sources.every((source) => source.stop.mock.calls.length > 0)).toBe(true);
+    } finally {
+      audio.restore();
+    }
+  });
+
+  it("refreshes Velocity from both existing Lead-note selection paths", async () => {
+    const { actions } = renderConsumer();
+    actions.generateAction.mockResolvedValueOnce(makeVelocitySelectionApplication());
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+
+    const velocity = screen.getByLabelText("Velocity");
+    expect(velocity).toHaveValue(100);
+    fireEvent.change(screen.getByRole("combobox", { name: "Lead note" }), {
+      target: { value: OVERLAPPING_NOTE_ID },
+    });
+    expect(velocity).toHaveValue(73);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Lead note 1, MIDI pitch 60, start tick 0/ }),
+    );
+    expect(velocity).toHaveValue(100);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Lead note 2, MIDI pitch 64, start tick 960/ }),
+    );
+    expect(velocity).toHaveValue(73);
+    expect(actions.setLeadVelocityAction).not.toHaveBeenCalled();
+  });
+
+  it.each(["", "+5", "1.5", "1e2", "0", "128", "9007199254740992"])(
+    "rejects invalid Velocity draft %j without dispatch and preserves the draft",
+    async (draft) => {
+      const { actions } = renderConsumer();
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      const velocity = screen.getByLabelText("Velocity");
+      fireEvent.change(velocity, { target: { value: draft } });
+      fireEvent.submit(screen.getByLabelText("Velocity").closest("form") as HTMLFormElement);
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent("Velocity:");
+      // Native number inputs sanitize a leading plus to an empty value before React receives it.
+      if (draft && draft !== "+5") expect(alert).toHaveTextContent(`Entered value: ${draft}.`);
+      expect(actions.setLeadVelocityAction).not.toHaveBeenCalled();
+      expect(velocity).toHaveValue(draft === "" || draft === "+5" ? null : Number(draft));
+      expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+      expect(
+        screen.getByRole("listitem", {
+          name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+        }),
+      ).toBeVisible();
+    },
+  );
+
+  it("preserves application, preview, history, draft, and audition after a safe velocity rejection", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const { actions } = renderConsumer();
+      actions.generateAction.mockResolvedValueOnce(VELOCITY_UNDONE_APPLICATION);
+      const privateFailure = Object.assign(new Error("private velocity failure"), {
+        code: "STALE_EDITOR_NOTE_VALUE",
+        field: "command.expectedVelocity",
+      });
+      actions.setLeadVelocityAction.mockRejectedValueOnce(privateFailure);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+      const sourceCount = audio.sources.length;
+      const stopCountsBefore = audio.sources.map((source) => source.stop.mock.calls.length);
+
+      const velocity = screen.getByLabelText("Velocity");
+      fireEvent.change(velocity, { target: { value: "88" } });
+      fireEvent.click(screen.getByRole("button", { name: "Apply Velocity" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Velocity changed since this value was loaded",
+      );
+      expect(screen.getByRole("alert")).not.toHaveTextContent("private velocity failure");
+      expect(velocity).toHaveValue(88);
+      expect(screen.getByText("Editor revision 1 of 2.")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Redo" })).toBeEnabled();
+      expect(
+        screen.getByRole("listitem", {
+          name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+        }),
+      ).toBeVisible();
+      expect(screen.getByText("Playing all four roles.")).toBeVisible();
+      expect(audio.sources).toHaveLength(sourceCount);
+      expect(audio.sources.map((source) => source.stop.mock.calls.length)).toEqual(
+        stopCountsBefore,
+      );
+      expect(actions.undoSectionEditAction).not.toHaveBeenCalled();
+    } finally {
+      audio.restore();
+    }
+  });
+
+  it("uses the existing safe editor diagnostic for an unrecognized velocity failure", async () => {
+    const { actions } = renderConsumer();
+    actions.setLeadVelocityAction.mockRejectedValueOnce(new Error("private v7 detail"));
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    const velocity = screen.getByLabelText("Velocity");
+    fireEvent.change(velocity, { target: { value: "88" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Velocity" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The Lead edit history could not be updated.");
+    expect(alert).not.toHaveTextContent("private v7 detail");
+    expect(velocity).toHaveValue(88);
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+  });
+
+  it("guards duplicate pending velocity submissions", async () => {
+    let resolveVelocity: ((value: EditorApplicationV1) => void) | undefined;
+    const { actions } = renderConsumer();
+    actions.setLeadVelocityAction.mockImplementationOnce(
+      () =>
+        new Promise<EditorApplicationV1>((resolve) => {
+          resolveVelocity = resolve;
+        }),
+    );
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    fireEvent.change(screen.getByLabelText("Velocity"), { target: { value: "88" } });
+    const apply = screen.getByRole("button", { name: "Apply Velocity" });
+    fireEvent.click(apply);
+    expect(apply).toBeDisabled();
+    fireEvent.submit(screen.getByLabelText("Velocity").closest("form") as HTMLFormElement);
+    expect(actions.setLeadVelocityAction).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      if (!resolveVelocity) throw new Error("No pending velocity operation.");
+      resolveVelocity(VELOCITY_APPLICATION);
+    });
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.setLeadVelocityAction).toHaveBeenCalledTimes(1);
   });
 
   it("deletes only the selected Lead note through the v4 action and restores its exact preview with undo/redo", async () => {

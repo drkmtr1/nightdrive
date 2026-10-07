@@ -9,6 +9,7 @@ import {
   setLeadPitchAction,
   setLeadPositionAction,
   setLeadStartTickAction,
+  setLeadVelocityAction,
   undoSectionEditAction,
 } from "./generate-section-action";
 
@@ -39,6 +40,7 @@ export default function HomePage() {
         setLeadPositionAction={setLeadPositionAction}
         setLeadDurationAction={setLeadDurationAction}
         setLeadStartTickAction={setLeadStartTickAction}
+        setLeadVelocityAction={setLeadVelocityAction}
         undoSectionEditAction={undoSectionEditAction}
         redoSectionEditAction={redoSectionEditAction}
       />

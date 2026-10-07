@@ -9,6 +9,7 @@ import type {
   SetNotePitchCommandV1,
   SetNotePositionCommandV5,
   SetNoteStartTickCommandV2,
+  SetNoteVelocityCommandV7,
 } from "../composition/editor-revision";
 import { generateCompleteSectionForAuditionV1 } from "../web/complete-section-node";
 import {
@@ -20,6 +21,7 @@ import {
   editEditorApplicationPitchV1,
   editEditorApplicationPositionV1,
   editEditorApplicationStartTickV1,
+  editEditorApplicationVelocityV1,
   redoEditorApplicationV1,
   undoEditorApplicationV1,
 } from "../web/editor-application-node";
@@ -76,6 +78,14 @@ export async function setLeadDurationAction(
   command: SetNoteDurationCommandV3,
 ): Promise<EditorApplicationV1> {
   return editEditorApplicationDurationV1(current, expectedParent, command);
+}
+
+export async function setLeadVelocityAction(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: SetNoteVelocityCommandV7,
+): Promise<EditorApplicationV1> {
+  return editEditorApplicationVelocityV1(current, expectedParent, command);
 }
 
 export async function deleteLeadNoteAction(

@@ -11,6 +11,7 @@ import {
   setLeadPitchAction,
   setLeadPositionAction,
   setLeadStartTickAction,
+  setLeadVelocityAction,
   undoSectionEditAction,
 } from "./generate-section-action";
 
@@ -157,6 +158,29 @@ describe("editor application server functions", () => {
       .mockReturnValueOnce(next as never);
 
     await expect(setLeadDurationAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
+  it("passes the exact v7 velocity command through the pinned Node boundary once", async () => {
+    const current = { sentinel: "current application" } as never;
+    const parent = {
+      schema: "nightdrive.editor-revision.v1",
+      revisionHash: "parent-hash",
+    } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v7",
+      type: "set-note-velocity",
+      noteId: "stable-note-id",
+      expectedVelocity: 100,
+      velocity: 88,
+    } as never;
+    const next = { sentinel: "next application" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationVelocityV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(setLeadVelocityAction(current, parent, command)).resolves.toBe(next);
     expect(edit).toHaveBeenCalledTimes(1);
     expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });
