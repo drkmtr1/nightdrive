@@ -1264,8 +1264,8 @@ describe("Generate section consumer", () => {
     expect(actions.setLeadVelocityAction).not.toHaveBeenCalled();
   });
 
-  it.each(["", "+5", "1.5", "1e2", "0", "128", "9007199254740992"])(
-    "rejects invalid Velocity draft %j without dispatch and preserves the draft",
+  it.each(["", "1.5", "1e2", "0", "128", "9007199254740992"])(
+    "rejects invalid Velocity draft %j without dispatch and preserves the application-visible draft",
     async (draft) => {
       const { actions } = renderConsumer();
       choose();
@@ -1273,14 +1273,15 @@ describe("Generate section consumer", () => {
       await screen.findByRole("heading", { name: "Generated section" });
       const velocity = screen.getByLabelText("Velocity");
       fireEvent.change(velocity, { target: { value: draft } });
+      const applicationVisibleDraft = (velocity as HTMLInputElement).value;
       fireEvent.submit(screen.getByLabelText("Velocity").closest("form") as HTMLFormElement);
 
       const alert = await screen.findByRole("alert");
       expect(alert).toHaveTextContent("Velocity:");
-      // Native number inputs sanitize a leading plus to an empty value before React receives it.
-      if (draft && draft !== "+5") expect(alert).toHaveTextContent(`Entered value: ${draft}.`);
+      expect((velocity as HTMLInputElement).value).toBe(applicationVisibleDraft);
+      if (draft) expect(alert).toHaveTextContent(`Entered value: ${draft}.`);
       expect(actions.setLeadVelocityAction).not.toHaveBeenCalled();
-      expect(velocity).toHaveValue(draft === "" || draft === "+5" ? null : Number(draft));
+      expect(velocity).toHaveValue(draft === "" ? null : Number(draft));
       expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
       expect(
         screen.getByRole("listitem", {
@@ -1289,6 +1290,41 @@ describe("Generate section consumer", () => {
       ).toBeVisible();
     },
   );
+
+  it("rejects a browser-sanitized Velocity draft without changing application or history", async () => {
+    const { actions } = renderConsumer();
+    actions.generateAction.mockResolvedValueOnce(VELOCITY_UNDONE_APPLICATION);
+    actions.redoSectionEditAction.mockResolvedValueOnce(VELOCITY_APPLICATION);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    const velocity = screen.getByLabelText("Velocity") as HTMLInputElement;
+    expect(velocity).toHaveAttribute("type", "number");
+    expect(velocity).toHaveAttribute("min", "1");
+    expect(velocity).toHaveAttribute("max", "127");
+    expect(velocity).toHaveAttribute("step", "1");
+
+    fireEvent.change(velocity, { target: { value: "+5" } });
+    // The native input discards this syntax before application state receives it.
+    expect(velocity.value).toBe("");
+    fireEvent.submit(velocity.closest("form") as HTMLFormElement);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Velocity:");
+    expect(velocity.value).toBe("");
+    expect(actions.setLeadVelocityAction).not.toHaveBeenCalled();
+    expect(actions.undoSectionEditAction).not.toHaveBeenCalled();
+    expect(screen.getByText("Editor revision 1 of 2.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Redo" })).toBeEnabled();
+    expect(
+      screen.getByRole("listitem", {
+        name: "Lead note, MIDI pitch 60, start tick 0, duration 960 ticks",
+      }),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(VELOCITY_UNDONE_APPLICATION);
+    expect(actions.redoSectionEditAction.mock.calls[0][0]).toBe(VELOCITY_UNDONE_APPLICATION);
+  });
 
   it("preserves application, preview, history, draft, and audition after a safe velocity rejection", async () => {
     const audio = installFakeAudioContext();
