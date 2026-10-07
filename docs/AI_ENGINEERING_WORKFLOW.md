@@ -59,6 +59,40 @@ During corrective `SPECIFY` or `IMPLEMENT` execution, if evidence indicates mate
 
 Apply only actions permitted by the task type; R0 does not bypass an applicable review or acceptance gate. PASS, REVISE, and BLOCKED are workflow states, not permission requests. Neither a merge nor a recommendation makes the next capability eligible. Stop for an unresolved consequential Product Owner decision.
 
+## Milestone 2 review correction and continuation loop
+
+**CANDIDATE governance:** This section becomes local execution authority under ADR-031 only after consequential independent exact-head PASS and explicit Product Owner acceptance of that exact tuple. It cannot authorize its own adoption or review. It applies only to remaining Milestone 2 work. Existing task-specific STOP conditions, scope ceilings, accepted contracts, validation requirements, reviewer authority, and ADR-031 cumulative integration policy remain binding.
+
+After independent IMPLEMENT **REVISE** or **BLOCKED**, automatically perform the smallest separate bounded correction without additional Product Owner acknowledgement only when all five conditions hold:
+
+1. The already accepted product/architecture/interaction/canonical contract sufficiently determines correct behavior.
+2. The finding identifies an implementation defect, missing test/evidence, or mechanically determined conformance problem.
+3. There is one contract-conformant correction direction, or no choice between materially different producer behaviors, architecture, schemas, dependencies, scope, or acceptance semantics is required.
+4. The correction stays inside the accepted bounded task scope and satisfies existing proportionality/corrective-scope rules.
+5. No new Product Owner decision is required.
+
+Preserve the finding and unfavorable evidence. Source/test/document mutation creates a new exact implementation head. Rerun affected validation and required final validation, prepare complete updated exact-head evidence, and return directly for renewed applicable independent review. The new head remains unreviewed until PASS; self-validation and prior PASS cannot approve a changed descendant.
+
+For **evidence-only BLOCKED**, automatically obtain permitted prerequisites already authorized by the task, such as pinned-runtime execution, focused validation, or artifact-identity verification. If content need not change, preserve the same exact head/tree and return a validation supplement for renewed review. Do not mutate content merely for evidence. This permits no new infrastructure, egress, dependency, or evidence-standard change. An actual defect follows the correction conditions above; unavailable evidence outside existing authority remains a genuine blocker.
+
+Stop for Product Owner judgment when the accepted contract is ambiguous, contradictory, or insufficient, or resolution requires competing producer behaviors, changes to accepted interaction/product requirements, architecture/ownership, command/schema/hash/version semantics, material scope/roadmap expansion, dependency adoption/change, new persistence/security/deployment behavior, subjective acceptance, acceptance-criteria changes, or changing required evidence to obtain PASS. Contract ambiguity is not implementation correction. The native-number sanitization ambiguity correctly required a Product Owner decision; it is not precedent for self-selecting a contract.
+
+Independent IMPLEMENT **PASS** under already accepted authority establishes a reviewed local ADR-031 checkpoint, including after correction, without ceremonial Product Owner acceptance. It is not protected integration. Reconcile the checkpoint, mechanically replace materially stale coordination state where wording is determined, select one independently eligible bounded M2 task, and continue until a consequential decision, required independent-review boundary, genuine blocker, or recorded cumulative integration boundary. Do not ask merely whether to continue; completion alone does not establish successor eligibility.
+
+Corrected consequential **SPECIFY** still requires independent review and Product Owner exact-tuple acceptance before implementation. Local PASSes do not aggregate into cumulative integration PASS: complete cumulative review against the actual live target base and required protected PR/CI/merge remain mandatory. No product requirement, AC-015, canonical editor, ADR-027 through ADR-037 product/interaction meaning, dependency policy, security/release requirement, or Stage 8 qualification changes. This section clarifies M2 execution mechanics only; outside M2 the existing lifecycle applies unchanged.
+
+### Required scenario checks
+
+| Case | Required route |
+| --- | --- |
+| REVISE: ordinary code defect under sufficient accepted contract | Automatic smallest in-scope correction; new head; affected/final validation; renewed independent review. |
+| BLOCKED: missing pinned-runtime evidence, no content defect | Permitted evidence recovery; same head/tree plus supplement; renewed review. |
+| BLOCKED: two plausible contract behaviors | Stop for Product Owner decision; no inferred contract. |
+| REVISE: remedy expands scope | Stop expansion; existing proportionality/prerequisite or Product Owner boundary. |
+| PASS after corrected IMPLEMENT | Reviewed local checkpoint without ceremonial acceptance; reconcile and continue only eligible work. |
+| Corrected consequential SPECIFY | New exact-head consequential review and Product Owner acceptance before implementation. |
+| Cumulative integration | Complete review against actual live target base; protected CI/merge; local PASSes insufficient. |
+
 ## Codex execution settings
 
 For every substantive task, Codex records a task-specific model/effort recommendation and the effective settings when observable. Prefer the lowest-capability available model and lowest reasoning effort reasonably likely to succeed, considering ambiguity, contract maturity, deterministic/replay/serialization sensitivity, debugging difficulty, cross-file reasoning, complexity, and required judgment. Prefer increasing effort before escalating model capability when the same model remains capable.
