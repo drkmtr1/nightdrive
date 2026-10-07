@@ -583,3 +583,21 @@ A separate future specification must decide whether preview carries velocity; th
 **Consequences:** This candidate authorizes no implementation in the same task, no UI controls, audible velocity, preview schema change, gain/normalization change, resize, transpose, snap, add/delete changes, other-role editing, persistence, AC-014, Stage 8 qualification, or AC-015 completion. AC-015 remains partial. Earlier exclusions of canonical velocity editing are narrowed only for this one existing Lead-note command if and when this exact decision passes review, receives Product Owner acceptance, and is separately implemented. The earlier preview/audition exclusions remain binding.
 
 **Revisit:** Any change to role scope, expected/replacement values, velocity domain, no-op behavior, command/error/version semantics, revision/history behavior, preview ownership, audibility, user interaction, persistence, or qualification claims requires separate authority and compatibility evidence. Audible velocity remains outside this decision.
+
+## ADR-037 — M2 Lead-note velocity UI interaction
+
+**Date:** 2026-10-06
+
+**Status:** CANDIDATE. This interaction decision may authorize only a separate local UI implementation after consequential independent exact-head review PASS and Product Owner acceptance of that exact reviewed tuple. It does not accept a descendant, create protected integration, or claim AC-015 completion.
+
+**Context:** ADR-036 and the accepted M2 Lead-note velocity command specify a canonical v7 absolute velocity change for one existing Lead note, but do not define producer interaction. The v7 implementation and pinned-Node application operation are independently reviewed as a local checkpoint, not protected-integrated. The existing selected-note editor already uses labeled integer fields with explicit Apply actions. The Product Owner selected a labeled integer Velocity field with explicit Apply Velocity and required an inline notice that velocity is canonical state while preview loudness remains unchanged.
+
+**Decision:** Define the selected-note field, form submission, safe rejection, result installation, notice, and evidence in [M2 Lead-note velocity UI interaction](reviews/M2_LEAD_NOTE_VELOCITY_UI_SPECIFICATION.md). Initialize from the selected canonical Lead note and refresh on selection or revision changes. A changed explicit Apply constructs exactly one v7 `set-note-velocity` command from the stable note ID, selected note's expected current velocity, and entered absolute replacement, then passes the captured parent and unchanged command through the existing Server Action pattern to the pinned-Node `editEditorApplicationVelocityV1` operation. A same-value proposal dispatches nothing. The browser draft remains noncanonical until the returned complete `EditorApplicationV1` is installed.
+
+On success, create one child revision/Undo step, retain the source identity, keep `CompleteSectionPreview` unchanged and velocity-agnostic, and apply existing edit-triggered audition invalidation without autoplay or resume. On local or canonical rejection, preserve the draft and complete existing application/history/preview/audition state and use only safe field-relevant or existing generic feedback. Display the specified informational notice; do not imply velocity was lost or discarded.
+
+**Alternatives:** A slider or continuous update would add a different interaction and could produce repeated revisions. Applying on keystroke or blur would remove the explicit atomic action. The selected labeled integer field and Apply action match existing controls and produce one canonical command only after explicit submission.
+
+**Consequences:** This is UI interaction authority only after its review/acceptance lifecycle. It does not change v7 canonical semantics, `CompleteSectionPreview`, BrowserAudition, gain mapping, normalization, master volume, or any v1-v6 behavior. AC-015 remains partial. No velocity lane/handle, multi-note or other-role editing, resize, transpose, snap, persistence, AC-014, or Stage 8 work is authorized.
+
+**Revisit:** Any change to the control, submission gesture, accessible behavior, canonical boundary, error/state preservation, audition limitation, version compatibility, or scope requires separately bounded authority and applicable review. Audible velocity remains a separate specification.
