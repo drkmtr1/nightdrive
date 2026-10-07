@@ -15,6 +15,7 @@ export const EDITOR_COMMAND_SCHEMA_V3 = "nightdrive.editor-note-command.v3" as c
 export const EDITOR_COMMAND_SCHEMA_V4 = "nightdrive.editor-note-command.v4" as const;
 export const EDITOR_COMMAND_SCHEMA_V5 = "nightdrive.editor-note-command.v5" as const;
 export const EDITOR_COMMAND_SCHEMA_V6 = "nightdrive.editor-note-command.v6" as const;
+export const EDITOR_COMMAND_SCHEMA_V7 = "nightdrive.editor-note-command.v7" as const;
 export const EDITOR_ADDED_NOTE_ID_INPUT_SCHEMA_V1 =
   "nightdrive.editor-added-note-id-input.v1" as const;
 export const ADD_NOTE_COMMAND_V6 = "add-note" as const;
@@ -23,6 +24,7 @@ export const SET_NOTE_START_TICK_COMMAND_V2 = "set-note-start-tick" as const;
 export const SET_NOTE_DURATION_COMMAND_V3 = "set-note-duration" as const;
 export const DELETE_NOTE_COMMAND_V4 = "delete-note" as const;
 export const SET_NOTE_POSITION_COMMAND_V5 = "set-note-position" as const;
+export const SET_NOTE_VELOCITY_COMMAND_V7 = "set-note-velocity" as const;
 const ROLES = ["harmony", "bass", "arpeggiator", "lead"] as const;
 type EditorRole = (typeof ROLES)[number];
 const HASH = /^[0-9a-f]{64}$/u;
@@ -81,8 +83,16 @@ export type AddNoteCommandV6 = Readonly<{
   startTick: number;
   durationTicks: number;
 }>;
+export type SetNoteVelocityCommandV7 = Readonly<{
+  schema: typeof EDITOR_COMMAND_SCHEMA_V7;
+  type: typeof SET_NOTE_VELOCITY_COMMAND_V7;
+  noteId: string;
+  expectedVelocity: number;
+  velocity: number;
+}>;
 export type EditorNoteCommand =
   | AddNoteCommandV6
+  | SetNoteVelocityCommandV7
   | SetNotePitchCommandV1
   | SetNoteStartTickCommandV2
   | SetNoteDurationCommandV3
@@ -121,6 +131,7 @@ export type EditorErrorCode =
   | "EDITOR_NOTE_START_OUT_OF_RANGE"
   | "EDITOR_NOTE_START_ORDER_INVALID"
   | "EDITOR_NOTE_DURATION_OUT_OF_RANGE"
+  | "EDITOR_NOTE_VELOCITY_OUT_OF_RANGE"
   | "EDITOR_NOTE_ID_COLLISION"
   | "NO_OP_EDITOR_COMMAND";
 export class EditorValueError extends RangeError {
@@ -479,6 +490,36 @@ export function validateAddNoteCommandV6(value: unknown): AddNoteCommandV6 {
     durationTicks,
   });
 }
+export function validateSetNoteVelocityCommandV7(value: unknown): SetNoteVelocityCommandV7 {
+  const c = dataRecord(
+    value,
+    "command",
+    ["schema", "type", "noteId", "expectedVelocity", "velocity"],
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (read(c, "schema") !== EDITOR_COMMAND_SCHEMA_V7)
+    fail("UNSUPPORTED_EDITOR_COMMAND_SCHEMA", "command.schema", "Unsupported command schema.");
+  if (read(c, "type") !== SET_NOTE_VELOCITY_COMMAND_V7)
+    fail("UNSUPPORTED_EDITOR_COMMAND_TYPE", "command.type", "Unsupported command type.");
+  const noteId = read(c, "noteId");
+  if (typeof noteId !== "string" || !NOTE_ID.test(noteId))
+    fail("INVALID_EDITOR_COMMAND", "command.noteId", "Invalid note ID.");
+  const expectedVelocity = int(
+    read(c, "expectedVelocity"),
+    "command.expectedVelocity",
+    "INVALID_EDITOR_COMMAND",
+  );
+  if (expectedVelocity < 1 || expectedVelocity > 127)
+    fail("INVALID_EDITOR_COMMAND", "command.expectedVelocity", "Expected velocity must be 1..127.");
+  const velocity = int(read(c, "velocity"), "command.velocity", "INVALID_EDITOR_COMMAND");
+  return deepFreeze({
+    schema: EDITOR_COMMAND_SCHEMA_V7,
+    type: SET_NOTE_VELOCITY_COMMAND_V7,
+    noteId: noteId as string,
+    expectedVelocity,
+    velocity,
+  });
+}
 function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
   if (
     typeof value !== "object" ||
@@ -508,6 +549,7 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V3) return validateSetNoteDurationCommandV3(value);
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V5) return validateSetNotePositionCommandV5(value);
   if (schemaValue === EDITOR_COMMAND_SCHEMA_V6) return validateAddNoteCommandV6(value);
+  if (schemaValue === EDITOR_COMMAND_SCHEMA_V7) return validateSetNoteVelocityCommandV7(value);
   const names = Object.getOwnPropertyNames(value);
   if (
     schemaValue === EDITOR_COMMAND_SCHEMA_V4 &&
@@ -564,6 +606,15 @@ function validateEditorNoteCommand(value: unknown): EditorNoteCommand {
     names[4] === "durationTicks"
   )
     return validateAddNoteCommandV6(value);
+  if (
+    names.length === 5 &&
+    names[0] === "schema" &&
+    names[1] === "type" &&
+    names[2] === "noteId" &&
+    names[3] === "expectedVelocity" &&
+    names[4] === "velocity"
+  )
+    return validateSetNoteVelocityCommandV7(value);
   if (names.length === 3 && names[0] === "schema" && names[1] === "type" && names[2] === "noteId")
     return validateDeleteNoteCommandV4(value);
   return fail("INVALID_EDITOR_COMMAND", "command", "Invalid command fields or field order.");
@@ -807,6 +858,17 @@ function transitionVerifiedRevisionV1(
   const old = lead.notes[index] as EditorNoteV1;
   if (c.type === DELETE_NOTE_COMMAND_V4) {
     // Deletion has no old value or replacement; the verified target is its precondition.
+  } else if (c.type === SET_NOTE_VELOCITY_COMMAND_V7) {
+    if (old.velocity !== c.expectedVelocity)
+      fail("STALE_EDITOR_NOTE_VALUE", "command.expectedVelocity", "Stale velocity.");
+    if (c.velocity < 1 || c.velocity > 127)
+      fail(
+        "EDITOR_NOTE_VELOCITY_OUT_OF_RANGE",
+        "command.velocity",
+        "Lead note velocity must be 1..127.",
+      );
+    if (c.velocity === old.velocity)
+      fail("NO_OP_EDITOR_COMMAND", "command.velocity", "No-op command.");
   } else if (c.type === SET_NOTE_POSITION_COMMAND_V5) {
     if (old.pitch !== c.expectedPitch)
       fail("STALE_EDITOR_NOTE_VALUE", "command.expectedPitch", "Stale pitch.");
@@ -900,7 +962,9 @@ function transitionVerifiedRevisionV1(
                               ? { ...n, pitch: c.pitch, startTick: c.startTick }
                               : c.type === SET_NOTE_START_TICK_COMMAND_V2
                                 ? { ...n, startTick: c.startTick }
-                                : { ...n, durationTicks: c.durationTicks },
+                                : c.type === SET_NOTE_VELOCITY_COMMAND_V7
+                                  ? { ...n, velocity: c.velocity }
+                                  : { ...n, durationTicks: c.durationTicks },
                         ),
                   ),
             ),

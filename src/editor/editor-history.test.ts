@@ -14,14 +14,17 @@ import {
   EDITOR_COMMAND_SCHEMA_V2,
   EDITOR_COMMAND_SCHEMA_V5,
   EDITOR_COMMAND_SCHEMA_V6,
+  EDITOR_COMMAND_SCHEMA_V7,
   type EditorNoteCommand,
   type EditorRevisionV1,
   type EditorTrackV1,
   type EditorValueError,
   importCompleteSectionAsEditorRootV1,
   type SetNotePositionCommandV5,
+  type SetNoteVelocityCommandV7,
   serializeEditorRevisionV1,
   validateSetNotePositionCommandV5,
+  validateSetNoteVelocityCommandV7,
   verifyEditorRevisionV1,
 } from "../composition/editor-revision";
 import { generateCompleteSectionV1 } from "../generators/complete-section";
@@ -2642,7 +2645,7 @@ describe("M2 Lead note-add v6 canonical transition", () => {
     );
     rejected(
       {
-        schema: "nightdrive.editor-note-command.v7",
+        schema: "nightdrive.editor-note-command.v8",
         type: "add-note",
         pitch: 64,
         startTick: 960,
@@ -3000,5 +3003,353 @@ describe("M2 Lead note-add v6 canonical transition", () => {
     expect(selectedEditorRevisionV1(redone).tracks[3]?.notes.some((note) => note.id === id)).toBe(
       false,
     );
+  });
+});
+
+const VELOCITY_FIXTURE_COMMAND = {
+  schema: "nightdrive.editor-note-command.v7",
+  type: "set-note-velocity",
+  noteId: EXPECTED_FIRST_LEAD_NOTE_ID,
+  expectedVelocity: 100,
+  velocity: 88,
+} as const;
+const EXPECTED_VELOCITY_COMMAND_JSON =
+  '{"schema":"nightdrive.editor-note-command.v7","type":"set-note-velocity","noteId":"note-853ab61d8567f96e2baeaeb213560536422465a0742b27bb4775fd65cfafad12","expectedVelocity":100,"velocity":88}';
+const EXPECTED_VELOCITY_CHILD_HASH =
+  "076d05b395c5761cbc75b0133769dfab944852115187cddfb2e920e13b31b5ea";
+
+function independentVelocityChild(
+  parent: EditorRevisionV1,
+  targetIndex: number,
+  velocity: number,
+): EditorRevisionV1 {
+  const target = parent.tracks[3]?.notes[targetIndex];
+  if (!target) throw new Error("Missing independent Lead velocity fixture.");
+  const command: SetNoteVelocityCommandV7 = {
+    schema: "nightdrive.editor-note-command.v7",
+    type: "set-note-velocity",
+    noteId: target.id,
+    expectedVelocity: target.velocity,
+    velocity,
+  };
+  return independentlyHashedRevision({
+    schema: parent.schema,
+    source: parent.source,
+    section: parent.section,
+    tracks: parent.tracks.map((track) =>
+      track.role !== "lead"
+        ? track
+        : {
+            role: "lead",
+            notes: track.notes.map((note, index) =>
+              index === targetIndex ? { ...note, velocity } : note,
+            ),
+          },
+    ),
+    parent: { schema: parent.schema, revisionHash: parent.revisionHash },
+    command,
+  });
+}
+
+function velocityCommand(
+  revision: EditorRevisionV1,
+  targetIndex: number,
+  velocity: number,
+  expectedVelocity?: number,
+): SetNoteVelocityCommandV7 {
+  const target = revision.tracks[3]?.notes[targetIndex];
+  if (!target) throw new Error("Missing Lead velocity target.");
+  return {
+    schema: EDITOR_COMMAND_SCHEMA_V7,
+    type: "set-note-velocity",
+    noteId: target.id,
+    expectedVelocity: expectedVelocity ?? target.velocity,
+    velocity,
+  };
+}
+
+describe("M2 Lead note velocity v7 canonical transition", () => {
+  it("matches an independent literal command, canonical child bytes, and standard SHA-256", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const historyValue = await history();
+    const parent = selectedEditorRevisionV1(historyValue);
+    const expectedParent = independentRootRevision();
+    const expectedChild = independentVelocityChild(expectedParent, 0, 88);
+    const expectedChildJson = JSON.stringify(expectedChild);
+    const expectedHashInput = independentRevisionHashInput(expectedChildJson);
+    const actual = createChildEditorRevisionV1(parent, VELOCITY_FIXTURE_COMMAND, source, []);
+    const actualJson = serializeEditorRevisionV1(actual, source, [parent]);
+
+    expect(parent).toEqual(expectedParent);
+    expect(source.resultHash).toBe(EXPECTED_START_TICK_SOURCE_HASH);
+    expect(EDITOR_COMMAND_SCHEMA_V7).toBe("nightdrive.editor-note-command.v7");
+    expect(JSON.stringify(VELOCITY_FIXTURE_COMMAND)).toBe(EXPECTED_VELOCITY_COMMAND_JSON);
+    expect(Buffer.from(JSON.stringify(VELOCITY_FIXTURE_COMMAND), "utf8")).toEqual(
+      Buffer.from(EXPECTED_VELOCITY_COMMAND_JSON, "utf8"),
+    );
+    expect(expectedChild.revisionHash).toBe(EXPECTED_VELOCITY_CHILD_HASH);
+    expect(sha256Utf8(expectedHashInput)).toBe(EXPECTED_VELOCITY_CHILD_HASH);
+    expect(Buffer.from(expectedHashInput, "utf8")).toEqual(
+      Buffer.from(independentRevisionHashInput(expectedChildJson), "utf8"),
+    );
+    expect(actual).toEqual(expectedChild);
+    expect(actualJson).toBe(expectedChildJson);
+    expect(Buffer.from(actualJson, "utf8")).toEqual(Buffer.from(expectedChildJson, "utf8"));
+    expect(verifyEditorRevisionV1(actual, source, [parent])).toEqual(expectedChild);
+    expect(actual.command).toEqual(VELOCITY_FIXTURE_COMMAND);
+    expect(actual.parent?.revisionHash).toBe(parent.revisionHash);
+  });
+
+  it("changes only one Lead velocity and keeps boundaries, history, and replay deterministic", async () => {
+    const original = await history();
+    const parent = selectedEditorRevisionV1(original);
+    const oldLead = parent.tracks[3]?.notes;
+    if (!oldLead) throw new Error("Missing Lead velocity track.");
+
+    for (const velocity of [1, 127]) {
+      const changed = applyEditorCommandV1(
+        original,
+        { schema: parent.schema, revisionHash: parent.revisionHash },
+        velocityCommand(parent, 0, velocity),
+      );
+      const child = selectedEditorRevisionV1(changed);
+      expect(changed.revisions).toHaveLength(2);
+      expect(changed.cursor).toBe(1);
+      expect(child.tracks[3]?.notes).toEqual(
+        oldLead.map((note, index) => (index === 0 ? { ...note, velocity } : note)),
+      );
+      expect(child.tracks.slice(0, 3)).toEqual(parent.tracks.slice(0, 3));
+      expect(child.source).toEqual(parent.source);
+      expect(child.section).toEqual(parent.section);
+      expect(recursivelyFrozen(child)).toBe(true);
+      expect(recursivelyFrozen(changed)).toBe(true);
+      const replay = applyEditorCommandV1(
+        original,
+        { schema: parent.schema, revisionHash: parent.revisionHash },
+        velocityCommand(parent, 0, velocity),
+      );
+      expect(selectedEditorRevisionV1(replay)).toEqual(child);
+      expect(original.revisions[0]).toEqual(parent);
+      expect(oldLead[0]?.velocity).toBe(100);
+    }
+  });
+
+  it("enforces exact command descriptors and error precedence without invoking caller code", async () => {
+    const original = await history();
+    const parent = selectedEditorRevisionV1(original);
+    const target = parent.tracks[3]?.notes[0];
+    const nonLead = parent.tracks[0]?.notes[0];
+    if (!target || !nonLead) throw new Error("Missing velocity validation fixture.");
+    const apply = (command: unknown) =>
+      applyEditorCommandV1(
+        original,
+        { schema: parent.schema, revisionHash: parent.revisionHash },
+        command as never,
+      );
+    const expectError = (command: unknown, code: string, field: string) =>
+      expect(() => apply(command)).toThrow(expect.objectContaining({ code, field }));
+
+    for (const expectedVelocity of [0, 128])
+      expectError(
+        { ...VELOCITY_FIXTURE_COMMAND, expectedVelocity, velocity: "malformed" },
+        "INVALID_EDITOR_COMMAND",
+        "command.expectedVelocity",
+      );
+    for (const expectedVelocity of [
+      1.5,
+      Number.MAX_SAFE_INTEGER + 1,
+      "100",
+      null,
+      Number.NaN,
+      undefined,
+    ])
+      expectError(
+        { ...VELOCITY_FIXTURE_COMMAND, expectedVelocity },
+        "INVALID_EDITOR_COMMAND",
+        "command.expectedVelocity",
+      );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, noteId: "note-not-a-digest" },
+      "INVALID_EDITOR_COMMAND",
+      "command.noteId",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, expectedVelocity: 99, velocity: 128 },
+      "STALE_EDITOR_NOTE_VALUE",
+      "command.expectedVelocity",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, noteId: `note-${"0".repeat(64)}` },
+      "EDITOR_NOTE_NOT_FOUND",
+      "command.noteId",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, noteId: nonLead.id },
+      "EDITOR_NOTE_NOT_EDITABLE",
+      "command.noteId",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, velocity: 0 },
+      "EDITOR_NOTE_VELOCITY_OUT_OF_RANGE",
+      "command.velocity",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, velocity: 128 },
+      "EDITOR_NOTE_VELOCITY_OUT_OF_RANGE",
+      "command.velocity",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, velocity: -1 },
+      "EDITOR_NOTE_VELOCITY_OUT_OF_RANGE",
+      "command.velocity",
+    );
+    for (const velocity of [
+      1.5,
+      Number.MAX_SAFE_INTEGER + 1,
+      "88",
+      null,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      undefined,
+    ])
+      expectError(
+        { ...VELOCITY_FIXTURE_COMMAND, velocity },
+        "INVALID_EDITOR_COMMAND",
+        "command.velocity",
+      );
+
+    let getterCalled = false;
+    const accessor = { ...VELOCITY_FIXTURE_COMMAND };
+    Object.defineProperty(accessor, "velocity", {
+      enumerable: true,
+      get() {
+        getterCalled = true;
+        return 88;
+      },
+    });
+    expectError(accessor, "INVALID_EDITOR_COMMAND", "command.velocity");
+    expect(getterCalled).toBe(false);
+    expectError({ ...VELOCITY_FIXTURE_COMMAND, extra: true }, "INVALID_EDITOR_COMMAND", "command");
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, [Symbol("extra")]: true },
+      "INVALID_EDITOR_COMMAND",
+      "command",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, toJSON: () => "forged" },
+      "INVALID_EDITOR_COMMAND",
+      "command",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, velocity: () => 88 },
+      "INVALID_EDITOR_COMMAND",
+      "command.velocity",
+    );
+    const customPrototype = Object.assign(Object.create(null), VELOCITY_FIXTURE_COMMAND);
+    expectError(customPrototype, "INVALID_EDITOR_COMMAND", "command");
+    const wrongOrder = {
+      type: VELOCITY_FIXTURE_COMMAND.type,
+      schema: VELOCITY_FIXTURE_COMMAND.schema,
+      noteId: VELOCITY_FIXTURE_COMMAND.noteId,
+      expectedVelocity: VELOCITY_FIXTURE_COMMAND.expectedVelocity,
+      velocity: VELOCITY_FIXTURE_COMMAND.velocity,
+    };
+    expect(() => validateSetNoteVelocityCommandV7(wrongOrder)).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_COMMAND", field: "command" }),
+    );
+    const { velocity: _missingVelocity, ...missingField } = VELOCITY_FIXTURE_COMMAND;
+    expect(() => validateSetNoteVelocityCommandV7(missingField)).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_COMMAND", field: "command" }),
+    );
+    expect(() =>
+      validateSetNoteVelocityCommandV7({ ...VELOCITY_FIXTURE_COMMAND, velocity: 0 }),
+    ).not.toThrow();
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, schema: "nightdrive.editor-note-command.v8" },
+      "UNSUPPORTED_EDITOR_COMMAND_SCHEMA",
+      "command.schema",
+    );
+    expectError(
+      { ...VELOCITY_FIXTURE_COMMAND, type: "set-note-pitch" },
+      "UNSUPPORTED_EDITOR_COMMAND_TYPE",
+      "command.type",
+    );
+    const staleParentCommand = { ...VELOCITY_FIXTURE_COMMAND, velocity: "bad" };
+    expect(() =>
+      applyEditorCommandV1(
+        original,
+        { schema: parent.schema, revisionHash: "0".repeat(64) },
+        staleParentCommand as never,
+      ),
+    ).toThrow(expect.objectContaining({ code: "STALE_EDITOR_PARENT" }));
+    expect(original.revisions).toHaveLength(1);
+  });
+
+  it("rejects no-ops without changing history, retains redo after failures, and truncates it on a valid branch", async () => {
+    const original = await history();
+    const root = selectedEditorRevisionV1(original);
+    const first = applySelectedHistory(original, velocityCommand(root, 0, 88));
+    const firstRevision = selectedEditorRevisionV1(first);
+    const second = applyEditorCommandV1(
+      first,
+      { schema: firstRevision.schema, revisionHash: firstRevision.revisionHash },
+      velocityCommand(firstRevision, 0, 89),
+    );
+    const undone = undoEditorHistoryV1(second);
+    if (!undone) throw new Error("Undo should select the first velocity edit.");
+    const before = structuredClone(undone);
+    const selected = selectedEditorRevisionV1(undone);
+    expect(() => applySelectedHistory(undone, velocityCommand(selected, 0, 88))).toThrow(
+      expect.objectContaining({ code: "NO_OP_EDITOR_COMMAND", field: "command.velocity" }),
+    );
+    expect(undone).toEqual(before);
+    expect(redoEditorHistoryV1(undone)).toEqual(second);
+    expect(() => applySelectedHistory(undone, velocityCommand(selected, 0, 90, 99))).toThrow(
+      expect.objectContaining({ code: "STALE_EDITOR_NOTE_VALUE" }),
+    );
+    expect(undone).toEqual(before);
+    expect(redoEditorHistoryV1(undone)).toEqual(second);
+
+    const branch = applySelectedHistory(undone, velocityCommand(selected, 0, 90));
+    expect(branch.revisions).toHaveLength(3);
+    expect(branch.cursor).toBe(2);
+    expect(selectedEditorRevisionV1(branch).parent?.revisionHash).toBe(selected.revisionHash);
+    expect(redoEditorHistoryV1(branch)).toBeNull();
+    const branchUndone = undoEditorHistoryV1(branch);
+    if (!branchUndone) throw new Error("Undo should restore the selected parent.");
+    expect(selectedEditorRevisionV1(branchUndone)).toEqual(selected);
+    const branchRedone = redoEditorHistoryV1(branchUndone);
+    if (!branchRedone) throw new Error("Redo should restore the branch velocity edit.");
+    expect(selectedEditorRevisionV1(branchRedone)).toEqual(selectedEditorRevisionV1(branch));
+  });
+
+  it("rejects a forged self-consistent velocity child during full ancestry verification", async () => {
+    const original = await history();
+    const root = selectedEditorRevisionV1(original);
+    const valid = applySelectedHistory(original, velocityCommand(root, 0, 88));
+    const child = selectedEditorRevisionV1(valid);
+    const forgedContent = {
+      ...child,
+      tracks: child.tracks.map((track) =>
+        track.role !== "lead"
+          ? track
+          : {
+              ...track,
+              notes: track.notes.map((note, index) =>
+                index === 0 ? { ...note, velocity: 87 } : note,
+              ),
+            },
+      ),
+    };
+    const { revisionHash: _oldHash, ...withoutHash } = forgedContent;
+    const forged = independentlyHashedRevision(withoutHash);
+    const forgedHistory = { source: original.source, revisions: [root, forged], cursor: 1 };
+    expect(() => selectedEditorRevisionV1(forgedHistory)).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_LINEAGE" }),
+    );
+    expect(() => serializeEditorRevisionV1(forged, original.source, [root])).toThrow(
+      expect.objectContaining({ code: "INVALID_EDITOR_LINEAGE" }),
+    );
+    expect(original.revisions).toHaveLength(1);
   });
 });

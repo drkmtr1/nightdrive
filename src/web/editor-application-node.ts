@@ -9,6 +9,7 @@ import type {
   SetNotePitchCommandV1,
   SetNotePositionCommandV5,
   SetNoteStartTickCommandV2,
+  SetNoteVelocityCommandV7,
 } from "../composition/editor-revision";
 import {
   applyEditorCommandV1,
@@ -149,6 +150,16 @@ export function editEditorApplicationPositionV1(
   current: EditorApplicationV1,
   expectedParent: EditorRevisionIdentityV1,
   command: SetNotePositionCommandV5,
+): EditorApplicationV1 {
+  requirePinnedNode();
+  return application(applyEditorCommandV1(current.history, expectedParent, command));
+}
+
+/** Applies one validated Lead velocity command and returns its velocity-agnostic audition view. */
+export function editEditorApplicationVelocityV1(
+  current: EditorApplicationV1,
+  expectedParent: EditorRevisionIdentityV1,
+  command: SetNoteVelocityCommandV7,
 ): EditorApplicationV1 {
   requirePinnedNode();
   return application(applyEditorCommandV1(current.history, expectedParent, command));

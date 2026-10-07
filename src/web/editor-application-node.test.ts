@@ -13,6 +13,7 @@ import {
   EDITOR_COMMAND_SCHEMA_V4,
   EDITOR_COMMAND_SCHEMA_V5,
   EDITOR_COMMAND_SCHEMA_V6,
+  EDITOR_COMMAND_SCHEMA_V7,
 } from "../composition/editor-revision";
 import { generateCompleteSectionV1 } from "../generators/complete-section";
 import {
@@ -33,6 +34,7 @@ import {
   editEditorApplicationPitchV1,
   editEditorApplicationPositionV1,
   editEditorApplicationStartTickV1,
+  editEditorApplicationVelocityV1,
   redoEditorApplicationV1,
   undoEditorApplicationV1,
 } from "./editor-application-node";
@@ -102,6 +104,9 @@ describe("M2 editor application boundary", () => {
     ).toThrow("require Node");
     expect(() =>
       editEditorApplicationPositionV1(undefined as never, undefined as never, undefined as never),
+    ).toThrow("require Node");
+    expect(() =>
+      editEditorApplicationVelocityV1(undefined as never, undefined as never, undefined as never),
     ).toThrow("require Node");
     expect(() => undoEditorApplicationV1(undefined as never)).toThrow("require Node");
     expect(() => redoEditorApplicationV1(undefined as never)).toThrow("require Node");
@@ -541,5 +546,53 @@ describe("M2 editor application boundary", () => {
     expect(redone.selectedRevision).toEqual(added.selectedRevision);
     expect(redone.preview).toEqual(added.preview);
     expect(redone.history.revisions[1]?.tracks[3]?.notes[1]?.id).toBe(newNote.id);
+  });
+
+  it("applies one canonical v7 Lead velocity edit while keeping preview and audition velocity-agnostic", async () => {
+    const source = await generateCompleteSectionV1(request as never);
+    const root = createEditorApplicationV1(source);
+    const rootRevision = root.history.revisions[0];
+    const target = rootRevision?.tracks[3]?.notes[0];
+    if (!rootRevision || !target) throw new Error("Missing Lead velocity application fixture.");
+    const command = {
+      schema: EDITOR_COMMAND_SCHEMA_V7,
+      type: "set-note-velocity",
+      noteId: target.id,
+      expectedVelocity: target.velocity,
+      velocity: target.velocity === 127 ? 126 : target.velocity + 1,
+    } as const;
+
+    const edited = editEditorApplicationVelocityV1(root, root.selectedRevision, command);
+    const child = edited.history.revisions[1];
+    if (!child) throw new Error("Missing v7 velocity child revision.");
+    expect(edited.history.revisions).toHaveLength(2);
+    expect(edited.history.cursor).toBe(1);
+    expect(child.command).toEqual(command);
+    expect(child.parent?.revisionHash).toBe(rootRevision.revisionHash);
+    expect(child.tracks[3]?.notes[0]).toEqual({ ...target, velocity: command.velocity });
+    expect(child.tracks[3]?.notes.slice(1)).toEqual(rootRevision.tracks[3]?.notes.slice(1));
+    expect(child.tracks.slice(0, 3)).toEqual(rootRevision.tracks.slice(0, 3));
+    expect(edited.preview).toEqual(root.preview);
+    expect(edited.preview.sourceResultHash).toBe(source.resultHash);
+    expect(edited.selectedRevision.revisionHash).toBe(child.revisionHash);
+    expect(edited.selectedRevision.revisionHash).not.toBe(root.selectedRevision.revisionHash);
+    expect(edited.preview).not.toHaveProperty("revisionHash");
+    expect(
+      edited.preview.tracks
+        .flatMap((track) => track.notes)
+        .every((note) => !Object.hasOwn(note, "velocity")),
+    ).toBe(true);
+    expect(root.preview).toEqual(edited.preview);
+    expect(root.history.revisions[0]).toEqual(rootRevision);
+    expect(deepFrozen(edited)).toBe(true);
+
+    const undone = undoEditorApplicationV1(edited);
+    if (!undone) throw new Error("Undo should restore the exact pre-edit revision.");
+    expect(undone.selectedRevision).toEqual(root.selectedRevision);
+    expect(undone.preview).toEqual(root.preview);
+    const redone = redoEditorApplicationV1(undone);
+    if (!redone) throw new Error("Redo should restore the exact velocity revision.");
+    expect(redone.selectedRevision).toEqual(edited.selectedRevision);
+    expect(redone.preview).toEqual(root.preview);
   });
 });
