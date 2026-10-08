@@ -617,3 +617,19 @@ On success, create one child revision/Undo step, retain the source identity, kee
 **Consequences:** A separately reviewed implementation may add the handle only after exact-tuple acceptance. Preserve v1-v7, body drag and preview/canonical boundaries. AC-015 remains partial; no transpose, snap, audible velocity, other-role editing or release qualification is authorized.
 
 **Revisit:** Changes to edge scope, mapping, activation, command submission, cancellation, accessibility or canonical semantics require separate consequential authority.
+
+## ADR-039 — M2 selected Lead-note transpose interaction
+
+**Date:** 2026-10-08
+
+**Status:** CANDIDATE. Consequential independent exact-head PASS and Product Owner exact-tuple acceptance are required before separate local implementation under ADR-031.
+
+**Context:** Stage 10/AC-015 includes transpose, while existing commands accept absolute values. The Product Owner selects one existing selected Lead note and reuse of v1, with explicit browser semitone-delta input rather than a new canonical delta command.
+
+**Decision:** Define the labeled delta field, explicit Apply Transpose, exact validation, one existing v1 command and evidence in [the transpose interaction specification](reviews/M2_LEAD_NOTE_TRANSPOSE_UI_SPECIFICATION.md). The browser computes an absolute replacement from captured canonical pitch; Node retains sole source/ancestry and transition authority. Canonical provenance records the absolute v1 command, not the UI delta. Preserve Lead range 60..84, unchanged unrelated state, exact immutable history and existing successful-edit audition invalidation.
+
+**Alternatives:** Whole-track/batch transpose expands scope and needs atomic multi-note semantics. A new delta command changes canonical provenance/versioning. The selected single-note v1 interaction provides relative producer input without either expansion.
+
+**Consequences:** No runtime change in this task. AC-015 remains partial and snap remains unresolved. Preserve all v1-v7, source/hash/preview ownership and existing controls. No generator-policy repair, clamp, new gestures, audible velocity, persistence or qualification expansion.
+
+**Revisit:** Target scope, input/submission behavior, delta provenance, canonical semantics, interaction accessibility or broader capability changes require separately bounded consequential authority.
