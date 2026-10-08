@@ -420,6 +420,210 @@ function submit() {
 }
 
 describe("Generate section consumer", () => {
+  it("targets an added note by stable ID and clears the delta on piano-roll selection", async () => {
+    const actions = makeActions();
+    actions.generateAction.mockResolvedValue(ADDED_APPLICATION);
+    actions.setLeadPitchAction.mockRejectedValue(new Error("rejected"));
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    const field = screen.getByLabelText("Transpose (semitones)");
+    fireEvent.change(field, { target: { value: "3" } });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Lead note 2, MIDI pitch 64, start tick 960, duration 480 ticks",
+      }),
+    );
+    expect(field).toHaveValue("");
+    fireEvent.change(field, { target: { value: "-2" } });
+    fireEvent.submit(screen.getByRole("form", { name: "Transpose selected Lead note" }));
+    await screen.findByRole("alert");
+    const note = ADDED_APPLICATION.history.revisions[1]?.tracks[3]?.notes[1];
+    expect(actions.setLeadPitchAction).toHaveBeenCalledWith(
+      ADDED_APPLICATION,
+      ADDED_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v1",
+        type: "set-note-pitch",
+        noteId: note?.id,
+        expectedPitch: 64,
+        pitch: 62,
+      },
+    );
+    expect(field).toHaveValue("-2");
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+  });
+
+  it.each([
+    { oldPitch: 60, draft: "2", replacement: 62 },
+    { oldPitch: 64, draft: "-2", replacement: 62 },
+    { oldPitch: 64, draft: "-4", replacement: 60 },
+    { oldPitch: 60, draft: "24", replacement: 84 },
+  ])(
+    "transposes $oldPitch by $draft through one existing absolute pitch command",
+    async ({ oldPitch, draft, replacement }) => {
+      const initial = oldPitch === 60 ? ROOT_APPLICATION : makeEditorApplication(oldPitch, true);
+      const next = makeEditorApplication(replacement, true);
+      const actions = makeActions();
+      actions.generateAction.mockResolvedValue(initial);
+      actions.setLeadPitchAction.mockResolvedValue(next);
+      renderConsumer(actions);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      const field = screen.getByLabelText("Transpose (semitones)");
+      expect(field).toHaveAttribute("type", "text");
+      expect(field).toHaveValue("");
+      fireEvent.change(field, { target: { value: draft } });
+      expect(actions.setLeadPitchAction).not.toHaveBeenCalled();
+      fireEvent.submit(screen.getByRole("form", { name: "Transpose selected Lead note" }));
+      await waitFor(() => expect(field).toHaveValue(""));
+      expect(actions.setLeadPitchAction.mock.calls).toEqual([
+        [
+          initial,
+          initial.selectedRevision,
+          {
+            schema: "nightdrive.editor-note-command.v1",
+            type: "set-note-pitch",
+            noteId: NOTE_ID,
+            expectedPitch: oldPitch,
+            pitch: replacement,
+          },
+        ],
+      ]);
+      expect(screen.getByLabelText("MIDI pitch (60–84)")).toHaveValue(replacement);
+      expect(screen.getByLabelText("Absolute start tick")).toHaveValue(0);
+      expect(screen.getByLabelText("Absolute duration ticks")).toHaveValue(960);
+      expect(next.preview.sourceResultHash).toBe(initial.preview.sourceResultHash);
+      expect(initial.history.revisions[initial.history.cursor]?.tracks[3]?.notes[0]?.pitch).toBe(
+        oldPitch,
+      );
+    },
+  );
+
+  it.each(["", " ", "+2", "1.5", "1e2", "9007199254740992", "9007199254740991", "-1", "25"])(
+    "rejects transpose draft %j without dispatch or changing editor state",
+    async (draft) => {
+      const { actions } = renderConsumer();
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      const field = screen.getByLabelText("Transpose (semitones)");
+      fireEvent.change(field, { target: { value: draft } });
+      fireEvent.submit(screen.getByRole("form", { name: "Transpose selected Lead note" }));
+      expect(actions.setLeadPitchAction).not.toHaveBeenCalled();
+      expect(field).toHaveValue(draft);
+      expect(screen.getByRole("alert")).toHaveTextContent("Transpose:");
+      expect(screen.getByLabelText("MIDI pitch (60–84)")).toHaveValue(60);
+      expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+    },
+  );
+
+  it.each(["0", "-0", "000"])("keeps transpose %j a no-op", async (draft) => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    fireEvent.change(screen.getByLabelText("Transpose (semitones)"), { target: { value: draft } });
+    fireEvent.submit(screen.getByRole("form", { name: "Transpose selected Lead note" }));
+    expect(actions.setLeadPitchAction).not.toHaveBeenCalled();
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+  });
+
+  it("preserves a rejected transpose draft and uses safe boundary feedback", async () => {
+    const actions = makeActions();
+    actions.setLeadPitchAction.mockRejectedValue(new Error("private stack path"));
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    fireEvent.change(screen.getByLabelText("Transpose (semitones)"), { target: { value: "2" } });
+    fireEvent.submit(screen.getByRole("form", { name: "Transpose selected Lead note" }));
+    await screen.findByRole("alert");
+    expect(screen.getByLabelText("Transpose (semitones)")).toHaveValue("2");
+    expect(screen.getByText("Editor revision 1 of 1.")).toBeVisible();
+    expect(screen.queryByText(/private stack path/)).toBeNull();
+    expect(actions.setLeadPitchAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears transpose drafts on selection and undo/redo, retaining one-step history", async () => {
+    const { actions } = renderConsumer();
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    const field = screen.getByLabelText("Transpose (semitones)");
+    fireEvent.change(field, { target: { value: "4" } });
+    fireEvent.submit(screen.getByRole("form", { name: "Transpose selected Lead note" }));
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.setLeadPitchAction).toHaveBeenCalledTimes(1);
+    fireEvent.change(field, { target: { value: "-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await screen.findByText("Editor revision 1 of 2.");
+    expect(field).toHaveValue("");
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(EDITED_APPLICATION);
+    fireEvent.change(field, { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(field).toHaveValue("");
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(UNDONE_APPLICATION);
+    fireEvent.change(field, { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Lead note"), { target: { value: NOTE_ID } });
+    expect(field).toHaveValue("");
+  });
+
+  it.each(["resolve", "reject"])(
+    "suppresses duplicate transpose and stale %s after input invalidation",
+    async (outcome) => {
+      let resolveEdit!: (value: EditorApplicationV1) => void;
+      let rejectEdit!: (reason: Error) => void;
+      const actions = makeActions();
+      actions.setLeadPitchAction.mockImplementation(
+        () =>
+          new Promise((resolve, reject) => {
+            resolveEdit = resolve;
+            rejectEdit = reject;
+          }),
+      );
+      renderConsumer(actions);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.change(screen.getByLabelText("Transpose (semitones)"), { target: { value: "4" } });
+      const form = screen.getByRole("form", { name: "Transpose selected Lead note" });
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+      expect(actions.setLeadPitchAction).toHaveBeenCalledTimes(1);
+      fireEvent.change(screen.getByLabelText("Energy"), { target: { value: "high" } });
+      await act(async () => {
+        if (outcome === "resolve") resolveEdit(EDITED_APPLICATION);
+        else rejectEdit(new Error("private stale error"));
+      });
+      expect(screen.queryByRole("heading", { name: "Generated section" })).toBeNull();
+      expect(screen.queryByRole("alert")).toBeNull();
+    },
+  );
+
+  it("invalidates audition on successful transpose without automatically playing again", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      renderConsumer();
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+      const count = audio.sources.length;
+      fireEvent.change(screen.getByLabelText("Transpose (semitones)"), { target: { value: "4" } });
+      fireEvent.submit(screen.getByRole("form", { name: "Transpose selected Lead note" }));
+      await screen.findByText("Editor revision 2 of 2.");
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(audio.sources).toHaveLength(count);
+    } finally {
+      audio.restore();
+    }
+  });
+
   it("starts empty with explicit profile/template selection", () => {
     const { actions } = renderConsumer();
     expect(screen.getByLabelText("Profile")).toHaveValue("");

@@ -109,6 +109,8 @@ export function GenerateSection({
   const [addNoteFieldError, setAddNoteFieldError] = useState<AddLeadNoteFieldError | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [pitchValue, setPitchValue] = useState("");
+  const [transposeValue, setTransposeValue] = useState("");
+  const [transposeFieldError, setTransposeFieldError] = useState("");
   const [startTickValue, setStartTickValue] = useState("");
   const [positionPitchValue, setPositionPitchValue] = useState("");
   const [positionStartTickValue, setPositionStartTickValue] = useState("");
@@ -174,6 +176,8 @@ export function GenerateSection({
     setDurationTicksValue(selectedNote ? String(selectedNote.durationTicks) : "");
     setVelocityValue(selectedNote ? String(selectedNote.velocity) : "");
     setVelocityFieldError("");
+    setTransposeValue("");
+    setTransposeFieldError("");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -184,6 +188,8 @@ export function GenerateSection({
     setApplication(null);
     setSelectedNoteId("");
     setPitchValue("");
+    setTransposeValue("");
+    setTransposeFieldError("");
     setStartTickValue("");
     setPositionPitchValue("");
     setPositionStartTickValue("");
@@ -378,6 +384,37 @@ export function GenerateSection({
       durationTicks,
     };
     void runEditorOperation((current) => addLeadNoteAction(current, expectedParent, command));
+  }
+
+  function submitLeadTranspose(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    setError("");
+    setTransposeFieldError("");
+    if (!/^-?[0-9]+$/.test(transposeValue)) {
+      setTransposeFieldError("Transpose: enter a whole semitone amount, such as 2 or -2.");
+      return;
+    }
+    const delta = Number(transposeValue);
+    if (!Number.isSafeInteger(delta)) {
+      setTransposeFieldError("Transpose: enter a safe whole semitone amount.");
+      return;
+    }
+    if (delta === 0) return;
+    const pitch = selectedLeadNote.pitch + delta;
+    if (!Number.isSafeInteger(pitch) || pitch < 60 || pitch > 84) {
+      setTransposeFieldError("Transpose: the resulting Lead pitch must be from 60 to 84.");
+      return;
+    }
+    const expectedParent = application.selectedRevision;
+    const command: SetNotePitchCommandV1 = {
+      schema: "nightdrive.editor-note-command.v1",
+      type: "set-note-pitch",
+      noteId: selectedLeadNote.id,
+      expectedPitch: selectedLeadNote.pitch,
+      pitch,
+    };
+    void runEditorOperation((current) => setLeadPitchAction(current, expectedParent, command));
   }
 
   function submitLeadPitch(event: FormEvent<HTMLFormElement>) {
@@ -920,6 +957,29 @@ export function GenerateSection({
                 ) : null}
               </form>
             </section>
+            <form aria-label="Transpose selected Lead note" onSubmit={submitLeadTranspose}>
+              <label htmlFor="lead-note-transpose">Transpose (semitones)</label>
+              <input
+                id="lead-note-transpose"
+                type="text"
+                value={transposeValue}
+                disabled={!selectedLeadNote || editorPending}
+                aria-invalid={transposeFieldError ? true : undefined}
+                aria-describedby={transposeFieldError ? "lead-note-transpose-error" : undefined}
+                onChange={(event) => {
+                  setTransposeValue(event.target.value);
+                  setTransposeFieldError("");
+                }}
+              />
+              <button type="submit" disabled={!selectedLeadNote || editorPending}>
+                Apply Transpose
+              </button>
+              {transposeFieldError ? (
+                <p id="lead-note-transpose-error" role="alert">
+                  {transposeFieldError}
+                </p>
+              ) : null}
+            </form>
             <form onSubmit={submitLeadPitch}>
               <label htmlFor="lead-note-choice">Lead note</label>
               <select
@@ -928,6 +988,9 @@ export function GenerateSection({
                 disabled={leadNotes.length === 0 || editorPending}
                 onChange={(event) => {
                   const note = leadNotes.find((item) => item.id === event.target.value);
+                  editorEpoch.current += 1;
+                  setTransposeValue("");
+                  setTransposeFieldError("");
                   setSelectedNoteId(event.target.value);
                   setPitchValue(note ? String(note.pitch) : "");
                   setStartTickValue(note ? String(note.startTick) : "");
@@ -1174,6 +1237,9 @@ export function GenerateSection({
               parent={application.selectedRevision}
               onSelectNote={(noteId) => {
                 const note = leadNotes.find((item) => item.id === noteId);
+                editorEpoch.current += 1;
+                setTransposeValue("");
+                setTransposeFieldError("");
                 setSelectedNoteId(noteId);
                 setPitchValue(note ? String(note.pitch) : "");
                 setStartTickValue(note ? String(note.startTick) : "");
