@@ -497,6 +497,31 @@ export function GenerateSection({
     });
   }
 
+  function commitLeadDuration(request: {
+    sourceResultHash: string;
+    expectedParent: EditorRevisionIdentityV1;
+    command: SetNoteDurationCommandV3;
+  }) {
+    if (
+      !application ||
+      editorInFlight.current ||
+      application.preview.sourceResultHash !== request.sourceResultHash ||
+      application.selectedRevision.schema !== request.expectedParent.schema ||
+      application.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+    )
+      return;
+
+    void runEditorOperation((current) => {
+      if (
+        current.preview.sourceResultHash !== request.sourceResultHash ||
+        current.selectedRevision.schema !== request.expectedParent.schema ||
+        current.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+      )
+        return null;
+      return setLeadDurationAction(current, request.expectedParent, request.command);
+    });
+  }
+
   function submitLeadDuration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!application || !selectedLeadNote || editorInFlight.current) return;
@@ -1160,6 +1185,8 @@ export function GenerateSection({
                 setError("");
               }}
               onCommitPosition={commitLeadPosition}
+              onCommitDuration={commitLeadDuration}
+              disabled={editorPending}
             />
           ) : null}
           <div className="previewRoles">

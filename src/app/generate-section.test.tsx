@@ -1155,6 +1155,50 @@ describe("Generate section consumer", () => {
     expect(actions.redoSectionEditAction).toHaveBeenCalledWith(DURATION_UNDONE_APPLICATION);
   });
 
+  it("commits right-edge resize through v3 and retains exact undo/redo application identities", async () => {
+    const { actions } = renderConsumer();
+    actions.setLeadDurationAction.mockResolvedValueOnce(DURATION_APPLICATION);
+    actions.undoSectionEditAction.mockResolvedValueOnce(DURATION_UNDONE_APPLICATION);
+    actions.redoSectionEditAction.mockResolvedValueOnce(DURATION_APPLICATION);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    const plot = screen.getByTestId("lead-piano-roll-plot");
+    Object.defineProperty(plot, "getBoundingClientRect", {
+      value: () => ({ width: 30720, height: 500 }),
+    });
+    const handle = screen.getByRole("button", { name: /Resize duration: Lead 1/ });
+    fireEvent.pointerDown(handle, {
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 580, clientY: 120 });
+    expect(actions.setLeadDurationAction).not.toHaveBeenCalled();
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 580, clientY: 120 });
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.setLeadDurationAction).toHaveBeenCalledExactlyOnceWith(
+      ROOT_APPLICATION,
+      ROOT_APPLICATION.selectedRevision,
+      {
+        schema: "nightdrive.editor-note-command.v3",
+        type: "set-note-duration",
+        noteId: NOTE_ID,
+        expectedDurationTicks: 960,
+        durationTicks: 1440,
+      },
+    );
+    expect(actions.setLeadPositionAction).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    await screen.findByText("Editor revision 1 of 2.");
+    expect(actions.undoSectionEditAction).toHaveBeenCalledWith(DURATION_APPLICATION);
+    fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+    await screen.findByText("Editor revision 2 of 2.");
+    expect(actions.redoSectionEditAction).toHaveBeenCalledWith(DURATION_UNDONE_APPLICATION);
+  });
+
   it("submits one explicit v7 velocity command and restores canonical velocity through undo and redo", async () => {
     const { actions } = renderConsumer();
     actions.setLeadVelocityAction.mockResolvedValueOnce(VELOCITY_APPLICATION);

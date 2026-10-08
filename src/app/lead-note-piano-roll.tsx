@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type {
   EditorNoteV1,
   EditorRevisionIdentityV1,
+  SetNoteDurationCommandV3,
   SetNotePositionCommandV5,
 } from "../composition/editor-revision";
 
@@ -27,6 +28,10 @@ type Props = Readonly<{
   parent: EditorRevisionIdentityV1;
   onSelectNote: (noteId: string) => void;
   onCommitPosition: (request: CommitRequest) => void;
+  onCommitDuration: (
+    request: Omit<CommitRequest, "command"> & { command: SetNoteDurationCommandV3 },
+  ) => void;
+  disabled?: boolean;
 }>;
 
 type Proposal = Readonly<{
@@ -90,7 +95,125 @@ export function LeadNotePianoRoll({
   parent,
   onSelectNote,
   onCommitPosition,
+  onCommitDuration,
+  disabled = false,
 }: Props) {
+  const resizeRef = useRef<{
+    pointerId: number;
+    note: EditorNoteV1;
+    x: number;
+    y: number;
+    width: number;
+    sourceResultHash: string;
+    parent: EditorRevisionIdentityV1;
+    activated: boolean;
+  } | null>(null);
+  const [resizeProposal, setResizeProposal] = useState<{
+    noteId: string;
+    durationTicks: number;
+  } | null>(null);
+  function cancelResize() {
+    resizeRef.current = null;
+    setResizeProposal(null);
+  }
+  useEffect(() => {
+    const gesture = resizeRef.current;
+    if (
+      gesture &&
+      (disabled ||
+        (selectedNoteId && selectedNoteId !== gesture.note.id) ||
+        gesture.sourceResultHash !== sourceResultHash ||
+        gesture.parent.schema !== parent.schema ||
+        gesture.parent.revisionHash !== parent.revisionHash)
+    ) {
+      resizeRef.current = null;
+      setResizeProposal(null);
+    }
+  }, [disabled, selectedNoteId, sourceResultHash, parent.schema, parent.revisionHash]);
+  useEffect(
+    () => () => {
+      resizeRef.current = null;
+    },
+    [],
+  );
+  function beginResize(note: EditorNoteV1, event: ReactPointerEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    if (
+      disabled ||
+      event.button !== 0 ||
+      event.isPrimary === false ||
+      resizeRef.current ||
+      gestureRef.current
+    )
+      return;
+    const width = plotRef.current?.getBoundingClientRect().width;
+    if (
+      !width ||
+      !Number.isFinite(width) ||
+      width <= 0 ||
+      !Number.isFinite(event.clientX) ||
+      !Number.isFinite(event.clientY)
+    )
+      return;
+    resizeRef.current = {
+      pointerId: pointerId(event),
+      note,
+      x: event.clientX,
+      y: event.clientY,
+      width,
+      sourceResultHash,
+      parent,
+      activated: false,
+    };
+    onSelectNote(note.id);
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+      cancelResize();
+    }
+  }
+  function resizeAt(event: ReactPointerEvent<HTMLButtonElement>, release: boolean) {
+    const gesture = resizeRef.current;
+    if (!gesture || gesture.pointerId !== pointerId(event)) return;
+    if (
+      disabled ||
+      (selectedNoteId && selectedNoteId !== gesture.note.id) ||
+      gesture.sourceResultHash !== sourceResultHash ||
+      gesture.parent.schema !== parent.schema ||
+      gesture.parent.revisionHash !== parent.revisionHash
+    ) {
+      cancelResize();
+      return;
+    }
+    const dx = event.clientX - gesture.x;
+    const dy = event.clientY - gesture.y;
+    const durationTicks =
+      gesture.note.durationTicks + roundHalfAwayFromZero((dx * 30_720) / gesture.width);
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || !Number.isSafeInteger(durationTicks)) {
+      cancelResize();
+      return;
+    }
+    const activated = gesture.activated || Math.hypot(dx, dy) >= DRAG_THRESHOLD_CSS_PX;
+    resizeRef.current = { ...gesture, activated };
+    if (!release) {
+      setResizeProposal(activated ? { noteId: gesture.note.id, durationTicks } : null);
+      return;
+    }
+    cancelResize();
+    if (!activated || durationTicks === gesture.note.durationTicks) return;
+    onCommitDuration({
+      sourceResultHash: gesture.sourceResultHash,
+      expectedParent: gesture.parent,
+      command: {
+        schema: "nightdrive.editor-note-command.v3",
+        type: "set-note-duration",
+        noteId: gesture.note.id,
+        expectedDurationTicks: gesture.note.durationTicks,
+        durationTicks,
+      },
+    });
+  }
+
   const plotRef = useRef<HTMLFieldSetElement>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const contextRef = useRef({ sourceResultHash, parent });
@@ -130,7 +253,7 @@ export function LeadNotePianoRoll({
   );
 
   function beginGesture(note: EditorNoteV1, event: ReactPointerEvent<HTMLButtonElement>) {
-    if (event.button !== 0 || event.isPrimary === false) return;
+    if (disabled || resizeRef.current || event.button !== 0 || event.isPrimary === false) return;
     const plot = plotRef.current;
     if (!plot) return;
     const bounds = plot.getBoundingClientRect();
@@ -231,6 +354,11 @@ export function LeadNotePianoRoll({
         integer ticks without beat or bar snapping. Use the paired fields in Lead note correction
         for keyboard editing.
       </p>
+      <p role="status">
+        {resizeProposal
+          ? `Proposed duration ${resizeProposal.durationTicks} ticks; end tick ${(notes.find((note) => note.id === resizeProposal.noteId)?.startTick ?? 0) + resizeProposal.durationTicks}. Not yet applied.`
+          : "Use the right-edge handle to resize; use Absolute duration ticks and Apply Lead duration for keyboard editing."}
+      </p>
       <div className="leadPianoRollViewport">
         <div className="leadPianoRollCanvas">
           <div className="leadPianoRollBars" aria-hidden="true">
@@ -273,32 +401,54 @@ export function LeadNotePianoRoll({
                 const displayedStartTick =
                   proposal?.noteId === note.id ? proposal.startTick : note.startTick;
                 return (
-                  <button
-                    key={note.id}
-                    type="button"
-                    className="leadPianoRollNote"
-                    aria-label={`Lead note ${index + 1}, MIDI pitch ${displayedPitch}, start tick ${displayedStartTick}, duration ${note.durationTicks} ticks`}
-                    aria-pressed={selectedNoteId === note.id}
-                    data-note-id={note.id}
-                    data-pitch={displayedPitch}
-                    data-start-tick={displayedStartTick}
-                    data-duration-ticks={note.durationTicks}
-                    data-transient-proposal={proposal?.noteId === note.id ? "true" : undefined}
-                    style={{
-                      left: `${(displayedStartTick / sectionEndTick) * 100}%`,
-                      width: `${(note.durationTicks / sectionEndTick) * 100}%`,
-                      top: `${((MIDI_MAX - displayedPitch) / PITCH_ROW_COUNT) * 100}%`,
-                      height: `${100 / PITCH_ROW_COUNT}%`,
-                    }}
-                    onPointerDown={(event) => beginGesture(note, event)}
-                    onPointerMove={moveGesture}
-                    onPointerUp={endGesture}
-                    onPointerCancel={cancelGesture}
-                    onLostPointerCapture={cancelGesture}
-                    onClick={(event) => {
-                      if (event.detail === 0) onSelectNote(note.id);
-                    }}
-                  />
+                  <Fragment key={note.id}>
+                    <button
+                      type="button"
+                      className="leadPianoRollNote"
+                      aria-label={`Lead note ${index + 1}, MIDI pitch ${displayedPitch}, start tick ${displayedStartTick}, duration ${note.durationTicks} ticks`}
+                      aria-pressed={selectedNoteId === note.id}
+                      data-note-id={note.id}
+                      data-pitch={displayedPitch}
+                      data-start-tick={displayedStartTick}
+                      data-duration-ticks={note.durationTicks}
+                      data-transient-proposal={proposal?.noteId === note.id ? "true" : undefined}
+                      style={{
+                        left: `${(displayedStartTick / sectionEndTick) * 100}%`,
+                        width: `${(note.durationTicks / sectionEndTick) * 100}%`,
+                        top: `${((MIDI_MAX - displayedPitch) / PITCH_ROW_COUNT) * 100}%`,
+                        height: `${100 / PITCH_ROW_COUNT}%`,
+                      }}
+                      disabled={disabled}
+                      onPointerDown={(event) => beginGesture(note, event)}
+                      onPointerMove={moveGesture}
+                      onPointerUp={endGesture}
+                      onPointerCancel={cancelGesture}
+                      onLostPointerCapture={cancelGesture}
+                      onClick={(event) => {
+                        if (event.detail === 0) onSelectNote(note.id);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="leadPianoRollResize"
+                      disabled={disabled}
+                      aria-label={`Resize duration: Lead ${index + 1}, MIDI ${note.pitch}, start ${note.startTick} ticks`}
+                      data-resize-note-id={note.id}
+                      style={{
+                        left: `${((note.startTick + note.durationTicks) / sectionEndTick) * 100}%`,
+                        top: `${((MIDI_MAX - note.pitch) / PITCH_ROW_COUNT) * 100}%`,
+                        height: `${100 / PITCH_ROW_COUNT}%`,
+                      }}
+                      onPointerDown={(event) => beginResize(note, event)}
+                      onPointerMove={(event) => resizeAt(event, false)}
+                      onPointerUp={(event) => resizeAt(event, true)}
+                      onPointerCancel={cancelResize}
+                      onLostPointerCapture={cancelResize}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") cancelResize();
+                      }}
+                    />
+                  </Fragment>
                 );
               })}
             </fieldset>

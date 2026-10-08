@@ -524,3 +524,19 @@ a {
   outline: 3px solid var(--color-text);
   outline-offset: 2px;
 }
+
+.leadPianoRollResize {
+  position: absolute;
+  z-index: 3;
+  width: 8px;
+  transform: translateX(-100%);
+  padding: 0;
+  border: 1px solid var(--color-text);
+  background: var(--color-accent-strong);
+  cursor: ew-resize;
+  touch-action: none;
+}
+.leadPianoRollResize:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

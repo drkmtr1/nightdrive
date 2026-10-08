@@ -27,6 +27,7 @@ const NOTES = [FIRST_NOTE, SECOND_NOTE] as const;
 function setup(notes: readonly EditorNoteV1[] = NOTES) {
   const onSelectNote = vi.fn();
   const onCommitPosition = vi.fn();
+  const onCommitDuration = vi.fn();
   const view = render(
     <LeadNotePianoRoll
       sectionEndTick={30_720}
@@ -35,6 +36,7 @@ function setup(notes: readonly EditorNoteV1[] = NOTES) {
       sourceResultHash={"a".repeat(64)}
       parent={PARENT}
       onSelectNote={onSelectNote}
+      onCommitDuration={onCommitDuration}
       onCommitPosition={onCommitPosition}
     />,
   );
@@ -55,7 +57,7 @@ function setup(notes: readonly EditorNoteV1[] = NOTES) {
       }),
     });
   }
-  return { ...view, onSelectNote, onCommitPosition, plot, setPlotBounds };
+  return { ...view, onSelectNote, onCommitPosition, onCommitDuration, plot, setPlotBounds };
 }
 
 function noteButton(noteId = NOTE_ID) {
@@ -64,7 +66,7 @@ function noteButton(noteId = NOTE_ID) {
   return button;
 }
 
-function pointerDown(button: HTMLButtonElement, x: number, y: number) {
+function pointerDown(button: HTMLElement, x: number, y: number) {
   fireEvent.pointerDown(button, {
     pointerId: 1,
     isPrimary: true,
@@ -74,7 +76,7 @@ function pointerDown(button: HTMLButtonElement, x: number, y: number) {
   });
 }
 
-function pointerMove(button: HTMLButtonElement, x: number, y: number) {
+function pointerMove(button: HTMLElement, x: number, y: number) {
   fireEvent.pointerMove(button, {
     pointerId: 1,
     isPrimary: true,
@@ -83,7 +85,7 @@ function pointerMove(button: HTMLButtonElement, x: number, y: number) {
   });
 }
 
-function pointerUp(button: HTMLButtonElement, x: number, y: number) {
+function pointerUp(button: HTMLElement, x: number, y: number) {
   fireEvent.pointerUp(button, {
     pointerId: 1,
     isPrimary: true,
@@ -104,7 +106,7 @@ describe("LeadNotePianoRoll", () => {
       }),
     ).toHaveLength(25);
     expect(plot.querySelectorAll(".leadPianoRollBarLine")).toHaveLength(9);
-    expect(screen.getAllByRole("button", { name: /Lead note/ })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: /^Lead note/ })).toHaveLength(2);
     expect(noteButton()).toHaveAttribute("data-note-id", NOTE_ID);
     expect(noteButton()).toHaveStyle({ left: "3.125%", width: "1.5625%", top: "80%" });
     expect(onSelectNote).not.toHaveBeenCalled();
@@ -220,6 +222,7 @@ describe("LeadNotePianoRoll", () => {
       parent: PARENT,
       onSelectNote: vi.fn(),
       onCommitPosition: vi.fn(),
+      onCommitDuration: vi.fn(),
     };
     const view = render(<LeadNotePianoRoll {...props} />);
     const plot = screen.getByTestId("lead-piano-roll-plot");
@@ -275,3 +278,119 @@ describe("LeadNotePianoRoll", () => {
     expect(onCommitPosition).not.toHaveBeenCalled();
   });
 });
+
+describe("Lead right-edge resize", () => {
+  function handle() {
+    return screen.getByRole("button", { name: /Resize duration: Lead 1/ });
+  }
+  it.each([
+    [10, 1000, 787],
+    [-10, 1000, 173],
+    [4, 245760, 481],
+    [-4, 245760, 479],
+    [0, 1000, 480],
+  ])("maps displacement %s at width %s without snapping", (delta, width, expected) => {
+    const { onCommitDuration, onCommitPosition, setPlotBounds } = setup([FIRST_NOTE]);
+    setPlotBounds(width, 500);
+    const target = handle();
+    pointerDown(target, 120, 100);
+    pointerMove(target, 120 + delta, 110);
+    expect(onCommitDuration).not.toHaveBeenCalled();
+    pointerUp(target, 120 + delta, 110);
+    if (expected === 480) expect(onCommitDuration).not.toHaveBeenCalled();
+    else
+      expect(onCommitDuration).toHaveBeenCalledExactlyOnceWith({
+        sourceResultHash: "a".repeat(64),
+        expectedParent: PARENT,
+        command: {
+          schema: "nightdrive.editor-note-command.v3",
+          type: "set-note-duration",
+          noteId: NOTE_ID,
+          expectedDurationTicks: 480,
+          durationTicks: expected,
+        },
+      });
+    expect(onCommitPosition).not.toHaveBeenCalled();
+    expect(FIRST_NOTE.startTick).toBe(960);
+    expect(FIRST_NOTE.pitch).toBe(64);
+  });
+  it.each([3, 4, 5])("uses the exact threshold at %s pixels", (delta) => {
+    const { onCommitDuration, setPlotBounds } = setup([FIRST_NOTE]);
+    setPlotBounds(30720, 500);
+    const target = handle();
+    pointerDown(target, 50, 100);
+    pointerUp(target, 50 + delta, 100);
+    expect(onCommitDuration).toHaveBeenCalledTimes(delta < 4 ? 0 : 1);
+  });
+  it.each(["pointerCancel", "lostPointerCapture", "Escape"])(
+    "cancels %s and ignores later release",
+    (reason) => {
+      const { onCommitDuration, setPlotBounds } = setup([FIRST_NOTE]);
+      setPlotBounds(1000, 500);
+      const target = handle();
+      pointerDown(target, 100, 100);
+      pointerMove(target, 110, 100);
+      if (reason === "Escape") fireEvent.keyDown(target, { key: "Escape" });
+      else if (reason === "pointerCancel") fireEvent.pointerCancel(target, { pointerId: 1 });
+      else fireEvent.lostPointerCapture(target, { pointerId: 1 });
+      pointerUp(target, 110, 100);
+      expect(onCommitDuration).not.toHaveBeenCalled();
+    },
+  );
+  it.each([-480, -481, 40000])("delegates invalid duration without repair (%s)", (delta) => {
+    const { onCommitDuration, setPlotBounds } = setup([FIRST_NOTE]);
+    setPlotBounds(30720, 500);
+    const target = handle();
+    pointerDown(target, 100, 100);
+    pointerUp(target, 100 + delta, 100);
+    expect(onCommitDuration.mock.calls[0][0].command.durationTicks).toBe(480 + delta);
+  });
+  it("fails closed for unsafe coordinates and invalid geometry", () => {
+    const { onCommitDuration, setPlotBounds } = setup([FIRST_NOTE]);
+    setPlotBounds(Infinity, 500);
+    pointerDown(handle(), 100, 100);
+    pointerUp(handle(), 110, 100);
+    setPlotBounds(1, 500);
+    pointerDown(handle(), 100, 100);
+    pointerUp(handle(), Number.MAX_VALUE, 100);
+    expect(onCommitDuration).not.toHaveBeenCalled();
+  });
+});
+
+it.each(["parent", "source", "selection", "pending", "unmount"])(
+  "invalidates resize on %s",
+  (reason) => {
+    const props = {
+      sectionEndTick: 30720,
+      notes: [FIRST_NOTE],
+      selectedNoteId: NOTE_ID,
+      sourceResultHash: "a".repeat(64),
+      parent: PARENT,
+      onSelectNote: vi.fn(),
+      onCommitPosition: vi.fn(),
+      onCommitDuration: vi.fn(),
+      disabled: false,
+    };
+    const view = render(<LeadNotePianoRoll {...props} />);
+    const plot = screen.getByTestId("lead-piano-roll-plot");
+    Object.defineProperty(plot, "getBoundingClientRect", {
+      value: () => ({ width: 1000, height: 500 }),
+    });
+    const target = screen.getByRole("button", { name: /Resize duration: Lead 1/ });
+    pointerDown(target, 100, 100);
+    pointerMove(target, 110, 100);
+    if (reason === "unmount") view.unmount();
+    else
+      view.rerender(
+        <LeadNotePianoRoll
+          {...props}
+          parent={reason === "parent" ? { ...PARENT, revisionHash: "f".repeat(64) } : PARENT}
+          sourceResultHash={reason === "source" ? "e".repeat(64) : props.sourceResultHash}
+          selectedNoteId={reason === "selection" ? SECOND_NOTE.id : NOTE_ID}
+          disabled={reason === "pending"}
+        />,
+      );
+    pointerUp(target, 110, 100);
+    expect(props.onCommitDuration).not.toHaveBeenCalled();
+  },
+);
