@@ -26,6 +26,8 @@ Codex records a task-specific model/effort recommendation, rationale, and escala
 - Expected branch:
 - Expected base SHA/ref, when applicable:
 - Working-tree/index assumptions and existing work/stashes to preserve:
+- After ADR-031 protected activation, distinguish remote integration baseline from current task's local base; identify prerequisite immutable checkpoint/contract tuples, ancestry and exact review/Product Owner local-acceptance receipts. State whether required local checks/findings permit continuation; do not infer trust from a self-reported PASS.
+- Intended milestone/sub-milestone integration boundary and concrete reason for any earlier integration; do not relabel a micro-task to force a PR. Record integrated capabilities separately from local batch work and pending remote evidence. This field does not itself make a future task eligible.
 - For publication-capable work: reviewed target-base SHA/ref, reviewed implementation-head SHA, expected remote target-base state, reviewed scope, and relevant review/validation/check evidence.
 
 ## AUTHORITY / SCOPE
@@ -64,6 +66,10 @@ Record the disposition for this bounded task. This is a scope/eligibility record
 - `STANDING PUBLICATION AFTER EXACT-HEAD PASS` — record reviewed SHA and scope, current base, required CI, accepted merge method, and exact push/PR/merge checks; proceed only while the tuple and repository eligibility remain valid.
 - Another repository-compatible instruction, such as read-only evidence, leaving implementation uncommitted, or a task-specific no-publication stop.
 
+After [ADR-031](../DECISIONS.md#adr-031--local-reviewed-checkpoints-and-milestone-level-integration) activation, eligible ordinary tasks may use `LOCAL REVIEWED CHECKPOINT — continue only to a separately eligible task after complete required review/local checks`; a future qualifying SPECIFY may propose `LOCAL-DEVELOPMENT AUTHORITY ONLY AFTER consequential PASS + explicit exact-tuple Product Owner acceptance`. SPECIFY and IMPLEMENT remain separate. Explicit integration prerequisites and excluded governance/reviewer/security/qualification/evidence/deployment/release tasks retain their own lifecycle. This governance candidate cannot use these dispositions before protected activation.
+
+For `FINAL INTEGRATION CANDIDATE`, record the actual target-base/final-head/tree, complete cumulative scope, earlier checkpoint tuples, findings/evidence continuity and required final acceptance. Plan complete cumulative independent review, not approval inferred from checkpoint PASS results. Preserve local identities and classify the full PR diff for required CI. A changed final candidate requires renewed applicable review/acceptance.
+
 For publication-capable work, record reviewed base/head/scope/evidence and expected remote target-base state; before publication or merge verify the live target base and state the base-match or bounded-base-movement disposition. After exact-head PASS, any branch mutation creates a new unreviewed head under the workflow's reviewed-head rule. ASSESS permits no edits or commits. Review and standing progression remain subject to Product Owner-set publication/merge policy and all repository checks.
 
 For mechanical post-merge reconciliation, record whether the current bounded task includes it:
@@ -72,6 +78,8 @@ For mechanical post-merge reconciliation, record whether the current bounded tas
 - `PUBLICATION + MECHANICAL POST-MERGE RECONCILIATION` — list the allowed coordination/status paths (normally `PROJECT_STATE.md` and/or `docs/ROADMAP.md`), exact stop conditions, and the reconciliation disposition. Use a separate reviewed PR/CI/merge path only when the coordination change independently meets the publication threshold; omit immaterial history/bookkeeping publication. Do not begin a new engineering capability in that operational flow.
 
 Mechanical reconciliation may follow under standing authority when repository truth and this task's scope determine the edit. It may not modify the reviewed implementation, and it must stop `BLOCKED` if any new engineering judgment or authoritative-document conflict is required.
+
+Under activated ADR-031, include materially necessary related coordination before final review and prefer merge-independent truthful wording. No automatic standalone post-merge bookkeeping PR. A materially false integrated gate still needs correction. For session checkpoints record unpublished status, recovery/backup limits and next safe action; resumption verifies the local chain, receipts, refs and pending checks. Session end does not force publication.
 
 ## RETURN
 
