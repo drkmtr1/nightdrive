@@ -633,3 +633,19 @@ On success, create one child revision/Undo step, retain the source identity, kee
 **Consequences:** No runtime change in this task. AC-015 remains partial and snap remains unresolved. Preserve all v1-v7, source/hash/preview ownership and existing controls. No generator-policy repair, clamp, new gestures, audible velocity, persistence or qualification expansion.
 
 **Revisit:** Target scope, input/submission behavior, delta provenance, canonical semantics, interaction accessibility or broader capability changes require separately bounded consequential authority.
+
+## ADR-040 — M2 selected Lead-note Snap Start interaction
+
+**Date:** 2026-10-08
+
+**Status:** CANDIDATE. Consequential external independent exact-head PASS and Product Owner exact-tuple acceptance are required before separate local implementation under ADR-031.
+
+**Context:** Stage 10/AC-015 requires snap but earlier drag/resize interactions intentionally use free integer ticks. The Product Owner selects explicit Snap Start for one existing selected Lead note, a fixed 240-tick sixteenth-note grid at 960 PPQ, and halfway ties toward the later point.
+
+**Decision:** Define arithmetic, native keyboard-operable button, no-op, one existing v2 absolute start command, source/ancestry authority, rejection/history/audition behavior and evidence in [the Snap Start specification](reviews/M2_LEAD_NOTE_SNAP_UI_SPECIFICATION.md). Compute nearest tick-0-origin multiple using integer remainder >=120 for the later point. The existing Node boundary retains canonical validation and error precedence; containment/order violations reject with no alternate grid point, clamp, sorting or neighbor movement. Canonical provenance stores the existing absolute v2 command, not new snap/grid metadata.
+
+**Alternatives:** A drag/resize snapping mode would alter accepted gestures. Selectable grids, swing/triplets or batch quantization broaden product semantics. The selected explicit single-note action reuses v2 and leaves those interactions unchanged.
+
+**Consequences:** No runtime/UI implementation in this task and no new canonical schema/hash/command. Preserve stable IDs, unchanged fields/roles, full ancestry, source identity, immutable Undo/Redo and existing successful-edit audition invalidation. Snap exclusions are narrowed only for this explicit action after its authority lifecycle; other gestures stay unsnapped. AC-015 remains partial; no protected integration or qualification claim.
+
+**Revisit:** Any change to role/target scope, grid/origin, tie rule, interaction, rejection/repair, provenance, canonical authority or acceptance claims needs separate consequential review and applicable Product Owner acceptance.
