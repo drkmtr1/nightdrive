@@ -557,3 +557,165 @@ Upon protected activation only, this ADR qualifies the general development/publi
 **Consequences:** Fewer routine integration/bookkeeping cycles, with explicit pending remote evidence and local-only recovery risk. Cumulative interactions require complete final review; meaningful early integration remains available when risk or gates warrant it. No new registry, workflow, infrastructure, dependency, product feature or backup service is introduced.
 
 **Revisit:** Concrete cumulative-review, local recovery, validation-debt or scope/coupling evidence shows the recorded integration boundary is unsafe or too coarse. Use existing bounded assessment and Product Owner decision authority; do not create a recurring cadence.
+
+## ADR-032 — Atomic Lead note position command
+
+**Date:** 2026-10-04
+
+**Status:** CANDIDATE. This exact decision may authorize a separate bounded local implementation only after consequential independent exact-head review PASS and explicit Product Owner acceptance of that exact reviewed tuple under ADR-031. It does not accept a descendant or cumulative integration candidate. Protected integration remains at the recorded milestone/sub-milestone boundary. This SPECIFY task authorizes no runtime or UI implementation.
+
+**Context:** ADR-027 through ADR-030 define the verified canonical editor revision and separate Lead-only pitch-v1, start-tick-v2, duration-v3, and delete-v4 commands. A producer drag that changes both pitch and time cannot be represented by applying pitch-v1 and start-tick-v2 sequentially without creating an intermediate canonical revision and two history steps. The Product Owner selected one atomic revision and one Undo/Redo step for a single Lead-note drag.
+
+**Decision:** Add one versioned nightdrive.editor-note-command.v5 command type, set-note-position, targeting one existing Lead note by stable ID. It carries both expected current values (expectedPitch, expectedStartTick) from the verified selected parent and both absolute replacements (pitch, startTick). Validate the full final state atomically, then produce one child nightdrive.editor-revision.v1 revision. Keep existing v1-v4 command schemas, meanings and historical bytes unchanged; retain the revision-v1 schema, canonical hash domain, retained-source and full-ancestry verification, immutable history, original generated source identity, derived preview boundary and audition invalidation.
+
+A command with exactly one unchanged replacement field is valid if the other changes and every invariant passes. A command with both replacements unchanged is one command-level no-op and creates no revision. The exact command schema, final-state invariants, error precedence, replay, history and implementation evidence are defined in [M2 Lead note atomic drag command](reviews/M2_EDITOR_NOTE_DRAG_COMMAND_SPECIFICATION.md).
+
+composition remains the owner of canonical revision state, source/ancestry validation, canonical serialization and hashes. editor owns the command transition and history cursor. The existing pinned-Node boundary remains the validation/application boundary; browser values remain proposals and derived views. This ADR does not define pointer mapping, drag threshold, snapping, keyboard gesture behavior, accessibility interaction, selection policy, or visual design.
+
+**Alternatives:** Apply the existing pitch and start-tick commands in sequence; change v1/v2 command payloads in place; bump the revision schema/hash domain; create an intermediate noncanonical two-axis edit followed by a second canonical command. Sequential commands violate the selected one-revision/one-history-step behavior; in-place mutation breaks compatibility; a revision/hash migration is unnecessary because revision-v1 already binds an exact nested versioned command and complete result.
+
+**Consequences:** Only one existing Lead note's absolute pitch and startTick may change per accepted v5 command. Existing Lead pitch 60..84, section containment, nondecreasing start order, accepted overlap policy, stable ID, unchanged duration/velocity/order/source/other state, and full ancestry verification remain in force. No snapping, repair, Motif-policy reinterpretation, neighbor movement, resize, add/delete, other-role editing, persistence, API, dependency, AC-014 or Stage 8 work is introduced. AC-015 remains partial. A separate eligible IMPLEMENT task is required after this specification receives its exact-head review and Product Owner acceptance.
+
+**Revisit:** Any change to atomicity, accepted fields, Lead-only scope, expected-old checks, overlap/order/section constraints, command/revision/hash versioning, history semantics, or browser gesture policy requires a separate bounded specification and applicable review.
+
+## ADR-033 — M2 Lead-note drag interaction
+
+**Date:** 2026-10-05
+
+**Status:** CANDIDATE. This exact interaction decision may authorize a separate bounded local implementation only after consequential independent exact-head review PASS and explicit Product Owner acceptance of that exact reviewed tuple under ADR-031. It does not accept a descendant or cumulative integration candidate. Protected integration remains at the recorded milestone or sub-milestone boundary. This SPECIFY task authorizes no browser/runtime implementation.
+
+**Context:** ADR-032 and the accepted M2 Lead note atomic drag command define one verified v5 set-note-position command for one Lead note and leave its browser interaction unspecified. Stage 10 / AC-015 requires bounded drag editing and a keyboard-accessible alternative. The current eight-bar four-role timeline is read-only, and the existing Lead controls independently edit pitch and start tick. The Product Owner selected a separate Lead piano roll, free integer-tick movement without beat/bar snapping, direct existing-note targeting, one command on pointer release, a 4 CSS-pixel activation threshold, cancellation without a revision, a paired keyboard pitch/start action, and preservation of the pointer-to-note grab offset.
+
+**Decision:** Specify one bounded desktop-first Lead-note drag interaction in [M2 Lead-note drag interaction](reviews/M2_LEAD_NOTE_DRAG_UI_SPECIFICATION.md). Retain the current four-role timeline unchanged and read-only; add a distinct eight-bar Lead-only piano-roll projection. Directly target an existing note by its stable ID. A pointer gesture becomes a drag at 4 CSS pixels, preserves the grab offset, maps horizontal and vertical pointer deltas to nearest integer ticks and semitone pitches without beat/bar snapping, and sends one absolute set-note-position v5 command only on release. Cancellation discards the proposal and creates no command or revision. A keyboard-accessible alternative selects an existing note, edits labeled pitch and absolute start-tick fields together, and applies once through v5. Existing pitch-v1 and start-tick-v2 controls remain unchanged.
+
+Composition and the existing pinned-Node application boundary retain canonical authority. Pointer selection and proposal state are noncanonical. Successful v5 application, full retained-source/ancestry verification, revision hashing, undo/redo, derived preview, source identity, and audition invalidation retain their existing contracts. Do not add add-note, resize, velocity, transpose, snapping, other-role editing, persistence, API, dependency, AI, formal Stage 8 qualification, AC-014, or AC-015 completion.
+
+**Alternatives:** Make the current four-role timeline editable; use pointer position as an absolute note anchor; snap to beat/bar boundaries; commit on pointer-down or every pointer-move; issue pitch-v1 and start-tick-v2 separately; or omit the paired keyboard path. A distinct Lead piano roll keeps inspection and editing roles clear. Preserving the grabbed offset and committing one v5 command on release honor the selected gesture-level atomicity. Free integer ticks avoid an unaccepted rhythm grid, while the paired native fields provide exact keyboard entry without custom drag keys.
+
+**Consequences:** This is browser-interaction authority only after the stated review and acceptance lifecycle; it does not implement or accept a usable UI. It defines no general visual-brand direction, touch/mobile qualification, add/resize/velocity/transpose/snap capability, note-spelling convention, keyboard shortcuts, persistence, Stage 8 qualification, AC-014, or AC-015 completion. AC-015 remains partial. A separate eligible bounded IMPLEMENT task is required after this exact specification is accepted.
+
+**Revisit:** Any change to target role, separate-view boundary, pointer activation threshold, grab-offset behavior, coordinate mapping or rounding, snapping, command timing/atomicity, cancellation, keyboard alternative, validation boundary, revision/history semantics, preview/audition ownership, or scope requires separate authority and applicable review.
+
+## ADR-034 — M2 Lead note-add command
+
+**Date:** 2026-10-05
+
+**Status:** CANDIDATE. This exact command decision may authorize a separate bounded local implementation only after consequential independent exact-head review PASS and explicit Product Owner acceptance of that exact reviewed tuple under ADR-031. It does not accept a descendant or cumulative integration candidate. Protected integration remains at the recorded milestone/sub-milestone boundary. This SPECIFY task authorizes no runtime or UI implementation.
+
+**Context:** Stage 10 and AC-015 include adding notes. ADR-027 through ADR-033 establish verified editor revision V1, deterministic imported-note IDs, immutable history, Lead-only pitch/start/duration/position commands, deletion, and a separate Lead drag interaction. They explicitly defer adding a non-source note and its identity. The Product Owner selected Lead-only scope, fixed velocity 100, an edit-lineage identity derived from the exact verified parent identity and exact add command, insertion after all existing equal-start Lead notes, and explicit absolute pitch/startTick/durationTicks with no defaults.
+
+**Decision:** Add one v6 command, add-note, with exact ordered fields schema, type, pitch, startTick, durationTicks. The command applies only to Lead and creates one note with those three exact absolute values and velocity 100. It carries no role, velocity, note ID, expected-old field, random identifier, or timestamp. Derive its stable note ID under the separately versioned domain nightdrive.editor-added-note-id-input.v1 from the exact verified parent identity plus the exact canonical v6 command using the existing deterministic digest facility. Insert after all existing Lead notes sharing startTick, before the first note with a greater startTick, without sorting or changing existing IDs/order.
+
+The exact command, identity encoding, validation/error precedence, replay, revision/history, preview, compatibility, and evidence requirements are specified in [M2 Lead note-add command](reviews/M2_EDITOR_NOTE_ADD_COMMAND_SPECIFICATION.md).
+
+Composition retains canonical schema validation, retained-source/full-ancestry verification, serialization, and revision hashing. The editor owns the transition and immutable history cursor. The existing pinned-Node application boundary remains the canonical application boundary; browser state remains a noncanonical proposal. Keep editor revision V1, its hash domain, source binding, CompleteSectionPreview schema, and all v1-v5 commands unchanged.
+
+**Alternatives:** Extend source-occurrence IDs with a fabricated ordinal; use an array-index identity; accept caller-random IDs/timestamps; change editor revision/hash schemas; infer pitch, timing, duration, or velocity from neighboring notes, pointer state, generator policy, or transport state. The chosen separate domain preserves source-ID meaning; parent-bound command hashing is deterministic; explicit values avoid hidden defaults; fixed velocity and Lead-only scope minimize the operation while preserving the canonical note schema.
+
+**Consequences:** This authority defines one canonical Lead add command only. It does not define how a UI gathers values, note selection, pointer interactions, accessibility behavior, or visual design. A future UI must submit explicit absolute values under separately accepted interaction authority. No resize, velocity editing, transpose, snapping, other-role editing, persistence, API, dependencies, AC-014 work, Stage 8 qualification, or AC-015 completion is authorized. AC-015 remains partial. A separate bounded implementation task requires this exact specification's consequential independent review and Product Owner acceptance.
+
+**Revisit:** Any change to role, required value fields/defaults, velocity, identity derivation, insertion order, overlap policy, validation/error precedence, command/revision/hash versioning, history, source/preview ownership, or UI interaction requires separate authority and applicable review.
+
+## ADR-035 — M2 Lead note-add UI interaction
+
+**Date:** 2026-10-06
+
+**Status:** CANDIDATE. This exact UI interaction decision may authorize a separate bounded local implementation only after consequential independent exact-head review PASS and explicit Product Owner acceptance of that exact reviewed tuple under ADR-031. It does not accept a descendant or cumulative integration candidate. Protected integration remains at the recorded milestone/sub-milestone boundary. This SPECIFY task authorizes no runtime or UI implementation.
+
+**Context:** ADR-034 and the accepted M2 Lead note-add command specify one canonical v6 add-note transition with explicit absolute pitch, startTick, and durationTicks, fixed velocity 100, and deterministic parent-bound identity, but intentionally defer how the producer enters these values. Stage 10 / AC-015 includes adding notes with keyboard-accessible editing. The existing Lead piano roll supports inspection and existing-note editing; it is not a note-creation surface. The Product Owner selected a labeled three-field form with one Add Note action.
+
+**Decision:** Define the form and its atomic interaction in [M2 Lead note-add UI interaction](reviews/M2_LEAD_NOTE_ADD_UI_SPECIFICATION.md). The form collects only Pitch, Start Tick, and Duration Ticks as explicit absolute values, with no defaults or inference, and submits one ordered v6 command through the existing application Server Action pattern, which delegates once to the pinned-Node editEditorApplicationAddNoteV1 boundary. Existing composition/editor ownership remains authoritative for verification, canonical state, IDs, hashes, history, and preview. Successful application installs the returned application, creates one child revision/Undo step, retains the original sourceResultHash, makes the note available through existing selection/editing, and uses existing audition invalidation without autoplay. Rejection preserves the producer inputs and complete prior canonical/application state, history, preview, and audition.
+
+**Alternatives:** Create notes from piano-roll coordinates, infer values from selection or neighboring notes, issue separate commands for each field, or let browser state create canonical revisions. These would add unselected behavior, hidden values, partial history, or duplicate canonical authority. The selected form makes all required v6 fields explicit and commits them atomically through the existing boundary.
+
+**Consequences:** The existing four-role timeline, Lead piano roll, selection behavior, v1-v5 commands, v6 canonical semantics, and editor revision/hash ownership remain unchanged. The piano roll stays non-creating; the form is keyboard operable, safe-error-only, and proposal-only until Node validation. AC-015 remains partial. This decision adds no resize, velocity, transpose, snap, multi-note, other-role, persistence, API, dependency, AC-014, or Stage 8 capability. A separate implementation task remains unauthorized until this exact specification receives consequential independent PASS and Product Owner exact-tuple acceptance.
+
+**Revisit:** Any change to the three required values, defaults, creation gesture, canonical boundary, atomicity, error/state preservation, selection behavior, preview/source identity, audition behavior, scope, or version compatibility requires separately bounded authority and applicable review.
+
+## ADR-036 — M2 canonical Lead-note velocity command
+
+**Date:** 2026-10-06
+
+**Status:** CANDIDATE. This exact canonical command decision may authorize a separate bounded local IMPLEMENT task only after consequential independent exact-head review PASS and Product Owner exact-tuple acceptance under ADR-031. It does not authorize UI implementation, accept a descendant candidate, or create protected integration authority. This SPECIFY task authorizes no runtime or UI behavior change.
+
+**Context:** ADR-027 through ADR-035 establish a retained-source, full-ancestry verified editor revision; additive Lead-only commands through v6; immutable undo/redo; and a derived CompleteSectionPreview that omits velocity. Canonical editor notes already contain velocity in the 1..127 domain, and root-import/v6 add policy assigns 100. AC-015 includes velocity editing, but there is no accepted velocity-edit command. The Product Owner selected one existing Lead note's absolute canonical velocity edit and explicitly deferred any audible effect.
+
+**Decision:** Define one additive set-note-velocity command using nightdrive.editor-note-command.v7 with ordered fields schema, type, noteId, expectedVelocity, velocity. It targets one existing Lead note in the verified selected parent, compares expectedVelocity against that note, and carries an absolute replacement velocity. The replacement must be a safe integer in 1..127. One accepted command changes only that canonical note field and creates exactly one child editor-revision-v1; a same-value edit is a no-op. Preserve note identity, pitch, timing, duration, order, source, all unrelated notes/roles, existing revision hashing, complete ancestry verification, immutable history, and v1-v6 compatibility.
+
+Use the exact command validation/error precedence and implementation evidence in [the M2 Lead-note velocity command specification](reviews/M2_EDITOR_NOTE_VELOCITY_COMMAND_SPECIFICATION.md). Composition retains canonical state/serialization/source/ancestry/hash ownership; the editor owns the transition/history operation; a separate bounded implementation may expose it through the existing pinned-Node application boundary. This is canonical command authority only; this ADR defines no UI interaction.
+
+**Audition limitation:** Do not add velocity to CompleteSectionPreview or change BrowserAudition scheduling, note gain, role normalization, master volume, mute/solo, or other audition mapping. The selected editor revision identity changes, while the derived preview values and sourceResultHash remain unchanged for a velocity-only edit. Existing revision-change audition invalidation remains in force. An explicit later Play continues to audition the same velocity-agnostic preview. This is an intentional temporary product limitation and does not make canonical velocity meaningless.
+
+A separate future specification must decide whether preview carries velocity; the velocity-to-gain mapping; interaction with role gain/normalization and master volume; clipping/headroom; and browser audition evidence. No such choice is made here.
+
+**Alternatives:** Change the older command schemas; change the editor revision/hash schema; edit velocity by a relative delta; apply generator/Motif policy to manual edits; add velocity to the preview or choose a gain mapping now. The additive v7 envelope preserves historical commands and revision bytes; an expected-old field detects stale edits; the Product Owner explicitly deferred audition semantics.
+
+**Consequences:** This candidate authorizes no implementation in the same task, no UI controls, audible velocity, preview schema change, gain/normalization change, resize, transpose, snap, add/delete changes, other-role editing, persistence, AC-014, Stage 8 qualification, or AC-015 completion. AC-015 remains partial. Earlier exclusions of canonical velocity editing are narrowed only for this one existing Lead-note command if and when this exact decision passes review, receives Product Owner acceptance, and is separately implemented. The earlier preview/audition exclusions remain binding.
+
+**Revisit:** Any change to role scope, expected/replacement values, velocity domain, no-op behavior, command/error/version semantics, revision/history behavior, preview ownership, audibility, user interaction, persistence, or qualification claims requires separate authority and compatibility evidence. Audible velocity remains outside this decision.
+
+## ADR-037 — M2 Lead-note velocity UI interaction
+
+**Date:** 2026-10-06
+
+**Status:** CANDIDATE. This interaction decision may authorize only a separate local UI implementation after consequential independent exact-head review PASS and Product Owner acceptance of that exact reviewed tuple. It does not accept a descendant, create protected integration, or claim AC-015 completion.
+
+**Context:** ADR-036 and the accepted M2 Lead-note velocity command specify a canonical v7 absolute velocity change for one existing Lead note, but do not define producer interaction. The v7 implementation and pinned-Node application operation are independently reviewed as a local checkpoint, not protected-integrated. The existing selected-note editor already uses labeled integer fields with explicit Apply actions. The Product Owner selected a labeled integer Velocity field with explicit Apply Velocity and required an inline notice that velocity is canonical state while preview loudness remains unchanged.
+
+**Decision:** Define the selected-note field, form submission, safe rejection, result installation, notice, and evidence in [M2 Lead-note velocity UI interaction](reviews/M2_LEAD_NOTE_VELOCITY_UI_SPECIFICATION.md). Initialize from the selected canonical Lead note and refresh on selection or revision changes. A changed explicit Apply constructs exactly one v7 `set-note-velocity` command from the stable note ID, selected note's expected current velocity, and entered absolute replacement, then passes the captured parent and unchanged command through the existing Server Action pattern to the pinned-Node `editEditorApplicationVelocityV1` operation. A same-value proposal dispatches nothing. The browser draft remains noncanonical until the returned complete `EditorApplicationV1` is installed.
+
+On success, create one child revision/Undo step, retain the source identity, keep `CompleteSectionPreview` unchanged and velocity-agnostic, and apply existing edit-triggered audition invalidation without autoplay or resume. On local or canonical rejection, preserve the application-visible draft and complete existing application/history/preview/audition state and use only safe field-relevant or existing generic feedback. For the required native `type=number` control, browser sanitization of syntactically invalid text before the original text reaches application-controlled state is permitted; the sanitized value must fail closed, the discarded pre-sanitized text need not be recovered, and no raw-keystroke capture is introduced. Display the specified informational notice; do not imply velocity was lost or discarded.
+
+**Alternatives:** A slider or continuous update would add a different interaction and could produce repeated revisions. Applying on keystroke or blur would remove the explicit atomic action. The selected labeled integer field and Apply action match existing controls and produce one canonical command only after explicit submission.
+
+**Consequences:** This is UI interaction authority only after its review/acceptance lifecycle. It does not change v7 canonical semantics, `CompleteSectionPreview`, BrowserAudition, gain mapping, normalization, master volume, or any v1-v6 behavior. AC-015 remains partial. No velocity lane/handle, multi-note or other-role editing, resize, transpose, snap, persistence, AC-014, or Stage 8 work is authorized.
+
+**Revisit:** Any change to the control, submission gesture, accessible behavior, canonical boundary, error/state preservation, audition limitation, version compatibility, or scope requires separately bounded authority and applicable review. Audible velocity remains a separate specification.
+
+## ADR-038 — M2 Lead-note right-edge resize interaction
+
+**Date:** 2026-10-07
+
+**Status:** CANDIDATE. Consequential independent exact-head PASS and explicit Product Owner acceptance establish local implementation authority under ADR-031 only. This task implements nothing and grants no descendant or cumulative integration PASS.
+
+**Context:** The canonical v3 duration command and keyboard duration editor already exist; Stage 10/AC-015 still require resizing. The Product Owner selects right-edge-only resizing and reuse of accepted drag conventions.
+
+**Decision:** Use the existing v3 duration boundary for one Lead-note right-edge gesture, with captured stable target/parent, preserved grab offset, 4 CSS-pixel activation, nearest integer-tick delta and half-away ties, noncanonical proposal and one release command. Preserve start/pitch/velocity/order, existing overlaps, exact history/source identity and audition invalidation. The existing Duration Ticks/Apply form is the keyboard alternative. Exact interaction, cancellation and evidence are in [the resize specification](reviews/M2_LEAD_NOTE_RESIZE_UI_SPECIFICATION.md).
+
+**Alternatives:** Both-edge resizing needs new atomic start/duration semantics; snapping/clamping or continuous commits alter accepted intent/history. The selected right-edge-only path reuses v3 without those changes.
+
+**Consequences:** A separately reviewed implementation may add the handle only after exact-tuple acceptance. Preserve v1-v7, body drag and preview/canonical boundaries. AC-015 remains partial; no transpose, snap, audible velocity, other-role editing or release qualification is authorized.
+
+**Revisit:** Changes to edge scope, mapping, activation, command submission, cancellation, accessibility or canonical semantics require separate consequential authority.
+
+## ADR-039 — M2 selected Lead-note transpose interaction
+
+**Date:** 2026-10-08
+
+**Status:** CANDIDATE. Consequential independent exact-head PASS and Product Owner exact-tuple acceptance are required before separate local implementation under ADR-031.
+
+**Context:** Stage 10/AC-015 includes transpose, while existing commands accept absolute values. The Product Owner selects one existing selected Lead note and reuse of v1, with explicit browser semitone-delta input rather than a new canonical delta command.
+
+**Decision:** Define the labeled delta field, explicit Apply Transpose, exact validation, one existing v1 command and evidence in [the transpose interaction specification](reviews/M2_LEAD_NOTE_TRANSPOSE_UI_SPECIFICATION.md). The browser computes an absolute replacement from captured canonical pitch; Node retains sole source/ancestry and transition authority. Canonical provenance records the absolute v1 command, not the UI delta. Preserve Lead range 60..84, unchanged unrelated state, exact immutable history and existing successful-edit audition invalidation.
+
+**Alternatives:** Whole-track/batch transpose expands scope and needs atomic multi-note semantics. A new delta command changes canonical provenance/versioning. The selected single-note v1 interaction provides relative producer input without either expansion.
+
+**Consequences:** No runtime change in this task. AC-015 remains partial and snap remains unresolved. Preserve all v1-v7, source/hash/preview ownership and existing controls. No generator-policy repair, clamp, new gestures, audible velocity, persistence or qualification expansion.
+
+**Revisit:** Target scope, input/submission behavior, delta provenance, canonical semantics, interaction accessibility or broader capability changes require separately bounded consequential authority.
+
+## ADR-040 — M2 selected Lead-note Snap Start interaction
+
+**Date:** 2026-10-08
+
+**Status:** CANDIDATE. Consequential external independent exact-head PASS and Product Owner exact-tuple acceptance are required before separate local implementation under ADR-031.
+
+**Context:** Stage 10/AC-015 requires snap but earlier drag/resize interactions intentionally use free integer ticks. The Product Owner selects explicit Snap Start for one existing selected Lead note, a fixed 240-tick sixteenth-note grid at 960 PPQ, and halfway ties toward the later point.
+
+**Decision:** Define arithmetic, native keyboard-operable button, no-op, one existing v2 absolute start command, source/ancestry authority, rejection/history/audition behavior and evidence in [the Snap Start specification](reviews/M2_LEAD_NOTE_SNAP_UI_SPECIFICATION.md). Compute nearest tick-0-origin multiple using integer remainder >=120 for the later point. The existing Node boundary retains canonical validation and error precedence; containment/order violations reject with no alternate grid point, clamp, sorting or neighbor movement. Canonical provenance stores the existing absolute v2 command, not new snap/grid metadata.
+
+**Alternatives:** A drag/resize snapping mode would alter accepted gestures. Selectable grids, swing/triplets or batch quantization broaden product semantics. The selected explicit single-note action reuses v2 and leaves those interactions unchanged.
+
+**Consequences:** No runtime/UI implementation in this task and no new canonical schema/hash/command. Preserve stable IDs, unchanged fields/roles, full ancestry, source identity, immutable Undo/Redo and existing successful-edit audition invalidation. Snap exclusions are narrowed only for this explicit action after its authority lifecycle; other gestures stay unsnapped. AC-015 remains partial; no protected integration or qualification claim.
+
+**Revisit:** Any change to role/target scope, grid/origin, tie rule, interaction, rejection/repair, provenance, canonical authority or acceptance claims needs separate consequential review and applicable Product Owner acceptance.

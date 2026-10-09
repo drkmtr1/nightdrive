@@ -3,10 +3,14 @@
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type {
+  AddNoteCommandV6,
+  DeleteNoteCommandV4,
   EditorRevisionIdentityV1,
   SetNoteDurationCommandV3,
   SetNotePitchCommandV1,
+  SetNotePositionCommandV5,
   SetNoteStartTickCommandV2,
+  SetNoteVelocityCommandV7,
 } from "../composition/editor-revision";
 import type { HarmonyProfileId } from "../music-domain/harmony";
 import { createKey } from "../music-domain/key";
@@ -19,6 +23,7 @@ import {
   BrowserAudition,
   type BrowserAuditionDependencies,
 } from "./browser-audition";
+import { LeadNotePianoRoll } from "./lead-note-piano-roll";
 import { SectionTimeline } from "./section-timeline";
 
 export type GenerationChoice = Readonly<{
@@ -28,6 +33,11 @@ export type GenerationChoice = Readonly<{
 type Props = Readonly<{
   choices: readonly GenerationChoice[];
   generateAction: (request: CompleteSectionRequestV1) => Promise<EditorApplicationV1>;
+  addLeadNoteAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: AddNoteCommandV6,
+  ) => Promise<EditorApplicationV1>;
   setLeadPitchAction: (
     current: EditorApplicationV1,
     expectedParent: EditorRevisionIdentityV1,
@@ -38,14 +48,31 @@ type Props = Readonly<{
     expectedParent: EditorRevisionIdentityV1,
     command: SetNoteStartTickCommandV2,
   ) => Promise<EditorApplicationV1>;
+  setLeadPositionAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: SetNotePositionCommandV5,
+  ) => Promise<EditorApplicationV1>;
   setLeadDurationAction: (
     current: EditorApplicationV1,
     expectedParent: EditorRevisionIdentityV1,
     command: SetNoteDurationCommandV3,
   ) => Promise<EditorApplicationV1>;
+  setLeadVelocityAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: SetNoteVelocityCommandV7,
+  ) => Promise<EditorApplicationV1>;
+  deleteLeadNoteAction: (
+    current: EditorApplicationV1,
+    expectedParent: EditorRevisionIdentityV1,
+    command: DeleteNoteCommandV4,
+  ) => Promise<EditorApplicationV1>;
   undoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
   redoSectionEditAction: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>;
 }>;
+type AddLeadNoteField = "pitch" | "startTick" | "durationTicks";
+type AddLeadNoteFieldError = Readonly<{ field: AddLeadNoteField; message: string }>;
 const ROLE_LABELS = { harmony: "Harmony", bass: "Bass", arpeggiator: "Arpeggiator", lead: "Lead" };
 
 export function createBrowserAuditionDependencies(): BrowserAuditionDependencies {
@@ -63,19 +90,33 @@ export function createBrowserAuditionDependencies(): BrowserAuditionDependencies
 export function GenerateSection({
   choices,
   generateAction,
+  addLeadNoteAction,
   setLeadPitchAction,
   setLeadStartTickAction,
+  setLeadPositionAction,
   setLeadDurationAction,
+  setLeadVelocityAction,
+  deleteLeadNoteAction,
   undoSectionEditAction,
   redoSectionEditAction,
 }: Props) {
   const [profile, setProfile] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [application, setApplication] = useState<EditorApplicationV1 | null>(null);
+  const [addPitchValue, setAddPitchValue] = useState("");
+  const [addStartTickValue, setAddStartTickValue] = useState("");
+  const [addDurationTicksValue, setAddDurationTicksValue] = useState("");
+  const [addNoteFieldError, setAddNoteFieldError] = useState<AddLeadNoteFieldError | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState("");
   const [pitchValue, setPitchValue] = useState("");
+  const [transposeValue, setTransposeValue] = useState("");
+  const [transposeFieldError, setTransposeFieldError] = useState("");
   const [startTickValue, setStartTickValue] = useState("");
+  const [positionPitchValue, setPositionPitchValue] = useState("");
+  const [positionStartTickValue, setPositionStartTickValue] = useState("");
   const [durationTicksValue, setDurationTicksValue] = useState("");
+  const [velocityValue, setVelocityValue] = useState("");
+  const [velocityFieldError, setVelocityFieldError] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const [editorPending, setEditorPending] = useState(false);
@@ -130,7 +171,13 @@ export function GenerateSection({
     setSelectedNoteId(selectedNote?.id ?? "");
     setPitchValue(selectedNote ? String(selectedNote.pitch) : "");
     setStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
+    setPositionPitchValue(selectedNote ? String(selectedNote.pitch) : "");
+    setPositionStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
     setDurationTicksValue(selectedNote ? String(selectedNote.durationTicks) : "");
+    setVelocityValue(selectedNote ? String(selectedNote.velocity) : "");
+    setVelocityFieldError("");
+    setTransposeValue("");
+    setTransposeFieldError("");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -141,8 +188,18 @@ export function GenerateSection({
     setApplication(null);
     setSelectedNoteId("");
     setPitchValue("");
+    setTransposeValue("");
+    setTransposeFieldError("");
     setStartTickValue("");
+    setPositionPitchValue("");
+    setPositionStartTickValue("");
     setDurationTicksValue("");
+    setVelocityValue("");
+    setVelocityFieldError("");
+    setAddPitchValue("");
+    setAddStartTickValue("");
+    setAddDurationTicksValue("");
+    setAddNoteFieldError(null);
     setError("");
     const form = new FormData(event.currentTarget);
     const template = selected?.templates.find((item) => item.id === templateId);
@@ -231,7 +288,10 @@ export function GenerateSection({
   }
 
   async function runEditorOperation(
-    operation: (current: EditorApplicationV1) => Promise<EditorApplicationV1 | null>,
+    operation: (
+      current: EditorApplicationV1,
+    ) => EditorApplicationV1 | null | Promise<EditorApplicationV1 | null>,
+    onRejected?: (failure: unknown) => void,
   ) {
     if (!application || editorInFlight.current) return;
     editorInFlight.current = true;
@@ -243,15 +303,118 @@ export function GenerateSection({
       if (editorEpoch.current !== invocationEpoch || result === null) return;
       invalidatePlayback();
       installApplication(result);
-    } catch {
-      if (editorEpoch.current === invocationEpoch)
-        setError(
-          "The Lead edit history could not be updated. The generated section remains unchanged.",
-        );
+    } catch (failure) {
+      if (editorEpoch.current === invocationEpoch) {
+        if (onRejected) onRejected(failure);
+        else
+          setError(
+            "The Lead edit history could not be updated. The generated section remains unchanged.",
+          );
+      }
     } finally {
       editorInFlight.current = false;
       setEditorPending(false);
     }
+  }
+
+  function submitLeadNoteAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || editorInFlight.current) return;
+    setError("");
+    setAddNoteFieldError(null);
+
+    if (!/^[0-9]+$/.test(addPitchValue)) {
+      setAddNoteFieldError({
+        field: "pitch",
+        message: "Pitch: enter a whole MIDI value from 60 to 84.",
+      });
+      return;
+    }
+    const pitch = Number(addPitchValue);
+    if (!Number.isSafeInteger(pitch) || pitch < 60 || pitch > 84) {
+      setAddNoteFieldError({
+        field: "pitch",
+        message: "Pitch: enter a whole MIDI value from 60 to 84.",
+      });
+      return;
+    }
+
+    if (!/^[0-9]+$/.test(addStartTickValue)) {
+      setAddNoteFieldError({
+        field: "startTick",
+        message: "Start Tick: enter a whole tick from 0 to 30719.",
+      });
+      return;
+    }
+    const startTick = Number(addStartTickValue);
+    if (!Number.isSafeInteger(startTick) || startTick < 0 || startTick >= 30_720) {
+      setAddNoteFieldError({
+        field: "startTick",
+        message: "Start Tick: enter a whole tick from 0 to 30719.",
+      });
+      return;
+    }
+
+    if (!/^[0-9]+$/.test(addDurationTicksValue)) {
+      setAddNoteFieldError({
+        field: "durationTicks",
+        message: "Duration Ticks: enter a positive whole duration that ends within the section.",
+      });
+      return;
+    }
+    const durationTicks = Number(addDurationTicksValue);
+    if (
+      !Number.isSafeInteger(durationTicks) ||
+      durationTicks < 1 ||
+      durationTicks > 30_720 - startTick
+    ) {
+      setAddNoteFieldError({
+        field: "durationTicks",
+        message: "Duration Ticks: enter a positive whole duration that ends within the section.",
+      });
+      return;
+    }
+
+    const expectedParent = application.selectedRevision;
+    const command: AddNoteCommandV6 = {
+      schema: "nightdrive.editor-note-command.v6",
+      type: "add-note",
+      pitch,
+      startTick,
+      durationTicks,
+    };
+    void runEditorOperation((current) => addLeadNoteAction(current, expectedParent, command));
+  }
+
+  function submitLeadTranspose(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    setError("");
+    setTransposeFieldError("");
+    if (!/^-?[0-9]+$/.test(transposeValue)) {
+      setTransposeFieldError("Transpose: enter a whole semitone amount, such as 2 or -2.");
+      return;
+    }
+    const delta = Number(transposeValue);
+    if (!Number.isSafeInteger(delta)) {
+      setTransposeFieldError("Transpose: enter a safe whole semitone amount.");
+      return;
+    }
+    if (delta === 0) return;
+    const pitch = selectedLeadNote.pitch + delta;
+    if (!Number.isSafeInteger(pitch) || pitch < 60 || pitch > 84) {
+      setTransposeFieldError("Transpose: the resulting Lead pitch must be from 60 to 84.");
+      return;
+    }
+    const expectedParent = application.selectedRevision;
+    const command: SetNotePitchCommandV1 = {
+      schema: "nightdrive.editor-note-command.v1",
+      type: "set-note-pitch",
+      noteId: selectedLeadNote.id,
+      expectedPitch: selectedLeadNote.pitch,
+      pitch,
+    };
+    void runEditorOperation((current) => setLeadPitchAction(current, expectedParent, command));
   }
 
   function submitLeadPitch(event: FormEvent<HTMLFormElement>) {
@@ -278,6 +441,38 @@ export function GenerateSection({
     );
   }
 
+  function snapSelectedLeadStart() {
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    const section = selectedRevision?.section;
+    const startTick = selectedLeadNote.startTick;
+    if (
+      section?.ppq !== 960 ||
+      section.barCount !== 8 ||
+      section.endTick !== 30720 ||
+      !Number.isSafeInteger(startTick) ||
+      startTick < 0 ||
+      startTick >= 30720
+    ) {
+      setError("Snap Start could not use this note's timing. The section remains unchanged.");
+      return;
+    }
+    const snappedStartTick = Math.floor((startTick + 120) / 240) * 240;
+    if (!Number.isSafeInteger(snappedStartTick)) {
+      setError("Snap Start could not use this note's timing. The section remains unchanged.");
+      return;
+    }
+    if (snappedStartTick === startTick) return;
+    const expectedParent = application.selectedRevision;
+    const command: SetNoteStartTickCommandV2 = {
+      schema: "nightdrive.editor-note-command.v2",
+      type: "set-note-start-tick",
+      noteId: selectedLeadNote.id,
+      expectedStartTick: startTick,
+      startTick: snappedStartTick,
+    };
+    void runEditorOperation((current) => setLeadStartTickAction(current, expectedParent, command));
+  }
+
   function submitLeadStartTick(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!application || !selectedLeadNote || editorInFlight.current) return;
@@ -300,6 +495,100 @@ export function GenerateSection({
     void runEditorOperation((current) =>
       setLeadStartTickAction(current, current.selectedRevision, command),
     );
+  }
+
+  function submitLeadPosition(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    if (!/^\d+$/.test(positionPitchValue)) {
+      setError("Choose a whole MIDI pitch from 60 to 84.");
+      return;
+    }
+    const pitch = Number(positionPitchValue);
+    if (!Number.isSafeInteger(pitch) || pitch < 60 || pitch > 84) {
+      setError("Choose a whole MIDI pitch from 60 to 84.");
+      return;
+    }
+    if (!/^\d+$/.test(positionStartTickValue)) {
+      setError("Choose a whole start tick from 0 to 30719.");
+      return;
+    }
+    const startTick = Number(positionStartTickValue);
+    if (!Number.isSafeInteger(startTick) || startTick < 0 || startTick >= 30_720) {
+      setError("Choose a whole start tick from 0 to 30719.");
+      return;
+    }
+    if (pitch === selectedLeadNote.pitch && startTick === selectedLeadNote.startTick) return;
+
+    const expectedParent = application.selectedRevision;
+    const command: SetNotePositionCommandV5 = {
+      schema: "nightdrive.editor-note-command.v5",
+      type: "set-note-position",
+      noteId: selectedLeadNote.id,
+      expectedPitch: selectedLeadNote.pitch,
+      expectedStartTick: selectedLeadNote.startTick,
+      pitch,
+      startTick,
+    };
+    void runEditorOperation((current) => {
+      if (
+        current.preview.sourceResultHash !== application.preview.sourceResultHash ||
+        current.selectedRevision.schema !== expectedParent.schema ||
+        current.selectedRevision.revisionHash !== expectedParent.revisionHash
+      )
+        return null;
+      return setLeadPositionAction(current, expectedParent, command);
+    });
+  }
+
+  function commitLeadPosition(request: {
+    sourceResultHash: string;
+    expectedParent: EditorRevisionIdentityV1;
+    command: SetNotePositionCommandV5;
+  }) {
+    if (
+      !application ||
+      editorInFlight.current ||
+      application.preview.sourceResultHash !== request.sourceResultHash ||
+      application.selectedRevision.schema !== request.expectedParent.schema ||
+      application.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+    )
+      return;
+
+    void runEditorOperation((current) => {
+      if (
+        current.preview.sourceResultHash !== request.sourceResultHash ||
+        current.selectedRevision.schema !== request.expectedParent.schema ||
+        current.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+      )
+        return null;
+      return setLeadPositionAction(current, request.expectedParent, request.command);
+    });
+  }
+
+  function commitLeadDuration(request: {
+    sourceResultHash: string;
+    expectedParent: EditorRevisionIdentityV1;
+    command: SetNoteDurationCommandV3;
+  }) {
+    if (
+      !application ||
+      editorInFlight.current ||
+      application.preview.sourceResultHash !== request.sourceResultHash ||
+      application.selectedRevision.schema !== request.expectedParent.schema ||
+      application.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+    )
+      return;
+
+    void runEditorOperation((current) => {
+      if (
+        current.preview.sourceResultHash !== request.sourceResultHash ||
+        current.selectedRevision.schema !== request.expectedParent.schema ||
+        current.selectedRevision.revisionHash !== request.expectedParent.revisionHash
+      )
+        return null;
+      return setLeadDurationAction(current, request.expectedParent, request.command);
+    });
   }
 
   function submitLeadDuration(event: FormEvent<HTMLFormElement>) {
@@ -327,6 +616,75 @@ export function GenerateSection({
     );
   }
 
+  function submitLeadVelocity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    setError("");
+    setVelocityFieldError("");
+
+    if (!/^[0-9]+$/.test(velocityValue)) {
+      setVelocityFieldError("Velocity: enter a whole number from 1 to 127.");
+      return;
+    }
+    const velocity = Number(velocityValue);
+    if (!Number.isSafeInteger(velocity) || velocity < 1 || velocity > 127) {
+      setVelocityFieldError("Velocity: enter a whole number from 1 to 127.");
+      return;
+    }
+    if (velocity === selectedLeadNote.velocity) return;
+
+    const expectedParent = application.selectedRevision;
+    const command: SetNoteVelocityCommandV7 = {
+      schema: "nightdrive.editor-note-command.v7",
+      type: "set-note-velocity",
+      noteId: selectedLeadNote.id,
+      expectedVelocity: selectedLeadNote.velocity,
+      velocity,
+    };
+    void runEditorOperation(
+      (current) => setLeadVelocityAction(current, expectedParent, command),
+      (failure) => {
+        if (
+          failure &&
+          typeof failure === "object" &&
+          "code" in failure &&
+          "field" in failure &&
+          failure.code === "EDITOR_NOTE_VELOCITY_OUT_OF_RANGE" &&
+          failure.field === "command.velocity"
+        ) {
+          setVelocityFieldError("Velocity: enter a whole number from 1 to 127.");
+        } else if (
+          failure &&
+          typeof failure === "object" &&
+          "code" in failure &&
+          "field" in failure &&
+          failure.code === "STALE_EDITOR_NOTE_VALUE" &&
+          failure.field === "command.expectedVelocity"
+        ) {
+          setVelocityFieldError(
+            "Velocity changed since this value was loaded. Review the selected note and apply again.",
+          );
+        } else {
+          setError(
+            "The Lead edit history could not be updated. The generated section remains unchanged.",
+          );
+        }
+      },
+    );
+  }
+
+  function deleteSelectedLeadNote() {
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    const command: DeleteNoteCommandV4 = {
+      schema: "nightdrive.editor-note-command.v4",
+      type: "delete-note",
+      noteId: selectedLeadNote.id,
+    };
+    void runEditorOperation((current) =>
+      deleteLeadNoteAction(current, current.selectedRevision, command),
+    );
+  }
+
   return (
     <>
       <section className="statusPanel" aria-labelledby="generate-title">
@@ -341,7 +699,15 @@ export function GenerateSection({
             setSelectedNoteId("");
             setPitchValue("");
             setStartTickValue("");
+            setPositionPitchValue("");
+            setPositionStartTickValue("");
             setDurationTicksValue("");
+            setVelocityValue("");
+            setVelocityFieldError("");
+            setAddPitchValue("");
+            setAddStartTickValue("");
+            setAddDurationTicksValue("");
+            setAddNoteFieldError(null);
             setError("");
           }}
           aria-busy={pending}
@@ -541,9 +907,111 @@ export function GenerateSection({
           <section aria-labelledby="lead-edit-title" className="editorControls">
             <h3 id="lead-edit-title">Lead note correction</h3>
             <p>
-              Choose one existing Lead note to change its pitch, absolute start tick, or absolute
-              duration.
+              Edit the selected Lead note&apos;s pitch, absolute start tick, or duration, or delete
+              that note.
             </p>
+            <section aria-labelledby="lead-note-add-title">
+              <h4 id="lead-note-add-title">Add Lead note</h4>
+              <form
+                aria-labelledby="lead-note-add-title"
+                aria-busy={editorPending}
+                onSubmit={submitLeadNoteAdd}
+              >
+                <label htmlFor="add-lead-note-pitch">Pitch</label>
+                <input
+                  id="add-lead-note-pitch"
+                  name="pitch"
+                  type="number"
+                  min="60"
+                  max="84"
+                  step="1"
+                  required
+                  value={addPitchValue}
+                  aria-invalid={addNoteFieldError?.field === "pitch" || undefined}
+                  aria-describedby={
+                    addNoteFieldError?.field === "pitch" ? "add-lead-note-error" : undefined
+                  }
+                  disabled={editorPending}
+                  onChange={(event) => {
+                    setAddPitchValue(event.target.value);
+                    if (addNoteFieldError?.field === "pitch") setAddNoteFieldError(null);
+                    setError("");
+                  }}
+                />
+                <label htmlFor="add-lead-note-start-tick">Start Tick</label>
+                <input
+                  id="add-lead-note-start-tick"
+                  name="startTick"
+                  type="number"
+                  min="0"
+                  max="30719"
+                  step="1"
+                  required
+                  value={addStartTickValue}
+                  aria-invalid={addNoteFieldError?.field === "startTick" || undefined}
+                  aria-describedby={
+                    addNoteFieldError?.field === "startTick" ? "add-lead-note-error" : undefined
+                  }
+                  disabled={editorPending}
+                  onChange={(event) => {
+                    setAddStartTickValue(event.target.value);
+                    if (addNoteFieldError?.field === "startTick") setAddNoteFieldError(null);
+                    setError("");
+                  }}
+                />
+                <label htmlFor="add-lead-note-duration-ticks">Duration Ticks</label>
+                <input
+                  id="add-lead-note-duration-ticks"
+                  name="durationTicks"
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  value={addDurationTicksValue}
+                  aria-invalid={addNoteFieldError?.field === "durationTicks" || undefined}
+                  aria-describedby={
+                    addNoteFieldError?.field === "durationTicks" ? "add-lead-note-error" : undefined
+                  }
+                  disabled={editorPending}
+                  onChange={(event) => {
+                    setAddDurationTicksValue(event.target.value);
+                    if (addNoteFieldError?.field === "durationTicks") setAddNoteFieldError(null);
+                    setError("");
+                  }}
+                />
+                <button type="submit" disabled={editorPending}>
+                  Add Note
+                </button>
+                {addNoteFieldError ? (
+                  <p id="add-lead-note-error" role="alert">
+                    {addNoteFieldError.message}
+                  </p>
+                ) : null}
+              </form>
+            </section>
+            <form aria-label="Transpose selected Lead note" onSubmit={submitLeadTranspose}>
+              <label htmlFor="lead-note-transpose">Transpose (semitones)</label>
+              <input
+                id="lead-note-transpose"
+                type="text"
+                value={transposeValue}
+                disabled={!selectedLeadNote || editorPending}
+                aria-invalid={transposeFieldError ? true : undefined}
+                aria-describedby={transposeFieldError ? "lead-note-transpose-error" : undefined}
+                onChange={(event) => {
+                  setTransposeValue(event.target.value);
+                  setTransposeFieldError("");
+                }}
+              />
+              <button type="submit" disabled={!selectedLeadNote || editorPending}>
+                Apply Transpose
+              </button>
+              {transposeFieldError ? (
+                <p id="lead-note-transpose-error" role="alert">
+                  {transposeFieldError}
+                </p>
+              ) : null}
+            </form>
             <form onSubmit={submitLeadPitch}>
               <label htmlFor="lead-note-choice">Lead note</label>
               <select
@@ -552,10 +1020,17 @@ export function GenerateSection({
                 disabled={leadNotes.length === 0 || editorPending}
                 onChange={(event) => {
                   const note = leadNotes.find((item) => item.id === event.target.value);
+                  editorEpoch.current += 1;
+                  setTransposeValue("");
+                  setTransposeFieldError("");
                   setSelectedNoteId(event.target.value);
                   setPitchValue(note ? String(note.pitch) : "");
                   setStartTickValue(note ? String(note.startTick) : "");
+                  setPositionPitchValue(note ? String(note.pitch) : "");
+                  setPositionStartTickValue(note ? String(note.startTick) : "");
                   setDurationTicksValue(note ? String(note.durationTicks) : "");
+                  setVelocityValue(note ? String(note.velocity) : "");
+                  setVelocityFieldError("");
                   setError("");
                 }}
               >
@@ -595,6 +1070,13 @@ export function GenerateSection({
                 Apply Lead pitch
               </button>
             </form>
+            <button
+              type="button"
+              disabled={!selectedLeadNote || editorPending}
+              onClick={snapSelectedLeadStart}
+            >
+              Snap Start
+            </button>
             <form onSubmit={submitLeadStartTick}>
               <label htmlFor="lead-note-start-tick">Absolute start tick</label>
               <input
@@ -624,6 +1106,60 @@ export function GenerateSection({
               >
                 Move Lead note
               </button>
+            </form>
+            <form onSubmit={submitLeadPosition}>
+              <fieldset disabled={!selectedLeadNote || editorPending}>
+                <legend>Move and pitch Lead note together</legend>
+                <label htmlFor="lead-note-position-pitch">Position MIDI pitch (60–84)</label>
+                <input
+                  id="lead-note-position-pitch"
+                  type="number"
+                  min="60"
+                  max="84"
+                  step="1"
+                  required
+                  value={positionPitchValue}
+                  disabled={!selectedLeadNote || editorPending}
+                  onChange={(event) => {
+                    setPositionPitchValue(event.target.value);
+                    setError("");
+                  }}
+                />
+                <label htmlFor="lead-note-position-start-tick">Position absolute start tick</label>
+                <input
+                  id="lead-note-position-start-tick"
+                  type="number"
+                  min="0"
+                  max="30719"
+                  step="1"
+                  required
+                  value={positionStartTickValue}
+                  disabled={!selectedLeadNote || editorPending}
+                  onChange={(event) => {
+                    setPositionStartTickValue(event.target.value);
+                    setError("");
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={
+                    !selectedLeadNote ||
+                    editorPending ||
+                    !/^\d+$/.test(positionPitchValue) ||
+                    !Number.isSafeInteger(Number(positionPitchValue)) ||
+                    Number(positionPitchValue) < 60 ||
+                    Number(positionPitchValue) > 84 ||
+                    !/^\d+$/.test(positionStartTickValue) ||
+                    !Number.isSafeInteger(Number(positionStartTickValue)) ||
+                    Number(positionStartTickValue) < 0 ||
+                    Number(positionStartTickValue) >= 30720 ||
+                    (Number(positionPitchValue) === selectedLeadNote?.pitch &&
+                      Number(positionStartTickValue) === selectedLeadNote?.startTick)
+                  }
+                >
+                  Apply Lead position
+                </button>
+              </fieldset>
             </form>
             <form onSubmit={submitLeadDuration}>
               <label htmlFor="lead-note-duration">Absolute duration ticks</label>
@@ -656,6 +1192,59 @@ export function GenerateSection({
                 Apply Lead duration
               </button>
             </form>
+            <form onSubmit={submitLeadVelocity} aria-busy={editorPending}>
+              <label htmlFor="lead-note-velocity">Velocity</label>
+              <input
+                id="lead-note-velocity"
+                type="number"
+                min="1"
+                max="127"
+                step="1"
+                required
+                value={velocityValue}
+                disabled={!selectedLeadNote || editorPending}
+                aria-invalid={velocityFieldError ? true : undefined}
+                aria-describedby={
+                  velocityFieldError
+                    ? "lead-note-velocity-info lead-note-velocity-error"
+                    : "lead-note-velocity-info"
+                }
+                onChange={(event) => {
+                  setVelocityValue(event.target.value);
+                  setVelocityFieldError("");
+                  setError("");
+                }}
+              />
+              <p id="lead-note-velocity-info">
+                Velocity is saved in the editor revision, but it does not change preview loudness
+                yet.
+              </p>
+              {velocityFieldError ? (
+                <p id="lead-note-velocity-error" role="alert">
+                  {velocityFieldError}
+                  {velocityValue ? ` Entered value: ${velocityValue}.` : ""}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={
+                  !selectedLeadNote ||
+                  editorPending ||
+                  (/^[0-9]+$/.test(velocityValue) &&
+                    Number.isSafeInteger(Number(velocityValue)) &&
+                    Number(velocityValue) === selectedLeadNote?.velocity)
+                }
+              >
+                Apply Velocity
+              </button>
+            </form>
+            <button
+              type="button"
+              disabled={!selectedLeadNote || editorPending}
+              onClick={deleteSelectedLeadNote}
+            >
+              Delete selected Lead note
+            </button>
             <div className="editorHistoryControls">
               <button
                 type="button"
@@ -678,6 +1267,33 @@ export function GenerateSection({
             </p>
           </section>
           <SectionTimeline preview={preview} />
+          {application ? (
+            <LeadNotePianoRoll
+              sectionEndTick={preview.section.endTick}
+              notes={leadNotes}
+              selectedNoteId={selectedLeadNote?.id ?? ""}
+              sourceResultHash={preview.sourceResultHash}
+              parent={application.selectedRevision}
+              onSelectNote={(noteId) => {
+                const note = leadNotes.find((item) => item.id === noteId);
+                editorEpoch.current += 1;
+                setTransposeValue("");
+                setTransposeFieldError("");
+                setSelectedNoteId(noteId);
+                setPitchValue(note ? String(note.pitch) : "");
+                setStartTickValue(note ? String(note.startTick) : "");
+                setPositionPitchValue(note ? String(note.pitch) : "");
+                setPositionStartTickValue(note ? String(note.startTick) : "");
+                setDurationTicksValue(note ? String(note.durationTicks) : "");
+                setVelocityValue(note ? String(note.velocity) : "");
+                setVelocityFieldError("");
+                setError("");
+              }}
+              onCommitPosition={commitLeadPosition}
+              onCommitDuration={commitLeadDuration}
+              disabled={editorPending}
+            />
+          ) : null}
           <div className="previewRoles">
             {preview.tracks.map((track) => (
               <article key={track.role} aria-labelledby={`role-${track.role}`}>

@@ -3,11 +3,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import * as completeSection from "../web/complete-section-node";
 import * as editorApplication from "../web/editor-application-node";
 import {
+  addLeadNoteAction,
+  deleteLeadNoteAction,
   generateSectionAction,
   redoSectionEditAction,
   setLeadDurationAction,
   setLeadPitchAction,
+  setLeadPositionAction,
   setLeadStartTickAction,
+  setLeadVelocityAction,
   undoSectionEditAction,
 } from "./generate-section-action";
 
@@ -82,6 +86,26 @@ describe("editor application server functions", () => {
     expect(redo).toHaveBeenCalledWith(current);
   });
 
+  it("passes the exact v6 Add Note command through the pinned Node boundary once", async () => {
+    const current = { sentinel: "current application" } as never;
+    const parent = { schema: "nightdrive.editor-revision.v1", revisionHash: "parent" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v6",
+      type: "add-note",
+      pitch: 64,
+      startTick: 960,
+      durationTicks: 480,
+    } as never;
+    const next = { sentinel: "next application" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationAddNoteV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(addLeadNoteAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
   it("passes the versioned start-tick command through the pinned Node boundary", async () => {
     const current = { sentinel: "current" } as never;
     const parent = { schema: "parent" } as never;
@@ -99,6 +123,28 @@ describe("editor application server functions", () => {
     expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });
 
+  it("passes the atomic v5 position command through the pinned Node boundary", async () => {
+    const current = { sentinel: "current" } as never;
+    const parent = { schema: "parent", revisionHash: "parent-hash" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v5",
+      type: "set-note-position",
+      noteId: "stable-note-id",
+      expectedPitch: 60,
+      expectedStartTick: 0,
+      pitch: 64,
+      startTick: 480,
+    } as never;
+    const next = { sentinel: "next" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationPositionV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(setLeadPositionAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
   it("passes the versioned duration command through the pinned Node boundary", async () => {
     const current = { sentinel: "current" } as never;
     const parent = { schema: "parent" } as never;
@@ -112,6 +158,47 @@ describe("editor application server functions", () => {
       .mockReturnValueOnce(next as never);
 
     await expect(setLeadDurationAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
+  it("passes the exact v7 velocity command through the pinned Node boundary once", async () => {
+    const current = { sentinel: "current application" } as never;
+    const parent = {
+      schema: "nightdrive.editor-revision.v1",
+      revisionHash: "parent-hash",
+    } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v7",
+      type: "set-note-velocity",
+      noteId: "stable-note-id",
+      expectedVelocity: 100,
+      velocity: 88,
+    } as never;
+    const next = { sentinel: "next application" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationVelocityV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(setLeadVelocityAction(current, parent, command)).resolves.toBe(next);
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(edit.mock.calls[0]).toEqual([current, parent, command]);
+  });
+
+  it("passes the v4 delete-note command through the Node application boundary", async () => {
+    const current = { sentinel: "current" } as never;
+    const parent = { schema: "parent" } as never;
+    const command = {
+      schema: "nightdrive.editor-note-command.v4",
+      type: "delete-note",
+      noteId: "stable-note-id",
+    } as never;
+    const next = { sentinel: "next" };
+    const edit = vi
+      .spyOn(editorApplication, "editEditorApplicationDeleteNoteV1")
+      .mockReturnValueOnce(next as never);
+
+    await expect(deleteLeadNoteAction(current, parent, command)).resolves.toBe(next);
     expect(edit).toHaveBeenCalledTimes(1);
     expect(edit.mock.calls[0]).toEqual([current, parent, command]);
   });

@@ -73,6 +73,42 @@ Track the remote integration baseline separately from the current task's local b
 
 Before publication inspect the complete cumulative actual-target-base-to-final-head diff, candidate content, cross-task interactions and findings under the existing review playbook. Reuse verified unchanged evidence with explicit provenance; do not aggregate earlier PASS results into final approval or inspect only the last task delta. A cumulative candidate containing new consequential contract/governing authority retains required external review and final exact-tuple Product Owner acceptance. Local specification acceptances establish historical local-development authority only. Any final candidate change reopens applicable cumulative review/acceptance before publication.
 
+## Project-wide review correction and continuation loop
+
+**CANDIDATE governance:** This section becomes local execution authority under ADR-031 only after consequential independent exact-head PASS and explicit Product Owner acceptance of that exact tuple. It cannot authorize its own adoption or review. It applies to all current and future Nightdrive milestones, only for independently eligible bounded work. It does not authorize a milestone or capability, invent or accept requirements, or relax a stricter existing review/acceptance gate; the stricter gate takes precedence. Existing task-specific STOP conditions, scope ceilings, accepted contracts, validation requirements, reviewer authority, and ADR-031 cumulative integration policy remain binding.
+
+After independent IMPLEMENT **REVISE** or **BLOCKED**, automatically perform the smallest separate bounded correction without additional Product Owner acknowledgement only when all five conditions hold:
+
+1. The already accepted product/architecture/interaction/canonical contract sufficiently determines correct behavior.
+2. The finding identifies an implementation defect, missing test/evidence, or mechanically determined conformance problem.
+3. There is one contract-conformant correction direction, or no choice between materially different producer behaviors, architecture, schemas, dependencies, scope, or acceptance semantics is required.
+4. The correction stays inside the accepted bounded task scope and satisfies existing proportionality/corrective-scope rules.
+5. No new Product Owner decision is required.
+
+Preserve the finding and unfavorable evidence. Source/test/document mutation creates a new exact implementation head. Rerun affected validation and required final validation, prepare complete updated exact-head evidence, and return directly for renewed applicable independent review. The new head remains unreviewed until PASS; self-validation and prior PASS cannot approve a changed descendant.
+
+For **evidence-only BLOCKED**, automatically obtain permitted prerequisites already authorized by the task, such as pinned-runtime execution, focused validation, or artifact-identity verification. If content need not change, preserve the same exact head/tree and return a validation supplement for renewed review. Do not mutate content merely for evidence. This permits no new infrastructure, egress, dependency, or evidence-standard change. An actual defect follows the correction conditions above; unavailable evidence outside existing authority remains a genuine blocker.
+
+Stop for Product Owner judgment when the accepted contract is ambiguous, contradictory, or insufficient, or resolution requires competing producer behaviors, changes to accepted interaction/product requirements, architecture/ownership, command/schema/hash/version semantics, material scope/roadmap expansion, dependency adoption/change, new persistence/security/deployment behavior, subjective acceptance, acceptance-criteria changes, or changing required evidence to obtain PASS. Contract ambiguity is not implementation correction. The native-number sanitization ambiguity correctly required a Product Owner decision; it is not precedent for self-selecting a contract.
+
+Independent IMPLEMENT **PASS** under already accepted authority establishes a reviewed local ADR-031 checkpoint, including after correction, without ceremonial Product Owner acceptance. It is not protected integration. Reconcile the checkpoint, mechanically replace materially stale coordination state where wording is determined, select one independently eligible bounded task, and continue until a consequential decision, required independent-review boundary, genuine blocker, or recorded cumulative integration boundary. Do not ask merely whether to continue; completion alone does not establish successor eligibility.
+
+Corrected consequential **SPECIFY** still requires independent review and Product Owner exact-tuple acceptance before implementation. Local PASSes do not aggregate into cumulative integration PASS: every applicable milestone or sub-milestone cumulative integration requires external ChatGPT exact-head review against the verified actual live target base; required protected publication/CI/merge remain mandatory. No product requirement, AC-015, canonical editor, ADR-027 through ADR-037 product/interaction meaning, dependency policy, security/release requirement, or Stage 8 qualification changes. This generalizes the previously accepted M2 correction loop prospectively across Nightdrive; historical review/acceptance remains bound to its original tuple. It changes procedural defaults only and grants no new tools, providers, reviewer settings, material egress, product behavior, or acceptance authority.
+
+### Required scenario checks
+
+| Case | Required route |
+| --- | --- |
+| REVISE: ordinary code defect under sufficient accepted contract | Automatic smallest in-scope correction; new head; affected/final validation; renewed independent review. |
+| BLOCKED: missing pinned-runtime evidence, no content defect | Permitted evidence recovery; same head/tree plus supplement; renewed review. |
+| BLOCKED: two plausible contract behaviors | Stop for Product Owner decision; no inferred contract. |
+| REVISE: remedy expands scope | Stop expansion; existing proportionality/prerequisite or Product Owner boundary. |
+| PASS after corrected IMPLEMENT | Reviewed local checkpoint without ceremonial acceptance; reconcile and continue only eligible work. |
+| Corrected consequential SPECIFY | New exact-head consequential review and Product Owner acceptance before implementation. |
+| Every applicable milestone/sub-milestone cumulative integration | External ChatGPT review against verified live target base; protected CI/merge; local PASSes insufficient. |
+| Future milestone/capability not independently eligible | Do not begin work or infer eligibility from this policy; satisfy its own roadmap, contract and acceptance prerequisites first. |
+| Stricter existing review/acceptance gate | Follow the stricter gate; procedural default grants no waiver. |
+
 ## Codex execution settings
 
 For every substantive task, Codex records a task-specific model/effort recommendation and the effective settings when observable. Prefer the lowest-capability available model and lowest reasoning effort reasonably likely to succeed, considering ambiguity, contract maturity, deterministic/replay/serialization sensitivity, debugging difficulty, cross-file reasoning, complexity, and required judgment. Prefer increasing effort before escalating model capability when the same model remains capable.
@@ -132,6 +168,33 @@ A qualified, separate Codex reviewer may satisfy required independent exact-head
 6. The contract-first review protocol and finding-continuity requirements can be satisfied.
 7. Required validation, CI, and evidence remain independently enforceable.
 8. No repository authority explicitly reserves the exact decision for external review.
+
+### Project-wide default reviewer routing
+
+**CANDIDATE governance:** This routing default activates as local ADR-031 execution authority only after external ChatGPT consequential exact-head PASS and explicit Product Owner acceptance of this exact tuple. It cannot authorize its own review. Until activation, existing routing remains binding.
+
+For every current and future Nightdrive milestone, when a frozen candidate satisfies **every existing substitution condition above**, Codex shall automatically invoke the existing qualified separate Codex reviewer as the normal independent exact-head route, rather than ask the Product Owner to manually relay a routine eligible candidate to ChatGPT. Eligible cases include IMPLEMENT of accepted behavior, implementation validation/qualification under accepted authority, settled-contract corrections, permitted evidence recovery, and mechanically determined implementation/test corrections under the [project-wide correction loop](#project-wide-review-correction-and-continuation-loop). These categories never establish eligibility by themselves; risk class, deterministic complexity, canonical/provenance, qualification, or fail-closed labels do not alone reserve review externally.
+
+Use only the existing qualified configuration, invocation and contract-first protocol below: author/reviewer contexts remain separate; reviewer is read-only; effective model/effort/sandbox/approval settings and complete permitted frozen-evidence access must be verifiable. Preserve per-invocation eligibility, egress classification/authorization/allowlist receipts, finding continuity, inspection-completeness and result-field checks. This default grants no new reviewer qualification or material-transmission authority. Do not substitute a different reviewer tool/model/configuration, relax access controls, or infer PASS from a failed invocation.
+
+A complete eligible reviewer PASS establishes only the exact reviewed base/head/tree/scope as a local checkpoint; reconcile and continue to independently eligible bounded work without ceremonial acknowledgement. For REVISE objectively determined by accepted authority, use the project-wide correction loop automatically: smallest correction, new head, affected/required validation, and fresh separate qualified reviewer invocation. For BLOCKED solely on missing permitted evidence, recover it automatically, preserve the same head/tree when content is unchanged, and invoke the qualified reviewer again with the supplement. Unverifiable execution/settings/read access, incomplete or uncertain results, material NOT VERIFIED obligations, or another non-PASS that cannot be mechanically resolved under accepted authority require the existing external-review fallback; never infer PASS. Contract ambiguity/contradiction/insufficiency or competing producer behavior stops for Product Owner judgment.
+
+External ChatGPT exact-head review remains mandatory for consequential SPECIFY or a candidate creating/changing product behavior or requirements, architecture/ownership, canonical/public contract or schema/hash/version meaning, roadmap/material scope, dependency policy, reviewer authority/review policy, validation/evidence policy, consequential security/trust/permission policy, or conflicting authority; subjective acceptance remains with the Product Owner. This is about changes to governing semantics, not implementation of already accepted semantics. Preserve all other existing external reservations below.
+
+**Every applicable milestone or sub-milestone cumulative integration candidate requires external ChatGPT exact-head review against the verified actual live target base**, regardless of local reviewer PASS history or apparent substitution eligibility. Prior local PASSes cannot aggregate into final PASS; protected CI/publication/merge and ADR-031 integration boundaries remain unchanged. This project-wide default supersedes only optional reviewer selection for independently eligible settled-contract candidates, not the substitution gate or protocol. It does not authorize future milestones/capabilities or self-accepted requirements. Every task retains separate scope/eligibility, accepted-contract, validation and acceptance prerequisites. Any stricter existing review/acceptance gate takes precedence.
+
+| Scenario | Required route after activation |
+| --- | --- |
+| Accepted ADR-038 resize specification, separate resize IMPLEMENT | Establish every gate condition, then automatically invoke qualified separate Codex reviewer. |
+| Complete eligible reviewer PASS | Exact local checkpoint; reconciliation and automatic eligible continuation. |
+| REVISE with one contract-determined code fix | Automatic correction, new head, validation, fresh separate reviewer. |
+| BLOCKED solely for permitted pinned-runtime evidence | Recover evidence, same unchanged head plus supplement, reviewer again. |
+| Reviewer exposes interaction/contract ambiguity | Stop for Product Owner decision; no reviewer-selected behavior. |
+| New consequential SPECIFY | External ChatGPT review and Product Owner exact-tuple acceptance. |
+| Every applicable milestone/sub-milestone cumulative integration | External ChatGPT review against verified live target base, regardless of local PASSes. |
+| Unverifiable reviewer execution/settings/read access | Existing external fallback; no substituted configuration or inferred PASS. |
+| Future milestone or capability | Establish independent eligibility and accepted authority first; this default alone authorizes no work. |
+| Stricter existing gate | Honor its reserved reviewer/acceptance/evidence requirements. |
 
 Reviewer routing is determined primarily by decision authority, not implementation difficulty, risk label, or category. R2/R3, deterministic, evidence-heavy, qualification, canonical, provenance/custody, CI/configuration, security-sensitive, and fail-closed implementation can use the dedicated reviewer when every eligibility condition above holds. The author records the eligibility basis in the task packet before invoking the reviewer. The author and reviewer must run in separate contexts; author self-review never qualifies.
 
