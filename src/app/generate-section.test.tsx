@@ -419,7 +419,326 @@ function submit() {
   fireEvent.submit(form);
 }
 
+function makeSnappedApplication(
+  initial: EditorApplicationV1,
+  startTick: number,
+): EditorApplicationV1 {
+  const parent = initial.history.revisions[initial.history.cursor];
+  if (!parent) throw new Error("Missing snap test parent.");
+  const note = parent.tracks[3]?.notes[0];
+  if (!note) throw new Error("Missing snap test note.");
+  const child = {
+    ...parent,
+    parent: initial.selectedRevision,
+    command: {
+      schema: "nightdrive.editor-note-command.v2",
+      type: "set-note-start-tick",
+      noteId: note.id,
+      expectedStartTick: note.startTick,
+      startTick,
+    },
+    tracks: parent.tracks.map((track) =>
+      track.role === "lead"
+        ? {
+            ...track,
+            notes: track.notes.map((item) => (item.id === note.id ? { ...item, startTick } : item)),
+          }
+        : track,
+    ),
+    revisionHash: "e".repeat(64),
+  } as EditorRevisionV1;
+  return {
+    ...initial,
+    history: {
+      ...initial.history,
+      revisions: [...initial.history.revisions.slice(0, initial.history.cursor + 1), child],
+      cursor: initial.history.cursor + 1,
+    },
+    selectedRevision: { schema: child.schema, revisionHash: child.revisionHash },
+    preview: {
+      ...initial.preview,
+      tracks: child.tracks.map((track) => ({
+        role: track.role,
+        notes: track.notes.map(({ pitch, startTick: tick, durationTicks }) => ({
+          pitch,
+          startTick: tick,
+          durationTicks,
+        })),
+      })),
+    },
+  };
+}
+
 describe("Generate section consumer", () => {
+  it.each([
+    [0, 0],
+    [119, 0],
+    [120, 240],
+    [121, 240],
+    [239, 240],
+    [240, 240],
+    [359, 240],
+    [360, 480],
+    [361, 480],
+  ])("Snap Start maps literal tick %i to %i through existing v2", async (oldTick, snappedTick) => {
+    const initial = makeEditorApplication(60, true, 1, oldTick);
+    const next = makeSnappedApplication(initial, snappedTick);
+    const actions = makeActions();
+    actions.generateAction.mockResolvedValue(initial);
+    actions.setLeadStartTickAction.mockResolvedValue(next);
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    const button = screen.getByRole("button", { name: "Snap Start" });
+    expect(button).toHaveAttribute("type", "button");
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    if (oldTick === snappedTick) {
+      expect(actions.setLeadStartTickAction).not.toHaveBeenCalled();
+      expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+      return;
+    }
+    await screen.findByText("Editor revision 3 of 3.");
+    expect(actions.setLeadStartTickAction.mock.calls).toEqual([
+      [
+        initial,
+        initial.selectedRevision,
+        {
+          schema: "nightdrive.editor-note-command.v2",
+          type: "set-note-start-tick",
+          noteId: NOTE_ID,
+          expectedStartTick: oldTick,
+          startTick: snappedTick,
+        },
+      ],
+    ]);
+    expect(screen.getByLabelText("Absolute start tick")).toHaveValue(snappedTick);
+    expect(next.preview.sourceResultHash).toBe(initial.preview.sourceResultHash);
+    expect(next.history.revisions[2]?.tracks.slice(0, 3)).toEqual(
+      initial.history.revisions[1]?.tracks.slice(0, 3),
+    );
+  });
+
+  it.each([
+    { oldTick: 30719, duration: 1, expected: 30720, code: "EDITOR_NOTE_START_OUT_OF_RANGE" },
+    { oldTick: 30600, duration: 120, expected: 30720, code: "EDITOR_NOTE_START_OUT_OF_RANGE" },
+    { oldTick: 30361, duration: 359, expected: 30480, code: "EDITOR_NOTE_START_OUT_OF_RANGE" },
+    { oldTick: 350, duration: 960, expected: 240, code: "EDITOR_NOTE_START_ORDER_INVALID" },
+    { oldTick: 370, duration: 960, expected: 480, code: "EDITOR_NOTE_START_ORDER_INVALID" },
+  ])(
+    "keeps rejected Snap Start $oldTick unchanged without alternative grid fallback",
+    async ({ oldTick, duration, expected, code }) => {
+      const initial = makeEditorApplication(60, true, 1, oldTick, duration);
+      const actions = makeActions();
+      actions.generateAction.mockResolvedValue(initial);
+      actions.setLeadStartTickAction.mockRejectedValue({
+        code,
+        field: "command.startTick",
+        message: "private detail",
+      });
+      renderConsumer(actions);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Snap Start" }));
+      await screen.findByRole("alert");
+      expect(actions.setLeadStartTickAction.mock.calls).toEqual([
+        [
+          initial,
+          initial.selectedRevision,
+          {
+            schema: "nightdrive.editor-note-command.v2",
+            type: "set-note-start-tick",
+            noteId: NOTE_ID,
+            expectedStartTick: oldTick,
+            startTick: expected,
+          },
+        ],
+      ]);
+      expect(screen.getByLabelText("Absolute start tick")).toHaveValue(oldTick);
+      expect(screen.getByLabelText("Absolute duration ticks")).toHaveValue(duration);
+      expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+      expect(screen.queryByText(/private detail/)).toBeNull();
+    },
+  );
+
+  it("Snap Start targets an added stable note and preserves on-grid redo and active playback", async () => {
+    const actions = makeActions();
+    actions.generateAction.mockResolvedValue(ADDED_APPLICATION);
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    fireEvent.change(screen.getByLabelText("Lead note"), { target: { value: ADDED_NOTE_ID } });
+    fireEvent.click(screen.getByRole("button", { name: "Snap Start" }));
+    expect(actions.setLeadStartTickAction).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Lead note")).toHaveValue(ADDED_NOTE_ID);
+    expect(screen.getByText("Editor revision 2 of 2.")).toBeVisible();
+  });
+
+  it("Snap Start sends the selected added note's stable ID through v2", async () => {
+    const selected = ADDED_APPLICATION.history.revisions[1];
+    if (!selected) throw new Error("Missing added note fixture.");
+    const revision = {
+      ...selected,
+      tracks: selected.tracks.map((track) =>
+        track.role === "lead"
+          ? {
+              ...track,
+              notes: track.notes.map((note) =>
+                note.id === ADDED_NOTE_ID ? { ...note, startTick: 1001 } : note,
+              ),
+            }
+          : track,
+      ),
+    };
+    const initial = {
+      ...ADDED_APPLICATION,
+      history: {
+        ...ADDED_APPLICATION.history,
+        revisions: [ADDED_APPLICATION.history.revisions[0] as EditorRevisionV1, revision],
+      },
+    };
+    const actions = makeActions();
+    actions.generateAction.mockResolvedValue(initial);
+    actions.setLeadStartTickAction.mockRejectedValue(new Error("safe rejection test"));
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    fireEvent.change(screen.getByLabelText("Lead note"), { target: { value: ADDED_NOTE_ID } });
+    fireEvent.click(screen.getByRole("button", { name: "Snap Start" }));
+    await screen.findByRole("alert");
+    expect(actions.setLeadStartTickAction.mock.calls).toEqual([
+      [
+        initial,
+        initial.selectedRevision,
+        {
+          schema: "nightdrive.editor-note-command.v2",
+          type: "set-note-start-tick",
+          noteId: ADDED_NOTE_ID,
+          expectedStartTick: 1001,
+          startTick: 960,
+        },
+      ],
+    ]);
+    expect(screen.getByLabelText("Lead note")).toHaveValue(ADDED_NOTE_ID);
+    expect(screen.getByLabelText("Absolute start tick")).toHaveValue(1001);
+  });
+
+  it("Snap Start does not invalidate active playback or redo for an on-grid selected note", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const actions = makeActions();
+      actions.generateAction.mockResolvedValue(UNDONE_APPLICATION);
+      renderConsumer(actions);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+      const stopCalls = audio.sources.map((source) => source.stop.mock.calls.length);
+      fireEvent.click(screen.getByRole("button", { name: "Snap Start" }));
+      expect(actions.setLeadStartTickAction).not.toHaveBeenCalled();
+      expect(screen.getByText("Playing all four roles.")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Redo" })).toBeEnabled();
+      expect(audio.sources.map((source) => source.stop.mock.calls.length)).toEqual(stopCalls);
+    } finally {
+      audio.restore();
+    }
+  });
+
+  it("fails closed for malformed local start context and disables Snap Start with no selected note", async () => {
+    const actions = makeActions();
+    actions.generateAction.mockResolvedValue(makeEditorApplication(60, true, 1, -1));
+    renderConsumer(actions);
+    choose();
+    submit();
+    await screen.findByRole("heading", { name: "Generated section" });
+    fireEvent.click(screen.getByRole("button", { name: "Snap Start" }));
+    expect(actions.setLeadStartTickAction).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Snap Start could not use this note's timing",
+    );
+    actions.generateAction.mockResolvedValue(DELETED_APPLICATION);
+    submit();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Snap Start" })).toBeDisabled());
+  });
+
+  it.each(["resolve", "reject"])(
+    "guards duplicate Snap Start and ignores stale %s after input change",
+    async (outcome) => {
+      const initial = makeEditorApplication(60, true, 1, 120);
+      let resolveEdit!: (value: EditorApplicationV1) => void;
+      let rejectEdit!: (reason: Error) => void;
+      const actions = makeActions();
+      actions.generateAction.mockResolvedValue(initial);
+      actions.setLeadStartTickAction.mockImplementation(
+        () =>
+          new Promise((resolve, reject) => {
+            resolveEdit = resolve;
+            rejectEdit = reject;
+          }),
+      );
+      renderConsumer(actions);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      const button = screen.getByRole("button", { name: "Snap Start" });
+      fireEvent.click(button);
+      fireEvent.click(button);
+      expect(actions.setLeadStartTickAction).toHaveBeenCalledTimes(1);
+      expect(button).toBeDisabled();
+      fireEvent.change(screen.getByLabelText("Energy"), { target: { value: "high" } });
+      await act(async () => {
+        if (outcome === "resolve") resolveEdit(makeSnappedApplication(initial, 240));
+        else rejectEdit(new Error("private stale snap"));
+      });
+      expect(screen.queryByRole("heading", { name: "Generated section" })).toBeNull();
+      expect(screen.queryByRole("alert")).toBeNull();
+    },
+  );
+
+  it("Snap Start restores exact selected applications on one-step Undo/Redo and invalidates active audition", async () => {
+    const audio = installFakeAudioContext();
+    try {
+      const initial = makeEditorApplication(60, true, 1, 120);
+      const next = makeSnappedApplication(initial, 240);
+      const actions = makeActions();
+      actions.generateAction.mockResolvedValue(initial);
+      actions.setLeadStartTickAction.mockResolvedValue(next);
+      actions.undoSectionEditAction.mockResolvedValue({
+        ...next,
+        history: { ...next.history, cursor: 1 },
+        selectedRevision: initial.selectedRevision,
+        preview: initial.preview,
+      });
+      actions.redoSectionEditAction.mockResolvedValue(next);
+      renderConsumer(actions);
+      choose();
+      submit();
+      await screen.findByRole("heading", { name: "Generated section" });
+      fireEvent.click(screen.getByRole("button", { name: "Play" }));
+      await screen.findByText("Playing all four roles.");
+      const count = audio.sources.length;
+      fireEvent.click(screen.getByRole("button", { name: "Snap Start" }));
+      await screen.findByText("Editor revision 3 of 3.");
+      expect(screen.getByText("Playback stopped.")).toBeVisible();
+      expect(audio.sources).toHaveLength(count);
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+      await screen.findByText("Editor revision 2 of 3.");
+      expect(actions.undoSectionEditAction).toHaveBeenCalledWith(next);
+      expect(screen.getByLabelText("Absolute start tick")).toHaveValue(120);
+      fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+      await screen.findByText("Editor revision 3 of 3.");
+      expect(screen.getByLabelText("Absolute start tick")).toHaveValue(240);
+      expect(actions.setLeadStartTickAction).toHaveBeenCalledTimes(1);
+    } finally {
+      audio.restore();
+    }
+  });
+
   it("targets an added note by stable ID and clears the delta on piano-roll selection", async () => {
     const actions = makeActions();
     actions.generateAction.mockResolvedValue(ADDED_APPLICATION);

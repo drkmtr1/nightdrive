@@ -441,6 +441,38 @@ export function GenerateSection({
     );
   }
 
+  function snapSelectedLeadStart() {
+    if (!application || !selectedLeadNote || editorInFlight.current) return;
+    const section = selectedRevision?.section;
+    const startTick = selectedLeadNote.startTick;
+    if (
+      section?.ppq !== 960 ||
+      section.barCount !== 8 ||
+      section.endTick !== 30720 ||
+      !Number.isSafeInteger(startTick) ||
+      startTick < 0 ||
+      startTick >= 30720
+    ) {
+      setError("Snap Start could not use this note's timing. The section remains unchanged.");
+      return;
+    }
+    const snappedStartTick = Math.floor((startTick + 120) / 240) * 240;
+    if (!Number.isSafeInteger(snappedStartTick)) {
+      setError("Snap Start could not use this note's timing. The section remains unchanged.");
+      return;
+    }
+    if (snappedStartTick === startTick) return;
+    const expectedParent = application.selectedRevision;
+    const command: SetNoteStartTickCommandV2 = {
+      schema: "nightdrive.editor-note-command.v2",
+      type: "set-note-start-tick",
+      noteId: selectedLeadNote.id,
+      expectedStartTick: startTick,
+      startTick: snappedStartTick,
+    };
+    void runEditorOperation((current) => setLeadStartTickAction(current, expectedParent, command));
+  }
+
   function submitLeadStartTick(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!application || !selectedLeadNote || editorInFlight.current) return;
@@ -1038,6 +1070,13 @@ export function GenerateSection({
                 Apply Lead pitch
               </button>
             </form>
+            <button
+              type="button"
+              disabled={!selectedLeadNote || editorPending}
+              onClick={snapSelectedLeadStart}
+            >
+              Snap Start
+            </button>
             <form onSubmit={submitLeadStartTick}>
               <label htmlFor="lead-note-start-tick">Absolute start tick</label>
               <input
