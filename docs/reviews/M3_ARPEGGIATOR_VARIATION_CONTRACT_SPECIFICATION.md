@@ -1,0 +1,162 @@
+# Milestone 3 first Arpeggiator variation contract specification
+
+## Status, authority and claim boundary
+
+**SPECIFY CANDIDATE — not implementation authority.** ADR-041 records this proposed contract. It becomes local implementation authority only after consequential external exact-head PASS and explicit Product Owner acceptance of that exact tuple under ADR-031. SPECIFY and IMPLEMENT remain separate; cumulative integration retains its external review/CI/protected merge gate.
+
+The Product Owner's 2026-10-10 D1-D4 decisions select Arpeggiator only, explicit root seed, fixed protected Harmony/Bass/edited Lead, a separate canonical variation boundary, retained alternatives with independent editor histories, and unverified local-producer/UTC metadata separate from musical identity. M2/AC-015 functional Lead editing is accepted at ec6487ba10b931f44dbbf49ae7cee29bd4b87821 / tree 0351306a673fec5fdea5cb10b29cd9d2ce0b006c. This does not close AC-014, full AC-027, S8-QUAL-002/003, release, broad compatibility/performance or musical qualification. Further Narrator-specific verification is removed; other accessibility requirements remain.
+
+Governing obligations: AGENTS immutable lineage/explicit seeds/locked canonical equality; ROADMAP Milestone 3 and Stage 11; FR-005/006, NFR-001/002 and AC-004/005/006; COMPOSITION_ENGINE targeted regeneration and reproducibility; ADR-026/027/031; accepted M2 v1-v7 command/history specifications. Stage 11 exit remains all-target AC-005/006. This Arpeggiator-only slice cannot establish that exit or complete M3.
+
+## Scope and ownership
+
+A variation replaces only Arpeggiator in an exact verified selected four-role state. Harmony, Bass and edited Lead are protected for this operation, not permanently forbidden from later independently authorized editing. Preserve all their canonical values, note IDs, velocities and event order; preserve section, tempo, key, Harmony realization, profile, Energy/Complexity and non-target parameters. No complete-section, Harmony, Bass or Motif regeneration. No implicit seed changes, retries, searches, repair, policy tuning or new generator algorithm.
+
+Canonical composition owns formats, snapshot validation, source/ancestry proof, track/state/music/variation hashes and serializers. Existing generator/domain code owns accepted Arpeggiator V2 seed derivation, PRNG, policy and event production. Existing editor owns unchanged v1-v7 Lead transitions and history. A small variation coordinator owns immutable retained alternatives and selection. Pinned Node application boundary validates before returning detached immutable combined state/preview. Browser proposes seed, selection or existing Lead commands; it cannot authenticate canonical values. No persistence, authentication, database, Supabase, dependency, AI, generalized locks, other-role generation or UI design is authorized here.
+
+## Compatibility mechanism: retained editor authority plus separate Arpeggiator state
+
+Do not create a fake CompleteSectionResultV1 or EditorRevisionV1 containing regenerated Arpeggiator. Existing EditorRevisionV1 and EditorHistoryV1 remain exactly as specified: their four tracks still represent the original generated source plus accepted Lead edits. Their original Arpeggiator is proof material, not the current audible Arpeggiator in a variation context.
+
+Each alternative retains its own EditorHistoryV1 and optional canonical variation root. The selected combined state is constructed as follows:
+
+1. Verify retained CompleteSectionResultV1, recompute the editor root and verify every retained editor revision/command transition with existing full-source/full-ancestry authority. Verify history array/cursor exactly as today, including retained redo revisions.
+2. With no variation root, combined tracks equal the selected editor revision's tracks.
+3. With a variation root, independently prove that root and its parent chain as specified below. Combined Harmony/Bass equal both the root and selected editor tracks; combined Lead equals the selected editor Lead; combined Arpeggiator equals the immutable root's Arpeggiator.
+4. Section/source identity must match throughout. The root's exact creation-parent editor history is retained separately in the immutable parent proof. The initial context forks that entire verified parent history including its current cursor and redo path. Subsequent accepted edits/Undo/Redo use existing editor semantics within that independent fork. Undo may navigate earlier Lead revisions in that history; it does not undo the Arpeggiator variation. Selecting another alternative returns to that alternative's retained history/cursor.
+
+Thus later v1-v7 commands use the unchanged existing canonical editor boundary with its exact editor parent identity, including unchanged v6 added-note IDs. A new combined-state identity additionally binds the active variation; application submissions must check both combined expected parent and existing editor expected parent. No old verifier is extended to accept unsupported ancestry. No second pitch/timing/add/delete/velocity algorithm or new editor command is defined.
+
+## Canonical encoding and common value rules
+
+All new canonical records are exact descriptor-safe ordinary own-data objects, Object.prototype or null prototype at input, ordinary detached objects at output. Reject accessors, symbols, functions, toJSON, exotic prototypes, missing/extra/reordered fields, sparse arrays and non-data array entries without invoking hooks. No JSON round-trip of untrusted values. Inputs are copied into detached snapshots before asynchronous work and not mutated/frozen in place. Arrays are dense and ordered; no sorting/repair of submitted state. Normalize accepted numeric negative zero to positive zero; reject non-safe integers, NaN and Infinity. Serializers accept only authoritatively verified values or full proof, never a shape/hash-consistent object alone.
+
+Encoding is compact JSON, fixed field order below, no whitespace/BOM/trailing newline, standard JSON integer/string encoding, UTF-8. SHA-256 uses the existing accepted deterministic digest facility; lowercase full 64 hex digests, no truncation. Each hash input uses its own literal schema domain and excludes its own digest. No wall clock, attempt sequence, browser/session/random state or persistence identifier enters musical, note, state or variation lineage identities. All returned nested values are recursively immutable and detached from caller data.
+
+Existing source/section/track/note values and nested field order remain those of editor-v1: source = schema,resultHash; section = ppq,barCount,timeSignature,tempo,endTick; meter = numerator,denominator; tempo = microsecondsPerQuarter; track = role,notes; note = id,pitch,startTick,durationTicks,velocity. Role order is harmony,bass,arpeggiator,lead; PPQ960, 8 bars, 4/4, endTick30720. Existing complete-section, Arpeggiator aggregate and editor serializers retain their exact accepted versions and bytes.
+
+## Schemas, exact fields and identities
+
+Every list below gives exact serialized order. Identity records are data, not proof.
+
+| Value | Schema / fields |
+| --- | --- |
+| Selected combined state | `nightdrive.variation-state.v1`: schema,source,variation,editor,section,tracks,trackHashes,musicHash,stateHash |
+| State identity | schema,stateHash; schema is `nightdrive.variation-state.v1` |
+| Variation root identity | schema,variationHash; schema is `nightdrive.arpeggiator-variation.v1` |
+| Existing editor identity | schema,revisionHash; schema is unchanged `nightdrive.editor-revision.v1` |
+| Variation request | `nightdrive.arpeggiator-variation-request.v1`: schema,parent,rootSeed |
+| Variation root | `nightdrive.arpeggiator-variation.v1`: schema,source,parent,request,generation,section,tracks,trackHashes,musicHash,unchanged,variationHash |
+| Attempt record | `nightdrive.variation-attempt.v1`: schema,sequence,variation,actor,createdAt,attemptHash |
+
+`variation` in selected state is null for the original alternative or the exact variation root identity. `editor` is the exact selected verified EditorRevisionV1 identity. `parent` in request/root is the selected combined-state identity at creation. Root.request.parent must equal root.parent. `rootSeed` is explicitly supplied integer 0..4294967295; there is no default or inherited replacement. Source is always the original verified complete-section source binding, not the variation hash. A state and variation identity deliberately distinguish canonical note/lineage identity from musical-content identity.
+
+`generation` is the complete accepted Stage7ArpeggiatorAggregateV1 canonical wire value produced using its existing serializer, not a second bespoke plan/event encoding. Its existing parent=null means a standalone aggregate's generation provenance, never that the variation lacks a parent; the enclosing variation binds the actual selected parent. Preserve the existing aggregate schema/engine/generator/profile/policy/PRNG/hash identities unchanged. Its section/harmony must match the source; its new rootSeed equals request.rootSeed. Only accepted source Arpeggiator V2 profile/policy versions are eligible; no silent upgrade of an old unsupported source.
+
+`trackHashes` has exactly harmony,bass,arpeggiator,lead, with lowercase hashes in this new track-preservation domain. Do not overwrite historical generated component hashes. `unchanged` is a boolean independently recomputed from ordered Arpeggiator musical values (defined below), never supplied as an assertion of success.
+
+### Track preservation hash
+
+Hash compact UTF-8 `{schema:"nightdrive.variation-track-hash-input.v1",track:<exact track>}`. All note fields including IDs/velocity/order are included. This compares parent and child protected editor-state components within one domain. Generated hashes in the retained source/aggregate still prove their historical generation inputs; they cannot authenticate manually edited Lead. Both kinds of evidence are retained and named distinctly.
+
+### Musical-content hash and unchanged output
+
+Hash `{schema:"nightdrive.variation-music-hash-input.v1",section:<section>,tracks:<musical tracks>}`. Musical tracks have role,notes in role order. Musical notes have pitch,startTick,durationTicks,velocity, in canonical event order, omitting id only. This identity intentionally excludes source/parent, seed/plan/version/provenance, regenerated IDs, creation metadata and attempt sequence. Versioned hashing rules are fixed, and tempo/section are included. Canonical velocity is musical state even though current audition ignores it.
+
+Compare the parent's and replacement's ordered Arpeggiator musical-note arrays, including velocity; exact equality means unchanged=true. It can be unchanged even when new regenerated IDs differ. Recompute the full musicHash: if Arpeggiator musical values match and the three protected components are unchanged, parent and child musicHash must match exactly. Never salt or rewrite musical values/hash to advertise novelty. Preserve the successful attempt and its explicit seed anyway.
+
+### Selected state hash
+
+Hash `{schema:"nightdrive.variation-state-hash-input.v1",source,variation,editor,section,tracks,trackHashes,musicHash}` with those fields/order. It binds the current combined canonical values, variation root and exact editor identity. It does not include the current history cursor as a new identity input, redundant redo arrays or metadata; selected editor identity already binds exact current editor state. Full retained proof is still mandatory. Same verified selection restores the identical stateHash.
+
+### Regenerated Arpeggiator note IDs
+
+In accepted generated event order, ordinal is zero-based. Hash `{schema:"nightdrive.variation-arpeggiator-note-id-input.v1",parent:<state identity>,request:<exact request>,ordinal:<integer>}`. ID is `note-` plus the full lowercase digest. Parent/request do not depend on the resulting IDs or result digest, so there is no recursion. Import generated pitch/start/duration unchanged and set canonical velocity=100. Do not derive IDs from a current array index after import, creation time, attempt sequence, random value or source-occurrence domain. Stable regenerated IDs survive later state selection/Lead editing and regeneration of other protected state; a later Arpeggiator replacement creates its own IDs.
+
+Check global uniqueness across all four resulting tracks. Collision rejects with VARIATION_NOTE_ID_COLLISION; no salting, truncation, alternate ordinal or retry. Identical verified parent + exact request gives identical IDs. No existing source or manually added/deleted Lead identity is reinterpreted.
+
+### Variation lineage/result hash
+
+Hash `{schema:"nightdrive.arpeggiator-variation-hash-input.v1",source,parent,request,generation,section,tracks,trackHashes,musicHash,unchanged}` in that order. Its identity includes deterministic replay inputs, accepted generated result, full resulting canonical state and exact parent. It excludes its own variationHash and all attempt metadata. Same complete deterministic inputs produce the same variationHash; a different seed may change lineageHash/IDs while musical hash remains equal. This is permitted, not proof of different music.
+
+## Generation and source binding
+
+The retained source must be independently verified with its accepted complete-section verifier, including component/result hashes. Do not trust a claimed source resultHash alone. Use its authoritative supplied Harmony realization; reconstruct typed primitives from verified canonical wire values if needed, without invoking Harmony generation or choosing a new voicing. Preserve exact Harmony canonical values and compare the new aggregate Harmony bytes/hash in the accepted aggregate domain against a projection of that same source.
+
+Build the existing Stage7ArpeggiatorAggregateRequestV1 mechanically from verified source provenance: its accepted wrapper schema/engine/generator, parent=null, source tempo and authoritative progression, original Arpeggiator range, Energy/Complexity, profile ID/data version, policy version, seed derivation and PRNG versions; replace only rootSeed with the explicit request value. Reuse the existing aggregate operation, which delegates to accepted Arpeggiator V2. Never pass variation parent into its historical parent=null field or call generateCompleteSectionV1.
+
+The first variation and all descendants keep original source parameters, not untrusted caller versions or an application's current defaults. All new variations may target an original alternative or a selected earlier variation state; the exact parent includes any intervening Lead edits. Generation of the new replacement occurs once after request preflight. Verification/replay may regenerate each retained ancestor's Arpeggiator as needed to establish authority; do not misreport that as a single total generator call. Reuse a trusted immutable context only when the implementation can establish its origin through the canonical boundary, never by structural shape/freeze/hash alone.
+
+## Parent proof, authoritative verification and replay
+
+A proof bundle retains the original verified source, the required original/editor histories, all referenced variation roots and their creation-parent selected-state proofs, and attempt records where collection integrity is claimed. Identity-only references are not proof. Reject missing links, cycles, conflicting records for one identity, mismatched sources, unsupported schemas or forged content.
+
+For an original parent, prove the selected EditorRevisionV1 from original import and every command transition; recompute all combined state fields/hashes with variation=null. For a variation parent, recursively prove the root's creation parent, regenerate the accepted aggregate from its exact request/source parameters, reconstruct note IDs, protected copies, all digests and unchanged flag, then verify its selected editor history with the old editor verifier. Verify the retained exact creation editor history in the root's parent proof and the exact source. Do not require that creation revision to remain in the current active history after Undo followed by a new edit truncates its redo path; its immutable creation proof remains retained separately. Derive current combined state with fixed root Arpeggiator and current verified editor Lead. Compare the full expected state and digests, not only claimed hashes.
+
+Root verification recomputes the entire child state from parent plus request: Harmony/Bass/Lead exact parent copies, only Arpeggiator replaced, section unchanged. Assert protected canonical values and all three trackHashes equal before accepting. A valid hash over a forged state is insufficient. Replay must not reinterpret manually edited Lead under Motif policies, renumber notes, restore deleted notes, lose added notes or replace velocity. No partial authority from passing generator validation alone.
+
+Canonical serialization, child variation creation, context selection, preview creation and later Lead edits require full verified source/ancestry or a boundary-produced authoritatively verified context. All exported entry points must preserve that trust requirement; do not expose a permissive shape/hash verifier as canonical authentication. This carries M2-EDITOR-REV-001's resolved source/lineage requirement forward without reopening historical code.
+
+## Retained alternatives and independent editor history
+
+The in-memory collection has exact own fields `source,alternatives,selectedSequence,nextSequence`. It is application state, not a persisted canonical schema. `alternatives` is ordered by creation and contains entries with exact fields `sequence,attempt,variation,history`. Original entry has sequence=0, attempt=null, variation=null and verified existing EditorHistoryV1. Created alternatives use positive monotonic safe-integer sequence, a verified attempt, a variation root and a fork of the selected parent's entire verified history. nextSequence starts at1 and increments only on a fully successful creation. Sequence is an attempt-local discriminator, never musical/canonical lineage identity. Reject unsafe exhaustion; do not wrap or reuse sequences. No collection/global UUID is required; sequence uniqueness is within this collection.
+
+Selection uses the retained sequence, requires membership and complete verification, and returns that entry's exact current editor identity plus recomputed identical combined state identity. It does not regenerate to select, create a revision, restamp metadata or reset a context's history/cursor. Verification may replay proof to authenticate; that must not replace retained values or count as a newly created variation. Original alternative and earlier immutable roots remain retained. No branch merge/collaboration/persistent graph UI.
+
+Creating an alternative never advances or truncates the parent's editor cursor/redo path. Subsequent Lead editing changes only the selected alternative's history by existing accepted command semantics; replace application containers immutably. Existing Undo/Redo checks and NO_OP behavior remain, including redo truncation after an edit from an undone cursor. Other retained alternatives/history are untouched. Old canonical revisions/roots are never mutated, relabeled or assigned new identities. Selection and context changes cannot leak a shared mutable history cursor.
+
+A later Lead command requires expected combined-state identity AND exact existing editor identity. At the application layer it also requires the expected selectedSequence to match the active alternative, before dispatch; this protects independent contexts with identical deterministic states. Selection ownership is application state, not an additional canonical hash input. Variation creation and Undo/Redo use the same selectedSequence check and async epoch protection. After source/context/state verification and combined expected-parent check, delegate to the existing editor application operation. Its accepted validation/error order and v1-v7 bytes/hashes remain unchanged. Rebuild combined state from resulting selected editor Lead plus fixed variation Arpeggiator; do not use the old editor application's original-Arpeggiator preview as the final variation preview. Successful edit is one editor revision/Undo step; no additional fake edit command or revision is manufactured. Combined-state identity changes as a consequence, not as a second musical edit.
+
+## Attempt provenance and distinct repeated requests
+
+Actor is the exact literal `local-producer-unverified`; no authenticated identity claim. createdAt is an explicit application-supplied valid UTC Gregorian instant encoded `YYYY-MM-DDTHH:mm:ss.sssZ` with exactly three fractional digits. The deterministic composition layer does not read a clock. The Node application may acquire a clock value once for a creation attempt, outside generation; it is passed as metadata. It is not a user-entered musical parameter or required new UI field.
+
+Attempt hash input is `{schema:"nightdrive.variation-attempt-hash-input.v1",sequence,variation,actor,createdAt}` in that order. `variation` is the verified root identity. Hash is lowercase SHA-256 of canonical UTF-8. This associates metadata with exact lineage/result; it is integrity binding, not an authenticated signature or tamper-proof audit log. Full verification rejects a mismatched envelope/hash/unknown root, but cannot establish real-world authorship or truth of the clock.
+
+An explicit repeated identical request from the identical selected parent retains another alternative/attempt. Its deterministic variationHash, musicHash and regenerated note IDs remain identical. Its sequence differs even if createdAt has the same millisecond; attemptHash therefore differs. A duplicate canonical variation root may be shared only as immutable verified content; editing histories remain independent. Sequence/time never enter request, regenerated note IDs, track/state/music/variation hashes, seed derivation or PRNG. Replay retains original attempt sequence/actor/time/hash exactly; it never creates a new attempt or timestamp. Do not claim uniqueness across unrelated sessions or persistence.
+
+## Validation, rejection and failure atomicity
+
+All errors are structured code/field with safe stable messages; no raw exceptions/stack/private paths in producer output. Within an owning phase check fields in specified order. A safe descriptor scan rejects hooks before reading any values; it must not prematurely apply later semantic checks and mask earlier phase errors. For new variation creation, use this order:
+
+1. At the Node application entry, exact pinned Node24.21.0 guard before canonical operation, unchanged npm11.19.0 validation environment. Runtime failure creates nothing.
+2. Snapshot outer consumed inputs descriptor-safely. Reject unsafe shape with INVALID_VARIATION_INPUT at the first canonical field path; unsupported new schema tag uses UNSUPPORTED_VARIATION_SCHEMA. Do not execute caller hooks or copy ignored fields.
+3. Verify retained source and source-supported version eligibility. Propagate accepted source errors unchanged; unsupported source Arpeggiator version uses UNSUPPORTED_VARIATION_SOURCE. Verify collection/history/ancestry and selected state in source, alternatives order, selectedSequence order. Missing/cyclic/conflicting ancestry uses INVALID_VARIATION_LINEAGE; malformed collection/cursor/sequence uses INVALID_VARIATION_COLLECTION. Existing editor errors propagate unchanged in their established order.
+4. Validate exact request schema/parent envelope; malformed parent uses INVALID_VARIATION_PARENT. Compare expected request.parent with actual selected combined state: STALE_VARIATION_PARENT before validating rootSeed. No silently applying to a newer selection.
+5. Validate explicit numeric uint32 rootSeed: INVALID_VARIATION_SEED at request.rootSeed. No coercion/default/truncation. Then validate attempt actor, createdAt and nextSequence in that order: INVALID_VARIATION_PROVENANCE for metadata; INVALID_VARIATION_COLLECTION for exhausted sequence. The application owns sequence, not a caller-selected canonical parameter.
+6. Build exact accepted source-derived generation request; delegate accepted aggregate generation. Propagate accepted delegated generator errors unchanged, safe-boundary mapping as today. No retry, fallback or protected-component generation.
+7. Verify returned aggregate against exact expected source/seed/version inputs and accepted semantics, project new notes/IDs, reject global ID collision; then compare section and protected tracks in harmony,bass,lead order. Mismatch uses VARIATION_LOCK_MISMATCH at the relevant field. Recompute expected full result, unchanged and all hashes; forged/corrupt digest uses VARIATION_HASH_MISMATCH at its owner. Malformed state values use INVALID_VARIATION_STATE.
+8. Construct and verify attempt envelope, new alternative/history fork, selected combined state and derived preview. Atomically return the complete new immutable application value only after all verification succeeds. Failed append/hash/preview/context construction returns none of the proposed root, attempt, history, hashes, preview or partial success. Input collection, draft, parent/current history and prior alternatives remain unchanged.
+
+For authoritative verification of a supplied root/state/attempt, phases are: descriptor/schema; retained-source proof; referenced ancestry/editor proof; exact request parent/seed and source-derived aggregate replay; expected section/tracks/IDs/lock equality; track hashes, musicHash, unchanged, lineage variationHash, stateHash as applicable; attempt metadata and attemptHash. Check ordering within records as defined above. Verify expected outputs, not repair them. Collection mutation/selection happens only after verification.
+
+Same musical output is a valid successful variation, not NO_OP_EDITOR_COMMAND. Same-value Lead edits retain existing NO_OP rejection. Invalid selection returns INVALID_VARIATION_COLLECTION without changing current context. A valid repeated request is not a collision merely because the immutable canonical root already exists; ID uniqueness is within each resulting state, not across retained alternatives.
+
+## Derived preview, audition and interaction limits
+
+Project the existing CompleteSectionPreview shape directly from authoritatively verified selected combined tracks, omitting IDs/velocity exactly as the current preview does; original sourceResultHash stays unchanged. All four roles/section/ticks/pitches reflect combined state, never a cast generated result or intermediate representation. Return detached recursively immutable preview. Velocity remains canonical but not audible; no gain, normalization, master volume, voice, scheduling or transport contract changes.
+
+Successful variation creation, alternative selection, Lead edit and Undo/Redo use existing audition invalidation: stop/cancel owned session, reject stale callbacks, no automatic Play/resume. Generation-relevant proposal/selection changes cannot allow an old async response to overwrite newer state; reuse existing ownership/epoch rules. Rejecting a proposal preserves authoritative application/history/current selection and application-visible draft under existing safe-error conventions. No custom pointer, snapping, seed-field default, variation-selector design, confirmation or keyboard shortcut is specified. A later bounded UI contract must settle any genuinely new interactions; native keyboard operability and existing accessibility requirements remain.
+
+## Required independent implementation evidence
+
+Do not obtain expected canonical/hash values from production variation serializers/generators. Reuse accepted independent Harmony/Bass/Lead/editor and Arpeggiator fixtures where inputs match; construct new literal expected variation/state/metadata records independently and recompute hashes using a test-side standard SHA-256 path. Evidence must include:
+
+- Fixed source plus parent with real Lead pitch/timing/velocity edits and added/deleted notes; literal four-role expected state, exact canonical JSON/UTF-8, each track hash, musical hash, regenerated IDs, variation/state/attempt inputs and digests.
+- Exact protected bytes/values/hashes/IDs/order and section preserved through Arpeggiator seed changes; original source unchanged and no protected-generator invocation. Authoritative supplied Harmony identity/content and accepted Arpeggiator component seeding/PRNG behavior; no new draw/retry.
+- Same parent/request replay equality; different parents bind distinct lineage/IDs; matching-event output yields unchanged=true and equal musical hash. Repeated identical requests with equal timestamp retain different sequences/attempt hashes and identical deterministic roots/music/IDs; metadata does not affect generation, PRNG or canonical IDs.
+- Forged self-consistent source/root/state/parent/lock/provenance rejection; missing/cyclic/conflicting ancestry; stale combined parent even with a matching editor identity; global note collision fails closed; descriptor hooks never execute; malformed numeric/version/field/order boundaries and multi-invalid precedence.
+- Every exported serialization, selection, child creation and preview path requires actual source/ancestry/context authority. M2-EDITOR-REV-001 must not recur in a new wrapper.
+- Original and variation-context v1-v7 success/rejection compatibility: old bytes/hashes/added IDs unchanged; correct composite tracks; existing order/range/containment/overlap rules and manual Lead policy scope preserved. Exact independent Undo/Redo per alternative, redo truncation confined to selected history, retained alternatives survive edits; selection restores exact editor and combined-state identities without regeneration/new attempt.
+- Recursive immutability and detached snapshots through async work; delegated generation/hash/preview/context failure leaves no partial record or input mutation. Pinned-runtime positive Node boundary actually executes, plus guard rejection.
+- Preview contains correct varied Arpeggiator and edited Lead, original source identity, no velocity/schema expansion; successful context changes invalidate audition without automatic restart. Applicable later UI keyboard/focus/stale-response evidence is required for UI claims, not inferred from canonical tests.
+
+Focused canonical/generator/editor/Node regressions, strict TypeScript, changed-file Biome, lint/docs/diff and production build as applicable to later implementation. Full protected PR Runtime/Documentation and cumulative external review remain required at integration. No claim of full-suite, browser, PR CI or qualification evidence from this SPECIFY task.
+
+## Activation, alternatives and revisit conditions
+
+Rejected alternatives: regenerate a whole section (loses edited Lead/identity); mutate editor-v1 to accept a new ancestry tag (changes old meaning); second Lead edit engine (duplicates semantics); encode creation time/sequence into musical hashes (false novelty/nondeterminism); single destructive redo path for alternatives (loses retained variants); fake authenticated author or omit AC-006 metadata.
+
+The separate combined-state boundary is the smallest compatible mechanism because existing EditorHistoryV1 continues proving its exact original-source Lead state while one immutable Arpeggiator root supplies the only replaced component. It adds verification, not a second editor algorithm. Subsequent tasks must not represent the internal proof-only editor Arpeggiator as current composition.
+
+Revisit only through separately reviewed authority for other targets/general lock controls, changes to fixed parameters, audible velocity, persistent/cross-session identities/history, authenticated provenance, branch merging, new source/generator schemas, accepted output diversity search, or new interaction semantics. This candidate authorizes none. After external consequential PASS and exact-tuple acceptance, the next separately eligible task is the smallest canonical variation/state/proof implementation and pinned-Node boundary; retained-alternative/UI exposure may be separate bounded slices. No automatic implementation or publication follows this unreviewed specification head.
