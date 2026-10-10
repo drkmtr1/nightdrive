@@ -1219,13 +1219,103 @@ describe("original-parent canonical variation root and creation proof", () => {
   // Independently transcribed accepted Stage7 fixture and new-domain projection.
   // No production variation/aggregate serializer, generator or digest is used
   // to obtain any expected note, field order, canonical input or digest.
-  function expectedRoot() {
-    const selected = literalPitchChild();
-    const history = {
-      source: source(),
-      revisions: [JSON.parse(EXPECTED_START_TICK_ROOT_JSON) as EditorRevisionV1, selected],
+  function literalMultiEditHistory(): EditorHistoryV1 {
+    const root = JSON.parse(EXPECTED_START_TICK_ROOT_JSON) as EditorRevisionV1;
+    const first = root.tracks[3]?.notes[0];
+    const second = root.tracks[3]?.notes[1];
+    if (!first || !second) throw new Error("Missing literal multi-edit notes");
+    const commands: EditorNoteCommand[] = [
+      {
+        schema: "nightdrive.editor-note-command.v1",
+        type: "set-note-pitch",
+        noteId: first.id,
+        expectedPitch: 75,
+        pitch: 74,
+      },
+      {
+        schema: "nightdrive.editor-note-command.v2",
+        type: "set-note-start-tick",
+        noteId: first.id,
+        expectedStartTick: 0,
+        startTick: 240,
+      },
+      {
+        schema: "nightdrive.editor-note-command.v3",
+        type: "set-note-duration",
+        noteId: first.id,
+        expectedDurationTicks: 960,
+        durationTicks: 480,
+      },
+      {
+        schema: "nightdrive.editor-note-command.v7",
+        type: "set-note-velocity",
+        noteId: first.id,
+        expectedVelocity: 100,
+        velocity: 80,
+      },
+      {
+        schema: "nightdrive.editor-note-command.v6",
+        type: "add-note",
+        pitch: 72,
+        startTick: 30000,
+        durationTicks: 480,
+      },
+      { schema: "nightdrive.editor-note-command.v4", type: "delete-note", noteId: second.id },
+    ];
+    const revisions = [root];
+    for (const command of commands) {
+      const previous = revisions[revisions.length - 1];
+      if (!previous) throw new Error("Missing literal parent");
+      const tracks = structuredClone(previous.tracks).map((track) => {
+        if (track.role !== "lead") return track;
+        let notes = [...track.notes];
+        if (command.type === "set-note-pitch")
+          notes = notes.map((note) => (note.id === first.id ? { ...note, pitch: 74 } : note));
+        if (command.type === "set-note-start-tick")
+          notes = notes.map((note) => (note.id === first.id ? { ...note, startTick: 240 } : note));
+        if (command.type === "set-note-duration")
+          notes = notes.map((note) =>
+            note.id === first.id ? { ...note, durationTicks: 480 } : note,
+          );
+        if (command.type === "set-note-velocity")
+          notes = notes.map((note) => (note.id === first.id ? { ...note, velocity: 80 } : note));
+        if (command.type === "add-note") {
+          const id = `note-${hash({ schema: "nightdrive.editor-added-note-id-input.v1", parent: { schema: previous.schema, revisionHash: previous.revisionHash }, command })}`;
+          notes.push({ id, pitch: 72, startTick: 30000, durationTicks: 480, velocity: 100 });
+        }
+        if (command.type === "delete-note") notes = notes.filter((note) => note.id !== second.id);
+        return { role: track.role, notes };
+      });
+      const values = {
+        schema: previous.schema,
+        source: previous.source,
+        section: previous.section,
+        tracks,
+        parent: { schema: previous.schema, revisionHash: previous.revisionHash },
+        command,
+      };
+      revisions.push({
+        ...values,
+        revisionHash: hash({
+          schema: "nightdrive.editor-revision-hash-input.v1",
+          revision: values,
+        }),
+      });
+    }
+    return { source: source() as unknown as CompleteSectionResultV1, revisions, cursor: 6 };
+  }
+  function expectedRoot(
+    history: EditorHistoryV1 = {
+      source: source() as unknown as CompleteSectionResultV1,
+      revisions: [
+        JSON.parse(EXPECTED_START_TICK_ROOT_JSON) as EditorRevisionV1,
+        literalPitchChild(),
+      ],
       cursor: 1,
-    };
+    },
+  ) {
+    const selected = history.revisions[history.cursor];
+    if (!selected) throw new Error("Missing independently constructed selection");
     const parent = independentState(selected).state;
     const proposal = {
       schema: "nightdrive.arpeggiator-variation-request.v1",
@@ -1364,6 +1454,57 @@ describe("original-parent canonical variation root and creation proof", () => {
     expect(actual.creationProof.parentHistory).not.toBe(history);
     expect(actual.creationProof.parentHistory.revisions).not.toBe(history.revisions);
     expect(Object.keys(actual)).toEqual(["variation", "creationProof"]);
+  });
+  it("matches the complete independent multi-edit canonical parent/root/proof and all hash bytes", async () => {
+    const literalHistory = literalMultiEditHistory();
+    let actualHistory = rootHistory();
+    for (const revision of literalHistory.revisions.slice(1)) {
+      if (!revision.command) throw new Error("Missing literal command");
+      actualHistory = apply(actualHistory, revision.command);
+    }
+    expect(actualHistory).toEqual(literalHistory);
+    const actual = await generate(actualHistory);
+    const expected = expectedRoot(literalHistory);
+    expect(actual).toEqual({
+      variation: expected.variation,
+      creationProof: expected.creationProof,
+    });
+    expect(await serialize(actual)).toBe(JSON.stringify(expected.variation));
+    expect(Buffer.from(JSON.stringify(actual.variation))).toEqual(
+      Buffer.from(JSON.stringify(expected.variation)),
+    );
+    expect(actual.variation.trackHashes).toEqual(expected.variation.trackHashes);
+    expect(actual.variation.musicHash).toBe(hash(expected.musicInput));
+    expect(actual.variation.variationHash).toBe(hash(expected.variationHashInput));
+    expect(actual.creationProof.parent.tracks[3]?.notes[0]).toMatchObject({
+      pitch: 74,
+      startTick: 240,
+      durationTicks: 480,
+      velocity: 80,
+    });
+    expect(actual.variation.tracks[3]?.notes.at(-1)).toMatchObject({
+      pitch: 72,
+      startTick: 30000,
+      durationTicks: 480,
+      velocity: 100,
+    });
+    // Fixed digests were calculated from the literal test-side oracle above
+    // with node:crypto, never from a production variation result/serializer.
+    expect(expected.variation.variationHash).toBe(
+      "9836e2b631fc79f4ef9fcbfcb198e999296e2dbe9cebd30711cd5ab4eaf86a9d",
+    );
+    expect(expected.variation.musicHash).toBe(
+      "06f78515db4414150cc19b5347e2044fd950941abd8bd5e921a7d453d233bc0a",
+    );
+    expect(literalHistory.revisions[6]?.revisionHash).toBe(
+      "c9c58f26c49371afa02a396db85c0c4264de1121e7bb831a3be1e24ccc5d3c69",
+    );
+    expect(expected.variation.trackHashes).toEqual({
+      harmony: "253fb79d977986db2649f3c540a33739b5d17544184bb23e7b964776be43dd53",
+      bass: "0c52b648b390d71b5e8986d7c1dd1186a567279384e7fa17eb8c023719346b0e",
+      arpeggiator: "0e65cd6d39324e316f438f9807979a4060a6e666635eec94cdc23681b97d0d32",
+      lead: "1a8d1ef2a7ffaf3e73129305385413cd0238aaf0d7cb8cee476c3df37199500c",
+    });
   });
   it("authoritatively verifies and serializes by fresh replay once for every public invocation", async () => {
     const sourceReplay = vi.spyOn(generator, "generateCompleteSectionV1");
