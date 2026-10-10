@@ -19,6 +19,7 @@ import {
   selectedEditorRevisionV1,
   undoEditorHistoryV1,
 } from "../editor/editor-history";
+import * as digestAdapter from "../generators/adapters/stage7-digest";
 import * as generator from "../generators/complete-section";
 import * as motifGenerator from "../generators/motif-generator";
 import * as aggregateGenerator from "../generators/stage7-arpeggiator-aggregate";
@@ -27,9 +28,12 @@ import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
 import {
   generateOriginalArpeggiatorVariationComponentForNodeV1,
+  generateOriginalArpeggiatorVariationRootForNodeV1,
   projectOriginalVariationStateForNodeV1,
+  serializeOriginalArpeggiatorVariationRootForNodeV1,
   serializeOriginalVariationStateForNodeV1,
   verifyOriginalArpeggiatorVariationRequestForNodeV1,
+  verifyOriginalArpeggiatorVariationRootForNodeV1,
 } from "./variation-original-state-node";
 
 function request(): CompleteSectionRequestV1 {
@@ -488,6 +492,7 @@ describe("original alternative combined canonical state", () => {
     const root = await project(rootHistory());
     const child = await project(history);
     const undone = undoEditorHistoryV1(history);
+    if (!undone) throw new Error("Missing Undo result");
     if (!undone) throw new Error("Missing Undo");
     expect(await project(undone)).toEqual(root);
     const redone = redoEditorHistoryV1(undone);
@@ -703,12 +708,18 @@ describe("original alternative combined canonical state", () => {
   it("does not export a raw revision constructor and proves direct canonical projection", async () => {
     expect(Object.keys(compositionState).sort()).toEqual([
       "ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1",
+      "ARPEGGIATOR_VARIATION_SCHEMA_V1",
+      "VARIATION_CREATION_PROOF_SCHEMA_V1",
       "VARIATION_STATE_SCHEMA_V1",
       "VariationComponentValueError",
       "VariationRequestValueError",
+      "VariationRootValueError",
       "generateOriginalArpeggiatorVariationComponentV1",
+      "generateOriginalArpeggiatorVariationRootV1",
       "projectOriginalVariationStateV1",
+      "serializeOriginalArpeggiatorVariationRootV1",
       "verifyOriginalArpeggiatorVariationRequestV1",
+      "verifyOriginalArpeggiatorVariationRootV1",
     ]);
     const replay = vi.spyOn(generator, "generateCompleteSectionV1");
     const actual = await compositionState.projectOriginalVariationStateV1(
@@ -1161,5 +1172,512 @@ describe("original-parent accepted Arpeggiator generation bridge", () => {
     for (const op of [compositionState.generateOriginalArpeggiatorVariationComponentV1])
       await expect(op(bad, bad, bad, bad)).rejects.toThrow("requires Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
+  });
+});
+describe("original-parent canonical variation root and creation proof", () => {
+  const version = Object.getOwnPropertyDescriptor(process.versions, "node");
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (version) Object.defineProperty(process.versions, "node", version);
+  });
+  const input = (history = pitchHistory(), seed = 0) => ({
+    schema: "nightdrive.arpeggiator-variation-request.v1",
+    parent: {
+      schema: "nightdrive.variation-state.v1",
+      stateHash: independentState(selectedEditorRevisionV1(history)).state.stateHash,
+    },
+    rootSeed: seed,
+  });
+  const generate = (history = pitchHistory(), seed = 0) =>
+    generateOriginalArpeggiatorVariationRootForNodeV1(
+      source(),
+      request(),
+      history,
+      input(history, seed),
+    );
+  type RootPair = Awaited<ReturnType<typeof generate>>;
+  const verify = (pair: RootPair, history = pair.creationProof.parentHistory) =>
+    verifyOriginalArpeggiatorVariationRootForNodeV1(
+      source(),
+      request(),
+      history,
+      pair.variation.request,
+      pair.variation,
+      pair.creationProof,
+    );
+  const serialize = (pair: RootPair) =>
+    serializeOriginalArpeggiatorVariationRootForNodeV1(
+      source(),
+      request(),
+      pair.creationProof.parentHistory,
+      pair.variation.request,
+      pair.variation,
+      pair.creationProof,
+    );
+  const hash = (value: unknown) =>
+    createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
+  // Independently transcribed accepted Stage7 fixture and new-domain projection.
+  // No production variation/aggregate serializer, generator or digest is used
+  // to obtain any expected note, field order, canonical input or digest.
+  function expectedRoot() {
+    const selected = literalPitchChild();
+    const history = {
+      source: source(),
+      revisions: [JSON.parse(EXPECTED_START_TICK_ROOT_JSON) as EditorRevisionV1, selected],
+      cursor: 1,
+    };
+    const parent = independentState(selected).state;
+    const proposal = {
+      schema: "nightdrive.arpeggiator-variation-request.v1",
+      parent: { schema: parent.schema, stateHash: parent.stateHash },
+      rootSeed: 0,
+    };
+    const partialGeneration = {
+      schema: "nightdrive.stage7-arpeggiator-aggregate.v1",
+      engineVersion: "nightdrive.engine.stage7-aggregate.v1",
+      generatorVersion: "nightdrive.generator.stage7-arpeggiator.v1",
+      section: LITERAL_SECTION,
+      components: {
+        harmony: LITERAL_COMPONENTS.harmony,
+        arpeggiator: LITERAL_COMPONENTS.arpeggiator,
+      },
+      provenance: {
+        profile: { id: "dark-synthwave", version: "nightdrive.genre-profile.arpeggiator.v2" },
+        policy: { version: "nightdrive.arpeggiator-policy.v2" },
+        seedDerivation: { version: "nightdrive.seed-derivation.component.v1" },
+        prng: { version: "nightdrive.prng.mulberry32.v1" },
+        rootSeed: 0,
+        normalizedInputs: {
+          intent: { energy: "medium", complexity: "medium" },
+          range: { minMidiPitch: 36, maxMidiPitch: 84 },
+        },
+        parent: null,
+      },
+      componentHashes: {
+        harmony: hash({
+          schema: "nightdrive.stage7-harmony-component.v1",
+          section: LITERAL_SECTION,
+          harmony: LITERAL_COMPONENTS.harmony,
+        }),
+        arpeggiator: hash({
+          schema: "nightdrive.stage7-arpeggiator-component.v1",
+          section: LITERAL_SECTION,
+          events: LITERAL_COMPONENTS.arpeggiator,
+        }),
+      },
+      warnings: [],
+    };
+    const generation = { ...partialGeneration, resultHash: hash(partialGeneration) };
+    const arp = {
+      role: "arpeggiator",
+      notes: LITERAL_COMPONENTS.arpeggiator.map((event, ordinal) => ({
+        id: `note-${hash({ schema: "nightdrive.variation-arpeggiator-note-id-input.v1", parent: proposal.parent, request: proposal, ordinal })}`,
+        pitch: event.pitch,
+        startTick: event.startTick,
+        durationTicks: event.durationTicks,
+        velocity: 100,
+      })),
+    };
+    const tracks = parent.tracks.map((track) => (track.role === "arpeggiator" ? arp : track));
+    const hashInputs = tracks.map((track) => ({
+      schema: "nightdrive.variation-track-hash-input.v1",
+      track,
+    }));
+    const trackHashes = {
+      harmony: hash(hashInputs[0]),
+      bass: hash(hashInputs[1]),
+      arpeggiator: hash(hashInputs[2]),
+      lead: hash(hashInputs[3]),
+    };
+    const musicInput = {
+      schema: "nightdrive.variation-music-hash-input.v1",
+      section: parent.section,
+      tracks: tracks.map((track) => ({
+        role: track.role,
+        notes: track.notes.map(({ pitch, startTick, durationTicks, velocity }) => ({
+          pitch,
+          startTick,
+          durationTicks,
+          velocity,
+        })),
+      })),
+    };
+    const values = {
+      source: parent.source,
+      parent: proposal.parent,
+      request: proposal,
+      generation,
+      section: parent.section,
+      tracks,
+      trackHashes,
+      musicHash: hash(musicInput),
+      unchanged: true,
+    };
+    const variationHashInput = {
+      schema: "nightdrive.arpeggiator-variation-hash-input.v1",
+      ...values,
+    };
+    const variation = {
+      schema: "nightdrive.arpeggiator-variation.v1",
+      ...values,
+      variationHash: hash(variationHashInput),
+    };
+    return {
+      variation,
+      hashInputs,
+      musicInput,
+      variationHashInput,
+      creationProof: {
+        schema: "nightdrive.variation-creation-proof.v1",
+        variation: { schema: variation.schema, variationHash: variation.variationHash },
+        parent,
+        parentVariation: null,
+        parentHistory: history,
+      },
+    };
+  }
+  it("matches independently constructed complete root/proof, canonical UTF8, all IDs and hash inputs", async () => {
+    const history = pitchHistory();
+    const actual = await generate(history);
+    const expected = expectedRoot();
+    expect(actual).toEqual({
+      variation: expected.variation,
+      creationProof: expected.creationProof,
+    });
+    expect(JSON.stringify(actual.variation)).toBe(JSON.stringify(expected.variation));
+    expect(Buffer.from(JSON.stringify(actual.variation), "utf8")).toEqual(
+      Buffer.from(JSON.stringify(expected.variation), "utf8"),
+    );
+    expect(actual.variation.variationHash).toBe(hash(expected.variationHashInput));
+    expect(actual.variation.musicHash).toBe(hash(expected.musicInput));
+    expect(Object.values(actual.variation.trackHashes)).toEqual(expected.hashInputs.map(hash));
+    expect(actual.variation.generation.componentHashes).toEqual(
+      expected.variation.generation.componentHashes,
+    );
+    expect(actual.variation.generation.resultHash).toBe(expected.variation.generation.resultHash);
+    expect(actual.variation.unchanged).toBe(true);
+    expect(actual.variation.musicHash).toBe(actual.creationProof.parent.musicHash);
+    expect(actual.variation.tracks[2]?.notes[0]?.id).not.toBe(
+      actual.creationProof.parent.tracks[2]?.notes[0]?.id,
+    );
+    frozen(actual);
+    expect(actual.creationProof.parentHistory).not.toBe(history);
+    expect(actual.creationProof.parentHistory.revisions).not.toBe(history.revisions);
+    expect(Object.keys(actual)).toEqual(["variation", "creationProof"]);
+  });
+  it("authoritatively verifies and serializes by fresh replay once for every public invocation", async () => {
+    const sourceReplay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    const actual = await generate();
+    expect(sourceReplay).toHaveBeenCalledTimes(1);
+    expect(target).toHaveBeenCalledTimes(1);
+    expect(await verify(actual)).toEqual(actual);
+    expect(sourceReplay).toHaveBeenCalledTimes(2);
+    expect(target).toHaveBeenCalledTimes(2);
+    expect(await serialize(actual)).toBe(JSON.stringify(expectedRoot().variation));
+    expect(sourceReplay).toHaveBeenCalledTimes(3);
+    expect(target).toHaveBeenCalledTimes(3);
+  });
+  it("same verified parent/request repeats exactly; another parent changes lineage and stable IDs", async () => {
+    const a = await generate();
+    expect(await generate()).toEqual(a);
+    const b = await generate(rootHistory());
+    expect(b.variation.parent).not.toEqual(a.variation.parent);
+    expect(b.variation.variationHash).not.toBe(a.variation.variationHash);
+    expect(b.variation.tracks[2]?.notes[0]?.id).not.toBe(a.variation.tracks[2]?.notes[0]?.id);
+    expect(b.variation.generation).toEqual(a.variation.generation);
+  });
+  it.each([17, 4294967295])(
+    "seed %s preserves exact protected tracks/hashes/source/section without touching history",
+    async (seed) => {
+      let history = pitchHistory();
+      let note = selectedEditorRevisionV1(history).tracks[3]?.notes[0];
+      if (!note) throw new Error("Missing target");
+      history = apply(history, {
+        schema: "nightdrive.editor-note-command.v2",
+        type: "set-note-start-tick",
+        noteId: note.id,
+        expectedStartTick: note.startTick,
+        startTick: 240,
+      });
+      history = apply(history, {
+        schema: "nightdrive.editor-note-command.v3",
+        type: "set-note-duration",
+        noteId: note.id,
+        expectedDurationTicks: note.durationTicks,
+        durationTicks: 480,
+      });
+      history = apply(history, {
+        schema: "nightdrive.editor-note-command.v7",
+        type: "set-note-velocity",
+        noteId: note.id,
+        expectedVelocity: note.velocity,
+        velocity: 80,
+      });
+      history = apply(history, {
+        schema: "nightdrive.editor-note-command.v6",
+        type: "add-note",
+        pitch: 72,
+        startTick: 30000,
+        durationTicks: 480,
+      });
+      note = selectedEditorRevisionV1(history).tracks[3]?.notes[1];
+      if (!note) throw new Error("Missing delete target");
+      history = apply(history, {
+        schema: "nightdrive.editor-note-command.v4",
+        type: "delete-note",
+        noteId: note.id,
+      });
+      const before = JSON.stringify(history);
+      const result = await generate(history, seed);
+      const parent = independentState(selectedEditorRevisionV1(history)).state;
+      expect(result.variation.source).toEqual(parent.source);
+      expect(result.variation.section).toEqual(parent.section);
+      for (const index of [0, 1, 3])
+        expect(result.variation.tracks[index]).toEqual(parent.tracks[index]);
+      for (const role of ["harmony", "bass", "lead"] as const)
+        expect(result.variation.trackHashes[role]).toBe(parent.trackHashes[role]);
+      expect(result.variation.request.rootSeed).toBe(seed);
+      expect(result.variation.generation.provenance.rootSeed).toBe(seed);
+      expect(result.variation.tracks[2]?.notes.every((n) => n.velocity === 100)).toBe(true);
+      expect(JSON.stringify(history)).toBe(before);
+      expect(await verify(result)).toEqual(result);
+    },
+  );
+  it("retains and verifies the exact saved redo path even when its cursor precedes creation", async () => {
+    const undone = undoEditorHistoryV1(pitchHistory());
+    if (!undone) throw new Error("Missing undone history");
+    const pair = await generate(undone);
+    expect(pair.creationProof.parentHistory.cursor).toBe(0);
+    expect(pair.creationProof.parentHistory.revisions).toHaveLength(2);
+    expect(await verify(pair)).toEqual(pair);
+    const forged = structuredClone(pair);
+    Object.assign(forged.creationProof, { parentHistory: rootHistory() });
+    await expect(
+      verifyOriginalArpeggiatorVariationRootForNodeV1(
+        source(),
+        request(),
+        undone,
+        pair.variation.request,
+        forged.variation,
+        forged.creationProof,
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+      field: "creationProof.parentHistory",
+    });
+    const badRedo = forgedChild(pitchHistory());
+    await expect(
+      generateOriginalArpeggiatorVariationRootForNodeV1(
+        source(),
+        request(),
+        { ...badRedo, cursor: 0 },
+        input(undone),
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_EDITOR_LINEAGE" });
+  });
+  it("creation snapshot survives independent Undo/new-edit truncation of both active histories", async () => {
+    const history = pitchHistory();
+    const result = await generate(history);
+    const saved = JSON.stringify(result.creationProof);
+    const cursor = history.cursor;
+    const first = selectedEditorRevisionV1(history).tracks[3]?.notes[0];
+    if (!first) throw new Error("Missing note");
+    const undone = undoEditorHistoryV1(history);
+    if (!undone) throw new Error("Missing Undo result");
+    const changed = (pitch: number) =>
+      apply(undone, {
+        schema: "nightdrive.editor-note-command.v1",
+        type: "set-note-pitch",
+        noteId: first.id,
+        expectedPitch: 75,
+        pitch,
+      });
+    const parentActive = changed(73);
+    const childActive = changed(72);
+    expect(parentActive.revisions[cursor]?.revisionHash).not.toBe(
+      history.revisions[cursor]?.revisionHash,
+    );
+    expect(childActive.revisions[cursor]?.revisionHash).not.toBe(
+      history.revisions[cursor]?.revisionHash,
+    );
+    expect(JSON.stringify(result.creationProof)).toBe(saved);
+    expect(await verify(result)).toEqual(result);
+    // This proves immutable saved original-parent proof, not collection retention
+    // or recursive descendants (separately unimplemented).
+  });
+  it.each(["owner", "parent", "history", "cursor", "nonoriginal", "schema", "missing"])(
+    "rejects substituted creation proof: %s before target generation",
+    async (kind) => {
+      const value = structuredClone(await generate());
+      const proof = value.creationProof as unknown as Record<string, unknown>;
+      if (kind === "owner")
+        proof.variation = { schema: value.variation.schema, variationHash: "0".repeat(64) };
+      if (kind === "parent")
+        proof.parent = independentState(selectedEditorRevisionV1(rootHistory())).state;
+      if (kind === "history") proof.parentHistory = rootHistory();
+      if (kind === "cursor")
+        proof.parentHistory = { ...value.creationProof.parentHistory, cursor: 0 };
+      if (kind === "nonoriginal") proof.parentVariation = value.variation;
+      if (kind === "schema") proof.schema = "future";
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      await expect(
+        verifyOriginalArpeggiatorVariationRootForNodeV1(
+          source(),
+          request(),
+          pitchHistory(),
+          input(),
+          value.variation,
+          kind === "missing" ? null : proof,
+        ),
+      ).rejects.toMatchObject({ code: "INVALID_VARIATION_LINEAGE" });
+      expect(target).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["lead", "arp", "generation", "hash", "unchanged"])(
+    "rejects forged self-consistent root via verification and serialization: %s",
+    async (kind) => {
+      const value = structuredClone(await generate());
+      Object.assign(value, { variation: structuredClone(value.variation) });
+      const root = value.variation as unknown as Record<string, unknown>;
+      if (kind === "lead") (value.variation.tracks[3]?.notes[0] as { pitch: number }).pitch = 73;
+      if (kind === "arp") (value.variation.tracks[2]?.notes[0] as { pitch: number }).pitch = 54;
+      if (kind === "generation")
+        root.generation = { ...value.variation.generation, resultHash: "0".repeat(64) };
+      if (kind === "hash") root.musicHash = "0".repeat(64);
+      if (kind === "unchanged") root.unchanged = false;
+      const { schema: _schema, variationHash: _hash, ...values } = root;
+      root.variationHash = hash({
+        schema: "nightdrive.arpeggiator-variation-hash-input.v1",
+        ...values,
+      });
+      (value.creationProof.variation as { variationHash: string }).variationHash =
+        root.variationHash as string;
+      const code =
+        kind === "lead"
+          ? "VARIATION_LOCK_MISMATCH"
+          : kind === "arp"
+            ? "INVALID_VARIATION_STATE"
+            : "VARIATION_HASH_MISMATCH";
+      await expect(verify(value)).rejects.toMatchObject({ code });
+      await expect(serialize(value)).rejects.toMatchObject({ code });
+    },
+  );
+  it("rejects a global regenerated-note collision without salting/retry or partial output", async () => {
+    const parentNote = selectedEditorRevisionV1(pitchHistory()).tracks[3]?.notes[0];
+    if (!parentNote) throw new Error("Missing collision target");
+    const originalDigest = digestAdapter.digestStage7CanonicalUtf8;
+    vi.spyOn(digestAdapter, "digestStage7CanonicalUtf8").mockImplementation((text) =>
+      text.includes('"schema":"nightdrive.variation-arpeggiator-note-id-input.v1"')
+        ? parentNote.id.slice(5)
+        : originalDigest(text),
+    );
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    await expect(generate()).rejects.toMatchObject({ code: "VARIATION_NOTE_ID_COLLISION" });
+    expect(target).toHaveBeenCalledTimes(1);
+  });
+  it.each(["root", "proof"])(
+    "rejects extra undefined nested %s fields rather than JSON-normalizing them away",
+    async (owner) => {
+      const pair = structuredClone(await generate());
+      if (owner === "root")
+        Object.assign(pair.variation.generation.provenance, { extra: undefined });
+      else Object.assign(pair.creationProof.parent.source, { extra: undefined });
+      await expect(verify(pair)).rejects.toBeInstanceOf(compositionState.VariationRootValueError);
+      await expect(serialize(pair)).rejects.toBeInstanceOf(
+        compositionState.VariationRootValueError,
+      );
+    },
+  );
+  it("rejects unsafe proof before replay without invoking getter/toJSON", async () => {
+    const actual = await generate();
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty({}, "parentHistory", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(
+      verifyOriginalArpeggiatorVariationRootForNodeV1(
+        source(),
+        request(),
+        pitchHistory(),
+        input(),
+        actual.variation,
+        unsafe,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_INPUT" });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+  });
+  it("source-admission failure precedes proof semantics and dispatches no target", async () => {
+    const actual = await generate();
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    await expect(
+      verifyOriginalArpeggiatorVariationRootForNodeV1(
+        source(),
+        undefined,
+        pitchHistory(),
+        input(),
+        actual.variation,
+        null,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_SOURCE_ADMISSION_REQUEST" });
+    expect(target).not.toHaveBeenCalled();
+  });
+  it("stale parent beats invalid seed and delegated target failure changes no input", async () => {
+    const history = pitchHistory();
+    const proposal = {
+      ...input(),
+      parent: { ...input().parent, stateHash: "0".repeat(64) },
+      rootSeed: -1,
+    };
+    await expect(
+      generateOriginalArpeggiatorVariationRootForNodeV1(source(), request(), history, proposal),
+    ).rejects.toMatchObject({ code: "STALE_VARIATION_PARENT" });
+    const before = JSON.stringify(history);
+    const failure = new Error("synthetic target failure");
+    vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1").mockRejectedValue(failure);
+    await expect(generate()).rejects.toBe(failure);
+    expect(JSON.stringify(history)).toBe(before);
+  });
+  it("detaches all retained inputs before asynchronous source admission", async () => {
+    const original = structuredClone(source());
+    const originalRequest = structuredClone(request());
+    const history = structuredClone(pitchHistory());
+    const proposal = input(history);
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementation(async (r) => {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return real(r);
+    });
+    const pending = generateOriginalArpeggiatorVariationRootForNodeV1(
+      original,
+      originalRequest,
+      history,
+      proposal,
+    );
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    proposal.rootSeed = 17;
+    (history as { cursor: number }).cursor = 0;
+    release?.();
+    expect(await pending).toEqual({
+      variation: expectedRoot().variation,
+      creationProof: expectedRoot().creationProof,
+    });
+  });
+  it("all root public entries fail at the exact pinned runtime guard", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(
+      generateOriginalArpeggiatorVariationRootForNodeV1(null, null, null, null),
+    ).rejects.toThrow("24.21.0");
+    await expect(
+      verifyOriginalArpeggiatorVariationRootForNodeV1(null, null, null, null, null, null),
+    ).rejects.toThrow("24.21.0");
+    await expect(
+      serializeOriginalArpeggiatorVariationRootForNodeV1(null, null, null, null, null, null),
+    ).rejects.toThrow("24.21.0");
+    expect(replay).not.toHaveBeenCalled();
   });
 });

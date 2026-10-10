@@ -1,7 +1,10 @@
 import {
   generateOriginalArpeggiatorVariationComponentV1,
+  generateOriginalArpeggiatorVariationRootV1,
   projectOriginalVariationStateV1,
+  serializeOriginalArpeggiatorVariationRootV1,
   verifyOriginalArpeggiatorVariationRequestV1,
+  verifyOriginalArpeggiatorVariationRootV1,
 } from "../composition/variation-original-state";
 
 /** Original alternative only. Each entry delegates once to full canonical proof. */
@@ -43,4 +46,47 @@ export async function generateOriginalArpeggiatorVariationComponentForNodeV1(
   request: unknown,
 ) {
   return generateOriginalArpeggiatorVariationComponentV1(source, sourceRequest, history, request);
+}
+/** Original-parent root/proof only; no alternative, attempt or preview installed. */
+export async function generateOriginalArpeggiatorVariationRootForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
+  return generateOriginalArpeggiatorVariationRootV1(source, sourceRequest, history, request);
+}
+export async function verifyOriginalArpeggiatorVariationRootForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+  variation: unknown,
+  creationProof: unknown,
+) {
+  return verifyOriginalArpeggiatorVariationRootV1(
+    source,
+    sourceRequest,
+    history,
+    request,
+    variation,
+    creationProof,
+  );
+}
+export async function serializeOriginalArpeggiatorVariationRootForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+  variation: unknown,
+  creationProof: unknown,
+) {
+  return serializeOriginalArpeggiatorVariationRootV1(
+    source,
+    sourceRequest,
+    history,
+    request,
+    variation,
+    creationProof,
+  );
 }
