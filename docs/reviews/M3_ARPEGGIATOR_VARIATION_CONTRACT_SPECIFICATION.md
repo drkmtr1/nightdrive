@@ -60,7 +60,7 @@ Every list below gives exact serialized order. Identity records are data, not pr
 
 ### Track preservation hash
 
-Hash compact UTF-8 `{schema:"nightdrive.variation-track-hash-input.v1",track:<exact track>}`. All note fields including IDs/velocity/order are included. This compares parent and child protected editor-state components within one domain. Generated hashes in the retained source/aggregate still prove their historical generation inputs; they cannot authenticate manually edited Lead. Both kinds of evidence are retained and named distinctly.
+Hash compact UTF-8 `{schema:"nightdrive.variation-track-hash-input.v1",track:<exact track>}`. All note fields including IDs/velocity/order are included. This compares parent and child protected editor-state components within one domain. Generated hashes in the retained source/aggregate bind recorded generator-input provenance and content integrity; alone they prove neither generation origin nor historical invocation and cannot authenticate manually edited Lead. Source replay admission supplies only the separately defined equivalence-to-accepted-generation guarantee. Both kinds of evidence are retained and named distinctly.
 
 ### Musical-content hash and unchanged output
 
