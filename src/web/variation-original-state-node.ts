@@ -1,4 +1,5 @@
 import {
+  generateOriginalArpeggiatorVariationComponentV1,
   projectOriginalVariationStateV1,
   verifyOriginalArpeggiatorVariationRequestV1,
 } from "../composition/variation-original-state";
@@ -32,4 +33,14 @@ export async function verifyOriginalArpeggiatorVariationRequestForNodeV1(
   request: unknown,
 ) {
   return verifyOriginalArpeggiatorVariationRequestV1(source, sourceRequest, history, request);
+}
+
+/** Existing aggregate only; full fresh canonical proof precedes target generation. */
+export async function generateOriginalArpeggiatorVariationComponentForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
+  return generateOriginalArpeggiatorVariationComponentV1(source, sourceRequest, history, request);
 }

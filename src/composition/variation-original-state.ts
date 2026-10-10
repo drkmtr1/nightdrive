@@ -1,6 +1,16 @@
 import process from "node:process";
 import { digestStage7CanonicalUtf8 } from "../generators/adapters/stage7-digest";
+import { verifyStage7ArpeggiatorAggregateV1 } from "../generators/stage7-aggregate-verifier";
+import { generateStage7ArpeggiatorAggregateV1 } from "../generators/stage7-arpeggiator-aggregate";
+import { createArpRange } from "../music-domain/arpeggiator";
+import type { HarmonyProgressionRealization } from "../music-domain/harmony";
 import type { EditorRevisionV1 } from "./editor-revision";
+import {
+  STAGE7_AGGREGATE_ENGINE_VERSION_V1,
+  STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1,
+  STAGE7_ARPEGGIATOR_GENERATOR_VERSION_V1,
+  serializeStage7HarmonyComponentV1,
+} from "./stage7-arpeggiator-aggregate";
 import { verifyVariationEditorHistoryForNodeV1 } from "./variation-editor-history";
 import { snapshotVariationInputV1 } from "./variation-source-admission";
 
@@ -140,6 +150,16 @@ export async function verifyOriginalArpeggiatorVariationRequestV1(
   history: unknown,
   request: unknown,
 ): Promise<OriginalArpeggiatorVariationRequestV1> {
+  return (await originalVariationRequestContextV1(source, sourceRequest, history, request)).request;
+}
+
+// Private invocation continuation only: no transferable admission constructor.
+async function originalVariationRequestContextV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
   if (process.versions.node !== "24.21.0")
     throw new Error("Variation request verification requires Node 24.21.0.");
   // Every consumed input is descriptor-safely detached before the first await.
@@ -189,9 +209,74 @@ export async function verifyOriginalArpeggiatorVariationRequestV1(
     rootSeed > 4294967295
   )
     return fail("INVALID_VARIATION_SEED", "request.rootSeed");
-  return Object.freeze({
+  const acceptedRequest = Object.freeze({
     schema: ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1,
     parent: Object.freeze({ schema: VARIATION_STATE_SCHEMA_V1, stateHash: state.stateHash }),
     rootSeed: rootSeed === 0 ? 0 : rootSeed,
   });
+  return { verified, state, request: acceptedRequest };
+}
+
+export class VariationComponentValueError extends RangeError {
+  constructor(
+    readonly code: "VARIATION_LOCK_MISMATCH" | "VARIATION_HASH_MISMATCH",
+    readonly field: string,
+  ) {
+    super("Variation component does not match its verified inputs.");
+    this.name = "VariationComponentValueError";
+  }
+}
+
+/** Original-parent prerequisite only. Returns the existing accepted aggregate;
+ * creates no variation root/attempt/alternative and confers no reusable trust. */
+export async function generateOriginalArpeggiatorVariationComponentV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
+  const context = await originalVariationRequestContextV1(source, sourceRequest, history, request);
+  const original = context.verified.source;
+  const config = original.provenance.arpeggiator;
+  // The accepted source verifier already reconstructs the consumed typed
+  // chord/key/inversion/voicing values. The aggregate consumes exactly this
+  // Harmony projection. Its historical wider type also names evaluation-only
+  // rationale fields, which are neither fabricated nor needed for generation.
+  const progression = original.components.harmony as HarmonyProgressionRealization;
+  const generated = await generateStage7ArpeggiatorAggregateV1({
+    schema: STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1,
+    engineVersion: STAGE7_AGGREGATE_ENGINE_VERSION_V1,
+    generatorVersion: STAGE7_ARPEGGIATOR_GENERATOR_VERSION_V1,
+    parent: null,
+    tempo: original.section.tempo,
+    progression,
+    range: createArpRange(config.range),
+    intent: original.provenance.intent,
+    profile: { id: original.provenance.profile.id, version: config.profile.version },
+    policy: config.policy,
+    seedDerivation: config.seedDerivation,
+    prng: config.prng,
+    rootSeed: context.request.rootSeed,
+  });
+  const result = await verifyStage7ArpeggiatorAggregateV1(generated);
+  if (
+    serializeStage7HarmonyComponentV1(result.section, result.components.harmony) !==
+    serializeStage7HarmonyComponentV1(original.section, original.components.harmony)
+  )
+    throw new VariationComponentValueError(
+      "VARIATION_LOCK_MISMATCH",
+      "generation.components.harmony",
+    );
+  const expected = {
+    profile: { id: original.provenance.profile.id, version: config.profile.version },
+    policy: config.policy,
+    seedDerivation: config.seedDerivation,
+    prng: config.prng,
+    rootSeed: context.request.rootSeed,
+    normalizedInputs: { intent: original.provenance.intent, range: config.range },
+    parent: null,
+  };
+  if (JSON.stringify(result.provenance) !== JSON.stringify(expected))
+    throw new VariationComponentValueError("VARIATION_HASH_MISMATCH", "generation.provenance");
+  return result;
 }

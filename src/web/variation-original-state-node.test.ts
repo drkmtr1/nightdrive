@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import process from "node:process";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +9,7 @@ import {
   verifyCompleteSectionV1,
 } from "../composition/complete-section";
 import type { EditorNoteCommand, EditorRevisionV1 } from "../composition/editor-revision";
+import { serializeStage7ArpeggiatorAggregateV1 } from "../composition/stage7-arpeggiator-aggregate";
 import * as compositionState from "../composition/variation-original-state";
 import {
   applyEditorCommandV1,
@@ -18,8 +20,13 @@ import {
   undoEditorHistoryV1,
 } from "../editor/editor-history";
 import * as generator from "../generators/complete-section";
+import * as motifGenerator from "../generators/motif-generator";
 import * as aggregateGenerator from "../generators/stage7-arpeggiator-aggregate";
+import * as arpDomain from "../music-domain/arpeggiator-policy-generator";
+import * as bassDomain from "../music-domain/bass";
+import * as harmonyDomain from "../music-domain/harmony";
 import {
+  generateOriginalArpeggiatorVariationComponentForNodeV1,
   projectOriginalVariationStateForNodeV1,
   serializeOriginalVariationStateForNodeV1,
   verifyOriginalArpeggiatorVariationRequestForNodeV1,
@@ -697,7 +704,9 @@ describe("original alternative combined canonical state", () => {
     expect(Object.keys(compositionState).sort()).toEqual([
       "ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1",
       "VARIATION_STATE_SCHEMA_V1",
+      "VariationComponentValueError",
       "VariationRequestValueError",
+      "generateOriginalArpeggiatorVariationComponentV1",
       "projectOriginalVariationStateV1",
       "verifyOriginalArpeggiatorVariationRequestV1",
     ]);
@@ -931,5 +940,226 @@ describe("original-parent variation request preflight", () => {
       await expect(operation(bad, bad, bad, bad)).rejects.toThrow("requires Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
     Object.defineProperty(process.versions, "node", { value: "24.21.0", configurable: true });
+  });
+});
+
+describe("original-parent accepted Arpeggiator generation bridge", () => {
+  const version = Object.getOwnPropertyDescriptor(process.versions, "node");
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (version) Object.defineProperty(process.versions, "node", version);
+  });
+  const proposal = (seed = 0) => ({
+    schema: "nightdrive.arpeggiator-variation-request.v1",
+    parent: {
+      schema: "nightdrive.variation-state.v1",
+      stateHash: independentState(literalPitchChild()).state.stateHash,
+    },
+    rootSeed: seed,
+  });
+  const generate = (input: unknown = proposal(), history: unknown = pitchHistory()) =>
+    generateOriginalArpeggiatorVariationComponentForNodeV1(source(), request(), history, input);
+  function independentAggregate() {
+    const hash = (v: unknown) =>
+      createHash("sha256").update(JSON.stringify(v), "utf8").digest("hex");
+    const partial = {
+      schema: "nightdrive.stage7-arpeggiator-aggregate.v1",
+      engineVersion: "nightdrive.engine.stage7-aggregate.v1",
+      generatorVersion: "nightdrive.generator.stage7-arpeggiator.v1",
+      section: LITERAL_SECTION,
+      components: {
+        harmony: LITERAL_COMPONENTS.harmony,
+        arpeggiator: LITERAL_COMPONENTS.arpeggiator,
+      },
+      provenance: {
+        profile: { id: "dark-synthwave", version: "nightdrive.genre-profile.arpeggiator.v2" },
+        policy: { version: "nightdrive.arpeggiator-policy.v2" },
+        seedDerivation: { version: "nightdrive.seed-derivation.component.v1" },
+        prng: { version: "nightdrive.prng.mulberry32.v1" },
+        rootSeed: 0,
+        normalizedInputs: {
+          intent: { energy: "medium", complexity: "medium" },
+          range: { minMidiPitch: 36, maxMidiPitch: 84 },
+        },
+        parent: null,
+      },
+      componentHashes: {
+        harmony: hash({
+          schema: "nightdrive.stage7-harmony-component.v1",
+          section: LITERAL_SECTION,
+          harmony: LITERAL_COMPONENTS.harmony,
+        }),
+        arpeggiator: hash({
+          schema: "nightdrive.stage7-arpeggiator-component.v1",
+          section: LITERAL_SECTION,
+          events: LITERAL_COMPONENTS.arpeggiator,
+        }),
+      },
+      warnings: [],
+    };
+    return { ...partial, resultHash: hash(partial) };
+  }
+  it("matches accepted independent same-seed literal events, canonical UTF8 and standard SHA hashes", async () => {
+    const actual = await generate();
+    const expected = JSON.stringify(independentAggregate());
+    const canonical = serializeStage7ArpeggiatorAggregateV1(actual);
+    expect(canonical).toBe(expected);
+    expect(Buffer.from(canonical)).toEqual(Buffer.from(expected));
+    expect(actual.componentHashes).toEqual(independentAggregate().componentHashes);
+    expect(actual.resultHash).toBe(independentAggregate().resultHash);
+    frozen(actual);
+  });
+  it.each([17, 4294967295])(
+    "forwards only explicit seed %s and exact original source configuration",
+    async (seed) => {
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      const harmony = vi.spyOn(harmonyDomain, "realizeHarmonyProgression");
+      const bass = vi.spyOn(bassDomain, "generateBassEvents");
+      const motif = vi.spyOn(motifGenerator, "generateMotifV1");
+      const arp = vi.spyOn(arpDomain, "generateArpEventsWithPolicyV2");
+      const history = pitchHistory();
+      const before = structuredClone(history);
+      const result = await generate(proposal(seed), history);
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(target).toHaveBeenCalledTimes(1);
+      expect(harmony).toHaveBeenCalledTimes(1);
+      expect(bass).toHaveBeenCalledTimes(1);
+      expect(motif).toHaveBeenCalledTimes(1);
+      expect(arp).toHaveBeenCalledTimes(2);
+      expect(arp.mock.calls.map(([r]) => r.rootSeed)).toEqual([0, seed]);
+      expect(target.mock.calls[0]?.[0]).toEqual({
+        schema: "nightdrive.stage7-arpeggiator-aggregate.v1",
+        engineVersion: "nightdrive.engine.stage7-aggregate.v1",
+        generatorVersion: "nightdrive.generator.stage7-arpeggiator.v1",
+        parent: null,
+        tempo: { microsecondsPerQuarter: 500000 },
+        progression: source().components.harmony,
+        range: { minMidiPitch: 36, maxMidiPitch: 84 },
+        intent: { energy: "medium", complexity: "medium" },
+        profile: { id: "dark-synthwave", version: "nightdrive.genre-profile.arpeggiator.v2" },
+        policy: { version: "nightdrive.arpeggiator-policy.v2" },
+        seedDerivation: { version: "nightdrive.seed-derivation.component.v1" },
+        prng: { version: "nightdrive.prng.mulberry32.v1" },
+        rootSeed: seed,
+      });
+      expect(result.provenance.rootSeed).toBe(seed);
+      expect(result.components.harmony).toEqual(source().components.harmony);
+      expect(history).toEqual(before);
+      expect(selectedEditorRevisionV1(history).tracks[3]?.notes[0]?.pitch).toBe(74);
+      frozen(result);
+    },
+  );
+  it("freshly admits every direct canonical and Node invocation; deterministic output is detached", async () => {
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    const a = await generate(proposal(17));
+    const b = await compositionState.generateOriginalArpeggiatorVariationComponentV1(
+      source(),
+      request(),
+      pitchHistory(),
+      proposal(17),
+    );
+    expect(serializeStage7ArpeggiatorAggregateV1(a)).toBe(serializeStage7ArpeggiatorAggregateV1(b));
+    expect(a).not.toBe(b);
+    expect(replay).toHaveBeenCalledTimes(2);
+    expect(target).toHaveBeenCalledTimes(2);
+  });
+  it("finishes source/history/request validation before any target dispatch", async () => {
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    await expect(generate(proposal(), forgedChild(pitchHistory()))).rejects.toMatchObject({
+      code: "INVALID_EDITOR_LINEAGE",
+    });
+    await expect(
+      generate({
+        ...proposal(),
+        parent: { schema: "nightdrive.variation-state.v1", stateHash: "0".repeat(64) },
+        rootSeed: -1,
+      }),
+    ).rejects.toMatchObject({ code: "STALE_VARIATION_PARENT" });
+    await expect(generate({ ...proposal(), rootSeed: -1 })).rejects.toMatchObject({
+      code: "INVALID_VARIATION_SEED",
+    });
+    expect(target).not.toHaveBeenCalled();
+  });
+  it("snapshots the proposal/history before awaiting admission", async () => {
+    const original = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementation(async (r) => {
+      await gate;
+      return original(r);
+    });
+    const input = proposal(17);
+    const history = pitchHistory();
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    const pending = generate(input, history);
+    input.rootSeed = 999;
+    Reflect.set(history, "cursor", 0);
+    release?.();
+    const result = await pending;
+    expect(result.provenance.rootSeed).toBe(17);
+    expect(target.mock.calls[0]?.[0].rootSeed).toBe(17);
+  });
+  it.each(["replay", "target"])(
+    "propagates %s failure unchanged with no returned aggregate",
+    async (which) => {
+      const failure = new Error("delegated test failure");
+      const install = vi.fn();
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      if (which === "replay")
+        vi.spyOn(generator, "generateCompleteSectionV1").mockRejectedValue(failure);
+      else target.mockRejectedValue(failure);
+      const history = pitchHistory();
+      const before = structuredClone(history);
+      const pending = generate(proposal(), history);
+      void pending.then(install, () => undefined);
+      await expect(pending).rejects.toBe(failure);
+      expect(install).not.toHaveBeenCalled();
+      expect(history).toEqual(before);
+      expect(target).toHaveBeenCalledTimes(which === "replay" ? 0 : 1);
+    },
+  );
+  it.each(["digest", "seed", "tempo"])(
+    "rejects forged delegated %s output instead of repairing or returning it",
+    async (kind) => {
+      const original = aggregateGenerator.generateStage7ArpeggiatorAggregateV1;
+      vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1").mockImplementation(
+        async (r) => {
+          if (kind === "seed") return original({ ...r, rootSeed: r.rootSeed + 1 });
+          if (kind === "tempo")
+            return original({ ...r, tempo: { microsecondsPerQuarter: 600000 } as typeof r.tempo });
+          return { ...(await original(r)), resultHash: "0".repeat(64) };
+        },
+      );
+      await expect(generate()).rejects.toMatchObject({
+        code:
+          kind === "digest"
+            ? "AGGREGATE_HASH_MISMATCH"
+            : kind === "tempo"
+              ? "VARIATION_LOCK_MISMATCH"
+              : "VARIATION_HASH_MISMATCH",
+      });
+    },
+  );
+  it("rejects descriptors without observing hooks or generation", async () => {
+    const hook = vi.fn();
+    const input = Object.defineProperty(proposal(), "rootSeed", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    await expect(generate(input)).rejects.toMatchObject({ code: "INVALID_VARIATION_INPUT" });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+    expect(target).not.toHaveBeenCalled();
+  });
+  it("enforces exact runtime before observing inputs on both exported paths", async () => {
+    Object.defineProperty(process.versions, "node", { value: "24.20.0", configurable: true });
+    const hook = vi.fn();
+    const bad = Object.defineProperty({}, "source", { get: hook });
+    for (const op of [compositionState.generateOriginalArpeggiatorVariationComponentV1])
+      await expect(op(bad, bad, bad, bad)).rejects.toThrow("requires Node 24.21.0");
+    expect(hook).not.toHaveBeenCalled();
   });
 });
