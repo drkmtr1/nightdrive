@@ -1,0 +1,46 @@
+import {
+  generateOriginalArpeggiatorVariationComponentV1,
+  projectOriginalVariationStateV1,
+  verifyOriginalArpeggiatorVariationRequestV1,
+} from "../composition/variation-original-state";
+
+/** Original alternative only. Each entry delegates once to full canonical proof. */
+export async function projectOriginalVariationStateForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+) {
+  return projectOriginalVariationStateV1(source, sourceRequest, history);
+}
+
+/** No supplied state or claimed admission flag is accepted as serialization
+ * authority: repeat the full entry proof and serialize only its fresh result. */
+export async function serializeOriginalVariationStateForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+): Promise<string> {
+  return JSON.stringify(
+    await projectOriginalVariationStateForNodeV1(source, sourceRequest, history),
+  );
+}
+
+/** Request preflight only; no target generation or retained alternative creation. */
+export async function verifyOriginalArpeggiatorVariationRequestForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
+  return verifyOriginalArpeggiatorVariationRequestV1(source, sourceRequest, history, request);
+}
+
+/** Existing aggregate only; full fresh canonical proof precedes target generation. */
+export async function generateOriginalArpeggiatorVariationComponentForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
+  return generateOriginalArpeggiatorVariationComponentV1(source, sourceRequest, history, request);
+}
