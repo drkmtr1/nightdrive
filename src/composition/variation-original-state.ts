@@ -1,6 +1,8 @@
+import process from "node:process";
 import { digestStage7CanonicalUtf8 } from "../generators/adapters/stage7-digest";
 import type { EditorRevisionV1 } from "./editor-revision";
 import { verifyVariationEditorHistoryForNodeV1 } from "./variation-editor-history";
+import { snapshotVariationInputV1 } from "./variation-source-admission";
 
 export const VARIATION_STATE_SCHEMA_V1 = "nightdrive.variation-state.v1" as const;
 export type OriginalVariationStateV1 = Readonly<{
@@ -105,5 +107,91 @@ function originalVariationStateValuesV1(revision: EditorRevisionV1): OriginalVar
     trackHashes,
     musicHash,
     stateHash,
+  });
+}
+
+export const ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1 =
+  "nightdrive.arpeggiator-variation-request.v1" as const;
+export type OriginalArpeggiatorVariationRequestV1 = Readonly<{
+  schema: typeof ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1;
+  parent: Readonly<{ schema: typeof VARIATION_STATE_SCHEMA_V1; stateHash: string }>;
+  rootSeed: number;
+}>;
+export class VariationRequestValueError extends RangeError {
+  constructor(
+    readonly code:
+      | "INVALID_VARIATION_INPUT"
+      | "UNSUPPORTED_VARIATION_SCHEMA"
+      | "INVALID_VARIATION_PARENT"
+      | "STALE_VARIATION_PARENT"
+      | "INVALID_VARIATION_SEED",
+    readonly field: string,
+  ) {
+    super(`Variation request is invalid at ${field}.`);
+    this.name = "VariationRequestValueError";
+  }
+}
+
+/** Original parent only; returned request data confers no reusable admission.
+ * No target generation, attempt or alternative is created by this preflight. */
+export async function verifyOriginalArpeggiatorVariationRequestV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+): Promise<OriginalArpeggiatorVariationRequestV1> {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation request verification requires Node 24.21.0.");
+  // Every consumed input is descriptor-safely detached before the first await.
+  const original = snapshotVariationInputV1(source, "source");
+  const originalRequest = snapshotVariationInputV1(sourceRequest, "sourceRequest");
+  const retained = snapshotVariationInputV1(history, "history");
+  const proposal = snapshotVariationInputV1(request, "request");
+  const verified = await verifyVariationEditorHistoryForNodeV1(original, originalRequest, retained);
+  const selected = verified.history.revisions[verified.history.cursor];
+  if (!selected) throw new Error("Verified editor selection is missing.");
+  const state = originalVariationStateValuesV1(selected);
+  const fail = (code: VariationRequestValueError["code"], field: string): never => {
+    throw new VariationRequestValueError(code, field);
+  };
+  if (
+    typeof proposal !== "object" ||
+    proposal === null ||
+    Array.isArray(proposal) ||
+    JSON.stringify(Object.keys(proposal)) !== '["schema","parent","rootSeed"]'
+  )
+    return fail("INVALID_VARIATION_INPUT", "request");
+  const record = proposal as Record<string, unknown>;
+  if (record.schema !== ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1)
+    return fail("UNSUPPORTED_VARIATION_SCHEMA", "request.schema");
+  const parent = record.parent;
+  if (
+    typeof parent !== "object" ||
+    parent === null ||
+    Array.isArray(parent) ||
+    JSON.stringify(Object.keys(parent)) !== '["schema","stateHash"]'
+  )
+    return fail("INVALID_VARIATION_PARENT", "request.parent");
+  const identity = parent as Record<string, unknown>;
+  if (
+    identity.schema !== VARIATION_STATE_SCHEMA_V1 ||
+    typeof identity.stateHash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(identity.stateHash)
+  )
+    return fail("INVALID_VARIATION_PARENT", "request.parent");
+  if (identity.stateHash !== state.stateHash)
+    return fail("STALE_VARIATION_PARENT", "request.parent");
+  const rootSeed = record.rootSeed;
+  if (
+    typeof rootSeed !== "number" ||
+    !Number.isSafeInteger(rootSeed) ||
+    rootSeed < 0 ||
+    rootSeed > 4294967295
+  )
+    return fail("INVALID_VARIATION_SEED", "request.rootSeed");
+  return Object.freeze({
+    schema: ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1,
+    parent: Object.freeze({ schema: VARIATION_STATE_SCHEMA_V1, stateHash: state.stateHash }),
+    rootSeed: rootSeed === 0 ? 0 : rootSeed,
   });
 }

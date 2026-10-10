@@ -18,9 +18,11 @@ import {
   undoEditorHistoryV1,
 } from "../editor/editor-history";
 import * as generator from "../generators/complete-section";
+import * as aggregateGenerator from "../generators/stage7-arpeggiator-aggregate";
 import {
   projectOriginalVariationStateForNodeV1,
   serializeOriginalVariationStateForNodeV1,
+  verifyOriginalArpeggiatorVariationRequestForNodeV1,
 } from "./variation-original-state-node";
 
 function request(): CompleteSectionRequestV1 {
@@ -693,8 +695,11 @@ describe("original alternative combined canonical state", () => {
   });
   it("does not export a raw revision constructor and proves direct canonical projection", async () => {
     expect(Object.keys(compositionState).sort()).toEqual([
+      "ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1",
       "VARIATION_STATE_SCHEMA_V1",
+      "VariationRequestValueError",
       "projectOriginalVariationStateV1",
+      "verifyOriginalArpeggiatorVariationRequestV1",
     ]);
     const replay = vi.spyOn(generator, "generateCompleteSectionV1");
     const actual = await compositionState.projectOriginalVariationStateV1(
@@ -737,5 +742,194 @@ describe("original alternative combined canonical state", () => {
     ])
       await expect(op(bad, bad, bad)).rejects.toThrow("requires Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
+  });
+});
+
+describe("original-parent variation request preflight", () => {
+  const literalParent = () => ({
+    schema: "nightdrive.variation-state.v1",
+    stateHash: independentState(literalPitchChild()).state.stateHash,
+  });
+  const proposal = (seed: unknown = 17) => ({
+    schema: "nightdrive.arpeggiator-variation-request.v1",
+    parent: literalParent(),
+    rootSeed: seed,
+  });
+  const verify = (request: unknown, history: unknown = pitchHistory()) =>
+    verifyOriginalArpeggiatorVariationRequestForNodeV1(
+      source(),
+      requestOriginal(),
+      history,
+      request,
+    );
+  // Keep original generation request explicit and independent of variation seed.
+  const requestOriginal = request;
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each([0, 17, 4294967295, -0])(
+    "accepts explicit uint32 %s with one fresh admission per entry",
+    async (seed) => {
+      const input = proposal(seed);
+      const before = structuredClone(input);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      const result = await verify(input);
+      expect(JSON.stringify(result)).toBe(
+        JSON.stringify({ ...before, rootSeed: seed === 0 ? 0 : seed }),
+      );
+      expect(Object.is(result.rootSeed, -0)).toBe(false);
+      expect(result).not.toBe(input);
+      expect(result.parent).not.toBe(input.parent);
+      frozen(result);
+      expect(input).toEqual(before);
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(target).not.toHaveBeenCalled();
+      await compositionState.verifyOriginalArpeggiatorVariationRequestV1(
+        source(),
+        requestOriginal(),
+        pitchHistory(),
+        input,
+      );
+      expect(replay).toHaveBeenCalledTimes(2);
+      expect(target).not.toHaveBeenCalled();
+    },
+  );
+  it.each([-1, 4294967296, 0.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity, -Infinity, "17", null])(
+    "rejects invalid explicit seed %s without target generation or input changes",
+    async (seed) => {
+      const history = pitchHistory();
+      const before = structuredClone(history);
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      await expect(verify(proposal(seed), history)).rejects.toMatchObject({
+        code: "INVALID_VARIATION_SEED",
+        field: "request.rootSeed",
+      });
+      expect(history).toEqual(before);
+      expect(target).not.toHaveBeenCalled();
+    },
+  );
+  it.each([
+    { value: null, code: "INVALID_VARIATION_INPUT", field: "request" },
+    {
+      value: { schema: "nightdrive.arpeggiator-variation-request.v1", parent: literalParent() },
+      code: "INVALID_VARIATION_INPUT",
+      field: "request",
+    },
+    {
+      value: {
+        parent: literalParent(),
+        schema: "nightdrive.arpeggiator-variation-request.v1",
+        rootSeed: 17,
+      },
+      code: "INVALID_VARIATION_INPUT",
+      field: "request",
+    },
+    { value: { ...proposal(), extra: 1 }, code: "INVALID_VARIATION_INPUT", field: "request" },
+    {
+      value: { ...proposal(), schema: "unsupported" },
+      code: "UNSUPPORTED_VARIATION_SCHEMA",
+      field: "request.schema",
+    },
+    {
+      value: { ...proposal(), parent: null },
+      code: "INVALID_VARIATION_PARENT",
+      field: "request.parent",
+    },
+    {
+      value: {
+        ...proposal(),
+        parent: { stateHash: literalParent().stateHash, schema: "nightdrive.variation-state.v1" },
+      },
+      code: "INVALID_VARIATION_PARENT",
+      field: "request.parent",
+    },
+    {
+      value: { ...proposal(), parent: { ...literalParent(), stateHash: "BAD" } },
+      code: "INVALID_VARIATION_PARENT",
+      field: "request.parent",
+    },
+  ])("rejects exact envelope $code at $field", async ({ value, code, field }) => {
+    await expect(verify(value)).rejects.toMatchObject({ code, field });
+  });
+  it("rejects an explicit undefined seed without inventing a default", async () => {
+    await expect(verify({ ...proposal(), rootSeed: undefined })).rejects.toMatchObject({
+      code: "INVALID_VARIATION_SEED",
+      field: "request.rootSeed",
+    });
+  });
+  it("rejects stale parent before invalid seed, and editor lineage before parent semantics", async () => {
+    const stale = { ...proposal(-1), parent: { ...literalParent(), stateHash: "0".repeat(64) } };
+    await expect(verify(stale)).rejects.toMatchObject({ code: "STALE_VARIATION_PARENT" });
+    await expect(verify(stale, forgedChild(pitchHistory()))).rejects.toMatchObject({
+      code: "INVALID_EDITOR_LINEAGE",
+    });
+  });
+  it("source replay mismatch precedes request/seed semantics", async () => {
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const mismatch = requestOriginal();
+    Reflect.set(mismatch.composition, "rootSeed", 1);
+    await expect(
+      verifyOriginalArpeggiatorVariationRequestForNodeV1(
+        source(),
+        mismatch,
+        pitchHistory(),
+        proposal(-1),
+      ),
+    ).rejects.toMatchObject({ code: "SOURCE_ADMISSION_MISMATCH" });
+    expect(replay).toHaveBeenCalledTimes(1);
+  });
+  it.each(["getter", "toJSON", "function", "symbol"])(
+    "rejects %s without hooks or replay",
+    async (kind) => {
+      const input = proposal() as Record<string | symbol, unknown>;
+      const hook = vi.fn();
+      if (kind === "getter")
+        Object.defineProperty(input, "rootSeed", { get: hook, enumerable: true });
+      if (kind === "toJSON") input.toJSON = hook;
+      if (kind === "function") input.extra = hook;
+      if (kind === "symbol") input[Symbol("bad")] = 1;
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      await expect(verify(input)).rejects.toMatchObject({ code: "INVALID_VARIATION_INPUT" });
+      expect(hook).not.toHaveBeenCalled();
+      expect(replay).not.toHaveBeenCalled();
+    },
+  );
+  it("snapshots proposal before asynchronous replay and fails closed on delegated rejection", async () => {
+    const input = proposal();
+    const real = generator.generateCompleteSectionV1;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const replay = vi
+      .spyOn(generator, "generateCompleteSectionV1")
+      .mockImplementation(async (value) => {
+        await gate;
+        return real(value);
+      });
+    const pending = verify(input);
+    input.rootSeed = 23;
+    input.parent.stateHash = "0".repeat(64);
+    release();
+    expect((await pending).rootSeed).toBe(17);
+    const failure = new Error("synthetic replay failure");
+    replay.mockRejectedValueOnce(failure);
+    const installed = vi.fn();
+    const rejected = verify(proposal());
+    void rejected.then(installed, () => undefined);
+    await expect(rejected).rejects.toBe(failure);
+    expect(installed).not.toHaveBeenCalled();
+  });
+  it("guards Node before all input descriptors on canonical and Node paths", async () => {
+    Object.defineProperty(process.versions, "node", { value: "24.20.0", configurable: true });
+    const hook = vi.fn();
+    const bad = Object.defineProperty({}, "schema", { get: hook });
+    for (const operation of [
+      compositionState.verifyOriginalArpeggiatorVariationRequestV1,
+      verifyOriginalArpeggiatorVariationRequestForNodeV1,
+    ])
+      await expect(operation(bad, bad, bad, bad)).rejects.toThrow("requires Node 24.21.0");
+    expect(hook).not.toHaveBeenCalled();
+    Object.defineProperty(process.versions, "node", { value: "24.21.0", configurable: true });
   });
 });

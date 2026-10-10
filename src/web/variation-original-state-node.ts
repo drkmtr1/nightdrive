@@ -1,4 +1,7 @@
-import { projectOriginalVariationStateV1 } from "../composition/variation-original-state";
+import {
+  projectOriginalVariationStateV1,
+  verifyOriginalArpeggiatorVariationRequestV1,
+} from "../composition/variation-original-state";
 
 /** Original alternative only. Each entry delegates once to full canonical proof. */
 export async function projectOriginalVariationStateForNodeV1(
@@ -19,4 +22,14 @@ export async function serializeOriginalVariationStateForNodeV1(
   return JSON.stringify(
     await projectOriginalVariationStateForNodeV1(source, sourceRequest, history),
   );
+}
+
+/** Request preflight only; no target generation or retained alternative creation. */
+export async function verifyOriginalArpeggiatorVariationRequestForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
+  return verifyOriginalArpeggiatorVariationRequestV1(source, sourceRequest, history, request);
 }
