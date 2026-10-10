@@ -24,7 +24,12 @@ export class VariationSourceAdmissionError extends RangeError {
 
 // Local boundary copy, not a canonical serializer or reusable admission token.
 // Inspect descriptors before observing data; freeze only the detached copy.
-function snapshot(value: unknown, path: string, ancestors = new Set<object>()): unknown {
+/** @internal Data copy only: no canonical verification or admission authority. */
+export function snapshotVariationInputV1(
+  value: unknown,
+  path: string,
+  ancestors = new Set<object>(),
+): unknown {
   if (
     value === undefined ||
     value === null ||
@@ -59,7 +64,7 @@ function snapshot(value: unknown, path: string, ancestors = new Set<object>()): 
     if (!descriptor || !("value" in descriptor) || !descriptor.enumerable || name === "toJSON")
       return fail();
     Object.defineProperty(result, name, {
-      value: snapshot(descriptor.value, `${path}.${name}`, ancestors),
+      value: snapshotVariationInputV1(descriptor.value, `${path}.${name}`, ancestors),
       enumerable: true,
     });
   }
@@ -119,8 +124,8 @@ export async function verifyVariationSourceAdmissionV1(
     throw new Error("Variation source admission requires Node 24.21.0.");
   }
   // Snapshot all consumed input before source/request semantic validation or await.
-  const supplied = snapshot(source, "source");
-  const request = snapshot(sourceRequest, "sourceRequest");
+  const supplied = snapshotVariationInputV1(source, "source");
+  const request = snapshotVariationInputV1(sourceRequest, "sourceRequest");
   const verified = verifyCompleteSectionV1(supplied);
   requireRequest(request);
   if (typeof generateCompleteSectionV1 !== "function") {

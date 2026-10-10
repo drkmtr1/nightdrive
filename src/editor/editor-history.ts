@@ -43,6 +43,11 @@ function verifyHistory(history: EditorHistoryV1): EditorHistoryV1 {
   );
   return freeze({ source, revisions: freeze(revisions), cursor: history.cursor });
 }
+/** Existing editor authority: verifies retained source and every transition,
+ * including redo revisions. M3 source replay admission is a separate boundary. */
+export function verifyEditorHistoryV1(history: EditorHistoryV1): EditorHistoryV1 {
+  return verifyHistory(history);
+}
 export function createEditorHistoryV1(source: CompleteSectionResultV1): EditorHistoryV1 {
   const verified = verifyCompleteSectionV1(source);
   return freeze({
