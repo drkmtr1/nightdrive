@@ -8,6 +8,7 @@ import {
   verifyCompleteSectionV1,
 } from "../composition/complete-section";
 import type { EditorNoteCommand, EditorRevisionV1 } from "../composition/editor-revision";
+import * as compositionState from "../composition/variation-original-state";
 import {
   applyEditorCommandV1,
   createEditorHistoryV1,
@@ -690,11 +691,47 @@ describe("original alternative combined canonical state", () => {
     expect(installed).not.toHaveBeenCalled();
     await expect(serialize(rootHistory())).rejects.toBe(failure);
   });
-  it("guards exact Node before descriptors for both exported authoritative operations", async () => {
+  it("does not export a raw revision constructor and proves direct canonical projection", async () => {
+    expect(Object.keys(compositionState).sort()).toEqual([
+      "VARIATION_STATE_SCHEMA_V1",
+      "projectOriginalVariationStateV1",
+    ]);
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const actual = await compositionState.projectOriginalVariationStateV1(
+      source(),
+      request(),
+      pitchHistory(),
+    );
+    expect(actual).toEqual(independentState(literalPitchChild()).state);
+    expect(replay).toHaveBeenCalledTimes(1);
+    frozen(actual);
+  });
+  it("direct canonical construction rejects forged ancestry, standalone revisions and descriptor hooks", async () => {
+    await expect(
+      compositionState.projectOriginalVariationStateV1(
+        source(),
+        request(),
+        forgedChild(pitchHistory()),
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_EDITOR_LINEAGE" });
+    await expect(
+      compositionState.projectOriginalVariationStateV1(source(), request(), literalPitchChild()),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_LINEAGE", field: "history" });
+    const hook = vi.fn();
+    const bad = Object.defineProperty({}, "cursor", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(
+      compositionState.projectOriginalVariationStateV1(source(), request(), bad),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_INPUT" });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+  });
+  it("guards exact Node before descriptors for every exported authoritative operation", async () => {
     Object.defineProperty(process.versions, "node", { value: "24.20.0", configurable: true });
     const hook = vi.fn();
     const bad = Object.defineProperty({}, "source", { get: hook });
     for (const op of [
+      compositionState.projectOriginalVariationStateV1,
       projectOriginalVariationStateForNodeV1,
       serializeOriginalVariationStateForNodeV1,
     ])

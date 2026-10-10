@@ -1,17 +1,12 @@
-import { originalVariationStateValuesV1 } from "../composition/variation-original-state";
-import { verifyVariationEditorHistoryForNodeV1 } from "./variation-editor-history-node";
+import { projectOriginalVariationStateV1 } from "../composition/variation-original-state";
 
-/** Original alternative only. Each call freshly admits source and proves all
- * history, including redo. Returned state data never grants reusable authority. */
+/** Original alternative only. Each entry delegates once to full canonical proof. */
 export async function projectOriginalVariationStateForNodeV1(
   source: unknown,
   sourceRequest: unknown,
   history: unknown,
 ) {
-  const verified = await verifyVariationEditorHistoryForNodeV1(source, sourceRequest, history);
-  const selected = verified.history.revisions[verified.history.cursor];
-  if (!selected) throw new Error("Verified editor selection is missing.");
-  return originalVariationStateValuesV1(selected);
+  return projectOriginalVariationStateV1(source, sourceRequest, history);
 }
 
 /** No supplied state or claimed admission flag is accepted as serialization

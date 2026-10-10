@@ -1,5 +1,6 @@
 import { digestStage7CanonicalUtf8 } from "../generators/adapters/stage7-digest";
 import type { EditorRevisionV1 } from "./editor-revision";
+import { verifyVariationEditorHistoryForNodeV1 } from "./variation-editor-history";
 
 export const VARIATION_STATE_SCHEMA_V1 = "nightdrive.variation-state.v1" as const;
 export type OriginalVariationStateV1 = Readonly<{
@@ -15,13 +16,20 @@ export type OriginalVariationStateV1 = Readonly<{
 }>;
 const digest = (value: unknown): string => digestStage7CanonicalUtf8(JSON.stringify(value));
 
-/** @internal Pure value layout/hash construction, NOT canonical verification.
- * Only the Node boundary may publish this as an authoritative state after
- * replay admission and complete retained-history verification in that invocation.
- * There is intentionally no exported shape/hash-only state verifier/serializer. */
-export function originalVariationStateValuesV1(
-  revision: EditorRevisionV1,
-): OriginalVariationStateV1 {
+/** Every public construction requires complete retained inputs and fresh replay.
+ * The raw-revision builder is module-private and cannot confer public authority. */
+export async function projectOriginalVariationStateV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+): Promise<OriginalVariationStateV1> {
+  const verified = await verifyVariationEditorHistoryForNodeV1(source, sourceRequest, history);
+  const selected = verified.history.revisions[verified.history.cursor];
+  if (!selected) throw new Error("Verified editor selection is missing.");
+  return originalVariationStateValuesV1(selected);
+}
+
+function originalVariationStateValuesV1(revision: EditorRevisionV1): OriginalVariationStateV1 {
   const source = Object.freeze({
     schema: revision.source.schema,
     resultHash: revision.source.resultHash,
