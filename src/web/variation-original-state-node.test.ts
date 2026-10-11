@@ -10,6 +10,7 @@ import {
 } from "../composition/complete-section";
 import type { EditorNoteCommand, EditorRevisionV1 } from "../composition/editor-revision";
 import { serializeStage7ArpeggiatorAggregateV1 } from "../composition/stage7-arpeggiator-aggregate";
+import * as attemptComposition from "../composition/variation-attempt";
 import * as compositionState from "../composition/variation-original-state";
 import {
   applyEditorCommandV1,
@@ -26,6 +27,10 @@ import * as aggregateGenerator from "../generators/stage7-arpeggiator-aggregate"
 import * as arpDomain from "../music-domain/arpeggiator-policy-generator";
 import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
+import {
+  serializeVariationAttemptForNodeV1,
+  verifyVariationAttemptForNodeV1,
+} from "./variation-attempt-node";
 import {
   generateOriginalArpeggiatorVariationComponentForNodeV1,
   generateOriginalArpeggiatorVariationRootForNodeV1,
@@ -1869,6 +1874,239 @@ describe("original-parent canonical variation root and creation proof", () => {
     await expect(
       serializeOriginalArpeggiatorVariationRootForNodeV1(null, null, null, null, null, null),
     ).rejects.toThrow("24.21.0");
+    expect(replay).not.toHaveBeenCalled();
+  });
+  // Literal attempt bytes/digest calculated separately from production, binding
+  // the independently fixed multi-edit root above. No production output oracle.
+  const ATTEMPT_JSON =
+    '{"schema":"nightdrive.variation-attempt.v1","sequence":1,"variation":{"schema":"nightdrive.arpeggiator-variation.v1","variationHash":"9836e2b631fc79f4ef9fcbfcb198e999296e2dbe9cebd30711cd5ab4eaf86a9d"},"actor":"local-producer-unverified","createdAt":"2026-10-11T20:00:00.000Z","attemptHash":"1d8c5f748ce6620a32a1739104c24c61e8ab9982fe13c1cec7113469ac2630ed"}';
+  const attemptFixture = (sequence = 1) => {
+    const values = {
+      sequence,
+      variation: {
+        schema: "nightdrive.arpeggiator-variation.v1",
+        variationHash: "9836e2b631fc79f4ef9fcbfcb198e999296e2dbe9cebd30711cd5ab4eaf86a9d",
+      },
+      actor: "local-producer-unverified",
+      createdAt: "2026-10-11T20:00:00.000Z",
+    };
+    return {
+      schema: "nightdrive.variation-attempt.v1",
+      ...values,
+      attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+    };
+  };
+  const verifyAttempt = (
+    attempt: unknown = attemptFixture(),
+    roots: unknown = [pairOnly(expectedRoot(literalMultiEditHistory()))],
+  ) => verifyVariationAttemptForNodeV1(source(), request(), roots, attempt);
+  it("verifies and serializes exact independent attempt JSON/UTF8/hash through Node with one fresh source replay per invocation", async () => {
+    const supplied = attemptFixture();
+    expect(JSON.stringify(supplied)).toBe(ATTEMPT_JSON);
+    const owners = [pairOnly(expectedRoot(literalMultiEditHistory()))];
+    const saved = JSON.stringify({ supplied, owners });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const delegate = vi.spyOn(attemptComposition, "verifyVariationAttemptV1");
+    const result = await verifyAttempt(supplied, owners);
+    expect(delegate).toHaveBeenCalledTimes(1);
+    expect(delegate).toHaveBeenCalledWith(source(), request(), owners, supplied);
+    expect(replay).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(JSON.parse(ATTEMPT_JSON));
+    expect(result).not.toBe(supplied);
+    expect(result.variation).not.toBe(supplied.variation);
+    frozen(result);
+    const serialize = vi.spyOn(attemptComposition, "serializeVariationAttemptV1");
+    const text = await serializeVariationAttemptForNodeV1(source(), request(), owners, supplied);
+    expect(serialize).toHaveBeenCalledTimes(1);
+    expect(text).toBe(ATTEMPT_JSON);
+    expect(Buffer.from(text, "utf8")).toEqual(Buffer.from(ATTEMPT_JSON, "utf8"));
+    expect(replay).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify({ supplied, owners })).toBe(saved);
+  });
+  it.each(["missing", "extra", "reordered", "identity-order"])(
+    "rejects noncanonical attempt envelope %s without repairing it",
+    async (kind) => {
+      const proposal: Record<string, unknown> = attemptFixture();
+      if (kind === "missing") delete proposal.actor;
+      if (kind === "extra") proposal.extra = "ignored fields are forbidden";
+      const supplied =
+        kind === "reordered"
+          ? {
+              sequence: proposal.sequence,
+              schema: proposal.schema,
+              variation: proposal.variation,
+              actor: proposal.actor,
+              createdAt: proposal.createdAt,
+              attemptHash: proposal.attemptHash,
+            }
+          : proposal;
+      if (kind === "identity-order")
+        supplied.variation = {
+          variationHash: attemptFixture().variation.variationHash,
+          schema: "nightdrive.arpeggiator-variation.v1",
+        };
+      const saved = JSON.stringify(supplied);
+      await expect(verifyAttempt(supplied)).rejects.toMatchObject({
+        code: kind === "identity-order" ? "INVALID_VARIATION_LINEAGE" : "INVALID_VARIATION_INPUT",
+        field: kind === "identity-order" ? "attempt.variation" : "attempt",
+      });
+      expect(JSON.stringify(supplied)).toBe(saved);
+    },
+  );
+  it("binds a descendant attempt only after its complete recursive owner closure and exports no hash-only constructor", async () => {
+    expect(Object.keys(attemptComposition).sort()).toEqual(
+      [
+        "VARIATION_ATTEMPT_SCHEMA_V1",
+        "VariationAttemptValueError",
+        "serializeVariationAttemptV1",
+        "verifyVariationAttemptV1",
+      ].sort(),
+    );
+    const owners = closure();
+    const descendant = present(owners.at(-1));
+    const values = {
+      sequence: 3,
+      variation: {
+        schema: descendant.variation.schema,
+        variationHash: descendant.variation.variationHash,
+      },
+      actor: "local-producer-unverified",
+      createdAt: "2026-10-11T20:00:00.000Z",
+    };
+    const proposal = {
+      schema: "nightdrive.variation-attempt.v1",
+      ...values,
+      attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+    };
+    expect(await verifyAttempt(proposal, owners)).toEqual(proposal);
+    await expect(verifyAttempt(proposal, [descendant])).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+  });
+  it("keeps repeated-root sequence metadata distinct without changing root/music/note identities or restamping time", async () => {
+    const owners = [pairOnly(expectedRoot(literalMultiEditHistory()))];
+    const saved = JSON.stringify(owners);
+    const first = await verifyAttempt(attemptFixture(1), owners);
+    const second = await verifyAttempt(attemptFixture(2), owners);
+    expect(first.variation).toEqual(second.variation);
+    expect(first.createdAt).toBe(second.createdAt);
+    expect(first.attemptHash).not.toBe(second.attemptHash);
+    expect(await verifyAttempt(second, owners)).toEqual(second);
+    expect(JSON.stringify(owners)).toBe(saved);
+  });
+  it.each([
+    ["sequence", 0, "INVALID_VARIATION_COLLECTION"],
+    ["sequence", -1, "INVALID_VARIATION_COLLECTION"],
+    ["sequence", 1.5, "INVALID_VARIATION_COLLECTION"],
+    ["sequence", "1", "INVALID_VARIATION_COLLECTION"],
+    ["sequence", Number.MAX_SAFE_INTEGER + 1, "INVALID_VARIATION_COLLECTION"],
+    ["actor", "authenticated-producer", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-02-29T00:00:00.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-04-31T00:00:00.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T24:00:00.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T20:00:00Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T20:00:00.000+00:00", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T20:00:60.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["attemptHash", "0".repeat(64), "VARIATION_HASH_MISMATCH"],
+    ["attemptHash", "not-a-digest", "VARIATION_HASH_MISMATCH"],
+  ])("rejects invalid attempt %s=%s without mutation", async (field, value, code) => {
+    const proposal = attemptFixture();
+    Reflect.set(proposal, field, value);
+    const saved = JSON.stringify(proposal);
+    await expect(verifyAttempt(proposal)).rejects.toMatchObject({
+      code,
+      field: `attempt.${field}`,
+    });
+    expect(JSON.stringify(proposal)).toBe(saved);
+  });
+  it("rejects unknown root identity and self-consistent metadata backed by forged or missing proof, including canonical serialization", async () => {
+    const proposal = attemptFixture();
+    proposal.variation.variationHash = "0".repeat(64);
+    const { schema: _schema, attemptHash: _digest, ...input } = proposal;
+    proposal.attemptHash = hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...input });
+    await expect(verifyAttempt(proposal)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+      field: "attempt.variation",
+    });
+    const owners = [pairOnly(expectedRoot(literalMultiEditHistory()))];
+    owners[0].creationProof.parent.musicHash = "0".repeat(64);
+    const saved = JSON.stringify(owners);
+    await expect(verifyAttempt(attemptFixture(), owners)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+    await expect(
+      serializeVariationAttemptForNodeV1(source(), request(), owners, attemptFixture()),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_LINEAGE" });
+    await expect(
+      serializeVariationAttemptForNodeV1(source(), request(), [], attemptFixture()),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_LINEAGE" });
+    expect(JSON.stringify(owners)).toBe(saved);
+  });
+  it("rejects descriptors before replay, schema before source, source before metadata, and ordered attempt fields before digest", async () => {
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty(attemptFixture(), "actor", { get: hook });
+    await expect(verifyAttempt(unsafe)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_INPUT",
+      field: "attempt",
+    });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+    await expect(
+      verifyVariationAttemptForNodeV1(null, null, null, {
+        ...attemptFixture(),
+        schema: "unsupported",
+      }),
+    ).rejects.toMatchObject({ code: "UNSUPPORTED_VARIATION_SCHEMA" });
+    expect(replay).not.toHaveBeenCalled();
+    const bad = {
+      ...attemptFixture(),
+      sequence: 0,
+      actor: "invalid",
+      createdAt: "invalid",
+      attemptHash: "invalid",
+    };
+    await expect(
+      verifyVariationAttemptForNodeV1(source(), undefined, [], bad),
+    ).rejects.toMatchObject({ code: "INVALID_SOURCE_ADMISSION_REQUEST" });
+    await expect(verifyAttempt(bad)).rejects.toMatchObject({ field: "attempt.sequence" });
+    bad.sequence = 1;
+    await expect(verifyAttempt(bad)).rejects.toMatchObject({ field: "attempt.actor" });
+    bad.actor = "local-producer-unverified";
+    await expect(verifyAttempt(bad)).rejects.toMatchObject({ field: "attempt.createdAt" });
+  });
+  it("accepts exact leap-day metadata and captures proposals before asynchronous replay without reading a clock", async () => {
+    const proposal = attemptFixture();
+    proposal.createdAt = "2024-02-29T23:59:59.999Z";
+    const { schema: _schema, attemptHash: _digest, ...input } = proposal;
+    proposal.attemptHash = hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...input });
+    const saved = structuredClone(proposal);
+    const replayed = await generator.generateCompleteSectionV1(request());
+    let release: (() => void) | undefined;
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve(replayed);
+        }),
+    );
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => {
+      throw new Error("Clock must not be read");
+    });
+    const pending = verifyAttempt(proposal);
+    proposal.actor = "changed";
+    present(release)();
+    expect(await pending).toEqual(saved);
+    expect(clock).not.toHaveBeenCalled();
+  });
+  it("guards both attempt Node operations before any source replay", async () => {
+    Object.defineProperty(process.versions, "node", { value: "24.20.0", configurable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(verifyVariationAttemptForNodeV1(null, null, null, null)).rejects.toThrow(
+      "24.21.0",
+    );
+    await expect(serializeVariationAttemptForNodeV1(null, null, null, null)).rejects.toThrow(
+      "24.21.0",
+    );
     expect(replay).not.toHaveBeenCalled();
   });
   const pairOnly = (expected: ReturnType<typeof expectedRoot>) => ({
