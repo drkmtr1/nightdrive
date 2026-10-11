@@ -1,6 +1,7 @@
 import {
   generateOriginalArpeggiatorVariationComponentV1,
   generateOriginalArpeggiatorVariationRootV1,
+  generateVariationParentArpeggiatorRootV1,
   projectOriginalVariationStateV1,
   serializeOriginalArpeggiatorVariationRootV1,
   verifyArpeggiatorVariationAncestryV1,
@@ -100,4 +101,23 @@ export async function verifyArpeggiatorVariationAncestryForNodeV1(
   roots: unknown,
 ) {
   return verifyArpeggiatorVariationAncestryV1(source, sourceRequest, roots);
+}
+
+/** No selection, attempt or collection mutation; delegates once to full proof. */
+export async function generateVariationParentArpeggiatorRootForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  parentHistory: unknown,
+  request: unknown,
+  parentVariation: unknown,
+  roots: unknown,
+) {
+  return generateVariationParentArpeggiatorRootV1(
+    source,
+    sourceRequest,
+    parentHistory,
+    request,
+    parentVariation,
+    roots,
+  );
 }

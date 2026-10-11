@@ -705,6 +705,12 @@ export async function verifyArpeggiatorVariationAncestryV1(
   // Exactly one admission for the whole closure. No public returned value is
   // accepted as a token; ancestor continuations remain inside this invocation.
   const admitted = await verifyVariationSourceAdmissionV1(suppliedSource, suppliedRequest);
+  return verifyArpeggiatorVariationAncestryValuesV1(admitted, suppliedRoots);
+}
+async function verifyArpeggiatorVariationAncestryValuesV1(
+  admitted: Awaited<ReturnType<typeof verifyVariationSourceAdmissionV1>>,
+  suppliedRoots: unknown,
+): Promise<readonly VariationRootProofV1[]> {
   if (!Array.isArray(suppliedRoots) || suppliedRoots.length === 0)
     throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "roots");
   const verified: VariationRootProofV1[] = [];
@@ -810,4 +816,48 @@ export async function verifyArpeggiatorVariationAncestryV1(
     verified.push(expected);
   }
   return Object.freeze(verified);
+}
+
+/** Variation-parent transition only. The selected supplying root is explicit;
+ * the ordered existing owner closure is proof, not a selection policy. */
+export async function generateVariationParentArpeggiatorRootV1(
+  source: unknown,
+  sourceRequest: unknown,
+  parentHistory: unknown,
+  request: unknown,
+  parentVariation: unknown,
+  roots: unknown,
+): Promise<VariationRootProofV1> {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation-parent creation requires Node 24.21.0.");
+  const original = snapshotVariationInputV1(source, "source");
+  const originalRequest = snapshotVariationInputV1(sourceRequest, "sourceRequest");
+  const savedHistory = snapshotVariationInputV1(parentHistory, "parentHistory");
+  const proposal = snapshotVariationInputV1(request, "request");
+  const suppliedParent = snapshotVariationInputV1(parentVariation, "parentVariation");
+  const suppliedRoots = snapshotVariationInputV1(roots, "roots");
+  const admitted = await verifyVariationSourceAdmissionV1(original, originalRequest);
+  const verifiedRoots = await verifyArpeggiatorVariationAncestryValuesV1(admitted, suppliedRoots);
+  const parent = verifiedRoots.find((value) => sameValues(value.variation, suppliedParent));
+  if (!parent) throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "parentVariation");
+  if (!exactRecord(savedHistory, ["source", "revisions", "cursor"]))
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "parentHistory");
+  const historySource = verifyCompleteSectionV1(savedHistory.source);
+  if (serializeCompleteSectionV1(historySource) !== serializeCompleteSectionV1(admitted.source))
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "parentHistory.source");
+  const history = verifyEditorHistoryV1(
+    savedHistory as unknown as OriginalVariationCreationProofV1["parentHistory"],
+  );
+  const selected = history.revisions[history.cursor];
+  if (!selected) throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "parentHistory");
+  const state = variationStateValuesV1(selected, parent.variation);
+  const acceptedRequest = variationRequestValuesV1(proposal, state);
+  return originalVariationRootValuesV1(
+    {
+      verified: { source: admitted.source, sourceRequest: admitted.sourceRequest, history },
+      state,
+      request: acceptedRequest,
+    },
+    parent.variation,
+  );
 }

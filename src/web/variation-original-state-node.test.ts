@@ -29,6 +29,7 @@ import * as harmonyDomain from "../music-domain/harmony";
 import {
   generateOriginalArpeggiatorVariationComponentForNodeV1,
   generateOriginalArpeggiatorVariationRootForNodeV1,
+  generateVariationParentArpeggiatorRootForNodeV1,
   projectOriginalVariationStateForNodeV1,
   serializeOriginalArpeggiatorVariationRootForNodeV1,
   serializeOriginalVariationStateForNodeV1,
@@ -717,6 +718,7 @@ describe("original alternative combined canonical state", () => {
       "VariationRootValueError",
       "generateOriginalArpeggiatorVariationComponentV1",
       "generateOriginalArpeggiatorVariationRootV1",
+      "generateVariationParentArpeggiatorRootV1",
       "projectOriginalVariationStateV1",
       "serializeOriginalArpeggiatorVariationRootV1",
       "verifyArpeggiatorVariationAncestryV1",
@@ -2044,5 +2046,157 @@ describe("original-parent canonical variation root and creation proof", () => {
     const replay = vi.spyOn(generator, "generateCompleteSectionV1");
     await expect(verifyClosure(undefined)).rejects.toThrow("Node 24.21.0");
     expect(replay).not.toHaveBeenCalled();
+  });
+  it("creates one variation-parent child with exact independent canonical hashes/proof and one admission", async () => {
+    const ancestors = closure();
+    const parent = present(ancestors[1]);
+    const history = literalMultiEditHistory();
+    const expected = pairOnly(expectedRoot(history, parent.variation));
+    const before = JSON.stringify({ ancestors, history });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    const actual = await generateVariationParentArpeggiatorRootForNodeV1(
+      source(),
+      request(),
+      history,
+      expected.variation.request,
+      parent.variation,
+      ancestors,
+    );
+    expect(JSON.stringify(actual)).toBe(JSON.stringify(expected));
+    expect(Buffer.from(JSON.stringify(actual))).toEqual(Buffer.from(JSON.stringify(expected)));
+    expect(actual.creationProof.parentVariation).toEqual(parent.variation);
+    expect(actual.creationProof.parentHistory).toEqual(history);
+    expect(actual.creationProof.parentHistory).not.toBe(history);
+    expect(Object.isFrozen(actual.creationProof.parentHistory.revisions)).toBe(true);
+    expect(replay).toHaveBeenCalledTimes(1);
+    expect(target).toHaveBeenCalledTimes(ancestors.length + 1);
+    for (const role of ["harmony", "bass", "lead"] as const) {
+      expect(actual.variation.trackHashes[role]).toBe(
+        expected.creationProof.parent.trackHashes[role],
+      );
+    }
+    expect(JSON.stringify({ ancestors, history })).toBe(before);
+    const verified = await verifyClosure([...ancestors, actual]);
+    expect(verified.at(-1)).toEqual(actual);
+  });
+  it("forks complete cursor/redo proof without applying a redo or inferring the newest root", async () => {
+    const ancestors = closure();
+    const parent = present(ancestors[0]);
+    const history = present(undoEditorHistoryV1(pitchHistory()));
+    const expected = pairOnly(expectedRoot(history, parent.variation));
+    const result = await generateVariationParentArpeggiatorRootForNodeV1(
+      source(),
+      request(),
+      history,
+      expected.variation.request,
+      parent.variation,
+      ancestors,
+    );
+    expect(result).toEqual(expected);
+    expect(result.creationProof.parentHistory.cursor).toBe(0);
+    expect(result.creationProof.parentHistory.revisions).toHaveLength(2);
+    expect(result.creationProof.parentVariation).not.toEqual(ancestors.at(-1)?.variation);
+  });
+  it.each(["missing-owner", "changed-parent", "forged-history", "stale-parent", "seed"])(
+    "rejects %s before new generation without mutating inputs",
+    async (kind) => {
+      const ancestors = closure();
+      const parent = structuredClone(present(ancestors[0]).variation);
+      const history = kind === "forged-history" ? forgedChild(pitchHistory()) : pitchHistory();
+      const proposal = expectedRoot(history, parent).variation.request;
+      if (kind === "missing-owner") ancestors.shift();
+      if (kind === "changed-parent") parent.unchanged = false;
+      if (kind === "stale-parent")
+        proposal.parent = { ...proposal.parent, stateHash: "0".repeat(64) };
+      if (kind === "stale-parent" || kind === "seed") proposal.rootSeed = -1;
+      const before = JSON.stringify({ ancestors, parent, history, proposal });
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      await expect(
+        generateVariationParentArpeggiatorRootForNodeV1(
+          source(),
+          request(),
+          history,
+          proposal,
+          parent,
+          ancestors,
+        ),
+      ).rejects.toMatchObject({
+        code:
+          kind === "forged-history"
+            ? "INVALID_EDITOR_LINEAGE"
+            : kind === "stale-parent"
+              ? "STALE_VARIATION_PARENT"
+              : kind === "seed"
+                ? "INVALID_VARIATION_SEED"
+                : "INVALID_VARIATION_LINEAGE",
+      });
+      expect(JSON.stringify({ ancestors, parent, history, proposal })).toBe(before);
+      expect(target.mock.calls.length).toBeLessThanOrEqual(ancestors.length);
+    },
+  );
+  it("does not return a partial root/proof if the new target generation fails", async () => {
+    const ancestors = closure();
+    const parent = present(ancestors[0]).variation;
+    const history = pitchHistory();
+    const proposal = expectedRoot(history, parent).variation.request;
+    const real = aggregateGenerator.generateStage7ArpeggiatorAggregateV1;
+    const failure = new Error("synthetic new-target failure");
+    let calls = 0;
+    vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1").mockImplementation((r) =>
+      ++calls > ancestors.length ? Promise.reject(failure) : real(r),
+    );
+    const before = JSON.stringify({ ancestors, history });
+    const install = vi.fn();
+    const pending = generateVariationParentArpeggiatorRootForNodeV1(
+      source(),
+      request(),
+      history,
+      proposal,
+      parent,
+      ancestors,
+    );
+    void pending.then(install, () => undefined);
+    await expect(pending).rejects.toBe(failure);
+    expect(install).not.toHaveBeenCalled();
+    expect(JSON.stringify({ ancestors, history })).toBe(before);
+  });
+  it("detaches all six creation inputs before admission and fails pinned runtime before any reads", async () => {
+    const ancestors = structuredClone(closure());
+    const parent = present(ancestors[0]).variation;
+    const history = structuredClone(pitchHistory());
+    const expected = structuredClone(pairOnly(expectedRoot(history, parent)));
+    const proposal = structuredClone(expected.variation.request);
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementation(async (r) => {
+      await gate;
+      return real(r);
+    });
+    const pending = generateVariationParentArpeggiatorRootForNodeV1(
+      source(),
+      request(),
+      history,
+      proposal,
+      parent,
+      ancestors,
+    );
+    parent.variationHash = "0".repeat(64);
+    Reflect.set(history, "cursor", 0);
+    proposal.rootSeed = -1;
+    ancestors.splice(1);
+    release?.();
+    expect(await pending).toEqual(expected);
+    vi.restoreAllMocks();
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty({}, "schema", { enumerable: true, get: hook });
+    await expect(
+      generateVariationParentArpeggiatorRootForNodeV1(unsafe, null, null, null, null, null),
+    ).rejects.toThrow("Node 24.21.0");
+    expect(hook).not.toHaveBeenCalled();
   });
 });
