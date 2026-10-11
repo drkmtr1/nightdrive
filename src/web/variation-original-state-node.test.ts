@@ -27,6 +27,7 @@ import * as aggregateGenerator from "../generators/stage7-arpeggiator-aggregate"
 import * as arpDomain from "../music-domain/arpeggiator-policy-generator";
 import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
+import { projectRetainedVariationPreviewForNodeV1 } from "./variation-application-node";
 import {
   serializeVariationAttemptForNodeV1,
   verifyVariationAttemptForNodeV1,
@@ -2841,5 +2842,194 @@ describe("original-parent canonical variation root and creation proof", () => {
     await expect(pending).rejects.toBe(failure);
     expect(installed).not.toHaveBeenCalled();
     expect(JSON.stringify(input)).toBe(expected);
+  });
+
+  function expectedCollectionPreview(input: ReturnType<typeof collectionFixture>) {
+    const selected = present(
+      input.alternatives.find((entry) => entry.sequence === input.selectedSequence),
+    );
+    const revision = selectedEditorRevisionV1(selected.history);
+    return {
+      sourceResultHash: LITERAL_RESULT_HASH,
+      section: revision.section,
+      tracks: revision.tracks.map((track) => {
+        const current =
+          track.role === "arpeggiator" && selected.variation !== null
+            ? present(selected.variation.tracks[2])
+            : track;
+        return {
+          role: current.role,
+          notes: current.notes.map(({ pitch, startTick, durationTicks }) => ({
+            pitch,
+            startTick,
+            durationTicks,
+          })),
+        };
+      }),
+    };
+  }
+  it.each([0, 1, 2, 3])(
+    "projects independent retained alternative %s with original source identity and exact three-field notes",
+    async (selectedSequence) => {
+      const input = { ...collectionFixture(), selectedSequence };
+      const expected = expectedCollectionPreview(input);
+      const saved = JSON.stringify(input);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const result = await projectRetainedVariationPreviewForNodeV1(input);
+      expect(JSON.stringify(result)).toBe(JSON.stringify(expected));
+      expect(result.sourceResultHash).toBe(LITERAL_RESULT_HASH);
+      expect(Object.keys(result)).toEqual(["sourceResultHash", "section", "tracks"]);
+      expect(result.tracks.map((track) => track.role)).toEqual([
+        "harmony",
+        "bass",
+        "arpeggiator",
+        "lead",
+      ]);
+      for (const track of result.tracks)
+        for (const note of track.notes)
+          expect(Object.keys(note)).toEqual(["pitch", "startTick", "durationTicks"]);
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(input)).toBe(saved);
+      expect(result.section).not.toBe(expected.section);
+      frozen(result);
+    },
+  );
+  it("keeps manually edited Lead geometry and target Arpeggiator separate from old editor proof material", async () => {
+    // The literal seed-0 fixtures above intentionally permit identical output.
+    // For this wiring challenge obtain a differing valid root from the already
+    // reviewed upstream generator, never from the projection under test.
+    const root = await generate(rootHistory(), 17);
+    const input = collectionFixture(
+      [pairOnly(expectedRoot(rootHistory()))],
+      [literalMultiEditHistory()],
+    );
+    const entry = present(input.alternatives[1]);
+    Reflect.set(entry, "variation", root.variation);
+    Reflect.set(entry, "creationProof", root.creationProof);
+    const values = {
+      sequence: 1,
+      variation: { schema: root.variation.schema, variationHash: root.variation.variationHash },
+      actor: "local-producer-unverified",
+      createdAt: "2026-10-11T20:00:00.000Z",
+    };
+    Reflect.set(entry, "attempt", {
+      schema: "nightdrive.variation-attempt.v1",
+      ...values,
+      attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+    });
+    const result = await projectRetainedVariationPreviewForNodeV1(input);
+    const expected = expectedCollectionPreview(input);
+    expect(result.tracks[3]).toEqual(expected.tracks[3]);
+    expect(result.tracks[2]).toEqual(expected.tracks[2]);
+    const oldArp = selectedEditorRevisionV1(literalMultiEditHistory()).tracks[2];
+    expect(result.tracks[2]?.notes).not.toEqual(
+      oldArp?.notes.map(({ pitch, startTick, durationTicks }) => ({
+        pitch,
+        startTick,
+        durationTicks,
+      })),
+    );
+    expect(result.tracks[0]).toEqual(expected.tracks[0]);
+    expect(result.tracks[1]).toEqual(expected.tracks[1]);
+  });
+  it("canonical velocity changes revision identity without changing any preview byte", async () => {
+    const input = collectionFixture();
+    const entry = present(input.alternatives[3]);
+    const current = selectedEditorRevisionV1(entry.history);
+    const target = present(present(current.tracks[3]).notes[0]);
+    const edited = applyEditorCommandV1(entry.history, current, {
+      schema: "nightdrive.editor-note-command.v7",
+      type: "set-note-velocity",
+      noteId: target.id,
+      expectedVelocity: target.velocity,
+      velocity: 73,
+    });
+    expect(selectedEditorRevisionV1(edited).revisionHash).not.toBe(current.revisionHash);
+    const before = await projectRetainedVariationPreviewForNodeV1(input);
+    Reflect.set(entry, "history", edited);
+    const after = await projectRetainedVariationPreviewForNodeV1(input);
+    expect(JSON.stringify(after)).toBe(JSON.stringify(before));
+    expect(after.sourceResultHash).toBe(LITERAL_RESULT_HASH);
+  });
+  it("projects exact current Undo/Redo geometry within one retained alternative without navigating others", async () => {
+    const history = pitchHistory();
+    const input = collectionFixture([pairOnly(expectedRoot(rootHistory()))], [history]);
+    const edited = await projectRetainedVariationPreviewForNodeV1(input);
+    const entry = present(input.alternatives[1]);
+    Reflect.set(entry, "history", present(undoEditorHistoryV1(history)));
+    const undone = await projectRetainedVariationPreviewForNodeV1(input);
+    expect(undone.tracks[3]?.notes[0]?.pitch).toBe(75);
+    expect(edited.tracks[3]?.notes[0]?.pitch).toBe(74);
+    expect(undone.tracks[2]).toEqual(edited.tracks[2]);
+    Reflect.set(entry, "history", present(redoEditorHistoryV1(entry.history)));
+    expect(await projectRetainedVariationPreviewForNodeV1(input)).toEqual(edited);
+    expect(input.selectedSequence).toBe(1);
+    expect(input.alternatives[0]?.history.cursor).toBe(0);
+  });
+  it("rejects a forged unselected proof and redo history rather than projecting only the active entry", async () => {
+    const input = { ...collectionFixture(), selectedSequence: 0 };
+    Reflect.set(present(input.alternatives[2]), "creationProof", null);
+    await expect(projectRetainedVariationPreviewForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+    const other = { ...collectionFixture(), selectedSequence: 0 };
+    Reflect.set(present(other.alternatives[2]), "history", {
+      ...forgedChild(pitchHistory()),
+      cursor: 0,
+    });
+    await expect(projectRetainedVariationPreviewForNodeV1(other)).rejects.toMatchObject({
+      code: "INVALID_EDITOR_LINEAGE",
+    });
+  });
+  it("captures selection and complete data before async admission then re-admits on each later call", async () => {
+    const input = collectionFixture();
+    const expected = expectedCollectionPreview(input);
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    const replay = vi
+      .spyOn(generator, "generateCompleteSectionV1")
+      .mockImplementationOnce(async (r) => {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        return real(r);
+      });
+    const pending = projectRetainedVariationPreviewForNodeV1(input);
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    input.selectedSequence = 0;
+    input.alternatives.splice(1);
+    release?.();
+    expect(await pending).toEqual(expected);
+    input.nextSequence = 1; // The later invocation receives a complete valid Original-only fixture.
+    expect(await projectRetainedVariationPreviewForNodeV1(input)).toEqual(
+      expectedCollectionPreview(input),
+    );
+    expect(replay).toHaveBeenCalledTimes(2);
+  });
+  it("delegates full proof once, propagates errors and exports no raw projection", async () => {
+    const api = await import("./variation-application-node");
+    expect(Object.keys(api)).toEqual(["projectRetainedVariationPreviewForNodeV1"]);
+    const input = collectionFixture([]);
+    const failure = new Error("test verification unavailable");
+    const delegate = vi
+      .spyOn(compositionState, "verifyVariationCollectionV1")
+      .mockRejectedValueOnce(failure);
+    const installed = vi.fn();
+    const pending = projectRetainedVariationPreviewForNodeV1(input);
+    void pending.then(installed, () => undefined);
+    await expect(pending).rejects.toBe(failure);
+    expect(delegate).toHaveBeenCalledExactlyOnceWith(input);
+    expect(installed).not.toHaveBeenCalled();
+  });
+  it("guards exact runtime before unsafe inputs without executing caller hooks", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const hook = vi.fn();
+    const bad = Object.defineProperty({}, "source", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(projectRetainedVariationPreviewForNodeV1(bad)).rejects.toThrow(
+      "requires Node 24.21.0",
+    );
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
   });
 });
