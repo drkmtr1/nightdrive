@@ -9,6 +9,8 @@ import {
   STAGE7_AGGREGATE_ENGINE_VERSION_V1,
   STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1,
   STAGE7_ARPEGGIATOR_GENERATOR_VERSION_V1,
+  type Stage7ArpeggiatorAggregateV1,
+  serializeStage7ArpeggiatorAggregateV1,
   serializeStage7HarmonyComponentV1,
 } from "./stage7-arpeggiator-aggregate";
 import { verifyVariationEditorHistoryForNodeV1 } from "./variation-editor-history";
@@ -159,6 +161,7 @@ async function originalVariationRequestContextV1(
   sourceRequest: unknown,
   history: unknown,
   request: unknown,
+  suppliedProof?: Readonly<{ variation: Record<string, unknown>; creationProof: unknown }>,
 ) {
   if (process.versions.node !== "24.21.0")
     throw new Error("Variation request verification requires Node 24.21.0.");
@@ -171,6 +174,7 @@ async function originalVariationRequestContextV1(
   const selected = verified.history.revisions[verified.history.cursor];
   if (!selected) throw new Error("Verified editor selection is missing.");
   const state = originalVariationStateValuesV1(selected);
+  if (suppliedProof) verifyOriginalCreationProofValuesV1(suppliedProof, state, verified.history);
   const fail = (code: VariationRequestValueError["code"], field: string): never => {
     throw new VariationRequestValueError(code, field);
   };
@@ -236,6 +240,12 @@ export async function generateOriginalArpeggiatorVariationComponentV1(
   request: unknown,
 ) {
   const context = await originalVariationRequestContextV1(source, sourceRequest, history, request);
+  return originalVariationComponentValuesV1(context);
+}
+
+async function originalVariationComponentValuesV1(
+  context: Awaited<ReturnType<typeof originalVariationRequestContextV1>>,
+) {
   const original = context.verified.source;
   const config = original.provenance.arpeggiator;
   // The accepted source verifier already reconstructs the consumed typed
@@ -279,4 +289,331 @@ export async function generateOriginalArpeggiatorVariationComponentV1(
   if (JSON.stringify(result.provenance) !== JSON.stringify(expected))
     throw new VariationComponentValueError("VARIATION_HASH_MISMATCH", "generation.provenance");
   return result;
+}
+export const ARPEGGIATOR_VARIATION_SCHEMA_V1 = "nightdrive.arpeggiator-variation.v1" as const;
+export const VARIATION_CREATION_PROOF_SCHEMA_V1 = "nightdrive.variation-creation-proof.v1" as const;
+// The accepted serializer owns the canonical Harmony wire representation.
+// It is intentionally opaque here: typed generation Harmony is not wire data.
+type CanonicalVariationGenerationV1 = Readonly<
+  Omit<Stage7ArpeggiatorAggregateV1, "components"> & {
+    components: Readonly<{
+      harmony: unknown;
+      arpeggiator: Stage7ArpeggiatorAggregateV1["components"]["arpeggiator"];
+    }>;
+  }
+>;
+export type OriginalArpeggiatorVariationV1 = Readonly<{
+  schema: typeof ARPEGGIATOR_VARIATION_SCHEMA_V1;
+  source: OriginalVariationStateV1["source"];
+  parent: OriginalArpeggiatorVariationRequestV1["parent"];
+  request: OriginalArpeggiatorVariationRequestV1;
+  generation: CanonicalVariationGenerationV1;
+  section: OriginalVariationStateV1["section"];
+  tracks: OriginalVariationStateV1["tracks"];
+  trackHashes: OriginalVariationStateV1["trackHashes"];
+  musicHash: string;
+  unchanged: boolean;
+  variationHash: string;
+}>;
+export type OriginalVariationCreationProofV1 = Readonly<{
+  schema: typeof VARIATION_CREATION_PROOF_SCHEMA_V1;
+  variation: Readonly<{ schema: typeof ARPEGGIATOR_VARIATION_SCHEMA_V1; variationHash: string }>;
+  parent: OriginalVariationStateV1;
+  parentVariation: null;
+  parentHistory: Awaited<ReturnType<typeof verifyVariationEditorHistoryForNodeV1>>["history"];
+}>;
+export class VariationRootValueError extends RangeError {
+  constructor(
+    readonly code:
+      | "INVALID_VARIATION_INPUT"
+      | "UNSUPPORTED_VARIATION_SCHEMA"
+      | "INVALID_VARIATION_LINEAGE"
+      | "INVALID_VARIATION_STATE"
+      | "VARIATION_NOTE_ID_COLLISION"
+      | "VARIATION_LOCK_MISMATCH"
+      | "VARIATION_HASH_MISMATCH",
+    readonly field: string,
+  ) {
+    super(`Variation proof is invalid at ${field}.`);
+    this.name = "VariationRootValueError";
+  }
+}
+function sameValues(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (
+    typeof left !== "object" ||
+    left === null ||
+    typeof right !== "object" ||
+    right === null ||
+    Array.isArray(left) !== Array.isArray(right)
+  )
+    return false;
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  return leftKeys.every(
+    (key, index) =>
+      key === rightKeys[index] &&
+      sameValues((left as Record<string, unknown>)[key], (right as Record<string, unknown>)[key]),
+  );
+}
+function exactRecord(value: unknown, keys: readonly string[]): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    sameValues(Object.keys(value), keys)
+  );
+}
+function freezeTrustedValues<T>(value: T): T {
+  if (value !== null && typeof value === "object") {
+    for (const nested of Object.values(value)) freezeTrustedValues(nested);
+    Object.freeze(value);
+  }
+  return value;
+}
+function verifyOriginalCreationProofValuesV1(
+  supplied: Readonly<{ variation: Record<string, unknown>; creationProof: unknown }>,
+  parent: OriginalVariationStateV1,
+  history: OriginalVariationCreationProofV1["parentHistory"],
+): void {
+  const proof = supplied.creationProof;
+  if (
+    !exactRecord(proof, ["schema", "variation", "parent", "parentVariation", "parentHistory"]) ||
+    proof.schema !== VARIATION_CREATION_PROOF_SCHEMA_V1
+  )
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "creationProof");
+  const expectedIdentity = {
+    schema: ARPEGGIATOR_VARIATION_SCHEMA_V1,
+    variationHash: supplied.variation.variationHash,
+  };
+  if (!sameValues(proof.variation, expectedIdentity))
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "creationProof.variation");
+  if (!sameValues(proof.parent, parent))
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "creationProof.parent");
+  // This bounded entry supports original parents only, never silently treats a
+  // variation parent as an original one or accepts its identity without proof.
+  if (proof.parentVariation !== null)
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "creationProof.parentVariation");
+  if (!sameValues(proof.parentHistory, history))
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "creationProof.parentHistory");
+  if (
+    !sameValues(supplied.variation.source, parent.source) ||
+    !sameValues(supplied.variation.parent, { schema: parent.schema, stateHash: parent.stateHash })
+  )
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "variation.parent");
+}
+
+/** Root/proof data only, not an admission token or a retained alternative.
+ * Full invocation-local source and selected-history proof precedes construction. */
+export async function generateOriginalArpeggiatorVariationRootV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+) {
+  const context = await originalVariationRequestContextV1(source, sourceRequest, history, request);
+  return originalVariationRootValuesV1(context);
+}
+
+async function originalVariationRootValuesV1(
+  context: Awaited<ReturnType<typeof originalVariationRequestContextV1>>,
+) {
+  const aggregate = await originalVariationComponentValuesV1(context);
+  // This round-trip consumes only the accepted serializer's trusted output;
+  // no caller object or caller hook participates in JSON serialization here.
+  const generation = freezeTrustedValues(
+    JSON.parse(serializeStage7ArpeggiatorAggregateV1(aggregate)) as CanonicalVariationGenerationV1,
+  );
+  const parent = context.state;
+  const arp = Object.freeze({
+    role: "arpeggiator" as const,
+    notes: Object.freeze(
+      generation.components.arpeggiator.map((event, ordinal) =>
+        Object.freeze({
+          id: `note-${digest({
+            schema: "nightdrive.variation-arpeggiator-note-id-input.v1",
+            parent: context.request.parent,
+            request: context.request,
+            ordinal,
+          })}`,
+          pitch: event.pitch,
+          startTick: event.startTick,
+          durationTicks: event.durationTicks,
+          velocity: 100,
+        }),
+      ),
+    ),
+  });
+  const tracks = Object.freeze(
+    parent.tracks.map((track) => (track.role === "arpeggiator" ? arp : track)),
+  );
+  const seen = new Set<string>();
+  for (const [trackIndex, track] of tracks.entries()) {
+    for (const [index, note] of track.notes.entries()) {
+      if (seen.has(note.id))
+        throw new VariationRootValueError(
+          "VARIATION_NOTE_ID_COLLISION",
+          `variation.tracks.${trackIndex}.notes.${index}.id`,
+        );
+      seen.add(note.id);
+    }
+  }
+  const hashTrack = (role: "harmony" | "bass" | "arpeggiator" | "lead") => {
+    const track = tracks.find((value) => value.role === role);
+    if (!track) throw new Error("Verified variation track is missing.");
+    return digest({ schema: "nightdrive.variation-track-hash-input.v1", track });
+  };
+  const trackHashes = Object.freeze({
+    harmony: hashTrack("harmony"),
+    bass: hashTrack("bass"),
+    arpeggiator: hashTrack("arpeggiator"),
+    lead: hashTrack("lead"),
+  });
+  for (const role of ["harmony", "bass", "lead"] as const) {
+    if (trackHashes[role] !== parent.trackHashes[role])
+      throw new VariationRootValueError("VARIATION_LOCK_MISMATCH", `variation.trackHashes.${role}`);
+  }
+  const musical = (track: OriginalVariationStateV1["tracks"][number]) => ({
+    role: track.role,
+    notes: track.notes.map(({ pitch, startTick, durationTicks, velocity }) => ({
+      pitch,
+      startTick,
+      durationTicks,
+      velocity,
+    })),
+  });
+  const musicHash = digest({
+    schema: "nightdrive.variation-music-hash-input.v1",
+    section: parent.section,
+    tracks: tracks.map(musical),
+  });
+  const originalArp = parent.tracks.find((track) => track.role === "arpeggiator");
+  if (!originalArp) throw new Error("Verified Arpeggiator track is missing.");
+  const unchanged = sameValues(musical(originalArp), musical(arp));
+  const values = {
+    schema: ARPEGGIATOR_VARIATION_SCHEMA_V1,
+    source: parent.source,
+    parent: context.request.parent,
+    request: context.request,
+    generation,
+    section: parent.section,
+    tracks,
+    trackHashes,
+    musicHash,
+    unchanged,
+  };
+  const variation: OriginalArpeggiatorVariationV1 = Object.freeze({
+    ...values,
+    variationHash: digest({
+      schema: "nightdrive.arpeggiator-variation-hash-input.v1",
+      source: values.source,
+      parent: values.parent,
+      request: values.request,
+      generation: values.generation,
+      section: values.section,
+      tracks: values.tracks,
+      trackHashes: values.trackHashes,
+      musicHash: values.musicHash,
+      unchanged: values.unchanged,
+    }),
+  });
+  const creationProof: OriginalVariationCreationProofV1 = Object.freeze({
+    schema: VARIATION_CREATION_PROOF_SCHEMA_V1,
+    variation: Object.freeze({ schema: variation.schema, variationHash: variation.variationHash }),
+    parent,
+    parentVariation: null,
+    parentHistory: context.verified.history,
+  });
+  return Object.freeze({ variation, creationProof });
+}
+
+/** Verification requires explicit retained parent history and the child-owned
+ * snapshot. Recompute the complete root from fresh admission, not its digest.
+ * Recursive/non-original parents remain unsupported by this bounded entry. */
+export async function verifyOriginalArpeggiatorVariationRootV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+  variation: unknown,
+  creationProof: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation root verification requires Node 24.21.0.");
+  const original = snapshotVariationInputV1(source, "source");
+  const originalRequest = snapshotVariationInputV1(sourceRequest, "sourceRequest");
+  const retained = snapshotVariationInputV1(history, "history");
+  const proposal = snapshotVariationInputV1(request, "request");
+  const supplied = snapshotVariationInputV1(variation, "variation");
+  const proof = snapshotVariationInputV1(creationProof, "creationProof");
+  if (
+    !exactRecord(supplied, [
+      "schema",
+      "source",
+      "parent",
+      "request",
+      "generation",
+      "section",
+      "tracks",
+      "trackHashes",
+      "musicHash",
+      "unchanged",
+      "variationHash",
+    ])
+  )
+    throw new VariationRootValueError("INVALID_VARIATION_INPUT", "variation");
+  if (supplied.schema !== ARPEGGIATOR_VARIATION_SCHEMA_V1)
+    throw new VariationRootValueError("UNSUPPORTED_VARIATION_SCHEMA", "variation.schema");
+  const context = await originalVariationRequestContextV1(
+    original,
+    originalRequest,
+    retained,
+    proposal,
+    { variation: supplied, creationProof: proof },
+  );
+  if (!sameValues(supplied.request, context.request))
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "variation.request");
+  const expected = await originalVariationRootValuesV1(context);
+  const root = expected.variation;
+  if (!sameValues(supplied.generation, root.generation))
+    throw new VariationRootValueError("VARIATION_HASH_MISMATCH", "variation.generation");
+  if (!sameValues(supplied.section, root.section))
+    throw new VariationRootValueError("VARIATION_LOCK_MISMATCH", "variation.section");
+  if (!Array.isArray(supplied.tracks) || supplied.tracks.length !== root.tracks.length)
+    throw new VariationRootValueError("INVALID_VARIATION_STATE", "variation.tracks");
+  for (const role of ["harmony", "bass", "lead"] as const) {
+    const index = root.tracks.findIndex((track) => track.role === role);
+    if (!sameValues(supplied.tracks[index], root.tracks[index]))
+      throw new VariationRootValueError("VARIATION_LOCK_MISMATCH", `variation.tracks.${index}`);
+  }
+  if (!sameValues(supplied.tracks[2], root.tracks[2]))
+    throw new VariationRootValueError("INVALID_VARIATION_STATE", "variation.tracks.2");
+  for (const field of ["trackHashes", "musicHash", "unchanged", "variationHash"] as const) {
+    if (!sameValues(supplied[field], root[field]))
+      throw new VariationRootValueError("VARIATION_HASH_MISMATCH", `variation.${field}`);
+  }
+  return expected;
+}
+
+export async function serializeOriginalArpeggiatorVariationRootV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+  request: unknown,
+  variation: unknown,
+  creationProof: unknown,
+): Promise<string> {
+  return JSON.stringify(
+    (
+      await verifyOriginalArpeggiatorVariationRootV1(
+        source,
+        sourceRequest,
+        history,
+        request,
+        variation,
+        creationProof,
+      )
+    ).variation,
+  );
 }
