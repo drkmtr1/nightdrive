@@ -1,5 +1,9 @@
 import process from "node:process";
-import { verifyEditorHistoryV1 } from "../editor/editor-history";
+import { type EditorHistoryV1, verifyEditorHistoryV1 } from "../editor/editor-history";
+import type {
+  RetainedVariationAlternativeV1,
+  VariationCollectionV1,
+} from "../editor/variation-collection";
 import { digestStage7CanonicalUtf8 } from "../generators/adapters/stage7-digest";
 import { verifyStage7ArpeggiatorAggregateV1 } from "../generators/stage7-aggregate-verifier";
 import { generateStage7ArpeggiatorAggregateV1 } from "../generators/stage7-arpeggiator-aggregate";
@@ -710,12 +714,17 @@ export async function verifyArpeggiatorVariationAncestryV1(
 async function verifyArpeggiatorVariationAncestryValuesV1(
   admitted: Awaited<ReturnType<typeof verifyVariationSourceAdmissionV1>>,
   suppliedRoots: unknown,
+  continuation?: Readonly<{
+    before: (index: number) => void;
+    after: (pair: VariationRootProofV1, index: number) => void;
+  }>,
 ): Promise<readonly VariationRootProofV1[]> {
   if (!Array.isArray(suppliedRoots) || suppliedRoots.length === 0)
     throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", "roots");
   const verified: VariationRootProofV1[] = [];
   const owners = new Map<string, VariationRootProofV1>();
   for (const [index, pair] of suppliedRoots.entries()) {
+    continuation?.before(index);
     const path = `roots.${index}.creationProof`;
     const fail = (field = path): never => {
       throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", field);
@@ -815,6 +824,7 @@ async function verifyArpeggiatorVariationAncestryValuesV1(
     compareVariationRootValuesV1(root, expected);
     owners.set(expected.variation.variationHash, expected);
     verified.push(expected);
+    continuation?.after(expected, index);
   }
   return Object.freeze(verified);
 }
@@ -861,4 +871,245 @@ export async function generateVariationParentArpeggiatorRootV1(
     },
     parent.variation,
   );
+}
+
+export const VARIATION_ATTEMPT_SCHEMA_V1 = "nightdrive.variation-attempt.v1" as const;
+export type VariationAttemptV1 = Readonly<{
+  schema: typeof VARIATION_ATTEMPT_SCHEMA_V1;
+  sequence: number;
+  variation: Readonly<{ schema: typeof ARPEGGIATOR_VARIATION_SCHEMA_V1; variationHash: string }>;
+  actor: "local-producer-unverified";
+  createdAt: string;
+  attemptHash: string;
+}>;
+export class VariationAttemptValueError extends RangeError {
+  constructor(
+    readonly code:
+      | "INVALID_VARIATION_INPUT"
+      | "UNSUPPORTED_VARIATION_SCHEMA"
+      | "INVALID_VARIATION_COLLECTION"
+      | "INVALID_VARIATION_LINEAGE"
+      | "INVALID_VARIATION_PROVENANCE"
+      | "VARIATION_HASH_MISMATCH",
+    readonly field: string,
+  ) {
+    super(`Variation attempt is invalid at ${field}.`);
+    this.name = "VariationAttemptValueError";
+  }
+}
+function validAttemptUtc(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value))
+    return false;
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString() === value;
+}
+
+function variationAttemptRecordV1(supplied: unknown): Record<string, unknown> {
+  if (
+    !exactRecord(supplied, ["schema", "sequence", "variation", "actor", "createdAt", "attemptHash"])
+  )
+    throw new VariationAttemptValueError("INVALID_VARIATION_INPUT", "attempt");
+  if (supplied.schema !== VARIATION_ATTEMPT_SCHEMA_V1)
+    throw new VariationAttemptValueError("UNSUPPORTED_VARIATION_SCHEMA", "attempt.schema");
+  return supplied;
+}
+function variationAttemptValuesV1(
+  verified: readonly VariationRootProofV1[],
+  supplied: Record<string, unknown>,
+): VariationAttemptV1 {
+  if (!Number.isSafeInteger(supplied.sequence) || (supplied.sequence as number) < 1)
+    throw new VariationAttemptValueError("INVALID_VARIATION_COLLECTION", "attempt.sequence");
+  const identity = supplied.variation;
+  if (
+    !exactRecord(identity, ["schema", "variationHash"]) ||
+    identity.schema !== ARPEGGIATOR_VARIATION_SCHEMA_V1 ||
+    !verified.some(({ variation }) => variation.variationHash === identity.variationHash)
+  )
+    throw new VariationAttemptValueError("INVALID_VARIATION_LINEAGE", "attempt.variation");
+  if (supplied.actor !== "local-producer-unverified")
+    throw new VariationAttemptValueError("INVALID_VARIATION_PROVENANCE", "attempt.actor");
+  if (!validAttemptUtc(supplied.createdAt))
+    throw new VariationAttemptValueError("INVALID_VARIATION_PROVENANCE", "attempt.createdAt");
+  const variation = Object.freeze({
+    schema: ARPEGGIATOR_VARIATION_SCHEMA_V1,
+    variationHash: identity.variationHash as string,
+  });
+  const values = {
+    sequence: supplied.sequence as number,
+    variation,
+    actor: supplied.actor,
+    createdAt: supplied.createdAt,
+  } as const;
+  const attemptHash = digestStage7CanonicalUtf8(
+    JSON.stringify({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+  );
+  if (supplied.attemptHash !== attemptHash)
+    throw new VariationAttemptValueError("VARIATION_HASH_MISMATCH", "attempt.attemptHash");
+  return Object.freeze({ schema: VARIATION_ATTEMPT_SCHEMA_V1, ...values, attemptHash });
+}
+
+/** Existing attempt API: fresh complete source/root proof, never a trust token. */
+export async function verifyVariationAttemptV1(
+  source: unknown,
+  sourceRequest: unknown,
+  roots: unknown,
+  attempt: unknown,
+): Promise<VariationAttemptV1> {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation attempt verification requires Node 24.21.0.");
+  const suppliedSource = snapshotVariationInputV1(source, "source");
+  const suppliedRequest = snapshotVariationInputV1(sourceRequest, "sourceRequest");
+  const suppliedRoots = snapshotVariationInputV1(roots, "roots");
+  const supplied = variationAttemptRecordV1(snapshotVariationInputV1(attempt, "attempt"));
+  const admitted = await verifyVariationSourceAdmissionV1(suppliedSource, suppliedRequest);
+  const verified = await verifyArpeggiatorVariationAncestryValuesV1(admitted, suppliedRoots);
+  return variationAttemptValuesV1(verified, supplied);
+}
+export async function serializeVariationAttemptV1(
+  source: unknown,
+  sourceRequest: unknown,
+  roots: unknown,
+  attempt: unknown,
+): Promise<string> {
+  return JSON.stringify(await verifyVariationAttemptV1(source, sourceRequest, roots, attempt));
+}
+
+export class VariationCollectionValueError extends RangeError {
+  readonly code = "INVALID_VARIATION_COLLECTION";
+  constructor(readonly field: string) {
+    super(`Variation collection is invalid at ${field}.`);
+    this.name = "VariationCollectionValueError";
+  }
+}
+function collectionHistoryValuesV1(
+  admitted: Awaited<ReturnType<typeof verifyVariationSourceAdmissionV1>>,
+  supplied: unknown,
+  path: string,
+): EditorHistoryV1 {
+  if (!exactRecord(supplied, ["source", "revisions", "cursor"]))
+    throw new VariationCollectionValueError(path);
+  const retained = verifyCompleteSectionV1(supplied.source);
+  if (serializeCompleteSectionV1(retained) !== serializeCompleteSectionV1(admitted.source))
+    throw new VariationRootValueError("INVALID_VARIATION_LINEAGE", `${path}.source`);
+  return verifyEditorHistoryV1(supplied as unknown as EditorHistoryV1);
+}
+function verifyCombinedNoteIdsV1(
+  history: EditorHistoryV1,
+  variation: OriginalArpeggiatorVariationV1 | null,
+  path: string,
+) {
+  const selected = history.revisions[history.cursor];
+  if (!selected) throw new VariationCollectionValueError(`${path}.history`);
+  const state = variationStateValuesV1(selected, variation);
+  const seen = new Set<string>();
+  for (const [trackIndex, track] of state.tracks.entries()) {
+    for (const [index, note] of track.notes.entries()) {
+      if (seen.has(note.id))
+        throw new VariationRootValueError(
+          "VARIATION_NOTE_ID_COLLISION",
+          `${path}.tracks.${trackIndex}.notes.${index}.id`,
+        );
+      seen.add(note.id);
+    }
+  }
+}
+
+/** Complete data verification only. One invocation-local source replay, no
+ * creation, selection mutation, clock read, preview or transferable authority. */
+export async function verifyVariationCollectionV1(value: unknown): Promise<VariationCollectionV1> {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation collection verification requires Node 24.21.0.");
+  const supplied = snapshotVariationInputV1(value, "collection");
+  if (typeof supplied !== "object" || supplied === null || Array.isArray(supplied))
+    throw new VariationCollectionValueError("collection");
+  const record = supplied as Record<string, unknown>;
+  // Missing original request belongs to admission, before later collection errors.
+  const admitted = await verifyVariationSourceAdmissionV1(record.source, record.sourceRequest);
+  if (
+    !exactRecord(record, [
+      "source",
+      "sourceRequest",
+      "alternatives",
+      "selectedSequence",
+      "nextSequence",
+    ])
+  )
+    throw new VariationCollectionValueError("collection");
+  const entries = record.alternatives;
+  if (!Array.isArray(entries) || entries.length === 0)
+    throw new VariationCollectionValueError("collection.alternatives");
+  const fields = ["sequence", "attempt", "variation", "creationProof", "history"];
+  const original = entries[0];
+  if (!exactRecord(original, fields))
+    throw new VariationCollectionValueError("collection.alternatives.0");
+  if (original.sequence !== 0)
+    throw new VariationCollectionValueError("collection.alternatives.0.sequence");
+  for (const field of ["attempt", "variation", "creationProof"])
+    if (original[field] !== null)
+      throw new VariationCollectionValueError(`collection.alternatives.0.${field}`);
+  const history = collectionHistoryValuesV1(
+    admitted,
+    original.history,
+    "collection.alternatives.0.history",
+  );
+  verifyCombinedNoteIdsV1(history, null, "collection.alternatives.0");
+  const alternatives: RetainedVariationAlternativeV1[] = [
+    Object.freeze({
+      sequence: 0,
+      attempt: null,
+      variation: null,
+      creationProof: null,
+      history,
+    }),
+  ];
+  if (entries.length > 1) {
+    // Raw pair extraction from the detached snapshot grants no authority. The
+    // private continuation validates entries in creation order around each proof.
+    const pairs = entries.slice(1).map((entry) => ({
+      variation: entry !== null && typeof entry === "object" ? entry.variation : undefined,
+      creationProof: entry !== null && typeof entry === "object" ? entry.creationProof : undefined,
+    }));
+    await verifyArpeggiatorVariationAncestryValuesV1(admitted, pairs, {
+      before(index) {
+        const entry = entries[index + 1];
+        const path = `collection.alternatives.${index + 1}`;
+        if (!exactRecord(entry, fields)) throw new VariationCollectionValueError(path);
+        // No eviction exists; nextSequence advances only on successful append.
+        if (!Number.isSafeInteger(entry.sequence) || entry.sequence !== index + 1)
+          throw new VariationCollectionValueError(`${path}.sequence`);
+      },
+      after(pair, index) {
+        const entry = entries[index + 1] as Record<string, unknown>;
+        const path = `collection.alternatives.${index + 1}`;
+        const active = collectionHistoryValuesV1(admitted, entry.history, `${path}.history`);
+        const attempt = variationAttemptValuesV1([pair], variationAttemptRecordV1(entry.attempt));
+        if (attempt.sequence !== entry.sequence)
+          throw new VariationCollectionValueError(`${path}.attempt.sequence`);
+        verifyCombinedNoteIdsV1(active, pair.variation, path);
+        alternatives.push(
+          Object.freeze({
+            sequence: entry.sequence as number,
+            attempt,
+            variation: pair.variation,
+            creationProof: pair.creationProof,
+            history: active,
+          }),
+        );
+      },
+    });
+  }
+  if (
+    !Number.isSafeInteger(record.selectedSequence) ||
+    !alternatives.some((entry) => entry.sequence === record.selectedSequence)
+  )
+    throw new VariationCollectionValueError("collection.selectedSequence");
+  if (!Number.isSafeInteger(record.nextSequence) || record.nextSequence !== alternatives.length)
+    throw new VariationCollectionValueError("collection.nextSequence");
+  return Object.freeze({
+    source: admitted.source,
+    sourceRequest: admitted.sourceRequest,
+    alternatives: Object.freeze(alternatives),
+    selectedSequence: record.selectedSequence as number,
+    nextSequence: record.nextSequence as number,
+  });
 }
