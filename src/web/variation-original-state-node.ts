@@ -1,8 +1,10 @@
 import {
   generateOriginalArpeggiatorVariationComponentV1,
   generateOriginalArpeggiatorVariationRootV1,
+  generateVariationParentArpeggiatorRootV1,
   projectOriginalVariationStateV1,
   serializeOriginalArpeggiatorVariationRootV1,
+  verifyArpeggiatorVariationAncestryV1,
   verifyOriginalArpeggiatorVariationRequestV1,
   verifyOriginalArpeggiatorVariationRootV1,
 } from "../composition/variation-original-state";
@@ -88,5 +90,34 @@ export async function serializeOriginalArpeggiatorVariationRootForNodeV1(
     request,
     variation,
     creationProof,
+  );
+}
+
+/** Root/proof closure only; collection metadata and active histories are outside
+ * this prerequisite. Each invocation freshly proves source and all ancestors. */
+export async function verifyArpeggiatorVariationAncestryForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  roots: unknown,
+) {
+  return verifyArpeggiatorVariationAncestryV1(source, sourceRequest, roots);
+}
+
+/** No selection, attempt or collection mutation; delegates once to full proof. */
+export async function generateVariationParentArpeggiatorRootForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  parentHistory: unknown,
+  request: unknown,
+  parentVariation: unknown,
+  roots: unknown,
+) {
+  return generateVariationParentArpeggiatorRootV1(
+    source,
+    sourceRequest,
+    parentHistory,
+    request,
+    parentVariation,
+    roots,
   );
 }
