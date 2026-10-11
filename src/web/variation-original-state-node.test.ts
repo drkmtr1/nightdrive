@@ -1938,6 +1938,68 @@ describe("original-parent canonical variation root and creation proof", () => {
     expect(result[0]).toEqual(result[1]);
     expect(result[0]).not.toBe(result[1]);
   });
+  it.each(["original", "variation"] as const)(
+    "accepts repeated %s-parent roots before and after Undo adds a valid redo suffix, including descendants",
+    async (kind) => {
+      const initial = rootHistory();
+      const undone = present(undoEditorHistoryV1(pitchHistory()));
+      expect(selectedEditorRevisionV1(undone)).toEqual(selectedEditorRevisionV1(initial));
+      const ancestors = kind === "variation" ? [present(closure()[0])] : [];
+      const parent = ancestors[0]?.variation ?? null;
+      const create = (history: EditorHistoryV1) =>
+        parent === null
+          ? generate(history)
+          : generateVariationParentArpeggiatorRootForNodeV1(
+              source(),
+              request(),
+              history,
+              expectedRoot(history, parent).variation.request,
+              parent,
+              ancestors,
+            );
+      const beforeUndo = await create(initial);
+      const afterUndo = await create(undone);
+      expect(beforeUndo).toEqual(pairOnly(expectedRoot(initial, parent)));
+      expect(afterUndo).toEqual(pairOnly(expectedRoot(undone, parent)));
+      expect(afterUndo.variation).toEqual(beforeUndo.variation);
+      expect(afterUndo.creationProof).not.toEqual(beforeUndo.creationProof);
+      expect(beforeUndo.creationProof.parentHistory.revisions).toHaveLength(1);
+      expect(afterUndo.creationProof.parentHistory.revisions).toHaveLength(2);
+      expect(afterUndo.creationProof.parentHistory.cursor).toBe(0);
+      const descendant = pairOnly(expectedRoot(pitchHistory(), beforeUndo.variation));
+      for (const duplicates of [
+        [beforeUndo, afterUndo],
+        [afterUndo, beforeUndo],
+      ]) {
+        const supplied = [...ancestors, ...duplicates, descendant];
+        const saved = JSON.stringify(supplied);
+        const verified = await verifyClosure(supplied);
+        expect(JSON.stringify(verified)).toBe(saved);
+        expect(JSON.stringify(supplied)).toBe(saved);
+        expect(verified.at(-1)).toEqual(descendant);
+        expect(verified[ancestors.length]).not.toBe(verified[ancestors.length + 1]);
+        frozen(verified);
+      }
+    },
+  );
+  it("rejects a duplicate root with a self-consistently hashed forged redo revision instead of trusting its earlier owner", async () => {
+    const first = pairOnly(expectedRoot(rootHistory()));
+    const second = pairOnly(expectedRoot(present(undoEditorHistoryV1(pitchHistory()))));
+    expect(second.variation).toEqual(first.variation);
+    const forged = forgedChild(second.creationProof.parentHistory);
+    expect(forged.cursor).toBe(0);
+    Reflect.set(second.creationProof, "parentHistory", forged);
+    const supplied = [first, second];
+    const saved = JSON.stringify(supplied);
+    await expect(verifyClosure(supplied)).rejects.toMatchObject({
+      code: "INVALID_EDITOR_LINEAGE",
+      field: "revision.parent",
+    });
+    expect(JSON.stringify(supplied)).toBe(saved);
+    // The identical selected root alone must not bypass the old editor's
+    // complete redo-transition verification, even with a recomputed digest.
+    expect(await verifyClosure([first])).toEqual([first]);
+  });
   it.each([
     "missing",
     "forward",

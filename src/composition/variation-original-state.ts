@@ -755,8 +755,9 @@ async function verifyArpeggiatorVariationAncestryValuesV1(
       fail(`${path}.variation`);
     const prior =
       typeof root.variationHash === "string" ? owners.get(root.variationHash) : undefined;
-    if (prior && (!sameValues(prior.variation, root) || !sameValues(prior.creationProof, saved)))
-      fail();
+    // Root identity excludes the saved redo history. Equal roots may have
+    // distinct proofs; every submitted proof still completes verification below.
+    if (prior && !sameValues(prior.variation, root)) fail();
     if (!exactRecord(saved.parentHistory, ["source", "revisions", "cursor"]))
       fail(`${path}.parentHistory`);
     const rawHistory = saved.parentHistory as Record<string, unknown>;
