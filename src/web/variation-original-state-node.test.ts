@@ -32,6 +32,7 @@ import {
   projectOriginalVariationStateForNodeV1,
   serializeOriginalArpeggiatorVariationRootForNodeV1,
   serializeOriginalVariationStateForNodeV1,
+  verifyArpeggiatorVariationAncestryForNodeV1,
   verifyOriginalArpeggiatorVariationRequestForNodeV1,
   verifyOriginalArpeggiatorVariationRootForNodeV1,
 } from "./variation-original-state-node";
@@ -718,6 +719,7 @@ describe("original alternative combined canonical state", () => {
       "generateOriginalArpeggiatorVariationRootV1",
       "projectOriginalVariationStateV1",
       "serializeOriginalArpeggiatorVariationRootV1",
+      "verifyArpeggiatorVariationAncestryV1",
       "verifyOriginalArpeggiatorVariationRequestV1",
       "verifyOriginalArpeggiatorVariationRootV1",
     ]);
@@ -1304,6 +1306,10 @@ describe("original-parent canonical variation root and creation proof", () => {
     }
     return { source: source() as unknown as CompleteSectionResultV1, revisions, cursor: 6 };
   }
+  function present<T>(value: T | undefined | null): T {
+    if (value === undefined || value === null) throw new Error("Independent fixture value missing");
+    return value;
+  }
   function expectedRoot(
     history: EditorHistoryV1 = {
       source: source() as unknown as CompleteSectionResultV1,
@@ -1313,10 +1319,52 @@ describe("original-parent canonical variation root and creation proof", () => {
       ],
       cursor: 1,
     },
+    parentRoot: unknown = null,
   ) {
     const selected = history.revisions[history.cursor];
     if (!selected) throw new Error("Missing independently constructed selection");
-    const parent = independentState(selected).state;
+    const originalParent = independentState(selected).state;
+    const retainedRoot = parentRoot as compositionState.OriginalArpeggiatorVariationV1 | null;
+    const parentTracks = originalParent.tracks.map((track) =>
+      retainedRoot && track.role === "arpeggiator" ? present(retainedRoot.tracks[2]) : track,
+    );
+    const parentTrackHashes = {
+      harmony: hash({ schema: "nightdrive.variation-track-hash-input.v1", track: parentTracks[0] }),
+      bass: hash({ schema: "nightdrive.variation-track-hash-input.v1", track: parentTracks[1] }),
+      arpeggiator: hash({
+        schema: "nightdrive.variation-track-hash-input.v1",
+        track: parentTracks[2],
+      }),
+      lead: hash({ schema: "nightdrive.variation-track-hash-input.v1", track: parentTracks[3] }),
+    };
+    const parentValues = {
+      source: originalParent.source,
+      variation: retainedRoot
+        ? { schema: retainedRoot.schema, variationHash: retainedRoot.variationHash }
+        : null,
+      editor: originalParent.editor,
+      section: originalParent.section,
+      tracks: parentTracks,
+      trackHashes: parentTrackHashes,
+      musicHash: hash({
+        schema: "nightdrive.variation-music-hash-input.v1",
+        section: originalParent.section,
+        tracks: parentTracks.map((track) => ({
+          role: track.role,
+          notes: track.notes.map(({ pitch, startTick, durationTicks, velocity }) => ({
+            pitch,
+            startTick,
+            durationTicks,
+            velocity,
+          })),
+        })),
+      }),
+    };
+    const parent = {
+      schema: originalParent.schema,
+      ...parentValues,
+      stateHash: hash({ schema: "nightdrive.variation-state-hash-input.v1", ...parentValues }),
+    };
     const proposal = {
       schema: "nightdrive.arpeggiator-variation-request.v1",
       parent: { schema: parent.schema, stateHash: parent.stateHash },
@@ -1421,7 +1469,7 @@ describe("original-parent canonical variation root and creation proof", () => {
         schema: "nightdrive.variation-creation-proof.v1",
         variation: { schema: variation.schema, variationHash: variation.variationHash },
         parent,
-        parentVariation: null,
+        parentVariation: parentRoot,
         parentHistory: history,
       },
     };
@@ -1819,6 +1867,182 @@ describe("original-parent canonical variation root and creation proof", () => {
     await expect(
       serializeOriginalArpeggiatorVariationRootForNodeV1(null, null, null, null, null, null),
     ).rejects.toThrow("24.21.0");
+    expect(replay).not.toHaveBeenCalled();
+  });
+  const pairOnly = (expected: ReturnType<typeof expectedRoot>) => ({
+    variation: expected.variation,
+    creationProof: expected.creationProof,
+  });
+  const closure = () => {
+    const first = pairOnly(expectedRoot(literalMultiEditHistory()));
+    const second = pairOnly(expectedRoot(pitchHistory(), first.variation));
+    const third = pairOnly(expectedRoot(rootHistory(), second.variation));
+    return [first, second, third];
+  };
+  const verifyClosure = (values: unknown) =>
+    verifyArpeggiatorVariationAncestryForNodeV1(source(), request(), values);
+
+  it("proves the independent three-root canonical closure with one fresh source replay and exact absolute hashes/bytes", async () => {
+    const expected = closure();
+    const before = JSON.stringify(expected);
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const result = await verifyClosure(expected);
+    expect(JSON.stringify(result)).toBe(before);
+    expect(Buffer.from(JSON.stringify(result))).toEqual(Buffer.from(before));
+    expect(replay).toHaveBeenCalledTimes(1);
+    expect(result).not.toBe(expected);
+    expect(Object.isFrozen(result)).toBe(true);
+    for (const pair of result) {
+      expect(Object.isFrozen(pair.creationProof.parentHistory.revisions)).toBe(true);
+      expect(Object.isFrozen(pair.variation.tracks[2]?.notes[0])).toBe(true);
+    }
+    await verifyClosure(expected);
+    expect(replay).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(expected)).toBe(before);
+  });
+  it("verifies C and its descendant after both active histories independently lose creation revision R", async () => {
+    const history = pitchHistory();
+    const child = pairOnly(expectedRoot(history));
+    const undone = present(undoEditorHistoryV1(history));
+    const originalNote = present(present(selectedEditorRevisionV1(undone).tracks[3]).notes[0]);
+    const edit = (pitch: number) =>
+      applyEditorCommandV1(undone, selectedEditorRevisionV1(undone), {
+        schema: "nightdrive.editor-note-command.v1",
+        type: "set-note-pitch",
+        noteId: originalNote.id,
+        expectedPitch: originalNote.pitch,
+        pitch,
+      });
+    const parentActive = edit(73);
+    const childActive = edit(72);
+    const creationHash = selectedEditorRevisionV1(history).revisionHash;
+    expect(parentActive.revisions.some((r) => r.revisionHash === creationHash)).toBe(false);
+    expect(childActive.revisions.some((r) => r.revisionHash === creationHash)).toBe(false);
+    const saved = JSON.stringify(child.creationProof);
+    const descendant = pairOnly(expectedRoot(childActive, child.variation));
+    const result = await verifyClosure([child, descendant]);
+    expect(JSON.stringify(result[0]?.creationProof)).toBe(saved);
+    expect(result[1]?.creationProof.parent.editor.revisionHash).toBe(
+      selectedEditorRevisionV1(childActive).revisionHash,
+    );
+    expect(result[1]?.creationProof.parent.tracks[3]).toEqual(
+      selectedEditorRevisionV1(childActive).tracks[3],
+    );
+    expect(result[1]?.creationProof.parent.tracks[2]).toEqual(child.variation.tracks[2]);
+  });
+  it("accepts equal duplicate owners without coupling or granting reusable authority", async () => {
+    const [first, second] = closure();
+    const result = await verifyClosure([first, structuredClone(first), second]);
+    expect(result[0]).toEqual(result[1]);
+    expect(result[0]).not.toBe(result[1]);
+  });
+  it.each([
+    "missing",
+    "forward",
+    "cycle",
+    "conflict",
+    "wrong-owner",
+    "saved-cursor",
+    "parent-state",
+    "source",
+    "schema",
+    "self-consistent-root",
+  ])("fails closed for %s ancestor/proof substitution", async (kind) => {
+    const values = structuredClone(closure());
+    if (kind === "missing") values.shift();
+    if (kind === "forward") values.reverse();
+    if (kind === "cycle")
+      present(values[0]).creationProof.parentVariation = present(values[1]).variation;
+    if (kind === "conflict") {
+      const altered = structuredClone(present(values[0]));
+      altered.variation.unchanged = false;
+      values.splice(1, 0, altered);
+    }
+    if (kind === "wrong-owner")
+      present(values[1]).creationProof.variation.variationHash = "0".repeat(64);
+    if (kind === "saved-cursor")
+      Reflect.set(present(values[1]).creationProof.parentHistory, "cursor", 0);
+    if (kind === "parent-state") present(values[1]).creationProof.parent.musicHash = "0".repeat(64);
+    if (kind === "source") {
+      const otherRequest = request();
+      Reflect.set(otherRequest.composition, "rootSeed", 17);
+      Reflect.set(
+        present(values[1]).creationProof.parentHistory,
+        "source",
+        await generator.generateCompleteSectionV1(otherRequest),
+      );
+    }
+    if (kind === "schema") present(values[1]).creationProof.schema = "invalid";
+    if (kind === "self-consistent-root") {
+      const root = present(values[1]).variation;
+      root.tracks = structuredClone(root.tracks);
+      Reflect.set(present(present(root.tracks[3]).notes[0]), "pitch", 60);
+      const { schema: _schema, variationHash: _hash, ...input } = root;
+      root.variationHash = hash({
+        schema: "nightdrive.arpeggiator-variation-hash-input.v1",
+        ...input,
+      });
+      present(values[1]).creationProof.variation.variationHash = root.variationHash;
+    }
+    const before = JSON.stringify(values);
+    await expect(verifyClosure(values)).rejects.toMatchObject({
+      code:
+        kind === "self-consistent-root" ? "VARIATION_LOCK_MISMATCH" : "INVALID_VARIATION_LINEAGE",
+    });
+    expect(JSON.stringify(values)).toBe(before);
+  });
+  it("descriptor rejection precedes replay; source admission precedes malformed proof; stale parent precedes invalid seed", async () => {
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty({}, "variation", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(verifyClosure([unsafe])).rejects.toMatchObject({
+      code: "INVALID_VARIATION_INPUT",
+    });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+    await expect(
+      verifyArpeggiatorVariationAncestryForNodeV1(source(), undefined, [{}]),
+    ).rejects.toMatchObject({ code: "INVALID_SOURCE_ADMISSION_REQUEST" });
+    const values = closure();
+    present(values[0]).variation.request = {
+      ...present(values[0]).variation.request,
+      parent: { ...present(values[0]).variation.request.parent, stateHash: "0".repeat(64) },
+    };
+    present(values[0]).variation.request.rootSeed = -1;
+    await expect(verifyClosure(values)).rejects.toMatchObject({ code: "STALE_VARIATION_PARENT" });
+  });
+  it("does not replay or return partial proof after an invalid earlier owner", async () => {
+    const values = closure();
+    present(values[0]).creationProof.variation.variationHash = "0".repeat(64);
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    const install = vi.fn();
+    await verifyClosure(values).then(install, () => undefined);
+    expect(install).not.toHaveBeenCalled();
+    // No variation-root Stage7 replay follows the failed proof.
+    expect(target).not.toHaveBeenCalled();
+  });
+  it("detaches the entire ancestor closure before asynchronous admission", async () => {
+    const values = structuredClone(closure());
+    const before = JSON.stringify(values);
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementation(async (r) => {
+      await gate;
+      return real(r);
+    });
+    const pending = verifyClosure(values);
+    present(values[0]).variation.variationHash = "0".repeat(64);
+    Reflect.set(present(values[1]).creationProof.parentHistory, "cursor", 0);
+    release?.();
+    expect(JSON.stringify(await pending)).toBe(before);
+  });
+  it("requires exact pinned runtime before admission or proof access", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(verifyClosure(undefined)).rejects.toThrow("Node 24.21.0");
     expect(replay).not.toHaveBeenCalled();
   });
 });
