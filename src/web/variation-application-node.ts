@@ -1,4 +1,7 @@
-import { verifyVariationCollectionV1 } from "../composition/variation-original-state";
+import {
+  createRetainedArpeggiatorAlternativeV1,
+  verifyVariationCollectionV1,
+} from "../composition/variation-original-state";
 import type { VariationCollectionV1 } from "../editor/variation-collection";
 import type { CompleteSectionPreview } from "./complete-section-preview-node";
 
@@ -45,4 +48,33 @@ export async function projectRetainedVariationPreviewForNodeV1(
 ): Promise<CompleteSectionPreview> {
   const verified = await verifyVariationCollectionV1(value);
   return previewValues(verified);
+}
+
+/** Explicit creation only; actor/clock/sequence are application-owned. A partial
+ * collection, attempt or preview is never installed or returned on failure. */
+export async function createRetainedArpeggiatorVariationApplicationForNodeV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedEditor: unknown,
+  request: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation application creation requires Node 24.21.0.");
+  const createdAt = new Date().toISOString();
+  const result = await createRetainedArpeggiatorAlternativeV1(
+    value,
+    expectedSelectedSequence,
+    expectedEditor,
+    request,
+    { actor: "local-producer-unverified", createdAt },
+  );
+  return Object.freeze({
+    collection: result.collection,
+    selectedState: Object.freeze({
+      schema: result.state.schema,
+      stateHash: result.state.stateHash,
+    }),
+    selectedRevision: result.state.editor,
+    preview: previewValues(result.collection),
+  });
 }

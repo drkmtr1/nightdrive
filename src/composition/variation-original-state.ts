@@ -10,7 +10,7 @@ import { generateStage7ArpeggiatorAggregateV1 } from "../generators/stage7-arpeg
 import { createArpRange } from "../music-domain/arpeggiator";
 import type { HarmonyProgressionRealization } from "../music-domain/harmony";
 import { serializeCompleteSectionV1, verifyCompleteSectionV1 } from "./complete-section";
-import type { EditorRevisionV1 } from "./editor-revision";
+import { type EditorRevisionV1, EditorValueError } from "./editor-revision";
 import {
   STAGE7_AGGREGATE_ENGINE_VERSION_V1,
   STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1,
@@ -216,6 +216,7 @@ async function originalVariationRequestContextV1(
 function variationRequestValuesV1(
   proposal: unknown,
   state: VariationStateV1,
+  beforeSeed?: () => void,
 ): OriginalArpeggiatorVariationRequestV1 {
   const fail = (code: VariationRequestValueError["code"], field: string): never => {
     throw new VariationRequestValueError(code, field);
@@ -247,6 +248,7 @@ function variationRequestValuesV1(
     return fail("INVALID_VARIATION_PARENT", "request.parent");
   if (identity.stateHash !== state.stateHash)
     return fail("STALE_VARIATION_PARENT", "request.parent");
+  beforeSeed?.();
   const rootSeed = record.rootSeed;
   if (
     typeof rootSeed !== "number" ||
@@ -1019,7 +1021,13 @@ function verifyCombinedNoteIdsV1(
 export async function verifyVariationCollectionV1(value: unknown): Promise<VariationCollectionV1> {
   if (process.versions.node !== "24.21.0")
     throw new Error("Variation collection verification requires Node 24.21.0.");
-  const supplied = snapshotVariationInputV1(value, "collection");
+  return verifyVariationCollectionValuesV1(snapshotVariationInputV1(value, "collection"));
+}
+
+/** Private continuation: consumed snapshot only, never public admission authority. */
+async function verifyVariationCollectionValuesV1(
+  supplied: unknown,
+): Promise<VariationCollectionV1> {
   if (typeof supplied !== "object" || supplied === null || Array.isArray(supplied))
     throw new VariationCollectionValueError("collection");
   const record = supplied as Record<string, unknown>;
@@ -1111,5 +1119,109 @@ export async function verifyVariationCollectionV1(value: unknown): Promise<Varia
     alternatives: Object.freeze(alternatives),
     selectedSequence: record.selectedSequence as number,
     nextSequence: record.nextSequence as number,
+  });
+}
+
+/** One canonical creation transition from fresh complete retained proof. Metadata
+ * is supplied by the Node application, never part of musical identity. */
+export async function createRetainedArpeggiatorAlternativeV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedEditor: unknown,
+  request: unknown,
+  metadata: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation creation requires Node 24.21.0.");
+  // All consumed records are detached before admission; no late caller reads.
+  const supplied = snapshotVariationInputV1(value, "collection");
+  const sequence = snapshotVariationInputV1(expectedSelectedSequence, "expectedSelectedSequence");
+  const editor = snapshotVariationInputV1(expectedEditor, "expectedParent");
+  const proposal = snapshotVariationInputV1(request, "request");
+  const suppliedMetadata = snapshotVariationInputV1(metadata, "metadata");
+  const collection = await verifyVariationCollectionValuesV1(supplied);
+  if (!Number.isSafeInteger(sequence) || sequence !== collection.selectedSequence)
+    throw new VariationCollectionValueError("expectedSelectedSequence");
+  const selected = collection.alternatives.find((entry) => entry.sequence === sequence);
+  const revision = selected?.history.revisions[selected.history.cursor];
+  if (!selected || !revision)
+    throw new VariationCollectionValueError("collection.selectedSequence");
+  const parent = variationStateValuesV1(revision, selected.variation);
+  const acceptedRequest = variationRequestValuesV1(proposal, parent, () => {
+    if (
+      typeof editor !== "object" ||
+      editor === null ||
+      Array.isArray(editor) ||
+      (editor as Record<string, unknown>).schema !== revision.schema
+    )
+      throw new EditorValueError(
+        "INVALID_EDITOR_PARENT",
+        "expectedParent",
+        "Expected parent is invalid.",
+      );
+    if ((editor as Record<string, unknown>).revisionHash !== revision.revisionHash)
+      throw new EditorValueError(
+        "STALE_EDITOR_PARENT",
+        "expectedParent.revisionHash",
+        "Expected parent is stale.",
+      );
+  });
+  if (
+    !exactRecord(suppliedMetadata, ["actor", "createdAt"]) ||
+    suppliedMetadata.actor !== "local-producer-unverified"
+  )
+    throw new VariationAttemptValueError("INVALID_VARIATION_PROVENANCE", "attempt.actor");
+  if (!validAttemptUtc(suppliedMetadata.createdAt))
+    throw new VariationAttemptValueError("INVALID_VARIATION_PROVENANCE", "attempt.createdAt");
+  if (!Number.isSafeInteger(collection.nextSequence + 1))
+    throw new VariationCollectionValueError("collection.nextSequence");
+  const proof = await originalVariationRootValuesV1(
+    {
+      verified: {
+        source: collection.source,
+        sourceRequest: collection.sourceRequest,
+        history: selected.history,
+      },
+      state: parent,
+      request: acceptedRequest,
+    },
+    selected.variation,
+  );
+  const attemptValues = {
+    sequence: collection.nextSequence,
+    variation: Object.freeze({
+      schema: proof.variation.schema,
+      variationHash: proof.variation.variationHash,
+    }),
+    actor: suppliedMetadata.actor,
+    createdAt: suppliedMetadata.createdAt,
+  };
+  const attempt = variationAttemptValuesV1([proof], {
+    schema: VARIATION_ATTEMPT_SCHEMA_V1,
+    ...attemptValues,
+    attemptHash: digest({ schema: "nightdrive.variation-attempt-hash-input.v1", ...attemptValues }),
+  });
+  // Separate immutable active fork; the saved proof never follows this cursor.
+  const history = freezeTrustedValues(
+    JSON.parse(JSON.stringify(selected.history)) as EditorHistoryV1,
+  );
+  verifyCombinedNoteIdsV1(history, proof.variation, "createdAlternative");
+  const alternative = Object.freeze({
+    sequence: collection.nextSequence,
+    attempt,
+    variation: proof.variation,
+    creationProof: proof.creationProof,
+    history,
+  });
+  const next: VariationCollectionV1 = Object.freeze({
+    source: collection.source,
+    sourceRequest: collection.sourceRequest,
+    alternatives: Object.freeze([...collection.alternatives, alternative]),
+    selectedSequence: alternative.sequence,
+    nextSequence: alternative.sequence + 1,
+  });
+  return Object.freeze({
+    collection: next,
+    state: variationStateValuesV1(revision, proof.variation),
   });
 }

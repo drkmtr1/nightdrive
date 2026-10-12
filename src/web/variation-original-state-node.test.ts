@@ -27,7 +27,10 @@ import * as aggregateGenerator from "../generators/stage7-arpeggiator-aggregate"
 import * as arpDomain from "../music-domain/arpeggiator-policy-generator";
 import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
-import { projectRetainedVariationPreviewForNodeV1 } from "./variation-application-node";
+import {
+  createRetainedArpeggiatorVariationApplicationForNodeV1,
+  projectRetainedVariationPreviewForNodeV1,
+} from "./variation-application-node";
 import {
   serializeVariationAttemptForNodeV1,
   verifyVariationAttemptForNodeV1,
@@ -726,6 +729,7 @@ describe("original alternative combined canonical state", () => {
       "VariationComponentValueError",
       "VariationRequestValueError",
       "VariationRootValueError",
+      "createRetainedArpeggiatorAlternativeV1",
       "generateOriginalArpeggiatorVariationComponentV1",
       "generateOriginalArpeggiatorVariationRootV1",
       "generateVariationParentArpeggiatorRootV1",
@@ -3008,7 +3012,10 @@ describe("original-parent canonical variation root and creation proof", () => {
   });
   it("delegates full proof once, propagates errors and exports no raw projection", async () => {
     const api = await import("./variation-application-node");
-    expect(Object.keys(api)).toEqual(["projectRetainedVariationPreviewForNodeV1"]);
+    expect(Object.keys(api).sort()).toEqual([
+      "createRetainedArpeggiatorVariationApplicationForNodeV1",
+      "projectRetainedVariationPreviewForNodeV1",
+    ]);
     const input = collectionFixture([]);
     const failure = new Error("test verification unavailable");
     const delegate = vi
@@ -3029,6 +3036,311 @@ describe("original-parent canonical variation root and creation proof", () => {
     await expect(projectRetainedVariationPreviewForNodeV1(bad)).rejects.toThrow(
       "requires Node 24.21.0",
     );
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+  });
+
+  const creationMetadata = {
+    actor: "local-producer-unverified",
+    createdAt: "2026-10-12T03:00:00.000Z",
+  };
+  function creationInputs(input = collectionFixture([], [], pitchHistory())) {
+    const selected = present(
+      input.alternatives.find((entry) => entry.sequence === input.selectedSequence),
+    );
+    const expected = expectedRoot(selected.history, selected.variation);
+    const editor = { ...expected.creationProof.parent.editor };
+    return { input, expected, editor, proposal: structuredClone(expected.variation.request) };
+  }
+  const createAlternative = (
+    v: ReturnType<typeof creationInputs>,
+    metadata: unknown = creationMetadata,
+  ) =>
+    compositionState.createRetainedArpeggiatorAlternativeV1(
+      v.input,
+      v.input.selectedSequence,
+      v.editor,
+      v.proposal,
+      metadata,
+    );
+  function independentAttempt(
+    sequence: number,
+    root: ReturnType<typeof expectedRoot>["variation"],
+  ) {
+    const values = {
+      sequence,
+      variation: { schema: root.schema, variationHash: root.variationHash },
+      ...creationMetadata,
+    };
+    return {
+      schema: "nightdrive.variation-attempt.v1",
+      ...values,
+      attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+    };
+  }
+  it.each(["original", "variation"])(
+    "atomically creates a complete %s-parent alternative from independent root/attempt/state fixtures",
+    async (kind) => {
+      const v = creationInputs(
+        kind === "original" ? collectionFixture([], [], pitchHistory()) : collectionFixture(),
+      );
+      const before = JSON.stringify(v.input);
+      const parent = present(
+        v.input.alternatives.find((entry) => entry.sequence === v.input.selectedSequence),
+      );
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const result = await createAlternative(v);
+      const child = present(result.collection.alternatives.at(-1));
+      expect(child).toEqual({
+        sequence: v.input.nextSequence,
+        attempt: independentAttempt(v.input.nextSequence, v.expected.variation),
+        variation: v.expected.variation,
+        creationProof: v.expected.creationProof,
+        history: parent.history,
+      });
+      expect(JSON.stringify(child.attempt)).toBe(
+        JSON.stringify(independentAttempt(v.input.nextSequence, v.expected.variation)),
+      );
+      expect(result.state).toEqual(
+        expectedRoot(parent.history, v.expected.variation).creationProof.parent,
+      );
+      expect(result.collection.alternatives.slice(0, -1)).toEqual(v.input.alternatives);
+      expect(result.collection.selectedSequence).toBe(v.input.nextSequence);
+      expect(result.collection.nextSequence).toBe(v.input.nextSequence + 1);
+      expect(child.history).not.toBe(parent.history);
+      expect(child.history.revisions).toHaveLength(parent.history.revisions.length);
+      expect(child.history.cursor).toBe(parent.history.cursor);
+      expect(child.creationProof?.parentHistory).not.toBe(child.history);
+      expect(result.collection.source).toEqual(v.input.source);
+      for (const role of ["harmony", "bass", "lead"] as const) {
+        const index = result.state.tracks.findIndex((t) => t.role === role);
+        expect(result.state.tracks[index]).toEqual(v.expected.creationProof.parent.tracks[index]);
+        expect(result.state.trackHashes[role]).toBe(
+          v.expected.creationProof.parent.trackHashes[role],
+        );
+      }
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(v.input)).toBe(before);
+      frozen(result);
+      expect(await verifyVariationCollectionForNodeV1(result.collection)).toEqual(
+        result.collection,
+      );
+      expect(replay).toHaveBeenCalledTimes(2); // Separate authoritative invocation re-admits.
+    },
+  );
+  it("retains same-parent/seed/time duplicates with distinct sequences and independent redo proofs, then creates a verified descendant", async () => {
+    const first = await createAlternative(creationInputs(collectionFixture([], [], rootHistory())));
+    const redo = present(undoEditorHistoryV1(pitchHistory()));
+    const next = {
+      ...first.collection,
+      alternatives: first.collection.alternatives.map((entry) =>
+        entry.sequence === 0 ? { ...entry, history: redo } : entry,
+      ),
+      selectedSequence: 0,
+    };
+    const second = await createAlternative(
+      creationInputs(next as unknown as ReturnType<typeof collectionFixture>),
+    );
+    const one = present(second.collection.alternatives[1]);
+    const two = present(second.collection.alternatives[2]);
+    expect(one.variation).toEqual(two.variation);
+    expect(one.attempt?.createdAt).toBe(two.attempt?.createdAt);
+    expect(one.attempt?.attemptHash).not.toBe(two.attempt?.attemptHash);
+    expect(one.creationProof?.parentHistory.revisions).toHaveLength(1);
+    expect(two.creationProof?.parentHistory.revisions).toHaveLength(2);
+    expect(two.history).toEqual(redo);
+    const third = await createAlternative(
+      creationInputs(second.collection as unknown as ReturnType<typeof collectionFixture>),
+    );
+    expect(await verifyVariationCollectionForNodeV1(third.collection)).toEqual(third.collection);
+    expect(third.collection.alternatives[2]?.creationProof).toEqual(two.creationProof);
+    expect(third.collection.nextSequence).toBe(4);
+  });
+  it.each([
+    ["missing-request", "INVALID_SOURCE_ADMISSION_REQUEST", "sourceRequest"],
+    ["selection", "INVALID_VARIATION_COLLECTION", "expectedSelectedSequence"],
+    ["combined", "STALE_VARIATION_PARENT", "request.parent"],
+    ["editor", "STALE_EDITOR_PARENT", "expectedParent.revisionHash"],
+    ["seed", "INVALID_VARIATION_SEED", "request.rootSeed"],
+    ["next-sequence", "INVALID_VARIATION_COLLECTION", "collection.nextSequence"],
+  ])("creation rejection preserves all state and precedence for %s", async (kind, code, field) => {
+    const v = creationInputs();
+    let sequence = v.input.selectedSequence;
+    v.proposal.rootSeed = -1;
+    if (kind === "missing-request") Reflect.set(v.input, "sourceRequest", null);
+    if (kind === "selection") sequence = 9;
+    if (kind === "combined") v.proposal.parent.stateHash = "0".repeat(64);
+    if (kind === "editor") v.editor.revisionHash = "0".repeat(64);
+    if (kind === "next-sequence") v.input.nextSequence = Number.MAX_SAFE_INTEGER;
+    const before = JSON.stringify(v.input);
+    const installed = vi.fn();
+    const pending = compositionState.createRetainedArpeggiatorAlternativeV1(
+      v.input,
+      sequence,
+      v.editor,
+      v.proposal,
+      { actor: "wrong", createdAt: "invalid" },
+    );
+    void pending.then(installed, () => undefined);
+    await expect(pending).rejects.toMatchObject({ code, field });
+    expect(installed).not.toHaveBeenCalled();
+    expect(JSON.stringify(v.input)).toBe(before);
+  });
+  it.each([
+    [{ actor: "wrong", createdAt: "invalid" }, "attempt.actor"],
+    [{ ...creationMetadata, createdAt: "2026-02-30T03:00:00.000Z" }, "attempt.createdAt"],
+    [{ ...creationMetadata, createdAt: "2026-10-12T03:00:00Z" }, "attempt.createdAt"],
+    [{ ...creationMetadata, createdAt: "2026-10-12T03:00:00.000+00:00" }, "attempt.createdAt"],
+  ])("rejects metadata before generating the new target: %j", async (metadata, field) => {
+    const v = creationInputs();
+    const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+    await expect(createAlternative(v, metadata)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_PROVENANCE",
+      field,
+    });
+    expect(target).not.toHaveBeenCalled(); // Source replay uses its separate generator path.
+  });
+  it.each(["collection", "expectedEditor", "request", "metadata"])(
+    "rejects unsafe %s descriptors before admission without invoking hooks",
+    async (owner) => {
+      const v = creationInputs();
+      const hook = vi.fn();
+      const unsafe = Object.defineProperty({}, "x", { get: hook, enumerable: true });
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const args: unknown[] = [v.input, 0, v.editor, v.proposal, creationMetadata];
+      args[{ collection: 0, expectedEditor: 2, request: 3, metadata: 4 }[owner] ?? 0] = unsafe;
+      await expect(
+        compositionState.createRetainedArpeggiatorAlternativeV1(
+          ...(args as [unknown, unknown, unknown, unknown, unknown]),
+        ),
+      ).rejects.toMatchObject({ code: "INVALID_VARIATION_INPUT" });
+      expect(hook).not.toHaveBeenCalled();
+      expect(replay).not.toHaveBeenCalled();
+    },
+  );
+  it("captures all creation inputs before asynchronous admission", async () => {
+    const v = creationInputs();
+    const metadata = { ...creationMetadata };
+    const expected = v.expected;
+    const editor = { ...v.editor };
+    let release: (() => void) | undefined;
+    const real = generator.generateCompleteSectionV1;
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementationOnce(async (r) => {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return real(r);
+    });
+    const pending = createAlternative(v, metadata);
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    v.input.alternatives.splice(0);
+    v.proposal.rootSeed = -1;
+    v.editor.revisionHash = "0".repeat(64);
+    metadata.actor = "wrong";
+    release?.();
+    const result = await pending;
+    expect(result.collection.alternatives[1]?.variation).toEqual(expected.variation);
+    expect(result.collection.alternatives[1]?.attempt).toEqual(
+      independentAttempt(1, expected.variation),
+    );
+    expect(result.state.editor).toEqual(editor);
+  });
+  it.each(["generation", "attempt-hash"])(
+    "returns no partial success after %s failure",
+    async (kind) => {
+      const v = creationInputs();
+      const before = JSON.stringify(v.input);
+      const failure = new Error("fixture creation unavailable");
+      if (kind === "generation") {
+        vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1").mockRejectedValueOnce(
+          failure,
+        );
+      } else {
+        const real = digestAdapter.digestStage7CanonicalUtf8;
+        vi.spyOn(digestAdapter, "digestStage7CanonicalUtf8").mockImplementation((value) => {
+          if (value.startsWith('{"schema":"nightdrive.variation-attempt-hash-input.v1"'))
+            throw failure;
+          return real(value);
+        });
+      }
+      const installed = vi.fn();
+      const pending = createAlternative(v);
+      void pending.then(installed, () => undefined);
+      await expect(pending).rejects.toBe(failure);
+      expect(installed).not.toHaveBeenCalled();
+      expect(JSON.stringify(v.input)).toBe(before);
+    },
+  );
+  it("Node application owns exact actor/UTC metadata and returns only complete identities/preview with one fresh admission", async () => {
+    const v = creationInputs();
+    const before = JSON.stringify(v.input);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(creationMetadata.createdAt));
+    try {
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const result = await createRetainedArpeggiatorVariationApplicationForNodeV1(
+        v.input,
+        0,
+        v.editor,
+        v.proposal,
+      );
+      const state = expectedRoot(pitchHistory(), v.expected.variation).creationProof.parent;
+      expect(result.selectedState).toEqual({ schema: state.schema, stateHash: state.stateHash });
+      expect(result.selectedRevision).toEqual(state.editor);
+      expect(result.collection.alternatives[1]?.attempt).toEqual(
+        independentAttempt(1, v.expected.variation),
+      );
+      expect(result.preview).toEqual(
+        expectedCollectionPreview(
+          result.collection as unknown as ReturnType<typeof collectionFixture>,
+        ),
+      );
+      expect(result.preview.sourceResultHash).toBe(LITERAL_RESULT_HASH);
+      expect(Object.keys(present(result.preview.tracks[3]?.notes[0]))).toEqual([
+        "pitch",
+        "startTick",
+        "durationTicks",
+      ]);
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(v.input)).toBe(before);
+      frozen(result);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("Node application publishes nothing if final preview construction fails", async () => {
+    const v = creationInputs();
+    const state = v.expected.creationProof.parent;
+    vi.spyOn(compositionState, "createRetainedArpeggiatorAlternativeV1").mockResolvedValueOnce({
+      collection: { ...v.input, alternatives: [] } as unknown as Awaited<
+        ReturnType<typeof compositionState.createRetainedArpeggiatorAlternativeV1>
+      >["collection"],
+      state: state as unknown as Awaited<
+        ReturnType<typeof compositionState.createRetainedArpeggiatorAlternativeV1>
+      >["state"],
+    });
+    const installed = vi.fn();
+    const pending = createRetainedArpeggiatorVariationApplicationForNodeV1(
+      v.input,
+      0,
+      v.editor,
+      v.proposal,
+    );
+    void pending.then(installed, () => undefined);
+    await expect(pending).rejects.toThrow("Verified variation selection is missing");
+    expect(installed).not.toHaveBeenCalled();
+  });
+  it("both creation entry points reject wrong pinned runtime before caller hooks or delegation", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty({}, "source", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(
+      compositionState.createRetainedArpeggiatorAlternativeV1(unsafe, 0, null, null, null),
+    ).rejects.toThrow("Node 24.21.0");
+    await expect(
+      createRetainedArpeggiatorVariationApplicationForNodeV1(unsafe, 0, null, null),
+    ).rejects.toThrow("Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
     expect(replay).not.toHaveBeenCalled();
   });
