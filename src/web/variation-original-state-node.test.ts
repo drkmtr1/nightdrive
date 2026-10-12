@@ -3186,6 +3186,51 @@ describe("original-parent canonical variation root and creation proof", () => {
     expect(installed).not.toHaveBeenCalled();
     expect(JSON.stringify(v.input)).toBe(before);
   });
+  it.each(["extra", "missing", "reordered", "schema"])(
+    "rejects %s expected editor identity before seed without partial application",
+    async (kind) => {
+      const v = creationInputs();
+      const editor: Record<string, unknown> = { ...v.editor };
+      if (kind === "extra") editor.extra = true;
+      if (kind === "missing") delete editor.revisionHash;
+      if (kind === "schema") editor.schema = "unsupported";
+      const proposal =
+        kind === "reordered"
+          ? { revisionHash: v.editor.revisionHash, schema: v.editor.schema }
+          : editor;
+      v.proposal.rootSeed = -1;
+      const before = JSON.stringify(v.input);
+      const installed = vi.fn();
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      const pending = createRetainedArpeggiatorVariationApplicationForNodeV1(
+        v.input,
+        0,
+        proposal,
+        v.proposal,
+      );
+      void pending.then(installed, () => undefined);
+      await expect(pending).rejects.toMatchObject({
+        code: "INVALID_EDITOR_PARENT",
+        field: "expectedParent",
+      });
+      expect(installed).not.toHaveBeenCalled();
+      expect(target).not.toHaveBeenCalled();
+      expect(JSON.stringify(v.input)).toBe(before);
+    },
+  );
+  it("retains stale combined-parent precedence over malformed expected editor and seed", async () => {
+    const v = creationInputs();
+    v.proposal.parent.stateHash = "0".repeat(64);
+    v.proposal.rootSeed = -1;
+    await expect(
+      createRetainedArpeggiatorVariationApplicationForNodeV1(
+        v.input,
+        0,
+        { ...v.editor, extra: true },
+        v.proposal,
+      ),
+    ).rejects.toMatchObject({ code: "STALE_VARIATION_PARENT", field: "request.parent" });
+  });
   it.each([
     [{ actor: "wrong", createdAt: "invalid" }, "attempt.actor"],
     [{ ...creationMetadata, createdAt: "2026-02-30T03:00:00.000Z" }, "attempt.createdAt"],

@@ -1148,18 +1148,13 @@ export async function createRetainedArpeggiatorAlternativeV1(
     throw new VariationCollectionValueError("collection.selectedSequence");
   const parent = variationStateValuesV1(revision, selected.variation);
   const acceptedRequest = variationRequestValuesV1(proposal, parent, () => {
-    if (
-      typeof editor !== "object" ||
-      editor === null ||
-      Array.isArray(editor) ||
-      (editor as Record<string, unknown>).schema !== revision.schema
-    )
+    if (!exactRecord(editor, ["schema", "revisionHash"]) || editor.schema !== revision.schema)
       throw new EditorValueError(
         "INVALID_EDITOR_PARENT",
         "expectedParent",
         "Expected parent is invalid.",
       );
-    if ((editor as Record<string, unknown>).revisionHash !== revision.revisionHash)
+    if (editor.revisionHash !== revision.revisionHash)
       throw new EditorValueError(
         "STALE_EDITOR_PARENT",
         "expectedParent.revisionHash",
