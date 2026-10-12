@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   type CompleteSectionRequestV1,
   type CompleteSectionResultV1,
+  serializeCompleteSectionV1,
   verifyCompleteSectionV1,
 } from "../composition/complete-section";
 import {
@@ -20,7 +21,9 @@ import {
   selectedEditorRevisionV1,
   undoEditorHistoryV1,
 } from "../editor/editor-history";
+import * as collection from "../editor/variation-collection";
 import * as generator from "../generators/complete-section";
+import { createOriginalVariationCollectionForNodeV1 } from "./variation-collection-node";
 import { verifyVariationEditorHistoryForNodeV1 } from "./variation-editor-history-node";
 
 function request(): CompleteSectionRequestV1 {
@@ -553,6 +556,249 @@ describe("admitted retained editor history", () => {
     const bad = Object.defineProperty({}, "source", { get: hook });
     const generate = vi.spyOn(generator, "generateCompleteSectionV1");
     await expect(verifyVariationEditorHistoryForNodeV1(bad, bad, bad)).rejects.toThrow(
+      "requires Node 24.21.0",
+    );
+    expect(hook).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
+  });
+});
+
+describe("Original retained-collection bootstrap", () => {
+  const version = Object.getOwnPropertyDescriptor(process.versions, "node");
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (version) Object.defineProperty(process.versions, "node", version);
+  });
+  it("uses the actual pinned boundary and retains the literal original/root without stamping", async () => {
+    expect(process.versions.node).toBe("24.21.0");
+    const generate = vi.spyOn(generator, "generateCompleteSectionV1");
+    const clock = vi.spyOn(Date, "now");
+    const supplied = source();
+    const req = request();
+    const h = rootHistory();
+    const before = structuredClone({ supplied, req, h });
+    const result = await createOriginalVariationCollectionForNodeV1(supplied, req, h);
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(clock).not.toHaveBeenCalled();
+    expect(Object.keys(result)).toEqual([
+      "source",
+      "sourceRequest",
+      "alternatives",
+      "selectedSequence",
+      "nextSequence",
+    ]);
+    expect(serializeCompleteSectionV1(result.source)).toBe(JSON.stringify(wireSource()));
+    expect(result.source.resultHash).toBe(LITERAL_RESULT_HASH);
+    expect(result.sourceRequest).toEqual(req);
+    expect(result.selectedSequence).toBe(0);
+    expect(result.nextSequence).toBe(1);
+    expect(result.alternatives).toHaveLength(1);
+    const original = result.alternatives[0];
+    expect(Object.keys(original ?? {})).toEqual([
+      "sequence",
+      "attempt",
+      "variation",
+      "creationProof",
+      "history",
+    ]);
+    expect(original).toEqual({
+      sequence: 0,
+      attempt: null,
+      variation: null,
+      creationProof: null,
+      history: { ...h, revisions: [JSON.parse(EXPECTED_START_TICK_ROOT_JSON)] },
+    });
+    expect({ supplied, req, h }).toEqual(before);
+    expect(result.source).not.toBe(supplied);
+    expect(result.sourceRequest).not.toBe(req);
+    expect(original?.history).not.toBe(h);
+    frozen(result);
+  });
+  it("retains edited and undone histories exactly, with independently navigable redo", async () => {
+    const edited = pitchHistory();
+    const undone = undoEditorHistoryV1(edited);
+    if (!undone) throw new Error("Missing undo");
+    for (const h of [edited, undone]) {
+      const result = await createOriginalVariationCollectionForNodeV1(source(), request(), h);
+      const retained = result.alternatives[0]?.history;
+      if (!retained) throw new Error("Missing original history");
+      expect(JSON.stringify(retained)).toBe(JSON.stringify(h));
+      expect(selectedEditorRevisionV1(retained).revisionHash).toBe(
+        revisionAt(edited, h.cursor).revisionHash,
+      );
+      const navigated =
+        h.cursor === 0 ? redoEditorHistoryV1(retained) : undoEditorHistoryV1(retained);
+      if (!navigated) throw new Error("Missing navigation");
+      expect(selectedEditorRevisionV1(navigated).revisionHash).toBe(
+        revisionAt(edited, h.cursor === 0 ? 1 : 0).revisionHash,
+      );
+      expect(JSON.stringify(result.alternatives[0]?.history)).toBe(JSON.stringify(h));
+      frozen(result);
+    }
+  });
+  it("does not share mutable source/request/history or retain admission authority between calls", async () => {
+    const generate = vi.spyOn(generator, "generateCompleteSectionV1");
+    const first = await createOriginalVariationCollectionForNodeV1(
+      source(),
+      request(),
+      pitchHistory(),
+    );
+    const h = first.alternatives[0]?.history;
+    if (!h) throw new Error("Missing original history");
+    const second = await createOriginalVariationCollectionForNodeV1(
+      first.source,
+      first.sourceRequest,
+      h,
+    );
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(second).toEqual(first);
+    expect(second.source).not.toBe(first.source);
+    expect(second.alternatives[0]?.history).not.toBe(h);
+    expect(Object.keys(first)).not.toContain("admission");
+    expect(() => Reflect.set(first, "selectedSequence", 1)).not.toThrow();
+    expect(Reflect.set(first, "selectedSequence", 1)).toBe(false);
+    expect(first.selectedSequence).toBe(0);
+  });
+  it("captures source/request/history before asynchronous admission without freezing caller values", async () => {
+    const supplied = structuredClone(source());
+    const req = structuredClone(request());
+    const h = structuredClone(pitchHistory());
+    const expected = structuredClone({ supplied, req, h });
+    let resolve!: (value: CompleteSectionResultV1) => void;
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    const pending = createOriginalVariationCollectionForNodeV1(supplied, req, h);
+    Object.defineProperty(supplied, "resultHash", { value: "0".repeat(64) });
+    Object.defineProperty(req.composition, "rootSeed", { value: 99 });
+    Object.defineProperty(h, "cursor", { value: 99 });
+    resolve(verifyCompleteSectionV1(source()));
+    const result = await pending;
+    expect(result.source).toEqual(expected.supplied);
+    expect(result.sourceRequest).toEqual(expected.req);
+    expect(result.alternatives[0]?.history).toEqual(expected.h);
+    expect(Object.isFrozen(h)).toBe(false);
+    expect(Object.isFrozen(req.composition)).toBe(false);
+    expect(Object.isFrozen(supplied)).toBe(false);
+  });
+  it.each([0, 1])(
+    "rejects a rehashed forged child at active cursor %i, including redo",
+    async (cursor) => {
+      const h = { ...forgedChild(pitchHistory()), cursor };
+      const { revisionHash, ...base } = revisionAt(h, 1);
+      expect(revisionHash).toBe(
+        sha256(
+          JSON.stringify({
+            schema: "nightdrive.editor-revision-hash-input.v1",
+            revision: base,
+          }),
+        ),
+      );
+      await expect(
+        createOriginalVariationCollectionForNodeV1(source(), request(), h),
+      ).rejects.toMatchObject({
+        code: "INVALID_EDITOR_LINEAGE",
+      });
+    },
+  );
+  it("rejects an independently self-consistent source from a different accepted request", async () => {
+    const req = request();
+    const other = await generator.generateCompleteSectionV1({
+      ...req,
+      composition: { ...req.composition, rootSeed: 1 },
+    });
+    expect(verifyCompleteSectionV1(other)).toEqual(other);
+    await expect(
+      createOriginalVariationCollectionForNodeV1(other, req, createEditorHistoryV1(other)),
+    ).rejects.toMatchObject({
+      code: "SOURCE_ADMISSION_MISMATCH",
+    });
+  });
+  it("rejects a valid history from a different source after original admission", async () => {
+    const req = request();
+    const other = await generator.generateCompleteSectionV1({
+      ...req,
+      composition: { ...req.composition, rootSeed: 1 },
+    });
+    await expect(
+      createOriginalVariationCollectionForNodeV1(source(), req, createEditorHistoryV1(other)),
+    ).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+      field: "history.source",
+    });
+  });
+  it("preserves source, request, then history semantic rejection order", async () => {
+    await expect(
+      createOriginalVariationCollectionForNodeV1(
+        { ...source(), resultHash: "0".repeat(64) },
+        null,
+        null,
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_COMPLETE_SECTION_RESULT",
+    });
+    await expect(
+      createOriginalVariationCollectionForNodeV1(source(), null, null),
+    ).rejects.toMatchObject({
+      code: "INVALID_SOURCE_ADMISSION_REQUEST",
+    });
+    await expect(
+      createOriginalVariationCollectionForNodeV1(source(), request(), null),
+    ).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+  });
+  it.each([-1, 99, 0.5])("rejects invalid original history cursor %s", async (cursor) => {
+    await expect(
+      createOriginalVariationCollectionForNodeV1(source(), request(), { ...rootHistory(), cursor }),
+    ).rejects.toMatchObject({
+      code: "INVALID_EDITOR_REVISION",
+    });
+  });
+  it("rejects caller accessors before replay and never evaluates them", async () => {
+    const hook = vi.fn();
+    const h = Object.defineProperty(structuredClone(rootHistory()), "cursor", {
+      get: hook,
+      enumerable: true,
+    });
+    const generate = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(
+      createOriginalVariationCollectionForNodeV1(source(), request(), h),
+    ).rejects.toMatchObject({
+      code: "INVALID_VARIATION_INPUT",
+    });
+    expect(hook).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
+  });
+  it("propagates admission failure without returning any partial application value", async () => {
+    const error = new Error("test admission failed");
+    vi.spyOn(generator, "generateCompleteSectionV1").mockRejectedValueOnce(error);
+    const installed = vi.fn();
+    const pending = createOriginalVariationCollectionForNodeV1(source(), request(), rootHistory());
+    void pending.then(installed, () => undefined);
+    await expect(pending).rejects.toBe(error);
+    expect(installed).not.toHaveBeenCalled();
+  });
+  it("delegates once and does not mask coordinator rejection", async () => {
+    const error = new Error("test coordinator failed");
+    const call = vi
+      .spyOn(collection, "createOriginalVariationCollectionV1")
+      .mockRejectedValueOnce(error);
+    const supplied = source();
+    const req = request();
+    const h = rootHistory();
+    await expect(createOriginalVariationCollectionForNodeV1(supplied, req, h)).rejects.toBe(error);
+    expect(call).toHaveBeenCalledExactlyOnceWith(supplied, req, h);
+  });
+  it("guards exact Node before input hooks or source replay", async () => {
+    Object.defineProperty(process.versions, "node", { value: "24.20.0", configurable: true });
+    const hook = vi.fn();
+    const bad = Object.defineProperty({}, "source", { get: hook });
+    const generate = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(createOriginalVariationCollectionForNodeV1(bad, bad, bad)).rejects.toThrow(
       "requires Node 24.21.0",
     );
     expect(hook).not.toHaveBeenCalled();

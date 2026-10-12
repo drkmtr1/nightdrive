@@ -10,6 +10,7 @@ import {
 } from "../composition/complete-section";
 import type { EditorNoteCommand, EditorRevisionV1 } from "../composition/editor-revision";
 import { serializeStage7ArpeggiatorAggregateV1 } from "../composition/stage7-arpeggiator-aggregate";
+import * as attemptComposition from "../composition/variation-attempt";
 import * as compositionState from "../composition/variation-original-state";
 import {
   applyEditorCommandV1,
@@ -26,6 +27,12 @@ import * as aggregateGenerator from "../generators/stage7-arpeggiator-aggregate"
 import * as arpDomain from "../music-domain/arpeggiator-policy-generator";
 import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
+import { projectRetainedVariationPreviewForNodeV1 } from "./variation-application-node";
+import {
+  serializeVariationAttemptForNodeV1,
+  verifyVariationAttemptForNodeV1,
+} from "./variation-attempt-node";
+import { verifyVariationCollectionForNodeV1 } from "./variation-collection-node";
 import {
   generateOriginalArpeggiatorVariationComponentForNodeV1,
   generateOriginalArpeggiatorVariationRootForNodeV1,
@@ -711,8 +718,11 @@ describe("original alternative combined canonical state", () => {
     expect(Object.keys(compositionState).sort()).toEqual([
       "ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1",
       "ARPEGGIATOR_VARIATION_SCHEMA_V1",
+      "VARIATION_ATTEMPT_SCHEMA_V1",
       "VARIATION_CREATION_PROOF_SCHEMA_V1",
       "VARIATION_STATE_SCHEMA_V1",
+      "VariationAttemptValueError",
+      "VariationCollectionValueError",
       "VariationComponentValueError",
       "VariationRequestValueError",
       "VariationRootValueError",
@@ -721,9 +731,12 @@ describe("original alternative combined canonical state", () => {
       "generateVariationParentArpeggiatorRootV1",
       "projectOriginalVariationStateV1",
       "serializeOriginalArpeggiatorVariationRootV1",
+      "serializeVariationAttemptV1",
       "verifyArpeggiatorVariationAncestryV1",
       "verifyOriginalArpeggiatorVariationRequestV1",
       "verifyOriginalArpeggiatorVariationRootV1",
+      "verifyVariationAttemptV1",
+      "verifyVariationCollectionV1",
     ]);
     const replay = vi.spyOn(generator, "generateCompleteSectionV1");
     const actual = await compositionState.projectOriginalVariationStateV1(
@@ -1871,6 +1884,239 @@ describe("original-parent canonical variation root and creation proof", () => {
     ).rejects.toThrow("24.21.0");
     expect(replay).not.toHaveBeenCalled();
   });
+  // Literal attempt bytes/digest calculated separately from production, binding
+  // the independently fixed multi-edit root above. No production output oracle.
+  const ATTEMPT_JSON =
+    '{"schema":"nightdrive.variation-attempt.v1","sequence":1,"variation":{"schema":"nightdrive.arpeggiator-variation.v1","variationHash":"9836e2b631fc79f4ef9fcbfcb198e999296e2dbe9cebd30711cd5ab4eaf86a9d"},"actor":"local-producer-unverified","createdAt":"2026-10-11T20:00:00.000Z","attemptHash":"1d8c5f748ce6620a32a1739104c24c61e8ab9982fe13c1cec7113469ac2630ed"}';
+  const attemptFixture = (sequence = 1) => {
+    const values = {
+      sequence,
+      variation: {
+        schema: "nightdrive.arpeggiator-variation.v1",
+        variationHash: "9836e2b631fc79f4ef9fcbfcb198e999296e2dbe9cebd30711cd5ab4eaf86a9d",
+      },
+      actor: "local-producer-unverified",
+      createdAt: "2026-10-11T20:00:00.000Z",
+    };
+    return {
+      schema: "nightdrive.variation-attempt.v1",
+      ...values,
+      attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+    };
+  };
+  const verifyAttempt = (
+    attempt: unknown = attemptFixture(),
+    roots: unknown = [pairOnly(expectedRoot(literalMultiEditHistory()))],
+  ) => verifyVariationAttemptForNodeV1(source(), request(), roots, attempt);
+  it("verifies and serializes exact independent attempt JSON/UTF8/hash through Node with one fresh source replay per invocation", async () => {
+    const supplied = attemptFixture();
+    expect(JSON.stringify(supplied)).toBe(ATTEMPT_JSON);
+    const owners = [pairOnly(expectedRoot(literalMultiEditHistory()))];
+    const saved = JSON.stringify({ supplied, owners });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const delegate = vi.spyOn(attemptComposition, "verifyVariationAttemptV1");
+    const result = await verifyAttempt(supplied, owners);
+    expect(delegate).toHaveBeenCalledTimes(1);
+    expect(delegate).toHaveBeenCalledWith(source(), request(), owners, supplied);
+    expect(replay).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(JSON.parse(ATTEMPT_JSON));
+    expect(result).not.toBe(supplied);
+    expect(result.variation).not.toBe(supplied.variation);
+    frozen(result);
+    const serialize = vi.spyOn(attemptComposition, "serializeVariationAttemptV1");
+    const text = await serializeVariationAttemptForNodeV1(source(), request(), owners, supplied);
+    expect(serialize).toHaveBeenCalledTimes(1);
+    expect(text).toBe(ATTEMPT_JSON);
+    expect(Buffer.from(text, "utf8")).toEqual(Buffer.from(ATTEMPT_JSON, "utf8"));
+    expect(replay).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify({ supplied, owners })).toBe(saved);
+  });
+  it.each(["missing", "extra", "reordered", "identity-order"])(
+    "rejects noncanonical attempt envelope %s without repairing it",
+    async (kind) => {
+      const proposal: Record<string, unknown> = attemptFixture();
+      if (kind === "missing") delete proposal.actor;
+      if (kind === "extra") proposal.extra = "ignored fields are forbidden";
+      const supplied =
+        kind === "reordered"
+          ? {
+              sequence: proposal.sequence,
+              schema: proposal.schema,
+              variation: proposal.variation,
+              actor: proposal.actor,
+              createdAt: proposal.createdAt,
+              attemptHash: proposal.attemptHash,
+            }
+          : proposal;
+      if (kind === "identity-order")
+        supplied.variation = {
+          variationHash: attemptFixture().variation.variationHash,
+          schema: "nightdrive.arpeggiator-variation.v1",
+        };
+      const saved = JSON.stringify(supplied);
+      await expect(verifyAttempt(supplied)).rejects.toMatchObject({
+        code: kind === "identity-order" ? "INVALID_VARIATION_LINEAGE" : "INVALID_VARIATION_INPUT",
+        field: kind === "identity-order" ? "attempt.variation" : "attempt",
+      });
+      expect(JSON.stringify(supplied)).toBe(saved);
+    },
+  );
+  it("binds a descendant attempt only after its complete recursive owner closure and exports no hash-only constructor", async () => {
+    expect(Object.keys(attemptComposition).sort()).toEqual(
+      [
+        "VARIATION_ATTEMPT_SCHEMA_V1",
+        "VariationAttemptValueError",
+        "serializeVariationAttemptV1",
+        "verifyVariationAttemptV1",
+      ].sort(),
+    );
+    const owners = closure();
+    const descendant = present(owners.at(-1));
+    const values = {
+      sequence: 3,
+      variation: {
+        schema: descendant.variation.schema,
+        variationHash: descendant.variation.variationHash,
+      },
+      actor: "local-producer-unverified",
+      createdAt: "2026-10-11T20:00:00.000Z",
+    };
+    const proposal = {
+      schema: "nightdrive.variation-attempt.v1",
+      ...values,
+      attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+    };
+    expect(await verifyAttempt(proposal, owners)).toEqual(proposal);
+    await expect(verifyAttempt(proposal, [descendant])).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+  });
+  it("keeps repeated-root sequence metadata distinct without changing root/music/note identities or restamping time", async () => {
+    const owners = [pairOnly(expectedRoot(literalMultiEditHistory()))];
+    const saved = JSON.stringify(owners);
+    const first = await verifyAttempt(attemptFixture(1), owners);
+    const second = await verifyAttempt(attemptFixture(2), owners);
+    expect(first.variation).toEqual(second.variation);
+    expect(first.createdAt).toBe(second.createdAt);
+    expect(first.attemptHash).not.toBe(second.attemptHash);
+    expect(await verifyAttempt(second, owners)).toEqual(second);
+    expect(JSON.stringify(owners)).toBe(saved);
+  });
+  it.each([
+    ["sequence", 0, "INVALID_VARIATION_COLLECTION"],
+    ["sequence", -1, "INVALID_VARIATION_COLLECTION"],
+    ["sequence", 1.5, "INVALID_VARIATION_COLLECTION"],
+    ["sequence", "1", "INVALID_VARIATION_COLLECTION"],
+    ["sequence", Number.MAX_SAFE_INTEGER + 1, "INVALID_VARIATION_COLLECTION"],
+    ["actor", "authenticated-producer", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-02-29T00:00:00.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-04-31T00:00:00.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T24:00:00.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T20:00:00Z", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T20:00:00.000+00:00", "INVALID_VARIATION_PROVENANCE"],
+    ["createdAt", "2026-10-11T20:00:60.000Z", "INVALID_VARIATION_PROVENANCE"],
+    ["attemptHash", "0".repeat(64), "VARIATION_HASH_MISMATCH"],
+    ["attemptHash", "not-a-digest", "VARIATION_HASH_MISMATCH"],
+  ])("rejects invalid attempt %s=%s without mutation", async (field, value, code) => {
+    const proposal = attemptFixture();
+    Reflect.set(proposal, field, value);
+    const saved = JSON.stringify(proposal);
+    await expect(verifyAttempt(proposal)).rejects.toMatchObject({
+      code,
+      field: `attempt.${field}`,
+    });
+    expect(JSON.stringify(proposal)).toBe(saved);
+  });
+  it("rejects unknown root identity and self-consistent metadata backed by forged or missing proof, including canonical serialization", async () => {
+    const proposal = attemptFixture();
+    proposal.variation.variationHash = "0".repeat(64);
+    const { schema: _schema, attemptHash: _digest, ...input } = proposal;
+    proposal.attemptHash = hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...input });
+    await expect(verifyAttempt(proposal)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+      field: "attempt.variation",
+    });
+    const owners = [pairOnly(expectedRoot(literalMultiEditHistory()))];
+    owners[0].creationProof.parent.musicHash = "0".repeat(64);
+    const saved = JSON.stringify(owners);
+    await expect(verifyAttempt(attemptFixture(), owners)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+    await expect(
+      serializeVariationAttemptForNodeV1(source(), request(), owners, attemptFixture()),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_LINEAGE" });
+    await expect(
+      serializeVariationAttemptForNodeV1(source(), request(), [], attemptFixture()),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_LINEAGE" });
+    expect(JSON.stringify(owners)).toBe(saved);
+  });
+  it("rejects descriptors before replay, schema before source, source before metadata, and ordered attempt fields before digest", async () => {
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty(attemptFixture(), "actor", { get: hook });
+    await expect(verifyAttempt(unsafe)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_INPUT",
+      field: "attempt",
+    });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+    await expect(
+      verifyVariationAttemptForNodeV1(null, null, null, {
+        ...attemptFixture(),
+        schema: "unsupported",
+      }),
+    ).rejects.toMatchObject({ code: "UNSUPPORTED_VARIATION_SCHEMA" });
+    expect(replay).not.toHaveBeenCalled();
+    const bad = {
+      ...attemptFixture(),
+      sequence: 0,
+      actor: "invalid",
+      createdAt: "invalid",
+      attemptHash: "invalid",
+    };
+    await expect(
+      verifyVariationAttemptForNodeV1(source(), undefined, [], bad),
+    ).rejects.toMatchObject({ code: "INVALID_SOURCE_ADMISSION_REQUEST" });
+    await expect(verifyAttempt(bad)).rejects.toMatchObject({ field: "attempt.sequence" });
+    bad.sequence = 1;
+    await expect(verifyAttempt(bad)).rejects.toMatchObject({ field: "attempt.actor" });
+    bad.actor = "local-producer-unverified";
+    await expect(verifyAttempt(bad)).rejects.toMatchObject({ field: "attempt.createdAt" });
+  });
+  it("accepts exact leap-day metadata and captures proposals before asynchronous replay without reading a clock", async () => {
+    const proposal = attemptFixture();
+    proposal.createdAt = "2024-02-29T23:59:59.999Z";
+    const { schema: _schema, attemptHash: _digest, ...input } = proposal;
+    proposal.attemptHash = hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...input });
+    const saved = structuredClone(proposal);
+    const replayed = await generator.generateCompleteSectionV1(request());
+    let release: (() => void) | undefined;
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve(replayed);
+        }),
+    );
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => {
+      throw new Error("Clock must not be read");
+    });
+    const pending = verifyAttempt(proposal);
+    proposal.actor = "changed";
+    present(release)();
+    expect(await pending).toEqual(saved);
+    expect(clock).not.toHaveBeenCalled();
+  });
+  it("guards both attempt Node operations before any source replay", async () => {
+    Object.defineProperty(process.versions, "node", { value: "24.20.0", configurable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(verifyVariationAttemptForNodeV1(null, null, null, null)).rejects.toThrow(
+      "24.21.0",
+    );
+    await expect(serializeVariationAttemptForNodeV1(null, null, null, null)).rejects.toThrow(
+      "24.21.0",
+    );
+    expect(replay).not.toHaveBeenCalled();
+  });
   const pairOnly = (expected: ReturnType<typeof expectedRoot>) => ({
     variation: expected.variation,
     creationProof: expected.creationProof,
@@ -2260,5 +2506,530 @@ describe("original-parent canonical variation root and creation proof", () => {
       generateVariationParentArpeggiatorRootForNodeV1(unsafe, null, null, null, null, null),
     ).rejects.toThrow("Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
+  });
+
+  function collectionFixture(
+    roots = closure(),
+    histories = roots.map((pair) => pair.creationProof.parentHistory),
+    original = rootHistory(),
+  ) {
+    const originalEntry = {
+      sequence: 0,
+      attempt: null,
+      variation: null,
+      creationProof: null,
+      history: original,
+    };
+    const alternatives = [
+      originalEntry,
+      ...roots.map((pair, index) => {
+        const values = {
+          sequence: index + 1,
+          variation: { schema: pair.variation.schema, variationHash: pair.variation.variationHash },
+          actor: "local-producer-unverified",
+          createdAt: "2026-10-11T20:00:00.000Z",
+        };
+        return {
+          sequence: index + 1,
+          attempt: {
+            schema: "nightdrive.variation-attempt.v1",
+            ...values,
+            attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+          },
+          variation: pair.variation,
+          creationProof: pair.creationProof,
+          history: present(histories[index]),
+        };
+      }),
+    ];
+    return {
+      source: source(),
+      sourceRequest: request(),
+      alternatives,
+      selectedSequence: roots.length,
+      nextSequence: roots.length + 1,
+    };
+  }
+  it("verifies independent full collection bytes including three descendant roots and attempts with one source replay", async () => {
+    expect(process.versions.node).toBe("24.21.0");
+    const input = collectionFixture();
+    const expected = JSON.stringify(input);
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const clock = vi.spyOn(Date, "now");
+    const result = await verifyVariationCollectionForNodeV1(input);
+    expect(JSON.stringify(result)).toBe(expected);
+    expect(result.source.resultHash).toBe(LITERAL_RESULT_HASH);
+    expect(result.alternatives).toHaveLength(4);
+    expect(replay).toHaveBeenCalledTimes(1);
+    expect(clock).not.toHaveBeenCalled();
+    expect(result).not.toBe(input);
+    expect(result.alternatives[1]?.history).not.toBe(input.alternatives[1]?.history);
+    frozen(result);
+  });
+  it("verifies Original-only collection and normalizes negative zero without producing another context", async () => {
+    const input = collectionFixture([]);
+    input.selectedSequence = -0;
+    const original = present(input.alternatives[0]);
+    original.sequence = -0;
+    const result = await verifyVariationCollectionForNodeV1(input);
+    expect(result.selectedSequence).toBe(0);
+    expect(result.alternatives[0]?.sequence).toBe(0);
+    expect(result.nextSequence).toBe(1);
+    expect(result.alternatives[0]?.attempt).toBeNull();
+    expect(result.alternatives[0]?.variation).toBeNull();
+    expect(result.alternatives[0]?.creationProof).toBeNull();
+  });
+  it("keeps duplicate root identities with distinct valid redo proofs and independent active histories", async () => {
+    const undone = present(undoEditorHistoryV1(pitchHistory()));
+    const first = pairOnly(expectedRoot(rootHistory()));
+    const second = pairOnly(expectedRoot(undone));
+    const descendant = pairOnly(expectedRoot(pitchHistory(), first.variation));
+    expect(first.variation).toEqual(second.variation);
+    expect(first.creationProof).not.toEqual(second.creationProof);
+    const input = collectionFixture(
+      [first, second, descendant],
+      [rootHistory(), undone, pitchHistory()],
+    );
+    const result = await verifyVariationCollectionForNodeV1(input);
+    expect(JSON.stringify(result)).toBe(JSON.stringify(input));
+    expect(result.alternatives[1]?.variation).toEqual(result.alternatives[2]?.variation);
+    expect(result.alternatives[1]?.creationProof).not.toEqual(
+      result.alternatives[2]?.creationProof,
+    );
+    expect(result.alternatives[1]?.history).not.toBe(result.alternatives[2]?.history);
+    expect(result.alternatives[1]?.attempt?.attemptHash).not.toBe(
+      result.alternatives[2]?.attempt?.attemptHash,
+    );
+    const redo = present(redoEditorHistoryV1(present(result.alternatives[2]?.history)));
+    expect(selectedEditorRevisionV1(redo).revisionHash).toBe(
+      selectedEditorRevisionV1(pitchHistory()).revisionHash,
+    );
+    expect(result.alternatives[2]?.history.cursor).toBe(0);
+  });
+  it("retains creation proof after both current histories independently truncate its revision", async () => {
+    const history = pitchHistory();
+    const child = pairOnly(expectedRoot(history));
+    const undone = present(undoEditorHistoryV1(history));
+    const target = present(present(selectedEditorRevisionV1(undone).tracks[3]).notes[0]);
+    const edit = (pitch: number) =>
+      applyEditorCommandV1(undone, selectedEditorRevisionV1(undone), {
+        schema: "nightdrive.editor-note-command.v1",
+        type: "set-note-pitch",
+        noteId: target.id,
+        expectedPitch: target.pitch,
+        pitch,
+      });
+    const parentActive = edit(73);
+    const childActive = edit(72);
+    const creationHash = selectedEditorRevisionV1(history).revisionHash;
+    for (const active of [parentActive, childActive])
+      expect(active.revisions.some((r) => r.revisionHash === creationHash)).toBe(false);
+    const descendant = pairOnly(expectedRoot(childActive, child.variation));
+    const input = collectionFixture(
+      [child, descendant],
+      [childActive, rootHistory()],
+      parentActive,
+    );
+    const result = await verifyVariationCollectionForNodeV1(input);
+    expect(JSON.stringify(result)).toBe(JSON.stringify(input));
+    expect(
+      result.alternatives[1]?.creationProof?.parentHistory.revisions.some(
+        (r) => r.revisionHash === creationHash,
+      ),
+    ).toBe(true);
+  });
+  it.each([0, 1, 2, 3])(
+    "rejects forged active or redo history for alternative %s",
+    async (sequence) => {
+      const input = collectionFixture();
+      const entry = present(input.alternatives[sequence]);
+      Reflect.set(entry, "history", { ...forgedChild(pitchHistory()), cursor: 0 });
+      await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+        code: "INVALID_EDITOR_LINEAGE",
+      });
+    },
+  );
+  it("rejects forged saved redo proof independently of valid active histories and duplicate owner", async () => {
+    const first = pairOnly(expectedRoot(rootHistory()));
+    const second = pairOnly(expectedRoot(present(undoEditorHistoryV1(pitchHistory()))));
+    const input = collectionFixture([first, second]);
+    const proof = structuredClone(second.creationProof);
+    Reflect.set(proof, "parentHistory", { ...forgedChild(pitchHistory()), cursor: 0 });
+    Reflect.set(present(input.alternatives[2]), "creationProof", proof);
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_EDITOR_LINEAGE",
+    });
+  });
+  it.each(["missing", "cycle", "conflict"])(
+    "rejects %s creation proofs without repairing owners",
+    async (kind) => {
+      const pair = pairOnly(expectedRoot(rootHistory()));
+      const input = collectionFixture([pair, structuredClone(pair)]);
+      const entry = present(input.alternatives[kind === "conflict" ? 2 : 1]);
+      if (kind === "missing") Reflect.set(entry, "creationProof", null);
+      if (kind === "cycle") {
+        const proof = structuredClone(pair.creationProof);
+        Reflect.set(proof, "parentVariation", pair.variation);
+        Reflect.set(entry, "creationProof", proof);
+      }
+      if (kind === "conflict") {
+        const variation = structuredClone(pair.variation);
+        Reflect.set(variation, "unchanged", !variation.unchanged);
+        Reflect.set(entry, "variation", variation);
+      }
+      await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+        code: "INVALID_VARIATION_LINEAGE",
+      });
+    },
+  );
+  it("checks creation proof before active history, and earlier alternative before later proof", async () => {
+    const input = collectionFixture();
+    Reflect.set(present(input.alternatives[1]), "creationProof", null);
+    Reflect.set(present(input.alternatives[1]), "history", null);
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+    const second = collectionFixture();
+    Reflect.set(present(second.alternatives[0]), "history", forgedChild(pitchHistory()));
+    Reflect.set(present(second.alternatives[1]), "creationProof", null);
+    await expect(verifyVariationCollectionForNodeV1(second)).rejects.toMatchObject({
+      code: "INVALID_EDITOR_LINEAGE",
+    });
+  });
+  it.each([
+    ["selectedSequence", -1],
+    ["selectedSequence", 99],
+    ["selectedSequence", 0.5],
+    ["nextSequence", 0],
+    ["nextSequence", 5],
+    ["nextSequence", Number.MAX_SAFE_INTEGER],
+    ["nextSequence", NaN],
+    ["selectedSequence", Infinity],
+  ])("rejects malformed %s=%s", async (field, value) => {
+    const input = collectionFixture([]);
+    Reflect.set(input, field, value);
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_COLLECTION",
+      field: `collection.${field}`,
+    });
+  });
+  it.each([0, 2, 0.5, -1, Number.MAX_SAFE_INTEGER])(
+    "rejects non-consecutive child sequence %s",
+    async (sequence) => {
+      const input = collectionFixture([pairOnly(expectedRoot(rootHistory()))]);
+      Reflect.set(present(input.alternatives[1]), "sequence", sequence);
+      await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+        code: "INVALID_VARIATION_COLLECTION",
+        field: "collection.alternatives.1.sequence",
+      });
+    },
+  );
+  it.each(["sequence", "variation", "actor", "createdAt", "attemptHash"])(
+    "rejects attempt %s substitution even with a recomputed hash",
+    async (field) => {
+      const input = collectionFixture();
+      const entry = present(input.alternatives[1]);
+      const attempt = structuredClone(present(entry.attempt));
+      if (field === "sequence") attempt.sequence = 2;
+      if (field === "variation") attempt.variation.variationHash = "0".repeat(64);
+      if (field === "actor") attempt.actor = "authenticated";
+      if (field === "createdAt") attempt.createdAt = "2026-02-30T00:00:00.000Z";
+      const { schema: _schema, attemptHash: _hash, ...values } = attempt;
+      attempt.attemptHash =
+        field === "attemptHash"
+          ? "0".repeat(64)
+          : hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values });
+      Reflect.set(entry, "attempt", attempt);
+      await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+        code:
+          field === "sequence"
+            ? "INVALID_VARIATION_COLLECTION"
+            : field === "variation"
+              ? "INVALID_VARIATION_LINEAGE"
+              : field === "attemptHash"
+                ? "VARIATION_HASH_MISMATCH"
+                : "INVALID_VARIATION_PROVENANCE",
+      });
+    },
+  );
+  it("requires exact source/request and ordered collection/entry fields", async () => {
+    const input = collectionFixture([]);
+    const badRequest = { ...input, sourceRequest: undefined, selectedSequence: 99 };
+    await expect(verifyVariationCollectionForNodeV1(badRequest)).rejects.toMatchObject({
+      code: "INVALID_SOURCE_ADMISSION_REQUEST",
+    });
+    await expect(
+      verifyVariationCollectionForNodeV1({ ...input, admitted: true }),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_COLLECTION" });
+    const { sourceRequest, source: supplied, ...rest } = input;
+    await expect(
+      verifyVariationCollectionForNodeV1({ sourceRequest, source: supplied, ...rest }),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_COLLECTION" });
+    Reflect.set(present(input.alternatives[0]), "extra", true);
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_COLLECTION",
+    });
+  });
+  it("rejects active history bound to a different valid source", async () => {
+    const input = collectionFixture();
+    const req = request();
+    const other = await generator.generateCompleteSectionV1({
+      ...req,
+      composition: { ...req.composition, rootSeed: 1 },
+    });
+    Reflect.set(present(input.alternatives[1]), "history", createEditorHistoryV1(other));
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+      field: "collection.alternatives.1.history.source",
+    });
+  });
+  it("snapshots the full closure and histories before async replay, with fresh admission on another call", async () => {
+    const input = collectionFixture();
+    const expected = JSON.stringify(input);
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    const replay = vi
+      .spyOn(generator, "generateCompleteSectionV1")
+      .mockImplementationOnce(async (r) => {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        return real(r);
+      });
+    const pending = verifyVariationCollectionForNodeV1(input);
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    input.selectedSequence = 99;
+    input.alternatives.splice(1);
+    release?.();
+    const result = await pending;
+    expect(JSON.stringify(result)).toBe(expected);
+    const second = await verifyVariationCollectionForNodeV1(result);
+    expect(second).toEqual(result);
+    expect(second).not.toBe(result);
+    expect(replay).toHaveBeenCalledTimes(2);
+    expect(Object.isFrozen(input)).toBe(false);
+  });
+  it("rejects descriptor hooks before any replay, guards runtime first, and delegates once", async () => {
+    const input = collectionFixture([]);
+    const hook = vi.fn();
+    Object.defineProperty(input, "selectedSequence", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_INPUT",
+    });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toThrow(
+      "requires Node 24.21.0",
+    );
+    expect(hook).not.toHaveBeenCalled();
+    const failure = new Error("test full verifier unavailable");
+    const delegate = vi
+      .spyOn(compositionState, "verifyVariationCollectionV1")
+      .mockRejectedValueOnce(failure);
+    await expect(verifyVariationCollectionForNodeV1(input)).rejects.toBe(failure);
+    expect(delegate).toHaveBeenCalledExactlyOnceWith(input);
+  });
+  it("propagates replay rejection without a partial collection or caller mutation", async () => {
+    const input = collectionFixture();
+    const expected = JSON.stringify(input);
+    const failure = new Error("test replay failed");
+    vi.spyOn(generator, "generateCompleteSectionV1").mockRejectedValueOnce(failure);
+    const installed = vi.fn();
+    const pending = verifyVariationCollectionForNodeV1(input);
+    void pending.then(installed, () => undefined);
+    await expect(pending).rejects.toBe(failure);
+    expect(installed).not.toHaveBeenCalled();
+    expect(JSON.stringify(input)).toBe(expected);
+  });
+
+  function expectedCollectionPreview(input: ReturnType<typeof collectionFixture>) {
+    const selected = present(
+      input.alternatives.find((entry) => entry.sequence === input.selectedSequence),
+    );
+    const revision = selectedEditorRevisionV1(selected.history);
+    return {
+      sourceResultHash: LITERAL_RESULT_HASH,
+      section: revision.section,
+      tracks: revision.tracks.map((track) => {
+        const current =
+          track.role === "arpeggiator" && selected.variation !== null
+            ? present(selected.variation.tracks[2])
+            : track;
+        return {
+          role: current.role,
+          notes: current.notes.map(({ pitch, startTick, durationTicks }) => ({
+            pitch,
+            startTick,
+            durationTicks,
+          })),
+        };
+      }),
+    };
+  }
+  it.each([0, 1, 2, 3])(
+    "projects independent retained alternative %s with original source identity and exact three-field notes",
+    async (selectedSequence) => {
+      const input = { ...collectionFixture(), selectedSequence };
+      const expected = expectedCollectionPreview(input);
+      const saved = JSON.stringify(input);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const result = await projectRetainedVariationPreviewForNodeV1(input);
+      expect(JSON.stringify(result)).toBe(JSON.stringify(expected));
+      expect(result.sourceResultHash).toBe(LITERAL_RESULT_HASH);
+      expect(Object.keys(result)).toEqual(["sourceResultHash", "section", "tracks"]);
+      expect(result.tracks.map((track) => track.role)).toEqual([
+        "harmony",
+        "bass",
+        "arpeggiator",
+        "lead",
+      ]);
+      for (const track of result.tracks)
+        for (const note of track.notes)
+          expect(Object.keys(note)).toEqual(["pitch", "startTick", "durationTicks"]);
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(input)).toBe(saved);
+      expect(result.section).not.toBe(expected.section);
+      frozen(result);
+    },
+  );
+  it("keeps manually edited Lead geometry and target Arpeggiator separate from old editor proof material", async () => {
+    // The literal seed-0 fixtures above intentionally permit identical output.
+    // For this wiring challenge obtain a differing valid root from the already
+    // reviewed upstream generator, never from the projection under test.
+    const root = await generate(rootHistory(), 17);
+    const input = collectionFixture(
+      [pairOnly(expectedRoot(rootHistory()))],
+      [literalMultiEditHistory()],
+    );
+    const entry = present(input.alternatives[1]);
+    Reflect.set(entry, "variation", root.variation);
+    Reflect.set(entry, "creationProof", root.creationProof);
+    const values = {
+      sequence: 1,
+      variation: { schema: root.variation.schema, variationHash: root.variation.variationHash },
+      actor: "local-producer-unverified",
+      createdAt: "2026-10-11T20:00:00.000Z",
+    };
+    Reflect.set(entry, "attempt", {
+      schema: "nightdrive.variation-attempt.v1",
+      ...values,
+      attemptHash: hash({ schema: "nightdrive.variation-attempt-hash-input.v1", ...values }),
+    });
+    const result = await projectRetainedVariationPreviewForNodeV1(input);
+    const expected = expectedCollectionPreview(input);
+    expect(result.tracks[3]).toEqual(expected.tracks[3]);
+    expect(result.tracks[2]).toEqual(expected.tracks[2]);
+    const oldArp = selectedEditorRevisionV1(literalMultiEditHistory()).tracks[2];
+    expect(result.tracks[2]?.notes).not.toEqual(
+      oldArp?.notes.map(({ pitch, startTick, durationTicks }) => ({
+        pitch,
+        startTick,
+        durationTicks,
+      })),
+    );
+    expect(result.tracks[0]).toEqual(expected.tracks[0]);
+    expect(result.tracks[1]).toEqual(expected.tracks[1]);
+  });
+  it("canonical velocity changes revision identity without changing any preview byte", async () => {
+    const input = collectionFixture();
+    const entry = present(input.alternatives[3]);
+    const current = selectedEditorRevisionV1(entry.history);
+    const target = present(present(current.tracks[3]).notes[0]);
+    const edited = applyEditorCommandV1(entry.history, current, {
+      schema: "nightdrive.editor-note-command.v7",
+      type: "set-note-velocity",
+      noteId: target.id,
+      expectedVelocity: target.velocity,
+      velocity: 73,
+    });
+    expect(selectedEditorRevisionV1(edited).revisionHash).not.toBe(current.revisionHash);
+    const before = await projectRetainedVariationPreviewForNodeV1(input);
+    Reflect.set(entry, "history", edited);
+    const after = await projectRetainedVariationPreviewForNodeV1(input);
+    expect(JSON.stringify(after)).toBe(JSON.stringify(before));
+    expect(after.sourceResultHash).toBe(LITERAL_RESULT_HASH);
+  });
+  it("projects exact current Undo/Redo geometry within one retained alternative without navigating others", async () => {
+    const history = pitchHistory();
+    const input = collectionFixture([pairOnly(expectedRoot(rootHistory()))], [history]);
+    const edited = await projectRetainedVariationPreviewForNodeV1(input);
+    const entry = present(input.alternatives[1]);
+    Reflect.set(entry, "history", present(undoEditorHistoryV1(history)));
+    const undone = await projectRetainedVariationPreviewForNodeV1(input);
+    expect(undone.tracks[3]?.notes[0]?.pitch).toBe(75);
+    expect(edited.tracks[3]?.notes[0]?.pitch).toBe(74);
+    expect(undone.tracks[2]).toEqual(edited.tracks[2]);
+    Reflect.set(entry, "history", present(redoEditorHistoryV1(entry.history)));
+    expect(await projectRetainedVariationPreviewForNodeV1(input)).toEqual(edited);
+    expect(input.selectedSequence).toBe(1);
+    expect(input.alternatives[0]?.history.cursor).toBe(0);
+  });
+  it("rejects a forged unselected proof and redo history rather than projecting only the active entry", async () => {
+    const input = { ...collectionFixture(), selectedSequence: 0 };
+    Reflect.set(present(input.alternatives[2]), "creationProof", null);
+    await expect(projectRetainedVariationPreviewForNodeV1(input)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_LINEAGE",
+    });
+    const other = { ...collectionFixture(), selectedSequence: 0 };
+    Reflect.set(present(other.alternatives[2]), "history", {
+      ...forgedChild(pitchHistory()),
+      cursor: 0,
+    });
+    await expect(projectRetainedVariationPreviewForNodeV1(other)).rejects.toMatchObject({
+      code: "INVALID_EDITOR_LINEAGE",
+    });
+  });
+  it("captures selection and complete data before async admission then re-admits on each later call", async () => {
+    const input = collectionFixture();
+    const expected = expectedCollectionPreview(input);
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    const replay = vi
+      .spyOn(generator, "generateCompleteSectionV1")
+      .mockImplementationOnce(async (r) => {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        return real(r);
+      });
+    const pending = projectRetainedVariationPreviewForNodeV1(input);
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    input.selectedSequence = 0;
+    input.alternatives.splice(1);
+    release?.();
+    expect(await pending).toEqual(expected);
+    input.nextSequence = 1; // The later invocation receives a complete valid Original-only fixture.
+    expect(await projectRetainedVariationPreviewForNodeV1(input)).toEqual(
+      expectedCollectionPreview(input),
+    );
+    expect(replay).toHaveBeenCalledTimes(2);
+  });
+  it("delegates full proof once, propagates errors and exports no raw projection", async () => {
+    const api = await import("./variation-application-node");
+    expect(Object.keys(api)).toEqual(["projectRetainedVariationPreviewForNodeV1"]);
+    const input = collectionFixture([]);
+    const failure = new Error("test verification unavailable");
+    const delegate = vi
+      .spyOn(compositionState, "verifyVariationCollectionV1")
+      .mockRejectedValueOnce(failure);
+    const installed = vi.fn();
+    const pending = projectRetainedVariationPreviewForNodeV1(input);
+    void pending.then(installed, () => undefined);
+    await expect(pending).rejects.toBe(failure);
+    expect(delegate).toHaveBeenCalledExactlyOnceWith(input);
+    expect(installed).not.toHaveBeenCalled();
+  });
+  it("guards exact runtime before unsafe inputs without executing caller hooks", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const hook = vi.fn();
+    const bad = Object.defineProperty({}, "source", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(projectRetainedVariationPreviewForNodeV1(bad)).rejects.toThrow(
+      "requires Node 24.21.0",
+    );
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
   });
 });
