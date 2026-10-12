@@ -1,4 +1,5 @@
 import {
+  createOriginalVariationContextV1,
   createRetainedArpeggiatorAlternativeV1,
   editRetainedVariationContextV1,
   projectRetainedVariationContextV1,
@@ -89,6 +90,18 @@ function applicationValues(
     selectedRevision: result.state.editor,
     preview: previewValues(result.collection),
   });
+}
+
+/** Bootstrap one complete Original application from a freshly admitted source
+ * and its full retained editor history; projection stays private. */
+export async function createOriginalVariationApplicationForNodeV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Original variation application creation requires Node 24.21.0.");
+  return applicationValues(await createOriginalVariationContextV1(source, sourceRequest, history));
 }
 
 /** Complete current view after fresh proof; no selection or history mutation. */

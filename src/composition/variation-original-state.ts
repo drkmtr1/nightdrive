@@ -6,9 +6,10 @@ import {
   undoEditorHistoryV1,
   verifyEditorHistoryV1,
 } from "../editor/editor-history";
-import type {
-  RetainedVariationAlternativeV1,
-  VariationCollectionV1,
+import {
+  createOriginalVariationCollectionV1,
+  type RetainedVariationAlternativeV1,
+  type VariationCollectionV1,
 } from "../editor/variation-collection";
 import { digestStage7CanonicalUtf8 } from "../generators/adapters/stage7-digest";
 import { verifyStage7ArpeggiatorAggregateV1 } from "../generators/stage7-aggregate-verifier";
@@ -1240,6 +1241,20 @@ function retainedContextValuesV1(collection: VariationCollectionV1) {
   if (!selected || !revision)
     throw new VariationCollectionValueError("collection.selectedSequence");
   return Object.freeze({ collection, state: variationStateValuesV1(revision, selected.variation) });
+}
+
+/** Original-only application bootstrap: the verified collection and projection
+ * share this invocation; no second replay or public admission context. */
+export async function createOriginalVariationContextV1(
+  source: unknown,
+  sourceRequest: unknown,
+  history: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Original variation context creation requires Node 24.21.0.");
+  return retainedContextValuesV1(
+    await createOriginalVariationCollectionV1(source, sourceRequest, history),
+  );
 }
 
 /** Current application view, not serialized admission or caller-supplied authority. */
