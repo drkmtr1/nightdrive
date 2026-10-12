@@ -29,7 +29,9 @@ import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
 import {
   createRetainedArpeggiatorVariationApplicationForNodeV1,
+  projectRetainedVariationApplicationForNodeV1,
   projectRetainedVariationPreviewForNodeV1,
+  selectRetainedVariationApplicationForNodeV1,
 } from "./variation-application-node";
 import {
   serializeVariationAttemptForNodeV1,
@@ -734,6 +736,8 @@ describe("original alternative combined canonical state", () => {
       "generateOriginalArpeggiatorVariationRootV1",
       "generateVariationParentArpeggiatorRootV1",
       "projectOriginalVariationStateV1",
+      "projectRetainedVariationContextV1",
+      "selectRetainedVariationContextV1",
       "serializeOriginalArpeggiatorVariationRootV1",
       "serializeVariationAttemptV1",
       "verifyArpeggiatorVariationAncestryV1",
@@ -3014,7 +3018,9 @@ describe("original-parent canonical variation root and creation proof", () => {
     const api = await import("./variation-application-node");
     expect(Object.keys(api).sort()).toEqual([
       "createRetainedArpeggiatorVariationApplicationForNodeV1",
+      "projectRetainedVariationApplicationForNodeV1",
       "projectRetainedVariationPreviewForNodeV1",
+      "selectRetainedVariationApplicationForNodeV1",
     ]);
     const input = collectionFixture([]);
     const failure = new Error("test verification unavailable");
@@ -3388,5 +3394,183 @@ describe("original-parent canonical variation root and creation proof", () => {
     ).rejects.toThrow("Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
     expect(replay).not.toHaveBeenCalled();
+  });
+  function contextInputs(input = collectionFixture()) {
+    const entry = present(input.alternatives.find((v) => v.sequence === input.selectedSequence));
+    const state = expectedRoot(entry.history, entry.variation).creationProof.parent;
+    return {
+      input,
+      expectedState: { schema: state.schema, stateHash: state.stateHash },
+      expectedEditor: { ...state.editor },
+    };
+  }
+  const selectContext = (v: ReturnType<typeof contextInputs>, target: unknown) =>
+    selectRetainedVariationApplicationForNodeV1(
+      v.input,
+      v.input.selectedSequence,
+      v.expectedState,
+      v.expectedEditor,
+      target,
+    );
+  it.each([0, 1, 2, 3])(
+    "restores exact retained context %s with independent identity/preview fixtures and no new attempt",
+    async (target) => {
+      const input = collectionFixture(
+        closure(),
+        [rootHistory(), pitchHistory(), present(undoEditorHistoryV1(pitchHistory()))],
+        pitchHistory(),
+      );
+      const v = contextInputs(input);
+      const entry = present(input.alternatives[target]);
+      const expected = expectedRoot(entry.history, entry.variation).creationProof.parent;
+      const before = JSON.stringify(input);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const aggregate = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      const clock = vi.spyOn(Date, "now");
+      const result = await selectContext(v, target);
+      expect(result.collection).toEqual({ ...input, selectedSequence: target });
+      expect(result.selectedState).toEqual({
+        schema: expected.schema,
+        stateHash: expected.stateHash,
+      });
+      expect(result.selectedRevision).toEqual(expected.editor);
+      expect(result.preview).toEqual(
+        expectedCollectionPreview({ ...input, selectedSequence: target }),
+      );
+      expect(result.preview.sourceResultHash).toBe(LITERAL_RESULT_HASH);
+      expect(result.collection.alternatives[target]?.history).toEqual(entry.history);
+      expect(result.collection.alternatives[target]?.history).not.toBe(entry.history);
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(aggregate).toHaveBeenCalledTimes(3); // Retained ancestor verification only.
+      expect(clock).not.toHaveBeenCalled();
+      expect(JSON.stringify(input)).toBe(before);
+      frozen(result);
+    },
+  );
+  it("projects complete Original and varied application views with no fabricated parent or state authority", async () => {
+    for (const input of [collectionFixture([], [], pitchHistory()), collectionFixture()]) {
+      const v = contextInputs(input);
+      const before = JSON.stringify(input);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const result = await projectRetainedVariationApplicationForNodeV1(input);
+      expect(result.collection).toEqual(input);
+      expect(result.selectedState).toEqual(v.expectedState);
+      expect(result.selectedRevision).toEqual(v.expectedEditor);
+      expect(result.preview).toEqual(expectedCollectionPreview(input));
+      expect(JSON.stringify(input)).toBe(before);
+      expect(replay).toHaveBeenCalledTimes(1);
+      replay.mockRestore();
+      frozen(result);
+    }
+  });
+  it.each([
+    ["selection", "INVALID_VARIATION_COLLECTION", "expectedSelectedSequence"],
+    ["state", "STALE_VARIATION_PARENT", "expectedState"],
+    ["state-extra", "INVALID_VARIATION_PARENT", "expectedState"],
+    ["state-order", "INVALID_VARIATION_PARENT", "expectedState"],
+    ["editor", "STALE_EDITOR_PARENT", "expectedParent.revisionHash"],
+    ["editor-extra", "INVALID_EDITOR_PARENT", "expectedParent"],
+    ["editor-order", "INVALID_EDITOR_PARENT", "expectedParent"],
+    ["target", "INVALID_VARIATION_COLLECTION", "selection.sequence"],
+  ])(
+    "selection rejects %s before later errors without partial application",
+    async (kind, code, field) => {
+      const v = contextInputs();
+      let sequence = v.input.selectedSequence;
+      let state: unknown = v.expectedState;
+      let editor: unknown = v.expectedEditor;
+      if (kind === "selection") sequence = 8;
+      if (kind === "state") state = { ...v.expectedState, stateHash: "0".repeat(64) };
+      if (kind === "state-extra") state = { ...v.expectedState, extra: true };
+      if (kind === "state-order")
+        state = { stateHash: v.expectedState.stateHash, schema: v.expectedState.schema };
+      if (kind === "editor") editor = { ...v.expectedEditor, revisionHash: "0".repeat(64) };
+      if (kind === "editor-extra") editor = { ...v.expectedEditor, extra: true };
+      if (kind === "editor-order")
+        editor = { revisionHash: v.expectedEditor.revisionHash, schema: v.expectedEditor.schema };
+      const before = JSON.stringify(v.input);
+      const installed = vi.fn();
+      const pending = selectRetainedVariationApplicationForNodeV1(
+        v.input,
+        sequence,
+        state,
+        editor,
+        99,
+      );
+      void pending.then(installed, () => undefined);
+      await expect(pending).rejects.toMatchObject({ code, field });
+      expect(installed).not.toHaveBeenCalled();
+      expect(JSON.stringify(v.input)).toBe(before);
+    },
+  );
+  it.each([-1, 0.5, "1", Number.MAX_SAFE_INTEGER + 1, null])(
+    "rejects unsupported target %j without repair",
+    async (target) => {
+      await expect(selectContext(contextInputs(), target)).rejects.toMatchObject({
+        code: "INVALID_VARIATION_COLLECTION",
+        field: "selection.sequence",
+      });
+    },
+  );
+  it.each(["projection", "selection"])(
+    "%s verifies nonselected forged redo before restoring any context",
+    async (operation) => {
+      const v = contextInputs();
+      Reflect.set(present(v.input.alternatives[0]), "history", {
+        ...forgedChild(pitchHistory()),
+        cursor: 0,
+      });
+      const pending =
+        operation === "projection"
+          ? projectRetainedVariationApplicationForNodeV1(v.input)
+          : selectContext(v, 1);
+      await expect(pending).rejects.toMatchObject({ code: "INVALID_EDITOR_LINEAGE" });
+    },
+  );
+  it("rejects unsafe consumed selection input before admission without executing hooks", async () => {
+    const v = contextInputs();
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty({}, "schema", { get: hook, enumerable: true });
+    await expect(
+      selectRetainedVariationApplicationForNodeV1(v.input, 3, unsafe, v.expectedEditor, 0),
+    ).rejects.toMatchObject({ code: "INVALID_VARIATION_INPUT" });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+  });
+  it("captures all selection inputs before asynchronous admission and restores the captured target", async () => {
+    const v = contextInputs();
+    const expected = expectedRoot(v.input.alternatives[0]?.history, null).creationProof.parent;
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementationOnce(async (r) => {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return real(r);
+    });
+    const pending = selectContext(v, 0);
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    v.input.alternatives.splice(0);
+    v.expectedState.stateHash = "0".repeat(64);
+    v.expectedEditor.revisionHash = "0".repeat(64);
+    release?.();
+    const result = await pending;
+    expect(result.collection.selectedSequence).toBe(0);
+    expect(result.selectedState.stateHash).toBe(expected.stateHash);
+    expect(result.selectedRevision).toEqual(expected.editor);
+  });
+  it("all current-context and selection entries guard pinned runtime before hooks", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty({}, "source", { get: hook, enumerable: true });
+    for (const pending of [
+      compositionState.projectRetainedVariationContextV1(unsafe),
+      compositionState.selectRetainedVariationContextV1(unsafe, 0, null, null, 0),
+      projectRetainedVariationApplicationForNodeV1(unsafe),
+      selectRetainedVariationApplicationForNodeV1(unsafe, 0, null, null, 0),
+    ])
+      await expect(pending).rejects.toThrow("Node 24.21.0");
+    expect(hook).not.toHaveBeenCalled();
   });
 });

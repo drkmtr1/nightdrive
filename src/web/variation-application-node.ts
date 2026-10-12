@@ -1,5 +1,8 @@
 import {
   createRetainedArpeggiatorAlternativeV1,
+  projectRetainedVariationContextV1,
+  selectRetainedVariationContextV1,
+  type VariationStateV1,
   verifyVariationCollectionV1,
 } from "../composition/variation-original-state";
 import type { VariationCollectionV1 } from "../editor/variation-collection";
@@ -68,6 +71,12 @@ export async function createRetainedArpeggiatorVariationApplicationForNodeV1(
     request,
     { actor: "local-producer-unverified", createdAt },
   );
+  return applicationValues(result);
+}
+
+function applicationValues(
+  result: Readonly<{ collection: VariationCollectionV1; state: VariationStateV1 }>,
+) {
   return Object.freeze({
     collection: result.collection,
     selectedState: Object.freeze({
@@ -77,4 +86,32 @@ export async function createRetainedArpeggiatorVariationApplicationForNodeV1(
     selectedRevision: result.state.editor,
     preview: previewValues(result.collection),
   });
+}
+
+/** Complete current view after fresh proof; no selection or history mutation. */
+export async function projectRetainedVariationApplicationForNodeV1(value: unknown) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation application projection requires Node 24.21.0.");
+  return applicationValues(await projectRetainedVariationContextV1(value));
+}
+
+/** Thin application delegation, with no clock read or new musical transition. */
+export async function selectRetainedVariationApplicationForNodeV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  selectedSequence: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation application selection requires Node 24.21.0.");
+  return applicationValues(
+    await selectRetainedVariationContextV1(
+      value,
+      expectedSelectedSequence,
+      expectedState,
+      expectedEditor,
+      selectedSequence,
+    ),
+  );
 }

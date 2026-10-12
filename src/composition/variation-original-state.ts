@@ -231,23 +231,7 @@ function variationRequestValuesV1(
   const record = proposal as Record<string, unknown>;
   if (record.schema !== ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1)
     return fail("UNSUPPORTED_VARIATION_SCHEMA", "request.schema");
-  const parent = record.parent;
-  if (
-    typeof parent !== "object" ||
-    parent === null ||
-    Array.isArray(parent) ||
-    JSON.stringify(Object.keys(parent)) !== '["schema","stateHash"]'
-  )
-    return fail("INVALID_VARIATION_PARENT", "request.parent");
-  const identity = parent as Record<string, unknown>;
-  if (
-    identity.schema !== VARIATION_STATE_SCHEMA_V1 ||
-    typeof identity.stateHash !== "string" ||
-    !/^[a-f0-9]{64}$/.test(identity.stateHash)
-  )
-    return fail("INVALID_VARIATION_PARENT", "request.parent");
-  if (identity.stateHash !== state.stateHash)
-    return fail("STALE_VARIATION_PARENT", "request.parent");
+  expectedVariationParentValuesV1(record.parent, state, "request.parent");
   beforeSeed?.();
   const rootSeed = record.rootSeed;
   if (
@@ -263,6 +247,37 @@ function variationRequestValuesV1(
     rootSeed: rootSeed === 0 ? 0 : rootSeed,
   });
   return acceptedRequest;
+}
+
+/** Private identity checks; no caller identity confers state authority. */
+function expectedVariationParentValuesV1(
+  value: unknown,
+  state: VariationStateV1,
+  field: string,
+): void {
+  if (
+    !exactRecord(value, ["schema", "stateHash"]) ||
+    value.schema !== VARIATION_STATE_SCHEMA_V1 ||
+    typeof value.stateHash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(value.stateHash)
+  )
+    throw new VariationRequestValueError("INVALID_VARIATION_PARENT", field);
+  if (value.stateHash !== state.stateHash)
+    throw new VariationRequestValueError("STALE_VARIATION_PARENT", field);
+}
+function expectedEditorParentValuesV1(value: unknown, revision: EditorRevisionV1): void {
+  if (!exactRecord(value, ["schema", "revisionHash"]) || value.schema !== revision.schema)
+    throw new EditorValueError(
+      "INVALID_EDITOR_PARENT",
+      "expectedParent",
+      "Expected parent is invalid.",
+    );
+  if (value.revisionHash !== revision.revisionHash)
+    throw new EditorValueError(
+      "STALE_EDITOR_PARENT",
+      "expectedParent.revisionHash",
+      "Expected parent is stale.",
+    );
 }
 
 export class VariationComponentValueError extends RangeError {
@@ -1147,20 +1162,9 @@ export async function createRetainedArpeggiatorAlternativeV1(
   if (!selected || !revision)
     throw new VariationCollectionValueError("collection.selectedSequence");
   const parent = variationStateValuesV1(revision, selected.variation);
-  const acceptedRequest = variationRequestValuesV1(proposal, parent, () => {
-    if (!exactRecord(editor, ["schema", "revisionHash"]) || editor.schema !== revision.schema)
-      throw new EditorValueError(
-        "INVALID_EDITOR_PARENT",
-        "expectedParent",
-        "Expected parent is invalid.",
-      );
-    if (editor.revisionHash !== revision.revisionHash)
-      throw new EditorValueError(
-        "STALE_EDITOR_PARENT",
-        "expectedParent.revisionHash",
-        "Expected parent is stale.",
-      );
-  });
+  const acceptedRequest = variationRequestValuesV1(proposal, parent, () =>
+    expectedEditorParentValuesV1(editor, revision),
+  );
   if (
     !exactRecord(suppliedMetadata, ["actor", "createdAt"]) ||
     suppliedMetadata.actor !== "local-producer-unverified"
@@ -1219,4 +1223,56 @@ export async function createRetainedArpeggiatorAlternativeV1(
     collection: next,
     state: variationStateValuesV1(revision, proof.variation),
   });
+}
+
+/** Private projection consumes this invocation's fully verified collection only. */
+function retainedContextValuesV1(collection: VariationCollectionV1) {
+  const selected = collection.alternatives.find(
+    (entry) => entry.sequence === collection.selectedSequence,
+  );
+  const revision = selected?.history.revisions[selected.history.cursor];
+  if (!selected || !revision)
+    throw new VariationCollectionValueError("collection.selectedSequence");
+  return Object.freeze({ collection, state: variationStateValuesV1(revision, selected.variation) });
+}
+
+/** Current application view, not serialized admission or caller-supplied authority. */
+export async function projectRetainedVariationContextV1(value: unknown) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation context projection requires Node 24.21.0.");
+  const supplied = snapshotVariationInputV1(value, "collection");
+  return retainedContextValuesV1(await verifyVariationCollectionValuesV1(supplied));
+}
+
+/** Restores one already retained context; proof replay never installs replacements. */
+export async function selectRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  selectedSequence: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation context selection requires Node 24.21.0.");
+  const supplied = snapshotVariationInputV1(value, "collection");
+  const sequence = snapshotVariationInputV1(expectedSelectedSequence, "expectedSelectedSequence");
+  const state = snapshotVariationInputV1(expectedState, "expectedState");
+  const editor = snapshotVariationInputV1(expectedEditor, "expectedParent");
+  const target = snapshotVariationInputV1(selectedSequence, "selection.sequence");
+  const current = retainedContextValuesV1(await verifyVariationCollectionValuesV1(supplied));
+  if (!Number.isSafeInteger(sequence) || sequence !== current.collection.selectedSequence)
+    throw new VariationCollectionValueError("expectedSelectedSequence");
+  expectedVariationParentValuesV1(state, current.state, "expectedState");
+  const selected = current.collection.alternatives.find((entry) => entry.sequence === sequence);
+  const revision = selected?.history.revisions[selected.history.cursor];
+  if (!revision) throw new VariationCollectionValueError("collection.selectedSequence");
+  expectedEditorParentValuesV1(editor, revision);
+  if (
+    !Number.isSafeInteger(target) ||
+    !current.collection.alternatives.some((entry) => entry.sequence === target)
+  )
+    throw new VariationCollectionValueError("selection.sequence");
+  return retainedContextValuesV1(
+    Object.freeze({ ...current.collection, selectedSequence: target as number }),
+  );
 }
