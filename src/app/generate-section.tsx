@@ -5,6 +5,7 @@ import type { CompleteSectionRequestV1 } from "../composition/complete-section";
 import type {
   AddNoteCommandV6,
   DeleteNoteCommandV4,
+  EditorNoteCommand,
   EditorRevisionIdentityV1,
   SetNoteDurationCommandV3,
   SetNotePitchCommandV1,
@@ -25,6 +26,36 @@ import {
 } from "./browser-audition";
 import { LeadNotePianoRoll } from "./lead-note-piano-roll";
 import { SectionTimeline } from "./section-timeline";
+import type {
+  createArpeggiatorVariationAction,
+  createOriginalVariationApplicationAction,
+  editRetainedVariationAction,
+  redoRetainedVariationAction,
+  selectRetainedVariationAction,
+  undoRetainedVariationAction,
+} from "./variation-action";
+export type VariationActions = Readonly<{
+  bootstrap: typeof createOriginalVariationApplicationAction;
+  create: typeof createArpeggiatorVariationAction;
+  select: typeof selectRetainedVariationAction;
+  edit: typeof editRetainedVariationAction;
+  undo: typeof undoRetainedVariationAction;
+  redo: typeof redoRetainedVariationAction;
+}>;
+type VariationApplication = Awaited<ReturnType<VariationActions["bootstrap"]>>;
+// Rendering adapter only. The complete Node response remains canonical authority.
+function selectedEditorView(value: VariationApplication): EditorApplicationV1 | null {
+  const selected = value.collection.alternatives.find(
+    (entry) => entry.sequence === value.collection.selectedSequence,
+  );
+  return selected
+    ? {
+        history: selected.history,
+        selectedRevision: value.selectedRevision,
+        preview: value.preview,
+      }
+    : null;
+}
 
 export type GenerationChoice = Readonly<{
   profile: HarmonyProfileId;
@@ -32,6 +63,7 @@ export type GenerationChoice = Readonly<{
 }>;
 type Props = Readonly<{
   choices: readonly GenerationChoice[];
+  variationActions?: VariationActions;
   generateAction: (request: CompleteSectionRequestV1) => Promise<EditorApplicationV1>;
   addLeadNoteAction: (
     current: EditorApplicationV1,
@@ -90,19 +122,39 @@ export function createBrowserAuditionDependencies(): BrowserAuditionDependencies
 export function GenerateSection({
   choices,
   generateAction,
-  addLeadNoteAction,
-  setLeadPitchAction,
-  setLeadStartTickAction,
-  setLeadPositionAction,
-  setLeadDurationAction,
-  setLeadVelocityAction,
-  deleteLeadNoteAction,
+  addLeadNoteAction: legacyAddLeadNoteAction,
+  setLeadPitchAction: legacySetLeadPitchAction,
+  setLeadStartTickAction: legacySetLeadStartTickAction,
+  setLeadPositionAction: legacySetLeadPositionAction,
+  setLeadDurationAction: legacySetLeadDurationAction,
+  setLeadVelocityAction: legacySetLeadVelocityAction,
+  deleteLeadNoteAction: legacyDeleteLeadNoteAction,
   undoSectionEditAction,
   redoSectionEditAction,
+  variationActions,
 }: Props) {
   const [profile, setProfile] = useState("");
   const [templateId, setTemplateId] = useState("");
-  const [application, setApplication] = useState<EditorApplicationV1 | null>(null);
+  const [legacyApplication, setLegacyApplication] = useState<EditorApplicationV1 | null>(null);
+  const [variationApplication, setVariationApplication] = useState<VariationApplication | null>(
+    null,
+  );
+  const contextOwner = useRef<VariationApplication | null>(null);
+  const mounted = useRef(true);
+  const [variationSeed, setVariationSeed] = useState("");
+  const [variationError, setVariationError] = useState("");
+  const application = variationApplication
+    ? selectedEditorView(variationApplication)
+    : legacyApplication;
+  function setApplication(next: EditorApplicationV1 | null) {
+    setLegacyApplication(next);
+    if (next === null) {
+      setVariationApplication(null);
+      contextOwner.current = null;
+      setVariationSeed("");
+      setVariationError("");
+    }
+  }
   const [addPitchValue, setAddPitchValue] = useState("");
   const [addStartTickValue, setAddStartTickValue] = useState("");
   const [addDurationTicksValue, setAddDurationTicksValue] = useState("");
@@ -145,11 +197,16 @@ export function GenerateSection({
     application !== null && application.history.cursor < application.history.revisions.length - 1;
 
   useEffect(() => {
+    mounted.current = true;
     const stopWhenHidden = () => {
       if (document.visibilityState === "hidden") audition.current?.stop();
     };
     document.addEventListener("visibilitychange", stopWhenHidden);
     return () => {
+      mounted.current = false;
+      generationEpoch.current += 1;
+      editorEpoch.current += 1;
+      contextOwner.current = null;
       document.removeEventListener("visibilitychange", stopWhenHidden);
       audition.current?.stop();
     };
@@ -163,11 +220,11 @@ export function GenerateSection({
     audition.current?.invalidate();
   }
 
-  function installApplication(next: EditorApplicationV1) {
+  function installApplication(next: EditorApplicationV1, derivedVariationView = false) {
     const revision = next.history.revisions[next.history.cursor];
     const notes = revision?.tracks.find((track) => track.role === "lead")?.notes ?? [];
     const selectedNote = notes.find((note) => note.id === selectedNoteId) ?? notes[0];
-    setApplication(next);
+    if (!derivedVariationView) setLegacyApplication(next);
     setSelectedNoteId(selectedNote?.id ?? "");
     setPitchValue(selectedNote ? String(selectedNote.pitch) : "");
     setStartTickValue(selectedNote ? String(selectedNote.startTick) : "");
@@ -178,6 +235,171 @@ export function GenerateSection({
     setVelocityFieldError("");
     setTransposeValue("");
     setTransposeFieldError("");
+  }
+
+  function installVariationApplication(next: VariationApplication) {
+    const view = selectedEditorView(next);
+    if (!view) throw new Error("Returned variation selection is unavailable.");
+    // Check renderability before installation. Never install a root or preview alone.
+    setVariationApplication(next);
+    setLegacyApplication(null);
+    contextOwner.current = next;
+    installApplication(view, true);
+  }
+  function dispatchLeadCommand(
+    command: EditorNoteCommand,
+    legacy: () => Promise<EditorApplicationV1>,
+  ) {
+    if (!variationApplication) return legacy();
+    if (!variationActions) throw new Error("Variation application actions are unavailable.");
+    return variationActions.edit(
+      variationApplication.collection,
+      variationApplication.collection.selectedSequence,
+      variationApplication.selectedState,
+      variationApplication.selectedRevision,
+      command,
+    );
+  }
+  const addLeadNoteAction = (
+    current: EditorApplicationV1,
+    parent: EditorRevisionIdentityV1,
+    command: AddNoteCommandV6,
+  ) => dispatchLeadCommand(command, () => legacyAddLeadNoteAction(current, parent, command));
+  const setLeadPitchAction = (
+    current: EditorApplicationV1,
+    parent: EditorRevisionIdentityV1,
+    command: SetNotePitchCommandV1,
+  ) => dispatchLeadCommand(command, () => legacySetLeadPitchAction(current, parent, command));
+  const setLeadStartTickAction = (
+    current: EditorApplicationV1,
+    parent: EditorRevisionIdentityV1,
+    command: SetNoteStartTickCommandV2,
+  ) => dispatchLeadCommand(command, () => legacySetLeadStartTickAction(current, parent, command));
+  const setLeadPositionAction = (
+    current: EditorApplicationV1,
+    parent: EditorRevisionIdentityV1,
+    command: SetNotePositionCommandV5,
+  ) => dispatchLeadCommand(command, () => legacySetLeadPositionAction(current, parent, command));
+  const setLeadDurationAction = (
+    current: EditorApplicationV1,
+    parent: EditorRevisionIdentityV1,
+    command: SetNoteDurationCommandV3,
+  ) => dispatchLeadCommand(command, () => legacySetLeadDurationAction(current, parent, command));
+  const setLeadVelocityAction = (
+    current: EditorApplicationV1,
+    parent: EditorRevisionIdentityV1,
+    command: SetNoteVelocityCommandV7,
+  ) => dispatchLeadCommand(command, () => legacySetLeadVelocityAction(current, parent, command));
+  const deleteLeadNoteAction = (
+    current: EditorApplicationV1,
+    parent: EditorRevisionIdentityV1,
+    command: DeleteNoteCommandV4,
+  ) => dispatchLeadCommand(command, () => legacyDeleteLeadNoteAction(current, parent, command));
+
+  async function runVariationOperation(
+    operation: (current: VariationApplication) => Promise<VariationApplication | null>,
+  ) {
+    if (!variationApplication || !variationActions || inFlight.current || editorInFlight.current)
+      return;
+    const captured = variationApplication;
+    const invocationEpoch = ++editorEpoch.current;
+    editorInFlight.current = true;
+    setEditorPending(true);
+    setVariationError("");
+    try {
+      const next = await operation(captured);
+      if (
+        !mounted.current ||
+        editorEpoch.current !== invocationEpoch ||
+        contextOwner.current !== captured ||
+        next === null
+      )
+        return;
+      invalidatePlayback();
+      installVariationApplication(next);
+    } catch (failure) {
+      if (
+        mounted.current &&
+        editorEpoch.current === invocationEpoch &&
+        contextOwner.current === captured
+      ) {
+        const seedFailure =
+          failure !== null &&
+          typeof failure === "object" &&
+          Object.getOwnPropertyDescriptor(failure, "code")?.value === "INVALID_VARIATION_SEED" &&
+          Object.getOwnPropertyDescriptor(failure, "field")?.value === "request.rootSeed";
+        setVariationError(
+          seedFailure
+            ? "Seed: enter a whole number from 0 to 4294967295."
+            : "The variation could not be updated. Your section and histories remain unchanged.",
+        );
+      }
+    } finally {
+      editorInFlight.current = false;
+      if (mounted.current) setEditorPending(false);
+    }
+  }
+  function submitVariation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!variationApplication || !variationActions || inFlight.current || editorInFlight.current)
+      return;
+    if (
+      !/^[0-9]+$/.test(variationSeed) ||
+      !Number.isSafeInteger(Number(variationSeed)) ||
+      Number(variationSeed) > 0xffffffff
+    ) {
+      setVariationError("Seed: enter a whole number from 0 to 4294967295.");
+      return;
+    }
+    const rootSeed = Number(variationSeed);
+    void runVariationOperation((current) =>
+      variationActions.create(
+        current.collection,
+        current.collection.selectedSequence,
+        current.selectedRevision,
+        {
+          schema: "nightdrive.arpeggiator-variation-request.v1",
+          parent: current.selectedState,
+          rootSeed,
+        },
+      ),
+    );
+  }
+  function selectVariation(value: string) {
+    if (!variationApplication || !variationActions || inFlight.current || editorInFlight.current)
+      return;
+    const sequence = /^[0-9]+$/.test(value) ? Number(value) : NaN;
+    if (
+      !Number.isSafeInteger(sequence) ||
+      !variationApplication.collection.alternatives.some((entry) => entry.sequence === sequence)
+    ) {
+      setVariationError("Choose a retained variation.");
+      return;
+    }
+    if (sequence === variationApplication.collection.selectedSequence) return;
+    void runVariationOperation((current) =>
+      variationActions.select(
+        current.collection,
+        current.collection.selectedSequence,
+        current.selectedState,
+        current.selectedRevision,
+        sequence,
+      ),
+    );
+  }
+  function navigateHistory(direction: "undo" | "redo") {
+    if (variationApplication && variationActions) {
+      void runVariationOperation((current) =>
+        variationActions[direction](
+          current.collection,
+          current.collection.selectedSequence,
+          current.selectedState,
+          current.selectedRevision,
+        ),
+      );
+    } else if (!variationApplication) {
+      void runEditorOperation(direction === "undo" ? undoSectionEditAction : redoSectionEditAction);
+    }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -246,6 +468,19 @@ export function GenerateSection({
             ) as CompleteSectionRequestV1["composition"]["intent"]["complexity"],
           },
           rootSeed,
+          // M3 retains the complete accepted request, including the existing
+          // sustained Bass default. No new musical parameter or generator policy.
+          ...(variationActions
+            ? {
+                bass: {
+                  range: {
+                    minMidiPitch: 36,
+                    maxMidiPitch: 60,
+                  } as NonNullable<CompleteSectionRequestV1["composition"]["bass"]>["range"],
+                  rhythm: "sustained" as const,
+                },
+              }
+            : {}),
           arpeggiator: {
             range: {
               minMidiPitch: 36,
@@ -275,9 +510,18 @@ export function GenerateSection({
     startTransition(async () => {
       try {
         const result = await generateAction(request);
-        if (generationEpoch.current === invocationEpoch) installApplication(result);
+        if (!mounted.current || generationEpoch.current !== invocationEpoch) return;
+        if (variationActions) {
+          const original = await variationActions.bootstrap(
+            result.history.source,
+            request,
+            result.history,
+          );
+          if (mounted.current && generationEpoch.current === invocationEpoch)
+            installVariationApplication(original);
+        } else installApplication(result);
       } catch {
-        if (generationEpoch.current === invocationEpoch)
+        if (mounted.current && generationEpoch.current === invocationEpoch)
           setError(
             "Generation could not complete. Check your inputs and the local Node runtime, then try again.",
           );
@@ -290,21 +534,37 @@ export function GenerateSection({
   async function runEditorOperation(
     operation: (
       current: EditorApplicationV1,
-    ) => EditorApplicationV1 | null | Promise<EditorApplicationV1 | null>,
+    ) =>
+      | EditorApplicationV1
+      | VariationApplication
+      | null
+      | Promise<EditorApplicationV1 | VariationApplication | null>,
     onRejected?: (failure: unknown) => void,
   ) {
-    if (!application || editorInFlight.current) return;
+    if (!application || inFlight.current || editorInFlight.current) return;
+    const capturedContext = contextOwner.current;
     editorInFlight.current = true;
     setEditorPending(true);
     setError("");
     const invocationEpoch = ++editorEpoch.current;
     try {
       const result = await operation(application);
-      if (editorEpoch.current !== invocationEpoch || result === null) return;
+      if (
+        !mounted.current ||
+        editorEpoch.current !== invocationEpoch ||
+        contextOwner.current !== capturedContext ||
+        result === null
+      )
+        return;
       invalidatePlayback();
-      installApplication(result);
+      if ("collection" in result) installVariationApplication(result);
+      else installApplication(result);
     } catch (failure) {
-      if (editorEpoch.current === invocationEpoch) {
+      if (
+        mounted.current &&
+        editorEpoch.current === invocationEpoch &&
+        contextOwner.current === capturedContext
+      ) {
         if (onRejected) onRejected(failure);
         else
           setError(
@@ -313,7 +573,7 @@ export function GenerateSection({
       }
     } finally {
       editorInFlight.current = false;
-      setEditorPending(false);
+      if (mounted.current) setEditorPending(false);
     }
   }
 
@@ -817,6 +1077,64 @@ export function GenerateSection({
                 : "Choose your inputs and Generate. No section is loaded."}
         </p>
       </section>
+      {variationApplication && variationActions && (
+        <section
+          className="statusPanel"
+          aria-labelledby="variations-title"
+          aria-busy={pending || editorPending}
+        >
+          <h2 id="variations-title">Arpeggiator variations</h2>
+          <form onSubmit={submitVariation} noValidate>
+            <label htmlFor="variation-seed">Seed</label>
+            <input
+              id="variation-seed"
+              name="variationSeed"
+              type="number"
+              min="0"
+              max="4294967295"
+              step="1"
+              required
+              value={variationSeed}
+              disabled={pending || editorPending}
+              aria-describedby="variation-help variation-feedback"
+              aria-invalid={variationError.startsWith("Seed:") || undefined}
+              onChange={(event) => {
+                editorEpoch.current += 1;
+                setVariationSeed(event.target.value);
+                setVariationError("");
+              }}
+            />
+            <button type="submit" disabled={pending || editorPending}>
+              Create Arpeggiator Variation
+            </button>
+          </form>
+          <label htmlFor="active-variation">Active variation</label>
+          <select
+            id="active-variation"
+            name="activeVariation"
+            disabled={pending || editorPending}
+            value={String(variationApplication.collection.selectedSequence)}
+            onChange={(event) => selectVariation(event.target.value)}
+          >
+            {variationApplication.collection.alternatives.map((entry) => (
+              <option key={entry.sequence} value={entry.sequence}>
+                {entry.sequence === 0 ? "Original" : `Variation ${entry.sequence}`}
+              </option>
+            ))}
+          </select>
+          <p id="variation-help" className="supportingCopy">
+            Create an Arpeggiator alternative while keeping Harmony, Bass and your edited Lead. Undo
+            and Redo affect Lead edits within the active variation.
+          </p>
+          <p id="variation-feedback" role={variationError ? "alert" : "status"}>
+            {variationError ||
+              (editorPending
+                ? "Updating the section…"
+                : "Choose an explicit seed, or return to a retained variation.")}
+          </p>
+        </section>
+      )}
+
       {preview ? (
         <section className="statusPanel" aria-labelledby="tracks-title">
           <h2 id="tracks-title">Generated section</h2>
@@ -904,7 +1222,13 @@ export function GenerateSection({
               {transport?.message ?? "Press Play to audition the generated section."}
             </p>
           </section>
-          <section aria-labelledby="lead-edit-title" className="editorControls">
+          <section
+            aria-labelledby="lead-edit-title"
+            className="editorControls"
+            onChangeCapture={() => {
+              if (variationApplication && editorInFlight.current) editorEpoch.current += 1;
+            }}
+          >
             <h3 id="lead-edit-title">Lead note correction</h3>
             <p>
               Edit the selected Lead note&apos;s pitch, absolute start tick, or duration, or delete
@@ -1249,14 +1573,14 @@ export function GenerateSection({
               <button
                 type="button"
                 disabled={!canUndo || editorPending}
-                onClick={() => void runEditorOperation(undoSectionEditAction)}
+                onClick={() => navigateHistory("undo")}
               >
                 Undo
               </button>
               <button
                 type="button"
                 disabled={!canRedo || editorPending}
-                onClick={() => void runEditorOperation(redoSectionEditAction)}
+                onClick={() => navigateHistory("redo")}
               >
                 Redo
               </button>
