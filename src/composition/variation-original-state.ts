@@ -1,5 +1,11 @@
 import process from "node:process";
-import { type EditorHistoryV1, verifyEditorHistoryV1 } from "../editor/editor-history";
+import {
+  applyEditorCommandV1,
+  type EditorHistoryV1,
+  redoEditorHistoryV1,
+  undoEditorHistoryV1,
+  verifyEditorHistoryV1,
+} from "../editor/editor-history";
 import type {
   RetainedVariationAlternativeV1,
   VariationCollectionV1,
@@ -10,7 +16,7 @@ import { generateStage7ArpeggiatorAggregateV1 } from "../generators/stage7-arpeg
 import { createArpRange } from "../music-domain/arpeggiator";
 import type { HarmonyProgressionRealization } from "../music-domain/harmony";
 import { serializeCompleteSectionV1, verifyCompleteSectionV1 } from "./complete-section";
-import type { EditorRevisionV1 } from "./editor-revision";
+import { type EditorNoteCommand, type EditorRevisionV1, EditorValueError } from "./editor-revision";
 import {
   STAGE7_AGGREGATE_ENGINE_VERSION_V1,
   STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1,
@@ -216,6 +222,7 @@ async function originalVariationRequestContextV1(
 function variationRequestValuesV1(
   proposal: unknown,
   state: VariationStateV1,
+  beforeSeed?: () => void,
 ): OriginalArpeggiatorVariationRequestV1 {
   const fail = (code: VariationRequestValueError["code"], field: string): never => {
     throw new VariationRequestValueError(code, field);
@@ -230,23 +237,8 @@ function variationRequestValuesV1(
   const record = proposal as Record<string, unknown>;
   if (record.schema !== ARPEGGIATOR_VARIATION_REQUEST_SCHEMA_V1)
     return fail("UNSUPPORTED_VARIATION_SCHEMA", "request.schema");
-  const parent = record.parent;
-  if (
-    typeof parent !== "object" ||
-    parent === null ||
-    Array.isArray(parent) ||
-    JSON.stringify(Object.keys(parent)) !== '["schema","stateHash"]'
-  )
-    return fail("INVALID_VARIATION_PARENT", "request.parent");
-  const identity = parent as Record<string, unknown>;
-  if (
-    identity.schema !== VARIATION_STATE_SCHEMA_V1 ||
-    typeof identity.stateHash !== "string" ||
-    !/^[a-f0-9]{64}$/.test(identity.stateHash)
-  )
-    return fail("INVALID_VARIATION_PARENT", "request.parent");
-  if (identity.stateHash !== state.stateHash)
-    return fail("STALE_VARIATION_PARENT", "request.parent");
+  expectedVariationParentValuesV1(record.parent, state, "request.parent");
+  beforeSeed?.();
   const rootSeed = record.rootSeed;
   if (
     typeof rootSeed !== "number" ||
@@ -261,6 +253,37 @@ function variationRequestValuesV1(
     rootSeed: rootSeed === 0 ? 0 : rootSeed,
   });
   return acceptedRequest;
+}
+
+/** Private identity checks; no caller identity confers state authority. */
+function expectedVariationParentValuesV1(
+  value: unknown,
+  state: VariationStateV1,
+  field: string,
+): void {
+  if (
+    !exactRecord(value, ["schema", "stateHash"]) ||
+    value.schema !== VARIATION_STATE_SCHEMA_V1 ||
+    typeof value.stateHash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(value.stateHash)
+  )
+    throw new VariationRequestValueError("INVALID_VARIATION_PARENT", field);
+  if (value.stateHash !== state.stateHash)
+    throw new VariationRequestValueError("STALE_VARIATION_PARENT", field);
+}
+function expectedEditorParentValuesV1(value: unknown, revision: EditorRevisionV1): void {
+  if (!exactRecord(value, ["schema", "revisionHash"]) || value.schema !== revision.schema)
+    throw new EditorValueError(
+      "INVALID_EDITOR_PARENT",
+      "expectedParent",
+      "Expected parent is invalid.",
+    );
+  if (value.revisionHash !== revision.revisionHash)
+    throw new EditorValueError(
+      "STALE_EDITOR_PARENT",
+      "expectedParent.revisionHash",
+      "Expected parent is stale.",
+    );
 }
 
 export class VariationComponentValueError extends RangeError {
@@ -1019,7 +1042,13 @@ function verifyCombinedNoteIdsV1(
 export async function verifyVariationCollectionV1(value: unknown): Promise<VariationCollectionV1> {
   if (process.versions.node !== "24.21.0")
     throw new Error("Variation collection verification requires Node 24.21.0.");
-  const supplied = snapshotVariationInputV1(value, "collection");
+  return verifyVariationCollectionValuesV1(snapshotVariationInputV1(value, "collection"));
+}
+
+/** Private continuation: consumed snapshot only, never public admission authority. */
+async function verifyVariationCollectionValuesV1(
+  supplied: unknown,
+): Promise<VariationCollectionV1> {
   if (typeof supplied !== "object" || supplied === null || Array.isArray(supplied))
     throw new VariationCollectionValueError("collection");
   const record = supplied as Record<string, unknown>;
@@ -1112,4 +1141,242 @@ export async function verifyVariationCollectionV1(value: unknown): Promise<Varia
     selectedSequence: record.selectedSequence as number,
     nextSequence: record.nextSequence as number,
   });
+}
+
+/** One canonical creation transition from fresh complete retained proof. Metadata
+ * is supplied by the Node application, never part of musical identity. */
+export async function createRetainedArpeggiatorAlternativeV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedEditor: unknown,
+  request: unknown,
+  metadata: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation creation requires Node 24.21.0.");
+  // All consumed records are detached before admission; no late caller reads.
+  const supplied = snapshotVariationInputV1(value, "collection");
+  const sequence = snapshotVariationInputV1(expectedSelectedSequence, "expectedSelectedSequence");
+  const editor = snapshotVariationInputV1(expectedEditor, "expectedParent");
+  const proposal = snapshotVariationInputV1(request, "request");
+  const suppliedMetadata = snapshotVariationInputV1(metadata, "metadata");
+  const collection = await verifyVariationCollectionValuesV1(supplied);
+  if (!Number.isSafeInteger(sequence) || sequence !== collection.selectedSequence)
+    throw new VariationCollectionValueError("expectedSelectedSequence");
+  const selected = collection.alternatives.find((entry) => entry.sequence === sequence);
+  const revision = selected?.history.revisions[selected.history.cursor];
+  if (!selected || !revision)
+    throw new VariationCollectionValueError("collection.selectedSequence");
+  const parent = variationStateValuesV1(revision, selected.variation);
+  const acceptedRequest = variationRequestValuesV1(proposal, parent, () =>
+    expectedEditorParentValuesV1(editor, revision),
+  );
+  if (
+    !exactRecord(suppliedMetadata, ["actor", "createdAt"]) ||
+    suppliedMetadata.actor !== "local-producer-unverified"
+  )
+    throw new VariationAttemptValueError("INVALID_VARIATION_PROVENANCE", "attempt.actor");
+  if (!validAttemptUtc(suppliedMetadata.createdAt))
+    throw new VariationAttemptValueError("INVALID_VARIATION_PROVENANCE", "attempt.createdAt");
+  if (!Number.isSafeInteger(collection.nextSequence + 1))
+    throw new VariationCollectionValueError("collection.nextSequence");
+  const proof = await originalVariationRootValuesV1(
+    {
+      verified: {
+        source: collection.source,
+        sourceRequest: collection.sourceRequest,
+        history: selected.history,
+      },
+      state: parent,
+      request: acceptedRequest,
+    },
+    selected.variation,
+  );
+  const attemptValues = {
+    sequence: collection.nextSequence,
+    variation: Object.freeze({
+      schema: proof.variation.schema,
+      variationHash: proof.variation.variationHash,
+    }),
+    actor: suppliedMetadata.actor,
+    createdAt: suppliedMetadata.createdAt,
+  };
+  const attempt = variationAttemptValuesV1([proof], {
+    schema: VARIATION_ATTEMPT_SCHEMA_V1,
+    ...attemptValues,
+    attemptHash: digest({ schema: "nightdrive.variation-attempt-hash-input.v1", ...attemptValues }),
+  });
+  // Separate immutable active fork; the saved proof never follows this cursor.
+  const history = freezeTrustedValues(
+    JSON.parse(JSON.stringify(selected.history)) as EditorHistoryV1,
+  );
+  verifyCombinedNoteIdsV1(history, proof.variation, "createdAlternative");
+  const alternative = Object.freeze({
+    sequence: collection.nextSequence,
+    attempt,
+    variation: proof.variation,
+    creationProof: proof.creationProof,
+    history,
+  });
+  const next: VariationCollectionV1 = Object.freeze({
+    source: collection.source,
+    sourceRequest: collection.sourceRequest,
+    alternatives: Object.freeze([...collection.alternatives, alternative]),
+    selectedSequence: alternative.sequence,
+    nextSequence: alternative.sequence + 1,
+  });
+  return Object.freeze({
+    collection: next,
+    state: variationStateValuesV1(revision, proof.variation),
+  });
+}
+
+/** Private projection consumes this invocation's fully verified collection only. */
+function retainedContextValuesV1(collection: VariationCollectionV1) {
+  const selected = collection.alternatives.find(
+    (entry) => entry.sequence === collection.selectedSequence,
+  );
+  const revision = selected?.history.revisions[selected.history.cursor];
+  if (!selected || !revision)
+    throw new VariationCollectionValueError("collection.selectedSequence");
+  return Object.freeze({ collection, state: variationStateValuesV1(revision, selected.variation) });
+}
+
+/** Current application view, not serialized admission or caller-supplied authority. */
+export async function projectRetainedVariationContextV1(value: unknown) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation context projection requires Node 24.21.0.");
+  const supplied = snapshotVariationInputV1(value, "collection");
+  return retainedContextValuesV1(await verifyVariationCollectionValuesV1(supplied));
+}
+
+/** Private, invocation-local proof plus current application ownership. */
+async function retainedOwnedContextValuesV1(
+  supplied: unknown,
+  sequence: unknown,
+  state: unknown,
+  editor: unknown,
+) {
+  const current = retainedContextValuesV1(await verifyVariationCollectionValuesV1(supplied));
+  if (!Number.isSafeInteger(sequence) || sequence !== current.collection.selectedSequence)
+    throw new VariationCollectionValueError("expectedSelectedSequence");
+  expectedVariationParentValuesV1(state, current.state, "expectedState");
+  const selected = current.collection.alternatives.find((entry) => entry.sequence === sequence);
+  const revision = selected?.history.revisions[selected.history.cursor];
+  if (!revision) throw new VariationCollectionValueError("collection.selectedSequence");
+  expectedEditorParentValuesV1(editor, revision);
+  return current;
+}
+
+/** Restores one already retained context; proof replay never installs replacements. */
+export async function selectRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  selectedSequence: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation context selection requires Node 24.21.0.");
+  const supplied = snapshotVariationInputV1(value, "collection");
+  const sequence = snapshotVariationInputV1(expectedSelectedSequence, "expectedSelectedSequence");
+  const state = snapshotVariationInputV1(expectedState, "expectedState");
+  const editor = snapshotVariationInputV1(expectedEditor, "expectedParent");
+  const target = snapshotVariationInputV1(selectedSequence, "selection.sequence");
+  const current = await retainedOwnedContextValuesV1(supplied, sequence, state, editor);
+  if (
+    !Number.isSafeInteger(target) ||
+    !current.collection.alternatives.some((entry) => entry.sequence === target)
+  )
+    throw new VariationCollectionValueError("selection.sequence");
+  return retainedContextValuesV1(
+    Object.freeze({ ...current.collection, selectedSequence: target as number }),
+  );
+}
+
+/** One existing editor transition, scoped only to the fully verified selected fork. */
+async function retainedEditorTransitionV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  operation: "edit" | "undo" | "redo",
+  command?: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation editor operations require Node 24.21.0.");
+  const supplied = snapshotVariationInputV1(value, "collection");
+  const sequence = snapshotVariationInputV1(expectedSelectedSequence, "expectedSelectedSequence");
+  const state = snapshotVariationInputV1(expectedState, "expectedState");
+  const editor = snapshotVariationInputV1(expectedEditor, "expectedParent");
+  const proposal = operation === "edit" ? snapshotVariationInputV1(command, "command") : null;
+  const current = await retainedOwnedContextValuesV1(supplied, sequence, state, editor);
+  const selected = current.collection.alternatives.find((entry) => entry.sequence === sequence);
+  if (!selected) throw new VariationCollectionValueError("collection.selectedSequence");
+  // The unchanged editor/history boundary owns command validation, child bytes,
+  // stale values, cursor navigation and redo truncation. No second edit engine.
+  const history =
+    operation === "edit"
+      ? applyEditorCommandV1(selected.history, current.state.editor, proposal as EditorNoteCommand)
+      : operation === "undo"
+        ? undoEditorHistoryV1(selected.history)
+        : redoEditorHistoryV1(selected.history);
+  if (history === null) return null;
+  verifyCombinedNoteIdsV1(history, selected.variation, "selectedAlternative");
+  const collection: VariationCollectionV1 = Object.freeze({
+    ...current.collection,
+    alternatives: Object.freeze(
+      current.collection.alternatives.map((entry) =>
+        entry.sequence === sequence ? Object.freeze({ ...entry, history }) : entry,
+      ),
+    ),
+  });
+  return retainedContextValuesV1(collection);
+}
+
+export async function editRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  command: unknown,
+) {
+  const result = await retainedEditorTransitionV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+    "edit",
+    command,
+  );
+  if (result === null) throw new Error("Verified edit returned no revision.");
+  return result;
+}
+export async function undoRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+) {
+  return retainedEditorTransitionV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+    "undo",
+  );
+}
+export async function redoRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+) {
+  return retainedEditorTransitionV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+    "redo",
+  );
 }
