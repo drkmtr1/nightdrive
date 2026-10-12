@@ -1,5 +1,11 @@
 import process from "node:process";
-import { type EditorHistoryV1, verifyEditorHistoryV1 } from "../editor/editor-history";
+import {
+  applyEditorCommandV1,
+  type EditorHistoryV1,
+  redoEditorHistoryV1,
+  undoEditorHistoryV1,
+  verifyEditorHistoryV1,
+} from "../editor/editor-history";
 import type {
   RetainedVariationAlternativeV1,
   VariationCollectionV1,
@@ -10,7 +16,7 @@ import { generateStage7ArpeggiatorAggregateV1 } from "../generators/stage7-arpeg
 import { createArpRange } from "../music-domain/arpeggiator";
 import type { HarmonyProgressionRealization } from "../music-domain/harmony";
 import { serializeCompleteSectionV1, verifyCompleteSectionV1 } from "./complete-section";
-import { type EditorRevisionV1, EditorValueError } from "./editor-revision";
+import { type EditorNoteCommand, type EditorRevisionV1, EditorValueError } from "./editor-revision";
 import {
   STAGE7_AGGREGATE_ENGINE_VERSION_V1,
   STAGE7_ARPEGGIATOR_AGGREGATE_SCHEMA_V1,
@@ -1244,6 +1250,24 @@ export async function projectRetainedVariationContextV1(value: unknown) {
   return retainedContextValuesV1(await verifyVariationCollectionValuesV1(supplied));
 }
 
+/** Private, invocation-local proof plus current application ownership. */
+async function retainedOwnedContextValuesV1(
+  supplied: unknown,
+  sequence: unknown,
+  state: unknown,
+  editor: unknown,
+) {
+  const current = retainedContextValuesV1(await verifyVariationCollectionValuesV1(supplied));
+  if (!Number.isSafeInteger(sequence) || sequence !== current.collection.selectedSequence)
+    throw new VariationCollectionValueError("expectedSelectedSequence");
+  expectedVariationParentValuesV1(state, current.state, "expectedState");
+  const selected = current.collection.alternatives.find((entry) => entry.sequence === sequence);
+  const revision = selected?.history.revisions[selected.history.cursor];
+  if (!revision) throw new VariationCollectionValueError("collection.selectedSequence");
+  expectedEditorParentValuesV1(editor, revision);
+  return current;
+}
+
 /** Restores one already retained context; proof replay never installs replacements. */
 export async function selectRetainedVariationContextV1(
   value: unknown,
@@ -1259,14 +1283,7 @@ export async function selectRetainedVariationContextV1(
   const state = snapshotVariationInputV1(expectedState, "expectedState");
   const editor = snapshotVariationInputV1(expectedEditor, "expectedParent");
   const target = snapshotVariationInputV1(selectedSequence, "selection.sequence");
-  const current = retainedContextValuesV1(await verifyVariationCollectionValuesV1(supplied));
-  if (!Number.isSafeInteger(sequence) || sequence !== current.collection.selectedSequence)
-    throw new VariationCollectionValueError("expectedSelectedSequence");
-  expectedVariationParentValuesV1(state, current.state, "expectedState");
-  const selected = current.collection.alternatives.find((entry) => entry.sequence === sequence);
-  const revision = selected?.history.revisions[selected.history.cursor];
-  if (!revision) throw new VariationCollectionValueError("collection.selectedSequence");
-  expectedEditorParentValuesV1(editor, revision);
+  const current = await retainedOwnedContextValuesV1(supplied, sequence, state, editor);
   if (
     !Number.isSafeInteger(target) ||
     !current.collection.alternatives.some((entry) => entry.sequence === target)
@@ -1274,5 +1291,92 @@ export async function selectRetainedVariationContextV1(
     throw new VariationCollectionValueError("selection.sequence");
   return retainedContextValuesV1(
     Object.freeze({ ...current.collection, selectedSequence: target as number }),
+  );
+}
+
+/** One existing editor transition, scoped only to the fully verified selected fork. */
+async function retainedEditorTransitionV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  operation: "edit" | "undo" | "redo",
+  command?: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation editor operations require Node 24.21.0.");
+  const supplied = snapshotVariationInputV1(value, "collection");
+  const sequence = snapshotVariationInputV1(expectedSelectedSequence, "expectedSelectedSequence");
+  const state = snapshotVariationInputV1(expectedState, "expectedState");
+  const editor = snapshotVariationInputV1(expectedEditor, "expectedParent");
+  const proposal = operation === "edit" ? snapshotVariationInputV1(command, "command") : null;
+  const current = await retainedOwnedContextValuesV1(supplied, sequence, state, editor);
+  const selected = current.collection.alternatives.find((entry) => entry.sequence === sequence);
+  if (!selected) throw new VariationCollectionValueError("collection.selectedSequence");
+  // The unchanged editor/history boundary owns command validation, child bytes,
+  // stale values, cursor navigation and redo truncation. No second edit engine.
+  const history =
+    operation === "edit"
+      ? applyEditorCommandV1(selected.history, current.state.editor, proposal as EditorNoteCommand)
+      : operation === "undo"
+        ? undoEditorHistoryV1(selected.history)
+        : redoEditorHistoryV1(selected.history);
+  if (history === null) return null;
+  verifyCombinedNoteIdsV1(history, selected.variation, "selectedAlternative");
+  const collection: VariationCollectionV1 = Object.freeze({
+    ...current.collection,
+    alternatives: Object.freeze(
+      current.collection.alternatives.map((entry) =>
+        entry.sequence === sequence ? Object.freeze({ ...entry, history }) : entry,
+      ),
+    ),
+  });
+  return retainedContextValuesV1(collection);
+}
+
+export async function editRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  command: unknown,
+) {
+  const result = await retainedEditorTransitionV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+    "edit",
+    command,
+  );
+  if (result === null) throw new Error("Verified edit returned no revision.");
+  return result;
+}
+export async function undoRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+) {
+  return retainedEditorTransitionV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+    "undo",
+  );
+}
+export async function redoRetainedVariationContextV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+) {
+  return retainedEditorTransitionV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+    "redo",
   );
 }

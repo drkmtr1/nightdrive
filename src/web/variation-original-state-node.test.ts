@@ -12,6 +12,7 @@ import type { EditorNoteCommand, EditorRevisionV1 } from "../composition/editor-
 import { serializeStage7ArpeggiatorAggregateV1 } from "../composition/stage7-arpeggiator-aggregate";
 import * as attemptComposition from "../composition/variation-attempt";
 import * as compositionState from "../composition/variation-original-state";
+import * as editorBoundary from "../editor/editor-history";
 import {
   applyEditorCommandV1,
   createEditorHistoryV1,
@@ -29,9 +30,12 @@ import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
 import {
   createRetainedArpeggiatorVariationApplicationForNodeV1,
+  editRetainedVariationApplicationForNodeV1,
   projectRetainedVariationApplicationForNodeV1,
   projectRetainedVariationPreviewForNodeV1,
+  redoRetainedVariationApplicationForNodeV1,
   selectRetainedVariationApplicationForNodeV1,
+  undoRetainedVariationApplicationForNodeV1,
 } from "./variation-application-node";
 import {
   serializeVariationAttemptForNodeV1,
@@ -732,14 +736,17 @@ describe("original alternative combined canonical state", () => {
       "VariationRequestValueError",
       "VariationRootValueError",
       "createRetainedArpeggiatorAlternativeV1",
+      "editRetainedVariationContextV1",
       "generateOriginalArpeggiatorVariationComponentV1",
       "generateOriginalArpeggiatorVariationRootV1",
       "generateVariationParentArpeggiatorRootV1",
       "projectOriginalVariationStateV1",
       "projectRetainedVariationContextV1",
+      "redoRetainedVariationContextV1",
       "selectRetainedVariationContextV1",
       "serializeOriginalArpeggiatorVariationRootV1",
       "serializeVariationAttemptV1",
+      "undoRetainedVariationContextV1",
       "verifyArpeggiatorVariationAncestryV1",
       "verifyOriginalArpeggiatorVariationRequestV1",
       "verifyOriginalArpeggiatorVariationRootV1",
@@ -3018,9 +3025,12 @@ describe("original-parent canonical variation root and creation proof", () => {
     const api = await import("./variation-application-node");
     expect(Object.keys(api).sort()).toEqual([
       "createRetainedArpeggiatorVariationApplicationForNodeV1",
+      "editRetainedVariationApplicationForNodeV1",
       "projectRetainedVariationApplicationForNodeV1",
       "projectRetainedVariationPreviewForNodeV1",
+      "redoRetainedVariationApplicationForNodeV1",
       "selectRetainedVariationApplicationForNodeV1",
+      "undoRetainedVariationApplicationForNodeV1",
     ]);
     const input = collectionFixture([]);
     const failure = new Error("test verification unavailable");
@@ -3571,6 +3581,358 @@ describe("original-parent canonical variation root and creation proof", () => {
       selectRetainedVariationApplicationForNodeV1(unsafe, 0, null, null, 0),
     ])
       await expect(pending).rejects.toThrow("Node 24.21.0");
+    expect(hook).not.toHaveBeenCalled();
+  });
+  function editableContext() {
+    return contextInputs(
+      collectionFixture(closure(), [rootHistory(), rootHistory(), rootHistory()], rootHistory()),
+    );
+  }
+  function contextCommand(version: number, history: EditorHistoryV1): EditorNoteCommand {
+    const note = currentNote(history);
+    switch (version) {
+      case 1:
+        return {
+          schema: "nightdrive.editor-note-command.v1",
+          type: "set-note-pitch",
+          noteId: note.id,
+          expectedPitch: note.pitch,
+          pitch: 74,
+        };
+      case 2:
+        return {
+          schema: "nightdrive.editor-note-command.v2",
+          type: "set-note-start-tick",
+          noteId: note.id,
+          expectedStartTick: note.startTick,
+          startTick: 120,
+        };
+      case 3:
+        return {
+          schema: "nightdrive.editor-note-command.v3",
+          type: "set-note-duration",
+          noteId: note.id,
+          expectedDurationTicks: note.durationTicks,
+          durationTicks: 480,
+        };
+      case 4:
+        return {
+          schema: "nightdrive.editor-note-command.v4",
+          type: "delete-note",
+          noteId: note.id,
+        };
+      case 5:
+        return {
+          schema: "nightdrive.editor-note-command.v5",
+          type: "set-note-position",
+          noteId: note.id,
+          expectedPitch: note.pitch,
+          expectedStartTick: note.startTick,
+          pitch: 74,
+          startTick: 120,
+        };
+      case 6:
+        return {
+          schema: "nightdrive.editor-note-command.v6",
+          type: "add-note",
+          pitch: 72,
+          startTick: 30000,
+          durationTicks: 480,
+        };
+      case 7:
+        return {
+          schema: "nightdrive.editor-note-command.v7",
+          type: "set-note-velocity",
+          noteId: note.id,
+          expectedVelocity: note.velocity,
+          velocity: 73,
+        };
+      default:
+        throw new Error("Unsupported test command");
+    }
+  }
+  const editContext = (v: ReturnType<typeof contextInputs>, command: unknown) =>
+    editRetainedVariationApplicationForNodeV1(
+      v.input,
+      v.input.selectedSequence,
+      v.expectedState,
+      v.expectedEditor,
+      command,
+    );
+  const navigateContext = (v: ReturnType<typeof contextInputs>, direction: "undo" | "redo") =>
+    (direction === "undo"
+      ? undoRetainedVariationApplicationForNodeV1
+      : redoRetainedVariationApplicationForNodeV1)(
+      v.input,
+      v.input.selectedSequence,
+      v.expectedState,
+      v.expectedEditor,
+    );
+  const nextContext = (
+    application: Awaited<ReturnType<typeof projectRetainedVariationApplicationForNodeV1>>,
+  ) => contextInputs(application.collection as unknown as ReturnType<typeof collectionFixture>);
+
+  it.each([1, 2, 3, 4, 5, 6, 7])(
+    "applies only selected Lead v%s through unchanged editor semantics with correct combined identity and preview",
+    async (version) => {
+      const v = editableContext();
+      const parent = present(v.input.alternatives[3]);
+      const command = contextCommand(version, parent.history);
+      // v1 is an independently constructed literal revision/hash. Other versions
+      // compare wrapper wiring with the unchanged, separately tested editor boundary.
+      const expectedHistory =
+        version === 1
+          ? {
+              source: parent.history.source,
+              revisions: [revisionAt(parent.history, 0), literalPitchChild()],
+              cursor: 1,
+            }
+          : apply(parent.history, command);
+      const expected = expectedRoot(expectedHistory, parent.variation).creationProof.parent;
+      const before = JSON.stringify(v.input);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const aggregate = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      const delegate = vi.spyOn(editorBoundary, "applyEditorCommandV1");
+      const result = await editContext(v, command);
+      const selected = present(result.collection.alternatives[3]);
+      expect(selected.history).toEqual(expectedHistory);
+      expect(JSON.stringify(selected.history.revisions[1])).toBe(
+        JSON.stringify(expectedHistory.revisions[1]),
+      );
+      expect(selected.history.cursor).toBe(1);
+      expect(selected.history.revisions).toHaveLength(2); // v5 two axes: one child.
+      expect(result.selectedState).toEqual({
+        schema: expected.schema,
+        stateHash: expected.stateHash,
+      });
+      expect(result.selectedRevision).toEqual(expected.editor);
+      const expectedCollection = {
+        ...v.input,
+        alternatives: v.input.alternatives.map((entry) =>
+          entry.sequence === 3 ? { ...entry, history: expectedHistory } : entry,
+        ),
+      };
+      expect(result.preview).toEqual(expectedCollectionPreview(expectedCollection));
+      expect(result.preview.sourceResultHash).toBe(LITERAL_RESULT_HASH);
+      if (version === 7) expect(result.preview).toEqual(expectedCollectionPreview(v.input));
+      expect(selected.variation).toEqual(parent.variation);
+      expect(selected.creationProof).toEqual(parent.creationProof);
+      expect(selected.attempt).toEqual(parent.attempt);
+      expect(result.collection.alternatives.slice(0, 3)).toEqual(v.input.alternatives.slice(0, 3));
+      expect(result.collection.nextSequence).toBe(v.input.nextSequence);
+      expect(result.collection.source).toEqual(v.input.source);
+      expect(delegate).toHaveBeenCalledExactlyOnceWith(
+        expect.anything(),
+        v.expectedEditor,
+        command,
+      );
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(aggregate).toHaveBeenCalledTimes(3); // Proof replay, no new variation.
+      expect(JSON.stringify(v.input)).toBe(before);
+      frozen(result);
+    },
+  );
+  it.each([0, 3])(
+    "restores exact editor and combined hashes with Undo/Redo in context %s, without switching alternatives",
+    async (sequence) => {
+      const v = editableContext();
+      v.input.selectedSequence = sequence;
+      const current = contextInputs(v.input);
+      const command = contextCommand(1, present(current.input.alternatives[sequence]).history);
+      const edited = await editContext(current, command);
+      const undone = present(await navigateContext(nextContext(edited), "undo"));
+      expect(undone.selectedState).toEqual(current.expectedState);
+      expect(undone.selectedRevision).toEqual(current.expectedEditor);
+      expect(undone.preview).toEqual(expectedCollectionPreview(current.input));
+      expect(undone.collection.selectedSequence).toBe(sequence);
+      expect(undone.collection.alternatives[sequence]?.history.revisions).toHaveLength(2);
+      const redone = present(await navigateContext(nextContext(undone), "redo"));
+      expect(redone.selectedState).toEqual(edited.selectedState);
+      expect(redone.selectedRevision).toEqual(edited.selectedRevision);
+      expect(redone.preview).toEqual(edited.preview);
+      expect(redone.collection).toEqual(edited.collection);
+    },
+  );
+  it.each(["undo", "redo"] as const)(
+    "returns null for bounded %s after context proof, without creating an alternative or revision",
+    async (direction) => {
+      const v = editableContext();
+      const before = JSON.stringify(v.input);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      expect(await navigateContext(v, direction)).toBeNull();
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(v.input)).toBe(before);
+    },
+  );
+  it("edits both undone active histories without losing the child-owned creation revision proof", async () => {
+    const history = pitchHistory();
+    const proof = pairOnly(expectedRoot(history));
+    const undone = present(undoEditorHistoryV1(history));
+    const input = collectionFixture([proof], [undone], undone);
+    const v = contextInputs(input);
+    const childEdit = { ...contextCommand(1, undone), pitch: 72 };
+    const child = await editContext(v, childEdit);
+    const selectedOriginal = await selectContext(nextContext(child), 0);
+    const originalEdit = { ...contextCommand(1, undone), pitch: 73 };
+    const result = await editContext(nextContext(selectedOriginal), originalEdit);
+    const creationHash = selectedEditorRevisionV1(history).revisionHash;
+    for (const entry of result.collection.alternatives) {
+      expect(entry.history.revisions.some((r) => r.revisionHash === creationHash)).toBe(false);
+      expect(entry.history.revisions).toHaveLength(2);
+      expect(entry.history.cursor).toBe(1);
+    }
+    expect(result.collection.alternatives[1]?.creationProof).toEqual(proof.creationProof);
+    expect(
+      result.collection.alternatives[1]?.creationProof?.parentHistory.revisions.some(
+        (r) => r.revisionHash === creationHash,
+      ),
+    ).toBe(true);
+    expect(result.collection.alternatives[1]?.variation).toEqual(proof.variation);
+    expect(input.alternatives[0]?.history).toEqual(undone);
+    expect(await projectRetainedVariationApplicationForNodeV1(result.collection)).toEqual(result);
+  });
+  it.each(["selection", "combined", "editor"])(
+    "preserves %s ownership precedence over an invalid editor command",
+    async (kind) => {
+      const v = editableContext();
+      let sequence = v.input.selectedSequence;
+      if (kind === "selection") sequence = 0;
+      if (kind === "combined") v.expectedState.stateHash = "0".repeat(64);
+      if (kind === "editor") v.expectedEditor.revisionHash = "0".repeat(64);
+      const delegate = vi.spyOn(editorBoundary, "applyEditorCommandV1");
+      await expect(
+        editRetainedVariationApplicationForNodeV1(
+          v.input,
+          sequence,
+          v.expectedState,
+          v.expectedEditor,
+          {},
+        ),
+      ).rejects.toMatchObject({
+        code: {
+          selection: "INVALID_VARIATION_COLLECTION",
+          combined: "STALE_VARIATION_PARENT",
+          editor: "STALE_EDITOR_PARENT",
+        }[kind],
+      });
+      expect(delegate).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["undo", "redo"] as const)(
+    "%s checks exact current ownership before navigation",
+    async (direction) => {
+      const v = editableContext();
+      v.expectedEditor.revisionHash = "0".repeat(64);
+      await expect(navigateContext(v, direction)).rejects.toMatchObject({
+        code: "STALE_EDITOR_PARENT",
+      });
+    },
+  );
+  it.each(["no-op", "stale-value", "schema"])(
+    "propagates unchanged editor %s rejection without partial application",
+    async (kind) => {
+      const v = editableContext();
+      const command = contextCommand(1, present(v.input.alternatives[3]).history);
+      if (kind === "no-op") Reflect.set(command, "pitch", 75);
+      if (kind === "stale-value") Reflect.set(command, "expectedPitch", 74);
+      if (kind === "schema") Reflect.set(command, "schema", "unsupported");
+      const before = JSON.stringify(v.input);
+      const installed = vi.fn();
+      const pending = editContext(v, command);
+      void pending.then(installed, () => undefined);
+      await expect(pending).rejects.toMatchObject({
+        code: {
+          "no-op": "NO_OP_EDITOR_COMMAND",
+          "stale-value": "STALE_EDITOR_NOTE_VALUE",
+          schema: "UNSUPPORTED_EDITOR_COMMAND_SCHEMA",
+        }[kind],
+      });
+      expect(installed).not.toHaveBeenCalled();
+      expect(JSON.stringify(v.input)).toBe(before);
+    },
+  );
+  it("rejects nonselected forged redo before dispatching a selected edit", async () => {
+    const v = editableContext();
+    const command = contextCommand(1, present(v.input.alternatives[3]).history);
+    Reflect.set(present(v.input.alternatives[0]), "history", {
+      ...forgedChild(pitchHistory()),
+      cursor: 0,
+    });
+    const delegate = vi.spyOn(editorBoundary, "applyEditorCommandV1");
+    await expect(editContext(v, command)).rejects.toMatchObject({ code: "INVALID_EDITOR_LINEAGE" });
+    expect(delegate).not.toHaveBeenCalled();
+  });
+  it("snapshots command/context before admission and ignores subsequent caller mutation", async () => {
+    const v = editableContext();
+    const command = contextCommand(1, present(v.input.alternatives[3]).history);
+    const real = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    vi.spyOn(generator, "generateCompleteSectionV1").mockImplementationOnce(async (r) => {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return real(r);
+    });
+    const pending = editContext(v, command);
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    Reflect.set(command, "pitch", 80);
+    v.input.alternatives.splice(0);
+    v.expectedState.stateHash = "0".repeat(64);
+    release?.();
+    const result = await pending;
+    expect(result.collection.alternatives[3]?.history.revisions[1]).toEqual(literalPitchChild());
+  });
+  it("rejects unsafe command descriptors before admission without hooks", async () => {
+    const v = editableContext();
+    const hook = vi.fn();
+    const command = Object.defineProperty({}, "schema", { get: hook, enumerable: true });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(editContext(v, command)).rejects.toMatchObject({
+      code: "INVALID_VARIATION_INPUT",
+    });
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
+  });
+  it("returns no partial application if the existing editor delegate fails", async () => {
+    const v = editableContext();
+    const command = contextCommand(1, present(v.input.alternatives[3]).history);
+    const before = JSON.stringify(v.input);
+    const failure = new Error("test editor unavailable");
+    vi.spyOn(editorBoundary, "applyEditorCommandV1").mockImplementationOnce(() => {
+      throw failure;
+    });
+    const installed = vi.fn();
+    const pending = editContext(v, command);
+    void pending.then(installed, () => undefined);
+    await expect(pending).rejects.toBe(failure);
+    expect(installed).not.toHaveBeenCalled();
+    expect(JSON.stringify(v.input)).toBe(before);
+  });
+  it("fails closed on a combined-ID collision after a delegated edit", async () => {
+    const v = editableContext();
+    const selected = present(v.input.alternatives[3]);
+    const command = contextCommand(1, selected.history);
+    const forged = structuredClone(selected.history);
+    const collision = present(selected.variation?.tracks[2]?.notes[0]).id;
+    Reflect.set(present(forged.revisions[0]?.tracks[3]?.notes[0]), "id", collision);
+    vi.spyOn(editorBoundary, "applyEditorCommandV1").mockReturnValueOnce(forged);
+    await expect(editContext(v, command)).rejects.toMatchObject({
+      code: "VARIATION_NOTE_ID_COLLISION",
+    });
+  });
+  it("all contextual editor entries reject wrong runtime before caller hooks", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const hook = vi.fn();
+    const unsafe = Object.defineProperty({}, "source", { get: hook, enumerable: true });
+    const operations = [
+      () => compositionState.editRetainedVariationContextV1(unsafe, 0, null, null, {}),
+      () => compositionState.undoRetainedVariationContextV1(unsafe, 0, null, null),
+      () => compositionState.redoRetainedVariationContextV1(unsafe, 0, null, null),
+      () => editRetainedVariationApplicationForNodeV1(unsafe, 0, null, null, {}),
+      () => undoRetainedVariationApplicationForNodeV1(unsafe, 0, null, null),
+      () => redoRetainedVariationApplicationForNodeV1(unsafe, 0, null, null),
+    ];
+    for (const operation of operations) await expect(operation()).rejects.toThrow("Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,10 @@
 import {
   createRetainedArpeggiatorAlternativeV1,
+  editRetainedVariationContextV1,
   projectRetainedVariationContextV1,
+  redoRetainedVariationContextV1,
   selectRetainedVariationContextV1,
+  undoRetainedVariationContextV1,
   type VariationStateV1,
   verifyVariationCollectionV1,
 } from "../composition/variation-original-state";
@@ -114,4 +117,57 @@ export async function selectRetainedVariationApplicationForNodeV1(
       selectedSequence,
     ),
   );
+}
+
+/** Existing canonical Lead commands only, after fresh retained context authority. */
+export async function editRetainedVariationApplicationForNodeV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+  command: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation application edit requires Node 24.21.0.");
+  return applicationValues(
+    await editRetainedVariationContextV1(
+      value,
+      expectedSelectedSequence,
+      expectedState,
+      expectedEditor,
+      command,
+    ),
+  );
+}
+export async function undoRetainedVariationApplicationForNodeV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation application Undo requires Node 24.21.0.");
+  const result = await undoRetainedVariationContextV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+  );
+  return result === null ? null : applicationValues(result);
+}
+export async function redoRetainedVariationApplicationForNodeV1(
+  value: unknown,
+  expectedSelectedSequence: unknown,
+  expectedState: unknown,
+  expectedEditor: unknown,
+) {
+  if (process.versions.node !== "24.21.0")
+    throw new Error("Variation application Redo requires Node 24.21.0.");
+  const result = await redoRetainedVariationContextV1(
+    value,
+    expectedSelectedSequence,
+    expectedState,
+    expectedEditor,
+  );
+  return result === null ? null : applicationValues(result);
 }
