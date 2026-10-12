@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import process from "node:process";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createOriginalVariationApplicationAction } from "../app/variation-action";
 import {
   type CompleteSectionRequestV1,
   type CompleteSectionResultV1,
@@ -29,6 +30,7 @@ import * as arpDomain from "../music-domain/arpeggiator-policy-generator";
 import * as bassDomain from "../music-domain/bass";
 import * as harmonyDomain from "../music-domain/harmony";
 import {
+  createOriginalVariationApplicationForNodeV1,
   createRetainedArpeggiatorVariationApplicationForNodeV1,
   editRetainedVariationApplicationForNodeV1,
   projectRetainedVariationApplicationForNodeV1,
@@ -735,6 +737,7 @@ describe("original alternative combined canonical state", () => {
       "VariationComponentValueError",
       "VariationRequestValueError",
       "VariationRootValueError",
+      "createOriginalVariationContextV1",
       "createRetainedArpeggiatorAlternativeV1",
       "editRetainedVariationContextV1",
       "generateOriginalArpeggiatorVariationComponentV1",
@@ -3024,6 +3027,7 @@ describe("original-parent canonical variation root and creation proof", () => {
   it("delegates full proof once, propagates errors and exports no raw projection", async () => {
     const api = await import("./variation-application-node");
     expect(Object.keys(api).sort()).toEqual([
+      "createOriginalVariationApplicationForNodeV1",
       "createRetainedArpeggiatorVariationApplicationForNodeV1",
       "editRetainedVariationApplicationForNodeV1",
       "projectRetainedVariationApplicationForNodeV1",
@@ -3934,5 +3938,174 @@ describe("original-parent canonical variation root and creation proof", () => {
     ];
     for (const operation of operations) await expect(operation()).rejects.toThrow("Node 24.21.0");
     expect(hook).not.toHaveBeenCalled();
+  });
+});
+
+describe("Original complete application bootstrap and real Server Action", () => {
+  const version = Object.getOwnPropertyDescriptor(process.versions, "node");
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (version) Object.defineProperty(process.versions, "node", version);
+  });
+  function expectedPreview(history: EditorHistoryV1) {
+    const selected = revisionAt(history, history.cursor);
+    return {
+      sourceResultHash: LITERAL_RESULT_HASH,
+      section: selected.section,
+      tracks: selected.tracks.map((track) => ({
+        role: track.role,
+        notes: track.notes.map(({ pitch, startTick, durationTicks }) => ({
+          pitch,
+          startTick,
+          durationTicks,
+        })),
+      })),
+    };
+  }
+  it.each(["root", "edited", "undo-retaining-redo"])(
+    "real action admits %s once and returns the independent full application without another revision",
+    async (kind) => {
+      expect(process.versions.node).toBe("24.21.0");
+      const history =
+        kind === "root"
+          ? rootHistory()
+          : kind === "edited"
+            ? pitchHistory()
+            : undoEditorHistoryV1(pitchHistory());
+      if (!history) throw new Error("Missing fixture history");
+      const original = source();
+      const inputRequest = request();
+      const before = JSON.stringify([original, inputRequest, history]);
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      const target = vi.spyOn(aggregateGenerator, "generateStage7ArpeggiatorAggregateV1");
+      const result = await createOriginalVariationApplicationAction(
+        original,
+        inputRequest,
+        history,
+      );
+      const expectedRevision =
+        kind === "edited"
+          ? literalPitchChild()
+          : (JSON.parse(EXPECTED_START_TICK_ROOT_JSON) as EditorRevisionV1);
+      const expected = independentState(expectedRevision).state;
+      expect(result).toEqual({
+        collection: {
+          source: original,
+          sourceRequest: inputRequest,
+          alternatives: [
+            { sequence: 0, attempt: null, variation: null, creationProof: null, history },
+          ],
+          selectedSequence: 0,
+          nextSequence: 1,
+        },
+        selectedState: { schema: expected.schema, stateHash: expected.stateHash },
+        selectedRevision: expected.editor,
+        preview: expectedPreview(history),
+      });
+      expect(replay).toHaveBeenCalledTimes(1);
+      expect(target).not.toHaveBeenCalled();
+      expect(JSON.stringify([original, inputRequest, history])).toBe(before);
+      expect(result.collection.source).not.toBe(original);
+      expect(result.collection.sourceRequest).not.toBe(inputRequest);
+      expect(result.collection.alternatives[0]?.history).not.toBe(history);
+      const recursivelyFrozen = (value: unknown): boolean =>
+        value === null ||
+        typeof value !== "object" ||
+        (Object.isFrozen(value) && Object.values(value).every(recursivelyFrozen));
+      expect(recursivelyFrozen(result)).toBe(true);
+      expect(Object.keys(result.preview.tracks[3]?.notes[0] ?? {})).toEqual([
+        "pitch",
+        "startTick",
+        "durationTicks",
+      ]);
+      const saved = JSON.stringify(result);
+      Object.assign(inputRequest.composition, { rootSeed: 99 });
+      expect(JSON.stringify(result)).toBe(saved);
+    },
+  );
+  it("snapshots source, complete request and history before the asynchronous replay", async () => {
+    const original = source();
+    const inputRequest = request();
+    const history = structuredClone(pitchHistory());
+    const before = structuredClone({ original, inputRequest, history });
+    const generate = generator.generateCompleteSectionV1;
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const replay = vi
+      .spyOn(generator, "generateCompleteSectionV1")
+      .mockImplementation(async (...args) => {
+        await gate;
+        return generate(...args);
+      });
+    const pending = createOriginalVariationApplicationForNodeV1(original, inputRequest, history);
+    Object.assign(inputRequest.composition, { rootSeed: 99 });
+    Object.assign(original, { resultHash: "0".repeat(64) });
+    Object.assign(history, { cursor: 0 });
+    release?.();
+    const result = await pending;
+    expect(result.collection.source).toEqual(before.original);
+    expect(result.collection.sourceRequest).toEqual(before.inputRequest);
+    expect(result.collection.alternatives[0]?.history).toEqual(before.history);
+    expect(result.selectedRevision.revisionHash).toBe(literalPitchChild().revisionHash);
+    expect(replay).toHaveBeenCalledTimes(1);
+  });
+  it.each([0, 1, 2])(
+    "rejects descriptor-unsafe input %s before replay without invoking hooks",
+    async (index) => {
+      const hook = vi.fn();
+      const values: unknown[] = [source(), request(), rootHistory()];
+      values[index] = Object.defineProperty({}, "schema", { enumerable: true, get: hook });
+      const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+      await expect(
+        createOriginalVariationApplicationAction(values[0], values[1], values[2]),
+      ).rejects.toBeDefined();
+      expect(hook).not.toHaveBeenCalled();
+      expect(replay).not.toHaveBeenCalled();
+    },
+  );
+  it("rejects forged redo, malformed request and source mismatch without a complete result", async () => {
+    const installed = vi.fn();
+    const values: [unknown, unknown, unknown][] = [
+      [source(), request(), { ...forgedChild(pitchHistory()), cursor: 0 }],
+      [source(), { ...request(), schema: "invalid" }, rootHistory()],
+      [
+        source(),
+        { ...request(), composition: { ...request().composition, rootSeed: 1 } },
+        rootHistory(),
+      ],
+    ];
+    for (const args of values) {
+      const pending = createOriginalVariationApplicationAction(...args);
+      void pending.then(installed, () => undefined);
+      await expect(pending).rejects.toBeDefined();
+    }
+    expect(installed).not.toHaveBeenCalled();
+  });
+  it("propagates replay failure unchanged without retry or partial installation", async () => {
+    const failure = new Error("synthetic replay failure");
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1").mockRejectedValue(failure);
+    await expect(
+      createOriginalVariationApplicationAction(source(), request(), rootHistory()),
+    ).rejects.toBe(failure);
+    expect(replay).toHaveBeenCalledTimes(1);
+  });
+  it("guards both added boundaries before reading unsafe inputs", async () => {
+    Object.defineProperty(process.versions, "node", { configurable: true, value: "24.20.0" });
+    const hook = vi.fn();
+    const bad = Object.defineProperty({}, "schema", { enumerable: true, get: hook });
+    const replay = vi.spyOn(generator, "generateCompleteSectionV1");
+    await expect(compositionState.createOriginalVariationContextV1(bad, bad, bad)).rejects.toThrow(
+      "requires Node 24.21.0",
+    );
+    await expect(createOriginalVariationApplicationForNodeV1(bad, bad, bad)).rejects.toThrow(
+      "requires Node 24.21.0",
+    );
+    await expect(createOriginalVariationApplicationAction(bad, bad, bad)).rejects.toThrow(
+      "requires Node 24.21.0",
+    );
+    expect(hook).not.toHaveBeenCalled();
+    expect(replay).not.toHaveBeenCalled();
   });
 });

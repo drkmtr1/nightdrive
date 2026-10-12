@@ -13,6 +13,15 @@ import {
   undoSectionEditAction,
 } from "./generate-section-action";
 
+import {
+  createArpeggiatorVariationAction,
+  createOriginalVariationApplicationAction,
+  editRetainedVariationAction,
+  redoRetainedVariationAction,
+  selectRetainedVariationAction,
+  undoRetainedVariationAction,
+} from "./variation-action";
+
 export default function HomePage() {
   const choices = Object.values(HARMONY_PROFILE_IDS).map((profile) => ({
     profile,
@@ -33,6 +42,14 @@ export default function HomePage() {
 
       <GenerateSection
         choices={choices}
+        variationActions={{
+          bootstrap: createOriginalVariationApplicationAction,
+          create: createArpeggiatorVariationAction,
+          select: selectRetainedVariationAction,
+          edit: editRetainedVariationAction,
+          undo: undoRetainedVariationAction,
+          redo: redoRetainedVariationAction,
+        }}
         generateAction={generateSectionAction}
         addLeadNoteAction={addLeadNoteAction}
         deleteLeadNoteAction={deleteLeadNoteAction}
